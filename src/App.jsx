@@ -359,6 +359,108 @@ function buildSampleDistanceSession({
   };
 }
 
+function buildTestRecordSheets(userId) {
+  if (!userId) return [];
+  return [
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자초등 U-11',
+      division: '남자초등 U-11',
+      clubName: '연무초등학교',
+      groupName: '연무초등학교',
+      distance: 35,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 35, total: 337 },
+        { distance: 30, total: 342 },
+        { distance: 25, total: 342 },
+        { distance: 20, total: 351 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자초등 U-11',
+      division: '여자초등 U-11',
+      clubName: '천현초등학교',
+      groupName: '천현초등학교',
+      distance: 35,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 35, total: 305 },
+        { distance: 30, total: 325 },
+        { distance: 25, total: 339 },
+        { distance: 20, total: 343 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자 컴파운드',
+      division: '남자-컴파운드',
+      clubName: '팀 자이언트',
+      groupName: '팀 자이언트',
+      distance: 50,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 50, total: 354 },
+        { distance: 50, total: 347 },
+        { distance: 30, total: 356 },
+        { distance: 30, total: 358 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자 컴파운드',
+      division: '여자-컴파운드',
+      clubName: '신장중학교',
+      groupName: '신장중학교',
+      distance: 50,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 50, total: 328 },
+        { distance: 50, total: 324 },
+        { distance: 30, total: 339 },
+        { distance: 30, total: 348 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자중등부',
+      division: '남자중등부',
+      clubName: '성포중학교',
+      groupName: '성포중학교',
+      distance: 60,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 60, total: 338 },
+        { distance: 50, total: 322 },
+        { distance: 40, total: 347 },
+        { distance: 30, total: 357 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자중등부',
+      division: '여자중등부',
+      clubName: '여흥중학교',
+      groupName: '여흥중학교',
+      distance: 60,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 60, total: 331 },
+        { distance: 50, total: 324 },
+        { distance: 40, total: 339 },
+        { distance: 30, total: 351 },
+      ],
+    }),
+  ];
+}
+
 const SAMPLE_SHEETS = [
   {
     id: "sheet_2026_03_22",
@@ -1074,7 +1176,7 @@ function Hero() {
           </div>
           <div className="mt-6 max-w-4xl">
             <h1 className="text-4xl font-black leading-tight tracking-tight md:text-6xl">
-              X-Session으로 기록하고,   X-Ranking으로 증명한다.
+              X-Session으로 기록하고, X-Ranking으로 증명한다.
             </h1>
             <p className="mt-5 max-w-3xl text-lg text-slate-200 md:text-2xl">
               이 버전은 X-Session, X-Dashboard, X-Ranking, X-Analysis 구조를 기준으로 한 Firebase 실전 연결형 v1이다.
