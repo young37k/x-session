@@ -3015,27 +3015,49 @@ function ProfilePanel({ user, onUpdate, saving }) {
 
       <Card className="rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
-          <CardTitle>계정 관리</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl border border-slate-200 p-5">
-            <div className="mb-3 flex items-center gap-2 text-lg font-semibold"><Eraser className="h-5 w-5 text-slate-700" /> 프로필 삭제</div>
-            <p className="mb-4 text-sm text-slate-500">프로필 정보만 초기화하는 영역이다. 현재는 박스만 준비되어 있다.</p>
-            <Button variant="outline" className="w-full rounded-2xl" disabled>준비중</Button>
-          </div>
+  <CardTitle>계정 관리</CardTitle>
+</CardHeader>
+<CardContent className="grid gap-4 md:grid-cols-3">
+  <div className="rounded-3xl border border-slate-200 p-5">
+    <div className="mb-3 flex items-center gap-2 text-lg font-semibold">
+      <Eraser className="h-5 w-5 text-slate-700" /> 프로필 삭제
+    </div>
+    <p className="mb-4 text-sm text-slate-500">
+      프로필 정보만 초기화하는 영역이다. 현재는 박스만 준비되어 있다.
+    </p>
+    <Button variant="outline" className="w-full rounded-2xl" disabled>
+      준비중
+    </Button>
+  </div>
 
-          <div className="rounded-3xl border border-red-200 p-5">
-            <div className="mb-3 flex items-center gap-2 text-lg font-semibold text-red-700"><UserX className="h-5 w-5" /> 회원탈퇴</div>
-            <p className="mb-4 text-sm text-slate-500">Firebase 재인증이 필요한 기능이라 현재는 박스만 준비되어 있다.</p>
-            <Button variant="outline" className="w-full rounded-2xl border-red-200 text-red-700" disabled>준비중</Button>
-          </div>
+  <div className="rounded-3xl border border-red-200 p-5">
+    <div className="mb-3 flex items-center gap-2 text-lg font-semibold text-red-700">
+      <UserX className="h-5 w-5" /> 회원탈퇴
+    </div>
+    <p className="mb-4 text-sm text-slate-500">
+      Firebase 재인증이 필요한 기능이라 현재는 박스만 준비되어 있다.
+    </p>
+    <Button
+      variant="outline"
+      className="w-full rounded-2xl border-red-200 text-red-700"
+      disabled
+    >
+      준비중
+    </Button>
+  </div>
 
-          <div className="rounded-3xl border border-slate-200 p-5">
-            <div className="mb-3 flex items-center gap-2 text-lg font-semibold"><Lock className="h-5 w-5 text-slate-700" /> 비밀번호 변경</div>
-            <p className="mb-4 text-sm text-slate-500">보안상 재인증 흐름이 필요해서 현재는 박스만 준비되어 있다.</p>
-            <Button variant="outline" className="w-full rounded-2xl" disabled>준비중</Button>
-          </div>
-        </CardContent>
+  <div className="rounded-3xl border border-slate-200 p-5">
+    <div className="mb-3 flex items-center gap-2 text-lg font-semibold">
+      <Lock className="h-5 w-5 text-slate-700" /> 비밀번호 변경
+    </div>
+    <p className="mb-4 text-sm text-slate-500">
+      보안상 재인증 흐름이 필요해서 현재는 박스만 준비되어 있다.
+    </p>
+    <Button variant="outline" className="w-full rounded-2xl" disabled>
+      준비중
+    </Button>
+  </div>
+</CardContent>
       </Card>
     </div>
   );
