@@ -3768,7 +3768,6 @@ function XSessionApp() {
     return () => unsubscribe();
   }, [appServices, loadUsersAndSessions, adminRequested]);
 
-  }, [appServices, loadUsersAndSessions, adminRequested]);
 
 
   async function handleRegister(input) {
