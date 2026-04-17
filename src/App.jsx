@@ -69,6 +69,10 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+  deleteUser,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -202,6 +206,15 @@ const DEFAULT_UI = { activeTab: "dashboard" };
 
 const ADMIN_EMAILS = ["theyoung37k@gmail.com", "5@gmail.com"];
 const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
+
+async function deleteAllSessionsForUser(db, uid) {
+  const q = query(collection(db, "sessions"), where("userId", "==", uid));
+  const snap = await getDocs(q);
+  for (const d of snap.docs) {
+    await deleteDoc(doc(db, "sessions", d.id));
+  }
+}
+
 
 function getStoredAdminEmails() {
   try {
@@ -344,6 +357,108 @@ function buildSampleDistanceSession({
       worstEndScore: distanceRounds.length ? Math.min(...distanceRounds.map((r) => Number(r.total) || 0)) : 0,
     },
   };
+}
+
+function buildTestRecordSheets(userId) {
+  if (!userId) return [];
+  return [
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자초등 U-11',
+      division: '남자초등 U-11',
+      clubName: '연무초등학교',
+      groupName: '연무초등학교',
+      distance: 35,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 35, total: 337 },
+        { distance: 30, total: 342 },
+        { distance: 25, total: 342 },
+        { distance: 20, total: 351 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자초등 U-11',
+      division: '여자초등 U-11',
+      clubName: '천현초등학교',
+      groupName: '천현초등학교',
+      distance: 35,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 35, total: 305 },
+        { distance: 30, total: 325 },
+        { distance: 25, total: 339 },
+        { distance: 20, total: 343 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자 컴파운드',
+      division: '남자-컴파운드',
+      clubName: '팀 자이언트',
+      groupName: '팀 자이언트',
+      distance: 50,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 50, total: 354 },
+        { distance: 50, total: 347 },
+        { distance: 30, total: 356 },
+        { distance: 30, total: 358 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자 컴파운드',
+      division: '여자-컴파운드',
+      clubName: '신장중학교',
+      groupName: '신장중학교',
+      distance: 50,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 50, total: 328 },
+        { distance: 50, total: 324 },
+        { distance: 30, total: 339 },
+        { distance: 30, total: 348 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자중등부',
+      division: '남자중등부',
+      clubName: '성포중학교',
+      groupName: '성포중학교',
+      distance: 60,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 60, total: 338 },
+        { distance: 50, total: 322 },
+        { distance: 40, total: 347 },
+        { distance: 30, total: 357 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자중등부',
+      division: '여자중등부',
+      clubName: '여흥중학교',
+      groupName: '여흥중학교',
+      distance: 60,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 60, total: 331 },
+        { distance: 50, total: 324 },
+        { distance: 40, total: 339 },
+        { distance: 30, total: 351 },
+      ],
+    }),
+  ];
 }
 
 const SAMPLE_SHEETS = [
@@ -2446,7 +2561,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
                 <Award className="h-5 w-5 text-amber-500" />
                 <span>상위 3명</span>
                 <span className="text-sm font-normal text-slate-500">
-                  평균 화살 점수가 높은 순서
+                  평균점수가 높은 순서대로 등수 부여
                 </span>
               </CardTitle>
             </CardHeader>
@@ -3808,7 +3923,7 @@ function XSessionApp() {
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
-              {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
+              {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} appServices={appServices} onAfterLogout={handleLogout} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} />}
             </motion.div>
           </>
