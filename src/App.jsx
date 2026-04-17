@@ -155,6 +155,7 @@ const REGION_OPTIONS = [
   "충청북도",
 ];
 
+
 const REGION_DISTRICT_MAP = {
   "서울특별시": ["강남구","강동구","강북구","강서구","관악구","광진구","구로구","금천구","노원구","도봉구","동대문구","동작구","마포구","서대문구","서초구","성동구","성북구","송파구","양천구","영등포구","용산구","은평구","종로구","중구","중랑구"],
   "부산광역시": ["강서구","금정구","기장군","남구","동구","동래구","부산진구","북구","사상구","사하구","서구","수영구","연제구","영도구","중구","해운대구"],
@@ -240,6 +241,7 @@ async function deleteAllSessionsForUser(db, uid) {
     await deleteDoc(doc(db, "sessions", d.id));
   }
 }
+
 
 function getStoredAdminEmails() {
   try {
@@ -1503,6 +1505,1493 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
     </Card>
   );
 }
+
+
+function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
+  const navs = [
+    { key: "record", label: "X-Session", icon: Target },
+    { key: "dashboard", label: "X-Dashboard", icon: BarChart3 },
+    { key: "ranking", label: "X-Ranking", icon: Trophy },
+    { key: "analysis", label: "X-Analysis", icon: CalendarRange },
+    { key: "profile", label: "Profile", icon: User },
+    ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield }] : []),
+  ];
+
+  return (
+    <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
+      <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <ProfileAvatar user={user} size="md" />
+          <div className="min-w-0">
+            <div className="truncate text-base font-semibold">{getDisplayName(user)}</div>
+            <div className="truncate text-sm text-slate-500">{user.email}</div>
+          </div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
+          <TabsList className="grid w-full grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1 md:w-auto lg:grid-cols-5">
+            {navs.map((item) => {
+              const Icon = item.icon;
+              return (
+                <TabsTrigger
+                  key={item.key}
+                  value={item.key}
+                  className="gap-2 rounded-2xl px-3 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                >
+                  <Icon className="h-4 w-4" /> {item.label}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
+
+        <Button variant="outline" className="rounded-2xl" onClick={onLogout}>
+          <LogOut className="mr-2 h-4 w-4" /> 로그아웃
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SessionEditor({
+  session,
+  setSession,
+  onSave,
+  onTempSave,
+  onDeleteSavedSession,
+  saving,
+  tempSaveMessage,
+  editingSavedSession,
+}) {
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, endId: null });
+  const [deleteSessionDialog, setDeleteSessionDialog] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [history, setHistory] = useState([]);
+  const [lastQuickScore, setLastQuickScore] = useState(null);
+  const [flashKey, setFlashKey] = useState("");
+  const arrowRefs = useRef({});
+
+  const totalArrows = useMemo(
+    () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
+    [session]
+  );
+
+  const progress = useMemo(() => {
+    if (session.recordInputType === "distance") {
+      const rounds = session.distanceRounds || [];
+      const filled = rounds.filter((round) => Number(round.total) > 0).length;
+      return Math.round((filled / Math.max(1, rounds.length)) * 100);
+    }
+    return Math.round(
+      (totalArrows / Math.max(1, session.totalEnds * session.arrowsPerEnd)) * 100
+    );
+  }, [session, totalArrows]);
+
+  const currentTarget = useMemo(() => {
+    for (const end of session.ends) {
+      for (let i = 0; i < end.arrows.length; i += 1) {
+        if (end.arrows[i] === null) {
+          return { endId: end.id, arrowIndex: i };
+        }
+      }
+    }
+    return null;
+  }, [session]);
+
+  useEffect(() => {
+    if (!flashKey) return;
+    const timer = setTimeout(() => setFlashKey(""), 220);
+    return () => clearTimeout(timer);
+  }, [flashKey]);
+
+  function pushHistory(prev) {
+    setHistory((h) => [...h.slice(-29), JSON.parse(JSON.stringify(prev))]);
+  }
+
+  function reindexEnds(ends) {
+    return ends.map((end, idx) => ({ ...end, index: idx + 1 }));
+  }
+
+  function patchSession(update) {
+    setSession((prev) => {
+      pushHistory(prev);
+      const next = typeof update === "function" ? update(prev) : { ...prev, ...update };
+      return { ...next, totalEnds: next.ends.length, setPoints: deriveSetPoints(next) };
+    });
+  }
+
+  function triggerHaptic() {
+    if (typeof window !== "undefined" && window.navigator?.vibrate) {
+      window.navigator.vibrate(12);
+    }
+  }
+
+  function focusArrowField(endId, arrowIndex) {
+    const key = `${endId}_${arrowIndex}`;
+    const target = arrowRefs.current[key];
+    if (!target) return;
+    requestAnimationFrame(() => {
+      try {
+        target.focus();
+      } catch {
+        // ignore
+      }
+    });
+  }
+
+  function findFirstEmptyTarget(ends) {
+    for (const end of ends) {
+      for (let i = 0; i < end.arrows.length; i += 1) {
+        if (end.arrows[i] === null) {
+          return { endId: end.id, arrowIndex: i };
+        }
+      }
+    }
+    return null;
+  }
+
+  function updateArrow(endId, arrowIndex, value, options = {}) {
+    const { autoFocusNext = true, haptic = false } = options;
+
+    const nextEnds = session.ends.map((end) =>
+      end.id === endId
+        ? {
+            ...end,
+            arrows: end.arrows.map((arrow, idx) => (idx === arrowIndex ? value : arrow)),
+          }
+        : end
+    );
+
+    patchSession((prev) => ({
+      ...prev,
+      ends: prev.ends.map((end) =>
+        end.id === endId
+          ? {
+              ...end,
+              arrows: end.arrows.map((arrow, idx) => (idx === arrowIndex ? value : arrow)),
+            }
+          : end
+      ),
+    }));
+
+    if (haptic) triggerHaptic();
+
+    setFlashKey(`${endId}_${arrowIndex}`);
+
+    if (autoFocusNext) {
+      const nextTarget = findFirstEmptyTarget(nextEnds);
+      if (nextTarget) focusArrowField(nextTarget.endId, nextTarget.arrowIndex);
+    }
+  }
+
+  function quickInputScore(score) {
+    const emptyTarget = findFirstEmptyTarget(session.ends);
+    if (!emptyTarget) return;
+
+    setLastQuickScore(String(score));
+    updateArrow(emptyTarget.endId, emptyTarget.arrowIndex, score, {
+      autoFocusNext: true,
+      haptic: true,
+    });
+  }
+
+  function undoLast() {
+    if (!history.length) return;
+    const previous = history[history.length - 1];
+    setHistory((h) => h.slice(0, -1));
+    setSession(previous);
+  }
+
+  function resetEnd(endId) {
+    patchSession((prev) => ({
+      ...prev,
+      ends: prev.ends.map((end) =>
+        end.id === endId
+          ? {
+              ...end,
+              arrows: Array.from({ length: prev.arrowsPerEnd }, () => null),
+              opponentTotal: 0,
+            }
+          : end
+      ),
+    }));
+  }
+
+  function addEnd() {
+    patchSession((prev) => ({
+      ...prev,
+      ends: [...prev.ends, createEmptyEnd(prev.ends.length + 1, prev.arrowsPerEnd)],
+    }));
+  }
+
+  function addDistanceRound() {
+    patchSession((prev) => ({
+      ...prev,
+      distanceRounds: [
+        ...(prev.distanceRounds || []),
+        createEmptyDistanceRound((prev.distanceRounds || []).length + 1, prev.distance || 70),
+      ],
+    }));
+  }
+
+  function updateDistanceRound(roundId, field, value) {
+    patchSession((prev) => ({
+      ...prev,
+      distanceRounds: (prev.distanceRounds || []).map((round) =>
+        round.id === roundId ? { ...round, [field]: value } : round
+      ),
+    }));
+  }
+
+  function removeDistanceRound(roundId) {
+    patchSession((prev) => {
+      const filtered = (prev.distanceRounds || []).filter((round) => round.id !== roundId);
+      const nextRounds = filtered.length
+        ? filtered.map((round, idx) => ({ ...round, index: idx + 1 }))
+        : [createEmptyDistanceRound(1, prev.distance || 70)];
+      return { ...prev, distanceRounds: nextRounds };
+    });
+  }
+
+  function confirmDeleteEnd() {
+    patchSession((prev) => {
+      const filtered = prev.ends.filter((end) => end.id !== deleteDialog.endId);
+      return {
+        ...prev,
+        ends: reindexEnds(filtered.length ? filtered : [createEmptyEnd(1, prev.arrowsPerEnd)]),
+      };
+    });
+    setDeleteDialog({ open: false, endId: null });
+  }
+
+  function applyMode(mode) {
+    patchSession((prev) => ({
+      ...prev,
+      mode,
+    recordInputType: "end",
+      title: `${mode === "set" ? "세트제" : "누적제"} X-Session`,
+    }));
+  }
+
+  function applyRecordInputType(recordInputType) {
+    patchSession((prev) => ({
+      ...prev,
+      recordInputType,
+      mode: recordInputType === "distance" ? "cumulative" : prev.mode,
+      title: `${(recordInputType === "distance" || prev.mode === "cumulative") ? "누적제" : "세트제"} X-Session`,
+      distanceRounds:
+        recordInputType === "distance" && (!prev.distanceRounds || !prev.distanceRounds.length)
+          ? [
+              createEmptyDistanceRound(1, 35),
+              createEmptyDistanceRound(2, 30),
+              createEmptyDistanceRound(3, 25),
+              createEmptyDistanceRound(4, 20),
+            ]
+          : prev.distanceRounds,
+    }));
+  }
+
+  function validateBeforeSave() {
+    if (!session.sessionDate) return "날짜를 선택해야 한다.";
+
+    if (session.recordInputType === "distance") {
+      if (!session.distanceRounds?.length) return "최소 1개의 거리 기록은 필요하다.";
+      const hasAnyDistanceScore = session.distanceRounds.some((round) => Number(round.total) > 0);
+      if (!hasAnyDistanceScore) return "최소 1개 거리의 합계 점수는 입력해야 저장 가능하다.";
+      return "";
+    }
+
+    if (!session.ends.length) return "최소 1개의 엔드는 필요하다.";
+    if (session.arrowsPerEnd < 1 || session.arrowsPerEnd > MAX_ARROWS_PER_END) {
+      return "엔드당 화살 수가 비정상적이다.";
+    }
+    const hasAnyArrow = session.ends.some((end) => end.arrows.some((v) => v !== null));
+    if (!hasAnyArrow) return "최소 1발 이상 입력해야 저장 가능하다.";
+    return "";
+  }
+
+  async function confirmSave() {
+    const err = validateBeforeSave();
+    if (err) {
+      setSaveError(err);
+      return;
+    }
+    setSaveError("");
+    await onSave();
+    setSaveDialogOpen(false);
+    setHistory([]);
+  }
+
+  async function confirmDeleteSavedSession() {
+    await onDeleteSavedSession();
+    setDeleteSessionDialog(false);
+    setHistory([]);
+  }
+
+  function isCurrentArrow(endId, arrowIndex) {
+    return currentTarget?.endId === endId && currentTarget?.arrowIndex === arrowIndex;
+  }
+
+  function getQuickButtonClass(score) {
+    const base =
+      "h-10 rounded-2xl border transition-all duration-150 active:scale-[0.98] ";
+    const isActive = String(lastQuickScore) === String(score);
+
+    if (score === "X") {
+      return `${base} ${isActive ? "border-amber-400 bg-amber-100 text-amber-900 shadow-sm" : "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100"}`;
+    }
+    if (score === "M") {
+      return `${base} ${isActive ? "border-slate-500 bg-slate-200 text-slate-900 shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`;
+    }
+    if (Number(score) >= 9) {
+      return `${base} ${isActive ? "border-red-400 bg-red-100 text-red-900 shadow-sm" : "border-red-200 bg-red-50 text-red-800 hover:bg-red-100"}`;
+    }
+    if (Number(score) >= 7) {
+      return `${base} ${isActive ? "border-blue-400 bg-blue-100 text-blue-900 shadow-sm" : "border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100"}`;
+    }
+    return `${base} ${isActive ? "border-emerald-400 bg-emerald-100 text-emerald-900 shadow-sm" : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"}`;
+  }
+
+  return (
+    <>
+      <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
+        <Card className="self-start rounded-[28px] border-0 bg-white shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-blue-700" /> X-Session Setup
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {editingSavedSession && (
+                  <Badge className="rounded-full bg-amber-500 px-3 py-1 text-white">
+                    세션 편집중
+                  </Badge>
+                )}
+                <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 px-3 py-1 text-white">
+                  {session.mode === "set" ? "세트제" : "누적제"}
+                </Badge>
+              </div>
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label>날짜</Label>
+                <Input
+                  type="date"
+                  value={session.sessionDate}
+                  onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>입력 방식</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={session.recordInputType === "end" ? "default" : "outline"}
+                    className="rounded-2xl bg-blue-900 hover:bg-blue-800"
+                    onClick={() => applyRecordInputType("end")}
+                  >
+                    엔드 기반
+                  </Button>
+                  <Button
+                    variant={session.recordInputType === "distance" ? "default" : "outline"}
+                    className="rounded-2xl bg-emerald-700 hover:bg-emerald-600"
+                    onClick={() => applyRecordInputType("distance")}
+                  >
+                    거리 기반
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>기록 방식</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={session.mode === "cumulative" ? "default" : "outline"}
+                    className="rounded-2xl bg-blue-900 hover:bg-blue-800"
+                    onClick={() => applyMode("cumulative")}
+                  >
+                    누적제
+                  </Button>
+                  <Button
+                    variant={session.mode === "set" ? "default" : "outline"}
+                    className="rounded-2xl bg-red-700 hover:bg-red-600"
+                    onClick={() => applyMode("set")}
+                    
+                  >
+                    세트제
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>거리 (m)</Label>
+                <Select
+                  value={String(session.distance)}
+                  onValueChange={(value) => patchSession((prev) => ({ ...prev, distance: Number(value) }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="거리 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DISTANCE_OPTIONS.map((distance) => (
+                      <SelectItem key={distance} value={String(distance)}>
+                        {distance}m
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>학년</Label>
+                <Input value={session.division || ""} disabled />
+              </div>
+
+              {session.recordInputType === "end" ? (
+                <div className="grid gap-2">
+                  <Label>엔드당 화살 수</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={6}
+                    value={session.arrowsPerEnd}
+                    onChange={(e) => {
+                      const next = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(e.target.value) || 1));
+                      patchSession((prev) => ({
+                        ...prev,
+                        arrowsPerEnd: next,
+                        ends: prev.ends.map((end) => ({
+                          ...end,
+                          arrows: Array.from({ length: next }, (_, i) => end.arrows[i] ?? null),
+                        })),
+                      }));
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="grid gap-2">
+                  <Label>거리당 화살 수</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={session.arrowsPerDistance || 36}
+                    onChange={(e) =>
+                      patchSession((prev) => ({
+                        ...prev,
+                        arrowsPerDistance: Math.max(1, Number(e.target.value) || 36),
+                      }))
+                    }
+                  />
+                </div>
+              )}
+
+              <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4 sm:col-span-2">
+                <div className="mb-2 flex items-center justify-between text-sm">
+                  <span>X-Session 진행률</span>
+                  <span>{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-3 rounded-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 pb-28 md:pb-6">
+          {session.recordInputType === "end" ? (
+            <>
+              <div className="sticky top-2 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
+                <Card className="border-0 bg-transparent shadow-none">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div className="text-sm font-semibold text-slate-700">빠른 점수 입력</div>
+                      <Button
+                        variant="outline"
+                        className="h-9 rounded-2xl px-3 text-xs sm:text-sm"
+                        onClick={undoLast}
+                        disabled={!history.length}
+                      >
+                        <Undo2 className="mr-2 h-4 w-4" /> 마지막 입력 취소
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                      {QUICK_SCORE_OPTIONS.map((score) => (
+                        <Button
+                          key={String(score)}
+                          variant="outline"
+                          className={getQuickButtonClass(score)}
+                          onClick={() => quickInputScore(score)}
+                        >
+                          {score}
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {session.ends.map((end) => (
+                <Card key={end.id} className="rounded-[28px] border-0 bg-white shadow-xl">
+                  <CardContent className="p-4 md:p-5">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-base font-semibold">End {end.index}</div>
+                        <div className="text-sm text-slate-500">합계 {endTotal(end)}점</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="rounded-2xl" onClick={() => resetEnd(end.id)}>
+                          <Trash2 className="mr-2 h-4 w-4" /> 초기화
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                          onClick={() => setDeleteDialog({ open: true, endId: end.id })}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> 엔드 삭제
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                      {end.arrows.map((arrow, arrowIndex) => {
+                        const key = `${end.id}_${arrowIndex}`;
+                        const isCurrent = isCurrentArrow(end.id, arrowIndex);
+                        const isFlashed = flashKey === key;
+
+                        return (
+                          <div
+                            key={key}
+                            className={`rounded-2xl border p-2 transition-all duration-150 ${
+                              isCurrent
+                                ? "border-blue-400 bg-blue-50 shadow-sm ring-1 ring-blue-200"
+                                : isFlashed
+                                  ? "border-emerald-300 bg-emerald-50"
+                                  : "border-slate-200"
+                            }`}
+                          >
+                            <div className="mb-2 text-center text-xs text-slate-500">화살 {arrowIndex + 1}</div>
+                            <select
+                              ref={(el) => {
+                                if (el) arrowRefs.current[key] = el;
+                              }}
+                              value={arrow ?? ""}
+                              onChange={(e) =>
+                                updateArrow(
+                                  end.id,
+                                  arrowIndex,
+                                  e.target.value === ""
+                                    ? null
+                                    : isNaN(Number(e.target.value))
+                                      ? e.target.value
+                                      : Number(e.target.value),
+                                  { autoFocusNext: true, haptic: true }
+                                )
+                              }
+                              className={`h-10 w-full rounded-xl border bg-white px-2 text-center text-sm outline-none transition ${
+                                isCurrent
+                                  ? "border-blue-300 text-blue-900"
+                                  : isFlashed
+                                    ? "border-emerald-300 text-emerald-900"
+                                    : "border-slate-200"
+                              }`}
+                            >
+                              <option value="">선택</option>
+                              {SCORE_OPTIONS.map((option) => (
+                                <option key={String(option)} value={String(option)}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {session.mode === "set" && (
+                      <div className="mt-4 grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
+                        <div className="grid gap-2">
+                          <Label>상대 엔드 점수</Label>
+                          <Input
+                            type="number"
+                            value={end.opponentTotal ?? 0}
+                            onChange={(e) => {
+                              const value = Math.max(0, Number(e.target.value) || 0);
+                              patchSession((prev) => ({
+                                ...prev,
+                                ends: prev.ends.map((item) =>
+                                  item.id === end.id ? { ...item, opponentTotal: value } : item
+                                ),
+                              }));
+                            }}
+                          />
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                          엔드별 상대 점수를 입력해 세트 포인트를 계산한다.
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          ) : (
+            <>
+              <div className="grid gap-3">
+                {(session.distanceRounds || []).map((round) => (
+                  <Card key={round.id} className="rounded-[28px] border-0 bg-white shadow-xl">
+                    <CardContent className="p-4 md:p-5">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-base font-semibold">거리 기록 {round.index}</div>
+                          <div className="text-sm text-slate-500">
+                            거리 {round.distance || "-"}m · 합계 {Number(round.total) || 0}점
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                          onClick={() => removeDistanceRound(round.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> 거리 삭제
+                        </Button>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="grid gap-2">
+                          <Label>거리 (m)</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={round.distance}
+                            onChange={(e) =>
+                              updateDistanceRound(round.id, "distance", Math.max(1, Number(e.target.value) || 0))
+                            }
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>거리 합계 점수</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={round.total}
+                            onChange={(e) =>
+                              updateDistanceRound(round.id, "total", Math.max(0, Number(e.target.value) || 0))
+                            }
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+          <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+            <CardContent className="p-4 md:p-5">
+              <div className="flex flex-col gap-3">
+                {tempSaveMessage && (
+                  <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {tempSaveMessage}
+                  </div>
+                )}
+
+                {saveError && (
+                  <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {saveError}
+                  </div>
+                )}
+
+                <div className="grid gap-2 sm:grid-cols-4">
+                  {session.recordInputType === "end" ? (
+                    <Button variant="outline" className="rounded-2xl" onClick={addEnd}>
+                      <Plus className="mr-2 h-4 w-4" /> 엔드 추가
+                    </Button>
+                  ) : (
+                    <Button variant="outline" className="rounded-2xl" onClick={addDistanceRound}>
+                      <Plus className="mr-2 h-4 w-4" /> 거리 추가
+                    </Button>
+                  )}
+
+                  <Button variant="outline" className="rounded-2xl" onClick={onTempSave}>
+                    <Archive className="mr-2 h-4 w-4" /> 임시 세션 저장
+                  </Button>
+
+                  <Button
+                    className="rounded-2xl bg-blue-900 hover:bg-blue-800"
+                    onClick={() => setSaveDialogOpen(true)}
+                    disabled={saving}
+                  >
+                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    {editingSavedSession ? "세션 업데이트" : "세션 저장"}
+                  </Button>
+
+                  {editingSavedSession && (
+                    <Button
+                      variant="outline"
+                      className="rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                      onClick={() => setDeleteSessionDialog(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> 세션 삭제
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="rounded-[28px]">
+          <DialogHeader>
+            <DialogTitle>{editingSavedSession ? "X-Session 업데이트" : "X-Session 저장"}</DialogTitle>
+            <DialogDescription>
+              현재 입력 상태를 {editingSavedSession ? "업데이트" : "Firestore에 저장"}한다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 rounded-2xl bg-slate-50 p-4 text-sm">
+            <div>총점: {getSessionTotal(session)}점</div>
+            <div>히트 수: {getHits(session)}발</div>
+            <div>X 개수: {getXs(session)}개</div>
+            <div>평균 화살 점수: {getAverageArrow(session).toFixed(2)}</div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-2xl" onClick={() => setSaveDialogOpen(false)}>
+              취소
+            </Button>
+            <Button className="rounded-2xl bg-blue-900 hover:bg-blue-800" onClick={confirmSave} disabled={saving}>
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {editingSavedSession ? "업데이트 완료" : "저장 완료"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}>
+        <DialogContent className="rounded-[28px]">
+          <DialogHeader>
+            <DialogTitle>엔드 삭제 확인</DialogTitle>
+            <DialogDescription>이 엔드를 삭제하면 해당 엔드 기록이 함께 제거된다.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-2xl" onClick={() => setDeleteDialog({ open: false, endId: null })}>
+              취소
+            </Button>
+            <Button className="rounded-2xl bg-red-700 hover:bg-red-600" onClick={confirmDeleteEnd}>
+              삭제
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteSessionDialog} onOpenChange={setDeleteSessionDialog}>
+        <DialogContent className="rounded-[28px]">
+          <DialogHeader>
+            <DialogTitle>X-Session 삭제 확인</DialogTitle>
+            <DialogDescription>현재 불러온 저장 세션을 완전히 삭제한다.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-2xl" onClick={() => setDeleteSessionDialog(false)}>
+              취소
+            </Button>
+            <Button className="rounded-2xl bg-red-700 hover:bg-red-600" onClick={confirmDeleteSavedSession}>
+              세션 삭제
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function Dashboard({ sessions, loading, onEditSession }) {
+  const completed = sessions.filter((s) => s.isComplete);
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const yesterdayKey = getYesterdayKey();
+
+  const todaySessions = completed.filter(
+    (s) => String(s.sessionDate || "").slice(0, 10) === todayKey
+  );
+  const yesterdaySessions = completed.filter(
+    (s) => String(s.sessionDate || "").slice(0, 10) === yesterdayKey
+  );
+
+  const todayTotal = todaySessions.reduce(
+    (sum, s) => sum + (s.summary?.totalScore ?? getSessionTotal(s)),
+    0
+  );
+  const todayArrows = todaySessions.reduce(
+    (sum, s) => sum + (s.summary?.totalArrows ?? getArrowCount(s)),
+    0
+  );
+  const todayXCount = todaySessions.reduce(
+    (sum, s) => sum + (s.summary?.xCount ?? getXs(s)),
+    0
+  );
+  const todayAverage = todayArrows ? (todayTotal / todayArrows).toFixed(2) : "0.00";
+  const todayCount = todaySessions.length;
+
+  const previousDayTotal = yesterdaySessions.reduce(
+    (sum, s) => sum + (s.summary?.totalScore ?? getSessionTotal(s)),
+    0
+  );
+
+  const previousDayArrows = yesterdaySessions.reduce(
+    (sum, s) => sum + (s.summary?.totalArrows ?? getArrowCount(s)),
+    0
+  );
+
+  const previousDayXCount = yesterdaySessions.reduce(
+    (sum, s) => sum + (s.summary?.xCount ?? getXs(s)),
+    0
+  );
+
+  const previousDayAverage = previousDayArrows
+    ? (previousDayTotal / previousDayArrows).toFixed(2)
+    : "0.00";
+
+  const previousDayBest = yesterdaySessions.length
+    ? yesterdaySessions.reduce((best, current) =>
+        (current.summary?.totalScore ?? getSessionTotal(current)) >
+        (best.summary?.totalScore ?? getSessionTotal(best))
+          ? current
+          : best
+      )
+    : null;
+
+  const previousDayBestScore = previousDayBest
+    ? previousDayBest.summary?.totalScore ?? getSessionTotal(previousDayBest)
+    : 0;
+  const previousDayBestDistance = previousDayBest ? previousDayBest.distance : "-";
+
+  const todayBest = todaySessions.length
+    ? todaySessions.reduce((best, current) =>
+        (current.summary?.totalScore ?? getSessionTotal(current)) >
+        (best.summary?.totalScore ?? getSessionTotal(best))
+          ? current
+          : best
+      )
+    : null;
+
+  const todayBestScore = todayBest
+    ? todayBest.summary?.totalScore ?? getSessionTotal(todayBest)
+    : 0;
+  const todayBestDistance = todayBest ? todayBest.distance : "-";
+
+  return (
+    <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
+          <CardContent className="bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
+            <div className="grid grid-cols-2 divide-x divide-white/20">
+              <div className="p-5">
+                <div className="text-sm opacity-80">전일 세션 누적 점수</div>
+                <div className="mt-2 text-3xl font-bold tracking-tight">
+                  {previousDayTotal}
+                </div>
+                <div className="mt-2 text-xs opacity-80">
+                  {yesterdayKey} 세션 점수 합산
+                </div>
+              </div>
+
+              <div className="p-5">
+                <div className="text-sm opacity-80">당일 세션 누적 점수</div>
+                <div className="mt-2 text-3xl font-bold tracking-tight">
+                  {todayTotal}
+                </div>
+                <div className="mt-2 text-xs opacity-80">
+                  {todayCount ? `오늘 세션 ${todayCount}개 · 평균 ${todayAverage}` : "오늘 기록 없음"}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
+          <CardContent className="bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
+            <div className="grid grid-cols-2 divide-x divide-white/20">
+              <div className="p-5">
+                <div className="text-sm opacity-80">전일 세션 화살 평균 점수</div>
+                <div className="mt-2 text-3xl font-bold tracking-tight">
+                  {previousDayAverage}
+                </div>
+                <div className="mt-2 text-xs opacity-80">
+                  X {previousDayXCount}개
+                </div>
+              </div>
+
+              <div className="p-5">
+                <div className="text-sm opacity-80">당일 세션 화살 평균 점수</div>
+                <div className="mt-2 text-3xl font-bold tracking-tight">
+                  {todayAverage}
+                </div>
+                <div className="mt-2 text-xs opacity-80">
+                  {todayCount ? `X ${todayXCount}개` : "오늘 기록 없음"}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
+          <CardContent className="bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
+            <div className="grid grid-cols-2 divide-x divide-slate-900/10">
+              <div className="p-5">
+                <div className="text-sm opacity-80">전일 세션 거리 최고 점수</div>
+                <div className="mt-2 text-3xl font-bold tracking-tight">
+                  {previousDayBestScore}
+                </div>
+                <div className="mt-2 text-xs opacity-80">
+                  {previousDayBest ? `${previousDayBestDistance}m 최고` : "전일 기록 없음"}
+                </div>
+              </div>
+
+              <div className="p-5">
+                <div className="text-sm opacity-80">당일 세션 거리 최고 점수</div>
+                <div className="mt-2 text-3xl font-bold tracking-tight">
+                  {todayBestScore}
+                </div>
+                <div className="mt-2 text-xs opacity-80">
+                  {todayBest ? `${todayBestDistance}m 최고` : "오늘 기록 없음"}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle>Recent X-Sessions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 className="h-4 w-4 animate-spin" /> X-Session 불러오는 중
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+              아직 저장된 X-Session이 없다.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {completed
+                .slice()
+                .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+                .map((session) => (
+                  <div
+                    key={session.id}
+                    className="grid gap-3 rounded-3xl border border-slate-200 p-4 md:grid-cols-[1fr_auto] md:items-center"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="font-semibold">{session.title}</div>
+                        <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
+                          {getModeLabel(session.mode)}
+                        </Badge>
+                        <Badge className="rounded-full bg-slate-700 text-white">
+                          {getInputTypeLabel(session.recordInputType)}
+                        </Badge>
+                        <Badge className="rounded-full bg-emerald-600 text-white">
+                          완료
+                        </Badge>
+                      </div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        {formatDateTime(session.updatedAt)}
+                      </div>
+                      <div className="mt-2 text-sm text-slate-700">
+                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} / {getInputTypeLabel(session.recordInputType)} / X{" "}
+                        {session.summary?.xCount ?? getXs(session)} / 평균{" "}
+                        {(
+                          session.summary?.averageArrow ?? getAverageArrow(session)
+                        ).toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 text-right text-sm text-slate-500">
+                      <div>
+                        {session.recordInputType === "distance"
+                          ? `거리 기록 ${(session.distanceRounds || []).length}개`
+                          : `${session.distance}m · 엔드 ${session.ends.length}개`}
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="rounded-2xl"
+                        onClick={() => onEditSession?.(session.id)}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" /> 수정
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function StatCard({ title, value, sub, icon: Icon, tone }) {
+  const toneMap = {
+    blue: "from-blue-900 to-blue-700 text-white",
+    red: "from-red-700 to-red-500 text-white",
+    slate: "from-slate-900 to-slate-700 text-white",
+    gold: "from-amber-500 to-yellow-400 text-slate-900",
+  };
+
+  return (
+    <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
+      <CardContent className={`bg-gradient-to-br p-5 ${toneMap[tone] || toneMap.slate}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-sm opacity-80">{title}</div>
+            <div className="mt-2 text-3xl font-bold tracking-tight">{value}</div>
+            <div className="mt-2 text-xs opacity-80">{sub}</div>
+          </div>
+          <div className="rounded-2xl bg-white/15 p-3">
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RankingBoard({ users, sessions, currentUserId }) {
+  const [rankingFilters, setRankingFilters] = useState({
+    distance: "all",
+    division: "all",
+    groupName: "all",
+    regionCity: "all",
+    mode: "all",
+    dateFilter: "all",
+  });
+  const groupOptions = useMemo(() => Array.from(new Set(users.map((u) => u.groupName).filter(Boolean))), [users]);
+  const regionOptions = useMemo(() => REGION_OPTIONS, []);
+
+  const rankings = useMemo(() => buildUserRankings(users, sessions, rankingFilters), [users, sessions, rankingFilters]);
+
+  const sortedRankings = useMemo(() => {
+    const items = [...rankings];
+    items.sort((a, b) => {
+      if (b.avgArrow !== a.avgArrow) return b.avgArrow - a.avgArrow;
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      return String(b.latestDate).localeCompare(String(a.latestDate));
+    });
+    return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
+  }, [rankings]);
+
+  const myRank = sortedRankings.find((r) => r.userId === currentUserId);
+  const top3 = sortedRankings.slice(0, 3);
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[0.7fr_1.3fr]">
+      <div className="grid gap-4">
+        <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-500" /> 내 랭킹
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {myRank ? (
+              <div className="space-y-4">
+                <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-6 text-white shadow-lg">
+                  <div className="text-sm opacity-80">현재 순위</div>
+                  <div className="mt-2 text-5xl font-bold">#{myRank.rank}</div>
+                  <div className="mt-2 text-sm opacity-90">X {myRank.xCount} / 평균 화살 점수 {myRank.avgArrow.toFixed(2)}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">랭킹을 계산할 기록이 아직 없다.</div>
+            )}
+          </CardContent>
+        </Card>
+
+        {top3.length > 0 && (
+          <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Award className="h-5 w-5 text-amber-500" />
+                <span>상위 3명</span>
+                <span className="text-sm font-normal text-slate-500">
+                  평균점수가 높은 순서대로 등수 부여
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {top3.map((item) => (
+                <div key={item.userId} className="rounded-3xl border border-slate-200 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-300 font-bold text-slate-900">
+                      {item.rank}
+                    </div>
+                    <div>
+                      <div className="font-semibold">{item.name}</div>
+                      <div className="text-sm text-slate-500">{item.groupName} · {item.regionCity}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Medal className="h-5 w-5 text-red-600" /> X-Ranking
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-2">
+              <Label>거리</Label>
+              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="all">전체 거리</option>
+                {DISTANCE_OPTIONS.map((distance) => (
+                  <option key={distance} value={String(distance)}>{distance}m</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>학년</Label>
+              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="all">전체 학년</option>
+                {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>학교/소속팀</Label>
+              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="all">전체 학교/소속팀</option>
+                {groupOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>지역</Label>
+              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="all">전체 지역</option>
+                {regionOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>경기 방식</Label>
+              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                {MATCH_TYPE_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>날짜</Label>
+              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                {DATE_FILTER_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            {sortedRankings.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">아직 기록된 선수가 없다.</div>
+            ) : (
+              <div className="grid gap-3">
+                {sortedRankings.map((item) => (
+                  <div key={item.userId} className={`grid gap-3 rounded-3xl border p-4 md:grid-cols-[auto_1fr_auto] md:items-center ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
+                      {item.rank}
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <ProfileAvatar user={item} size="sm" />
+                        <div className="font-semibold">{item.name}</div>
+                        {item.userId === currentUserId && <Badge className="rounded-full bg-blue-900 text-white">나</Badge>}
+                      </div>
+                      <div className="mt-1 text-sm text-slate-500">{item.groupName} · {item.regionCity} · {item.division}</div>
+                      <div className="mt-2 text-sm text-slate-700">X {item.xCount} / 평균 화살 {item.avgArrow.toFixed(2)} / 최고 경기 {item.bestSession} / 세션 {item.sessions}</div>
+                    </div>
+                    <div className="text-right text-sm text-slate-500">총점 {item.totalScore}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function AnalysisBoard({ currentUser, users, sessions }) {
+  const [period, setPeriod] = useState("day");
+  const [matchType, setMatchType] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [requiredFilters, setRequiredFilters] = useState({
+    distance: "",
+    division: "",
+    regionCity: "all",
+  });
+
+  const allMySessions = sessions.filter((s) => s.userId === currentUser.id && s.isComplete);
+  const rivalCandidates = users.filter((u) => u.id !== currentUser.id);
+  const [selectedRival, setSelectedRival] = useState(rivalCandidates[0]?.id || "none");
+
+  useEffect(() => {
+    if (!rivalCandidates.find((u) => u.id === selectedRival)) {
+      setSelectedRival(rivalCandidates[0]?.id || "none");
+    }
+  }, [selectedRival, rivalCandidates]);
+
+  const isReady = Boolean(requiredFilters.distance && requiredFilters.division);
+
+  const filteredMine = allMySessions.filter(
+    (s) =>
+      isReady &&
+      String(s.distance) === String(requiredFilters.distance) &&
+      (s.division || currentUser.division || "") === requiredFilters.division &&
+      (requiredFilters.regionCity === "all" ? true : (s.regionCity || currentUser.regionCity || "") === requiredFilters.regionCity) &&
+      isWithinDateFilter(s.sessionDate, dateFilter)
+  );
+
+  const rivalUser = users.find((u) => u.id === selectedRival);
+
+  const rivalSessions = sessions
+    .filter((s) => s.userId === selectedRival && s.isComplete)
+    .filter(
+      (s) =>
+        isReady &&
+        String(s.distance) === String(requiredFilters.distance) &&
+        (s.division || rivalUser?.division || "") === requiredFilters.division &&
+        (requiredFilters.regionCity === "all" ? true : (s.regionCity || rivalUser?.regionCity || "") === requiredFilters.regionCity) &&
+        isWithinDateFilter(s.sessionDate, dateFilter)
+    );
+
+  const analytics = useMemo(() => buildAnalyticsData(filteredMine, period, matchType), [filteredMine, period, matchType]);
+  const comparison = useMemo(() => buildRivalComparison(filteredMine, rivalSessions, period, matchType), [filteredMine, rivalSessions, period, matchType]);
+  const rivalLabel = getDisplayName(rivalUser);
+  const trend = getTrendInsight(filteredMine);
+  const distancePerformance = getDistancePerformance(allMySessions.filter((s) => isWithinDateFilter(s.sessionDate, dateFilter)));
+  const weakZoneInsight = getWeakZoneInsight(filteredMine);
+
+  return (
+    <div className="grid gap-4">
+      <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-blue-700" /> X-Analysis
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-2">
+              <Label>거리</Label>
+              <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="">거리 선택</option>
+                {DISTANCE_OPTIONS.map((distance) => (
+                  <option key={distance} value={String(distance)}>{distance}m</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>학년/부문</Label>
+              <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="">학년/부문 선택</option>
+                {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>지역</Label>
+              <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="all">전체 지역</option>
+                {REGION_OPTIONS.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>날짜</Label>
+              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                {DATE_FILTER_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>경기 방식</Label>
+              <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                {MATCH_TYPE_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>분석 기준</Label>
+              <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                {PERIOD_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {!isReady ? (
+            <div className="rounded-3xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+              분석 결과를 보려면 거리와 학년/부문을 선택해야 한다.
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-3">
+                <Card className="rounded-[24px] border-0 bg-slate-50 shadow-none">
+                  <CardContent className="p-5">
+                    <div className="mb-2 text-sm text-slate-500">직전 경기 추세</div>
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      {trend.up === true && <TrendingUp className="h-5 w-5 text-emerald-600" />}
+                      {trend.up === false && <TrendingDown className="h-5 w-5 text-red-600" />}
+                      {trend.label}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="rounded-[24px] border-0 bg-slate-50 shadow-none">
+                  <CardContent className="p-5">
+                    <div className="mb-2 text-sm text-slate-500">약점 구간</div>
+                    <div className="text-lg font-semibold">{weakZoneInsight}</div>
+                  </CardContent>
+                </Card>
+                <Card className="rounded-[24px] border-0 bg-slate-50 shadow-none">
+                  <CardContent className="p-5">
+                    <div className="mb-2 text-sm text-slate-500">현재 선택 조건 경기 수</div>
+                    <div className="text-3xl font-bold">{filteredMine.length}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-2">
+                <div className="rounded-3xl bg-slate-50 p-4">
+                  <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 변화</div>
+                  <div className="h-[320px] w-full">
+                    <ResponsiveContainer>
+                      <LineChart data={analytics}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="label" />
+                        <YAxis domain={[0, 10]} />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="avgArrow" name="평균 화살 점수" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.avg }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl bg-slate-50 p-4">
+                  <div className="mb-3 text-sm font-semibold text-slate-700">구간별 총점</div>
+                  <div className="h-[320px] w-full">
+                    <ResponsiveContainer>
+                      <BarChart data={analytics}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="label" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="score" name="총점" fill={CHART_COLORS.score} radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl bg-slate-50 p-4">
+                <div className="mb-3 text-sm font-semibold text-slate-700">거리별 성능 비교</div>
+                <div className="h-[320px] w-full">
+                  <ResponsiveContainer>
+                    <BarChart data={distancePerformance}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="label" />
+                      <YAxis domain={[0, 10]} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="avgArrow" name="거리별 평균 화살 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Swords className="h-5 w-5 text-red-700" /> X-Analysis Rival Compare
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end">
+            {!isReady && (
+              <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-600">
+                먼저 거리와 학년/부문을 선택해야 라이벌 비교가 활성화된다.
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Label>라이벌 선택</Label>
+              <select value={selectedRival} onChange={(e) => setSelectedRival(e.target.value)} className="h-11 min-w-[240px] rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                {rivalCandidates.length === 0 ? (
+                  <option value="none">비교할 선수가 없음</option>
+                ) : (
+                  rivalCandidates.map((user) => (
+                    <option key={user.id} value={user.id}>{getDisplayName(user)}</option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div className="pb-2 text-sm text-slate-500">나 vs {rivalLabel}</div>
+          </div>
+
+          <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4">
+            <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 비교</div>
+            <div className="h-[340px] w-full">
+              <ResponsiveContainer>
+                <LineChart data={comparison}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" />
+                  <YAxis domain={[0, 10]} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="나" stroke={CHART_COLORS.me} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.me }} />
+                  <Line type="monotone" dataKey="라이벌" stroke={CHART_COLORS.rival} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.rival }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function ProfilePanel({ user, onUpdate, saving }) {
   const [form, setForm] = useState(user);
   const [savedMessage, setSavedMessage] = useState("");
@@ -1530,25 +3019,21 @@ function ProfilePanel({ user, onUpdate, saving }) {
       setSavedMessage("");
       return;
     }
-
     if (!form.division) {
       setErrorMessage("학년/부문을 선택해야 한다.");
       setSavedMessage("");
       return;
     }
-
     if (!form.groupName?.trim()) {
       setErrorMessage("소속을 입력해야 한다.");
       setSavedMessage("");
       return;
     }
-
     if (!form.regionCity) {
       setErrorMessage("지역(시/도)을 선택해야 한다.");
       setSavedMessage("");
       return;
     }
-
     if (!form.regionDistrict) {
       setErrorMessage("지역(구/군)을 선택해야 한다.");
       setSavedMessage("");
@@ -1672,3 +3157,957 @@ function ProfilePanel({ user, onUpdate, saving }) {
   );
 }
 
+
+function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
+  const [emailRegion, setEmailRegion] = useState("all");
+  const [emailDivision, setEmailDivision] = useState("all");
+  const [emailSubject, setEmailSubject] = useState("[X-SESSION 안내]");
+  const [emailBody, setEmailBody] = useState("안녕하세요. X-SESSION 운영 안내입니다.");
+  const [adminMemo, setAdminMemo] = useState(() => {
+    try {
+      return localStorage.getItem("elbowshot_admin_memo") || "";
+    } catch {
+      return "";
+    }
+  });
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [extraAdmins, setExtraAdmins] = useState(() => getStoredAdminEmails());
+  const [userSearch, setUserSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [deletingUserId, setDeletingUserId] = useState("");
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("elbowshot_admin_memo", adminMemo);
+    } catch {}
+  }, [adminMemo]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(extraAdmins));
+    } catch {}
+  }, [extraAdmins]);
+
+  const realUsers = useMemo(() => users.filter((user) => !user.isSampleData), [users]);
+  const realSessions = useMemo(() => sessions.filter((session) => !session.isSampleData), [sessions]);
+
+  const divisionOptions = useMemo(
+    () => Array.from(new Set(realUsers.map((user) => user.division).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko")),
+    [realUsers]
+  );
+
+  const regionOptions = useMemo(
+    () => Array.from(new Set(realUsers.map((user) => user.regionCity).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko")),
+    [realUsers]
+  );
+
+  const filteredRecipients = useMemo(() => {
+    return realUsers.filter((user) => {
+      if (!user.email) return false;
+      if (emailDivision !== "all" && user.division !== emailDivision) return false;
+      if (emailRegion !== "all" && user.regionCity !== emailRegion) return false;
+      return true;
+    });
+  }, [realUsers, emailDivision, emailRegion]);
+
+  const recipientEmails = useMemo(
+    () => filteredRecipients.map((user) => user.email).filter(Boolean).join(","),
+    [filteredRecipients]
+  );
+
+  const mailtoHref = useMemo(() => {
+    const subject = encodeURIComponent(emailSubject || "");
+    const body = encodeURIComponent(emailBody || "");
+    return `mailto:${recipientEmails}?subject=${subject}&body=${body}`;
+  }, [recipientEmails, emailSubject, emailBody]);
+
+  const allAdmins = useMemo(() => getAllAdminEmails(), [extraAdmins]);
+
+  const visibleUsers = useMemo(() => {
+    const keyword = String(userSearch || "").trim().toLowerCase();
+    const filtered = realUsers.filter((user) => {
+      if (!keyword) return true;
+      return [
+        user.name,
+        user.email,
+        user.groupName,
+        user.regionCity,
+        user.division,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(keyword));
+    });
+    return filtered
+      .slice()
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ko"))
+      .slice(0, 10);
+  }, [realUsers, userSearch]);
+
+  async function copyRecipients() {
+    try {
+      await navigator.clipboard.writeText(recipientEmails);
+      alert("수신자 이메일을 복사했다.");
+    } catch {
+      alert("복사에 실패했다.");
+    }
+  }
+
+  function addAdminEmail() {
+    const normalized = String(newAdminEmail || "").trim().toLowerCase();
+    if (!normalized || !normalized.includes("@")) {
+      alert("올바른 관리자 이메일을 입력해줘.");
+      return;
+    }
+    if (allAdmins.includes(normalized)) {
+      alert("이미 등록된 관리자 이메일이다.");
+      return;
+    }
+    setExtraAdmins((prev) => [...prev, normalized]);
+    setNewAdminEmail("");
+  }
+
+  function removeAdminEmail(email) {
+    if (ADMIN_EMAILS.includes(email)) {
+      alert("기본 관리자 이메일은 삭제할 수 없다.");
+      return;
+    }
+    if (String(currentUser?.email || "").trim().toLowerCase() === String(email).trim().toLowerCase()) {
+      alert("현재 로그인한 관리자 계정은 여기서 삭제할 수 없다.");
+      return;
+    }
+    setExtraAdmins((prev) => prev.filter((item) => item !== email));
+  }
+
+  async function deleteUserData(user) {
+    if (!appServices?.db) {
+      alert("DB 연결이 준비되지 않았다.");
+      return;
+    }
+    const ok = window.confirm(
+      `${getDisplayName(user)} 가입자 데이터를 삭제할까?
+프로필 문서와 저장 기록이 삭제된다.
+인증 계정 자체 삭제는 현재 프론트엔드에서 지원하지 않는다.`
+    );
+    if (!ok) return;
+
+    try {
+      setDeletingUserId(user.id);
+      const userSessions = realSessions.filter((session) => session.userId === user.id);
+      for (const session of userSessions) {
+        await deleteDoc(doc(appServices.db, "sessions", session.id));
+      }
+      await deleteDoc(doc(appServices.db, "users", user.id));
+      if (selectedUser?.id === user.id) setSelectedUser(null);
+      await onRefresh?.();
+      alert("가입자 데이터 삭제를 완료했다.");
+    } catch (error) {
+      alert(error.message || "가입자 데이터 삭제에 실패했다.");
+    } finally {
+      setDeletingUserId("");
+    }
+  }
+
+  return (
+    <div className="grid gap-6">
+            <FirebaseSetupNoticeCompact />
+
+<Card className="rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">관리자 페이지</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <div className="text-sm text-slate-500">관리자</div>
+            <div className="mt-2 text-lg font-semibold">{currentUser?.name || "관리자"}</div>
+            <div className="text-sm text-slate-500">{currentUser?.email || ""}</div>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <div className="text-sm text-slate-500">실사용자 수</div>
+            <div className="mt-2 text-3xl font-bold">{realUsers.length}</div>
+          </div>
+          <div className="rounded-2xl bg-slate-50 p-4">
+            <div className="text-sm text-slate-500">실기록 수</div>
+            <div className="mt-2 text-3xl font-bold">{realSessions.length}</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">관리자 계정 설정</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            추가 관리자 이메일을 등록하면 다음 로그인부터 관리자 모드 진입이 가능하다.
+          </div>
+          <div className="flex flex-col gap-3 md:flex-row">
+            <Input
+              value={newAdminEmail}
+              onChange={(e) => setNewAdminEmail(e.target.value)}
+              placeholder="추가 관리자 이메일 입력"
+              className="rounded-2xl"
+            />
+            <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={addAdminEmail}>
+              관리자 추가
+            </Button>
+          </div>
+          <div className="grid gap-2">
+            {allAdmins.map((email) => (
+              <div key={email} className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+                <div className="min-w-0">
+                  <div className="truncate">{email}</div>
+                  <div className="text-xs text-slate-500">
+                    {ADMIN_EMAILS.includes(email) ? "기본 관리자" : "추가 관리자"}
+                  </div>
+                </div>
+                {ADMIN_EMAILS.includes(email) ? (
+                  <Badge className="rounded-full bg-slate-700 text-white">기본 관리자</Badge>
+                ) : (
+                  <Button type="button" variant="outline" className="rounded-2xl" onClick={() => removeAdminEmail(email)}>
+                    관리자 삭제
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">가입자 목록 / 프로필 보기</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            비밀번호는 표시하지 않는다. 이름을 더블 클릭하면 자세한 정보를 볼 수 있다. 가입자 삭제는 프로필 문서와 저장 기록을 삭제한다.
+          </div>
+          <div className="grid gap-2 md:max-w-md">
+            <Label>이름 검색</Label>
+            <Input
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              placeholder="이름, 이메일, 소속, 지역 검색"
+            />
+          </div>
+          <div className="grid gap-2">
+            {visibleUsers.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 px-4 py-6 text-sm text-slate-500">
+                검색 결과가 없다.
+              </div>
+            ) : (
+              visibleUsers.map((user) => {
+                const userSessions = realSessions.filter((session) => session.userId === user.id);
+                return (
+                  <div key={user.id} className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3">
+                    <div
+                      className="min-w-0 cursor-pointer"
+                      onDoubleClick={() => setSelectedUser(user)}
+                      title="더블 클릭하면 자세한 정보 보기"
+                    >
+                      <div className="truncate font-semibold">{getDisplayName(user)}</div>
+                      <div className="truncate text-sm text-slate-500">{user.email || "이메일 없음"}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className="rounded-full bg-slate-700 text-white">기록 {userSessions.length}</Badge>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-2xl"
+                        disabled={deletingUserId === user.id}
+                        onClick={() => deleteUserData(user)}
+                      >
+                        {deletingUserId === user.id ? "삭제 중..." : "가입자 삭제"}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={Boolean(selectedUser)} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="max-w-xl rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>가입자 상세 정보</DialogTitle>
+            <DialogDescription>비밀번호는 관리자 페이지에서도 표시하지 않는다.</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="grid gap-3 text-sm">
+              <div><span className="font-medium">이름:</span> {selectedUser.name || "미입력"}</div>
+              <div><span className="font-medium">이메일:</span> {selectedUser.email || "미입력"}</div>
+              <div><span className="font-medium">학년/부문:</span> {selectedUser.division || "미입력"}</div>
+              <div><span className="font-medium">소속:</span> {selectedUser.groupName || "미입력"}</div>
+              <div><span className="font-medium">지역:</span> {selectedUser.regionCity || "미입력"}</div>
+              <div><span className="font-medium">UID:</span> {selectedUser.id}</div>
+              <div><span className="font-medium">저장 기록 수:</span> {realSessions.filter((session) => session.userId === selectedUser.id).length}</div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setSelectedUser(null)}>
+              닫기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">운영 메모</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <textarea
+            value={adminMemo}
+            onChange={(e) => setAdminMemo(e.target.value)}
+            className="min-h-[180px] rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
+            placeholder="수정 메모, 배포 메모, 개선 계획"
+          />
+          <div className="text-sm text-slate-500">이 메모는 현재 브라우저에 저장된다.</div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">메일 발송 준비</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label>학년/부문</Label>
+              <select
+                value={emailDivision}
+                onChange={(e) => setEmailDivision(e.target.value)}
+                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+              >
+                <option value="all">전체 학년/부문</option>
+                {divisionOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label>지역</Label>
+              <select
+                value={emailRegion}
+                onChange={(e) => setEmailRegion(e.target.value)}
+                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+              >
+                <option value="all">전체 지역</option>
+                {regionOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            실제 대량 발송은 아직 연결하지 않았다. 현재는 수신자 이메일 복사 및 메일앱 열기용이다.
+          </div>
+
+          <div className="grid gap-2">
+            <Label>수신자 수</Label>
+            <div className="rounded-2xl border border-slate-200 px-4 py-3 text-sm">
+              {filteredRecipients.length}명
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>제목</Label>
+            <Input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} />
+          </div>
+
+          <div className="grid gap-2">
+            <Label>내용</Label>
+            <textarea
+              value={emailBody}
+              onChange={(e) => setEmailBody(e.target.value)}
+              className="min-h-[180px] rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={() => recipientEmails && window.open(mailtoHref, "_self")}>
+              메일앱으로 열기
+            </Button>
+            <Button type="button" variant="outline" className="rounded-2xl" onClick={copyRecipients}>
+              이메일 복사
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function XSessionApp() {
+  const [ui, setUi] = useState(DEFAULT_UI);
+  const [appServices, setAppServices] = useState(null);
+  const [authUser, setAuthUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [draftSession, setDraftSession] = useState(null);
+  const [editingSessionId, setEditingSessionId] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [sessionSaving, setSessionSaving] = useState(false);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [globalError, setGlobalError] = useState("");
+  const [tempSaveMessage, setTempSaveMessage] = useState("");
+  const [adminRequested, setAdminRequested] = useState(false);
+  const pendingProfileRef = useRef(null);
+
+
+  const authTimeoutRef = useRef(null);
+
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current);
+        authTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    authTimeoutRef.current = setTimeout(() => {
+      setAuthLoading(false);
+      setGlobalError((prev) => prev || "인증 확인이 지연되어 기본 화면으로 전환했다. 다시 로그인해줘.");
+    }, 5000);
+
+    return () => {
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current);
+        authTimeoutRef.current = null;
+      }
+    };
+  }, [authLoading]);
+
+
+  useEffect(() => {
+    if (!FIREBASE_READY) return;
+    const app = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
+    setAppServices({
+      app,
+      auth: getAuth(app),
+      db: getFirestore(app),
+    });
+  }, []);
+
+  const loadUsersAndSessions = useCallback(async (db) => {
+    setSessionsLoading(true);
+    try {
+      const [usersSnap, sessionsSnap] = await Promise.all([
+        getDocs(collection(db, "users")),
+        getDocs(query(collection(db, "sessions"), orderBy("sessionDate", "desc"))),
+      ]);
+      setUsers(usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data())));
+      setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
+    } catch (error) {
+      setGlobalError(error.message || "데이터 로딩에 실패했다.");
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  function getDraftStorageKey(userId) {
+    return `elbowshot_temp_draft_${userId}`;
+  }
+
+  function saveDraftToLocal(userId, draft) {
+    try {
+      localStorage.setItem(getDraftStorageKey(userId), JSON.stringify(draft));
+    } catch {
+      // ignore
+    }
+  }
+
+  function loadDraftFromLocal(userId) {
+    try {
+      const raw = localStorage.getItem(getDraftStorageKey(userId));
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function clearDraftFromLocal(userId) {
+    try {
+      localStorage.removeItem(getDraftStorageKey(userId));
+    } catch {
+      // ignore
+    }
+  }
+
+  async function saveProfileDocument(uidValue, payload) {
+    const existing = await getDoc(doc(appServices.db, "users", uidValue));
+    await setDoc(
+      doc(appServices.db, "users", uidValue),
+      {
+        uid: uidValue,
+        email: payload.email,
+        displayName: payload.name,
+        photoURL: "",
+        photoPath: "",
+        groupName: payload.groupName || "",
+        regionCity: payload.regionCity || "",
+        regionDistrict: payload.regionDistrict || "",
+        division: payload.division || "",
+        role: "player",
+        status: "active",
+        createdAt: existing.exists() ? existing.data().createdAt || serverTimestamp() : serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
+
+  useEffect(() => {
+    if (!appServices?.auth || !appServices?.db) return;
+
+    const unsubscribe = onAuthStateChanged(appServices.auth, async (user) => {
+      setAuthUser(user || null);
+      setAuthLoading(false);
+
+      try {
+        if (!user) {
+          setProfile(null);
+          setDraftSession(null);
+          setEditingSessionId(null);
+          setUsers([]);
+          setSessions([]);
+          setUi(DEFAULT_UI);
+          return;
+        }
+
+        let nextProfile = null;
+        const snap = await getDoc(doc(appServices.db, "users", user.uid));
+
+        if (snap.exists()) {
+          nextProfile = fromFirestoreProfile(user.uid, snap.data());
+        } else if (pendingProfileRef.current && pendingProfileRef.current.email === user.email) {
+          nextProfile = {
+            id: user.uid,
+            uid: user.uid,
+            name: pendingProfileRef.current.name || user.email?.split("@")[0] || "사용자",
+            email: pendingProfileRef.current.email || user.email || "",
+            club: "",
+            clubName: "",
+            groupName: pendingProfileRef.current.groupName || "",
+            regionCity: pendingProfileRef.current.regionCity || "",
+            regionDistrict: pendingProfileRef.current.regionDistrict || "",
+            division: pendingProfileRef.current.division || "전체학년",
+            avatar: "",
+            photoURL: "",
+            photoPath: "",
+          };
+          await saveProfileDocument(user.uid, {
+            email: nextProfile.email,
+            name: nextProfile.name,
+            groupName: nextProfile.groupName,
+            regionCity: nextProfile.regionCity,
+            regionDistrict: nextProfile.regionDistrict,
+            division: nextProfile.division,
+          });
+        } else {
+          nextProfile = {
+            id: user.uid,
+            uid: user.uid,
+            name: user.displayName || user.email?.split("@")[0] || "사용자",
+            email: user.email || "",
+            club: "",
+            clubName: "",
+            groupName: "",
+            regionCity: "",
+            regionDistrict: "",
+            division: "전체학년",
+            avatar: "",
+            photoURL: "",
+            photoPath: "",
+          };
+        }
+
+        setProfile(nextProfile);
+
+        const tempDraft = loadDraftFromLocal(user.uid);
+        if (tempDraft) {
+          setDraftSession(
+            normalizeSessionShape(
+              { ...tempDraft, division: tempDraft.division || nextProfile.division || "전체학년" },
+              nextProfile
+            )
+          );
+          setTempSaveMessage("임시 저장된 X-Session을 불러왔다.");
+        } else {
+          setDraftSession(
+            normalizeSessionShape(createNewSession(nextProfile, "cumulative"), nextProfile)
+          );
+          setTempSaveMessage("");
+        }
+
+        setEditingSessionId(null);
+        setUi((prev) => ({
+          ...prev,
+          activeTab: adminRequested && isAdminEmail(nextProfile.email) ? "admin" : "dashboard",
+        }));
+
+        await loadUsersAndSessions(appServices.db);
+      } catch (error) {
+        console.error("AUTH_FLOW_ERROR", error);
+        setGlobalError(error.message || "인증 후 데이터 로딩에 실패했다.");
+        setDraftSession(null);
+        setEditingSessionId(null);
+        setUi(DEFAULT_UI);
+      } finally {
+        pendingProfileRef.current = null;
+      }
+    });
+
+    return () => unsubscribe();
+  }, [appServices, loadUsersAndSessions, adminRequested]);
+
+  }, [appServices, loadUsersAndSessions, adminRequested]);
+
+
+  async function handleRegister(input) {
+    if (!appServices?.auth || !appServices?.db) return;
+
+    setAuthLoading(true);
+    setGlobalError("");
+
+    try {
+      pendingProfileRef.current = {
+        name: input.name || input.email.split("@")[0],
+        email: input.email,
+        groupName: input.groupName || "",
+        regionCity: input.regionCity || "",
+        regionDistrict: input.regionDistrict || "",
+        division: input.division || "전체학년",
+      };
+
+      const result = await createUserWithEmailAndPassword(appServices.auth, input.email, input.password);
+
+      await saveProfileDocument(result.user.uid, {
+        email: input.email,
+        name: input.name || input.email.split("@")[0],
+        groupName: input.groupName || "",
+        regionCity: input.regionCity || "",
+        division: input.division || "전체학년",
+      });
+
+      const nextProfile = {
+        id: result.user.uid,
+        uid: result.user.uid,
+        name: input.name || input.email.split("@")[0],
+        email: input.email,
+        club: "",
+        clubName: "",
+        groupName: input.groupName || "",
+        regionCity: input.regionCity || "",
+        regionDistrict: input.regionDistrict || "",
+        division: input.division || "전체학년",
+        avatar: "",
+        photoURL: "",
+        photoPath: "",
+      };
+
+      setProfile(nextProfile);
+      setDraftSession(
+        normalizeSessionShape(createNewSession(nextProfile, "cumulative"), nextProfile)
+      );
+      setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
+      await loadUsersAndSessions(appServices.db);
+    } catch (error) {
+      pendingProfileRef.current = null;
+      setGlobalError(error.message || "회원가입에 실패했다.");
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  async function handleLogin(input) {
+    if (!appServices?.auth) return;
+
+    setAdminRequested(false);
+    setAuthLoading(true);
+    setGlobalError("");
+
+    try {
+      await signInWithEmailAndPassword(appServices.auth, input.email, input.password);
+    } catch (error) {
+      setGlobalError(error.message || "로그인에 실패했다.");
+      setAuthLoading(false);
+    }
+  }
+
+  async function handleAdminLogin(input) {
+    if (!isAdminEmail(input.email)) {
+      setGlobalError("관리자 권한이 없는 이메일이다.");
+      return;
+    }
+
+    setAdminRequested(true);
+    setAuthLoading(true);
+    setGlobalError("");
+
+    try {
+      await signInWithEmailAndPassword(appServices.auth, input.email, input.password);
+    } catch (error) {
+      setGlobalError(error.message || "관리자 로그인에 실패했다.");
+      setAuthLoading(false);
+      setAdminRequested(false);
+    }
+  }
+
+  async function handleLogout() {
+    if (!appServices?.auth) return;
+
+    await signOut(appServices.auth);
+    setAuthUser(null);
+    setProfile(null);
+    setDraftSession(null);
+    setEditingSessionId(null);
+    setUsers([]);
+    setSessions([]);
+    setUi(DEFAULT_UI);
+    setTempSaveMessage("");
+    setAdminRequested(false);
+  }
+
+  async function handleSaveSession() {
+    if (!appServices?.db || !authUser || !profile || !draftSession) return;
+
+    setSessionSaving(true);
+    setGlobalError("");
+
+    try {
+      const payload = buildSessionPayload({ draftSession, profile, uid: authUser.uid });
+
+      if (editingSessionId) {
+        await updateDoc(doc(appServices.db, "sessions", editingSessionId), {
+          sessionDate: payload.sessionDate,
+          title: payload.title,
+          mode: payload.mode,
+          recordInputType: payload.recordInputType,
+          distance: payload.distance,
+          groupName: payload.groupName,
+          division: payload.division,
+          arrowsPerEnd: payload.arrowsPerEnd,
+          arrowsPerDistance: payload.arrowsPerDistance,
+          endCount: payload.endCount,
+          distanceRoundCount: payload.distanceRoundCount,
+          distanceRounds: payload.distanceRounds,
+          ends: payload.ends,
+          summary: payload.summary,
+          status: payload.status,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        const docRef = await addDoc(collection(appServices.db, "sessions"), payload);
+        await setDoc(doc(appServices.db, "sessions", docRef.id), { sessionId: docRef.id }, { merge: true });
+      }
+
+      clearDraftFromLocal(authUser.uid);
+      setTempSaveMessage("");
+      setEditingSessionId(null);
+      await loadUsersAndSessions(appServices.db);
+      setDraftSession(normalizeSessionShape(createNewSession(profile, draftSession.mode), profile));
+      setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
+    } catch (error) {
+      setGlobalError(error.message || "X-Session 저장에 실패했다.");
+    } finally {
+      setSessionSaving(false);
+    }
+  }
+
+  async function handleDeleteSavedSession() {
+    if (!appServices?.db || !editingSessionId || !authUser || !profile) return;
+    try {
+      await deleteDoc(doc(appServices.db, "sessions", editingSessionId));
+      setEditingSessionId(null);
+      setDraftSession(normalizeSessionShape(createNewSession(profile, "cumulative"), profile));
+      clearDraftFromLocal(authUser.uid);
+      setTempSaveMessage("");
+      await loadUsersAndSessions(appServices.db);
+      setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
+    } catch (error) {
+      setGlobalError(error.message || "세션 삭제에 실패했다.");
+    }
+  }
+
+  function handleTempSave() {
+    if (!authUser || !draftSession) return;
+    saveDraftToLocal(authUser.uid, draftSession);
+    setTempSaveMessage("임시 X-Session 저장 완료. 다음에 다시 로그인해도 이어서 입력할 수 있다.");
+  }
+
+  function handleEditSession(sessionId) {
+    const target = sessionsForDisplay.find((s) => s.id === sessionId);
+    if (!target || !profile) return;
+    setDraftSession({
+      ...target,
+      recordInputType: target.recordInputType || "end",
+      division: target.division || profile.division || "",
+      distanceRounds:
+        target.distanceRounds?.length
+          ? target.distanceRounds.map((round, idx) => ({
+              ...round,
+              id: round.id || uid("edit_round"),
+              index: idx + 1,
+            }))
+          : [
+              createEmptyDistanceRound(1, 35),
+              createEmptyDistanceRound(2, 30),
+              createEmptyDistanceRound(3, 25),
+              createEmptyDistanceRound(4, 20),
+            ],
+      ends: (target.ends || []).map((end, idx) => ({
+        ...end,
+        id: end.id || uid("edit_end"),
+        index: idx + 1,
+        arrows: Array.from({ length: target.arrowsPerEnd || 6 }, (_, i) => end.arrows?.[i] ?? null),
+      })),
+    });
+    setEditingSessionId(target.isSampleData ? null : target.id);
+    setUi((prev) => ({ ...prev, activeTab: "record" }));
+    setTempSaveMessage(
+      target.isSampleData
+        ? "샘플 X-Session을 입력 화면으로 불러왔다. 저장하면 내 기록으로 새로 저장된다."
+        : "저장된 X-Session을 편집 중이다."
+    );
+  }
+
+  async function handleUpdateProfile(nextUser) {
+    if (!appServices?.db || !authUser || !profile) return;
+
+    setProfileSaving(true);
+    setGlobalError("");
+
+    try {
+      await saveProfileDocument(authUser.uid, {
+        email: profile.email,
+        name: nextUser.name,
+        groupName: nextUser.groupName,
+        regionCity: nextUser.regionCity,
+        regionDistrict: nextUser.regionDistrict,
+        division: nextUser.division,
+      });
+
+      const refreshed = {
+        ...profile,
+        name: nextUser.name || profile.name || "",
+        club: "",
+        clubName: "",
+        groupName: nextUser.groupName || "",
+        regionCity: nextUser.regionCity || "",
+        regionDistrict: nextUser.regionDistrict || "",
+        division: nextUser.division || "전체학년",
+      };
+
+      setProfile(refreshed);
+      setDraftSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              division: refreshed.division,
+            }
+          : createNewSession(refreshed, "cumulative")
+      );
+
+      if (authUser && draftSession) {
+        saveDraftToLocal(authUser.uid, {
+          ...(draftSession || createNewSession(refreshed, "cumulative")),
+          division: refreshed.division,
+        });
+      }
+
+      await loadUsersAndSessions(appServices.db);
+      return { ok: true, message: "프로필이 저장되었다. 앱 전체 표시 정보에도 반영된다." };
+    } catch (error) {
+      const message = error.message || "프로필 저장에 실패했다.";
+      setGlobalError(message);
+      return { ok: false, message };
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
+  const currentUser = useMemo(() => profile, [profile]);
+  const sampleUsers = useMemo(() => buildPermanentSampleUsers(), []);
+  const permanentSampleSessions = useMemo(() => buildPermanentSampleSessions(), []);
+
+  const usersForDisplay = useMemo(() => {
+    const existingIds = new Set(users.map((u) => u.id));
+    const extra = sampleUsers.filter((u) => !existingIds.has(u.id));
+    return [...users, ...extra];
+  }, [users, sampleUsers]);
+
+  const sessionsForDisplay = useMemo(() => {
+    const existingIds = new Set(sessions.map((s) => s.id));
+    const merged = [...sessions];
+
+    permanentSampleSessions.forEach((s) => {
+      if (!existingIds.has(s.id)) merged.push(s);
+    });
+
+    return merged;
+  }, [sessions, permanentSampleSessions]);
+
+  const mySessions = useMemo(
+    () => sessions.filter((s) => s.userId === authUser?.uid),
+    [sessions, authUser]
+  );
+
+  const isAdminUser = useMemo(() => isAdminEmail(currentUser?.email), [currentUser]);
+  const adminEmailGuard = isAdminEmail;
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
+        <Hero />
+
+        {authLoading && !authUser ? (
+          <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+            <CardContent className="flex items-center gap-3 p-6 text-slate-600">
+              <Loader2 className="h-5 w-5 animate-spin" /> 인증 상태 확인 중
+            </CardContent>
+          </Card>
+        ) : !currentUser ? (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+            <AuthPanel onRegister={handleRegister} onLogin={handleLogin} onAdminLogin={handleAdminLogin} authLoading={authLoading} />
+          </motion.div>
+        ) : (
+          <>
+            <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} />
+
+            {globalError && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
+
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+              {ui.activeTab === "record" && draftSession && (
+                <SessionEditor
+                  session={draftSession}
+                  setSession={setDraftSession}
+                  onSave={handleSaveSession}
+                  onTempSave={handleTempSave}
+                  onDeleteSavedSession={handleDeleteSavedSession}
+                  saving={sessionSaving}
+                  tempSaveMessage={tempSaveMessage}
+                  editingSavedSession={Boolean(editingSessionId)}
+                />
+              )}
+              {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
+              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
+              {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
+              {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
+              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} />}
+            </motion.div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default XSessionApp;
