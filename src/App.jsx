@@ -254,6 +254,15 @@ const I18N = {
     profileSaved: "프로필이 저장되었다.",
     authChecking: "인증 상태 확인 중",
     na: "미입력",
+    record: "X-Session",
+    dashboard: "X-Dashboard",
+    analysis: "X-Analysis",
+    save: "저장",
+    delete: "삭제",
+    temporarySave: "임시 저장",
+    distanceSelect: "거리 선택",
+    divisionSelect: "학년/부문 선택",
+    allRegionLabel: "전체 지역",
   },
   en: {
     heroTitle: "Record with X-Session. Prove it with X-Ranking.",
@@ -309,11 +318,30 @@ const I18N = {
     profileSaved: "Profile saved.",
     authChecking: "Checking authentication status",
     na: "Not set",
+    record: "X-Session",
+    dashboard: "X-Dashboard",
+    analysis: "X-Analysis",
+    save: "Save",
+    delete: "Delete",
+    temporarySave: "Save draft",
+    distanceSelect: "Select distance",
+    divisionSelect: "Select division",
+    allRegionLabel: "All regions",
   },
 };
 
 function tLanguage(language, key) {
   return I18N[language]?.[key] || I18N.ko[key] || key;
+}
+
+function getRuntimeLanguage() {
+  try {
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage?.getItem(LANGUAGE_STORAGE_KEY);
+      if (stored === "ko" || stored === "en") return stored;
+    }
+  } catch {}
+  return "ko";
 }
 
 const PERIOD_OPTIONS = [
@@ -1718,6 +1746,8 @@ function SessionEditor({
   const [lastQuickScore, setLastQuickScore] = useState(null);
   const [flashKey, setFlashKey] = useState("");
   const arrowRefs = useRef({});
+  const language = getRuntimeLanguage();
+  const t = (key) => tLanguage(language, key);
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -2455,6 +2485,8 @@ function SessionEditor({
 }
 
 function Dashboard({ sessions, loading, onEditSession }) {
+  const language = getRuntimeLanguage();
+  const t = (key) => tLanguage(language, key);
   const completed = sessions.filter((s) => s.isComplete);
 
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -2887,6 +2919,8 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
 }
 
 function AnalysisBoard({ currentUser, users, sessions }) {
+  const language = getRuntimeLanguage();
+  const t = (key) => tLanguage(language, key);
   const [period, setPeriod] = useState("day");
   const [matchType, setMatchType] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
@@ -3325,6 +3359,8 @@ function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChang
 
 
 function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
+  const language = getRuntimeLanguage();
+  const t = (key) => tLanguage(language, key);
   const [emailRegion, setEmailRegion] = useState("all");
   const [emailDivision, setEmailDivision] = useState("all");
   const [emailSubject, setEmailSubject] = useState("[X-SESSION 안내]");
