@@ -176,6 +176,105 @@ const REGION_DISTRICT_MAP = {
   "전라남도": ["목포시","여수시","순천시","나주시","광양시","담양군","곡성군","구례군","고흥군","보성군","화순군","장흥군","강진군","해남군","영암군","무안군","함평군","영광군","장성군","완도군","진도군","신안군"],
 };
 
+
+const LANGUAGE_OPTIONS = [
+  { value: "ko", label: "한국어" },
+  { value: "en", label: "English" },
+];
+
+const I18N = {
+  ko: {
+    tabRecord: "X-Session",
+    tabDashboard: "X-Dashboard",
+    tabRanking: "X-Ranking",
+    tabAnalysis: "X-Analysis",
+    tabProfile: "프로필",
+    tabAdmin: "관리자",
+    logout: "로그아웃",
+    profileTitle: "프로필 관리",
+    profileHint: "이름의 첫 글자가 자동으로 표시된다.",
+    profileName: "이름",
+    profileEmail: "이메일",
+    profileDivision: "학년/부문",
+    profileGroup: "소속",
+    profileRegionCity: "지역(시/도)",
+    profileRegionDistrict: "지역(구/군)",
+    profileLanguage: "언어",
+    saveProfile: "프로필 저장",
+    profileSaved: "프로필이 저장되었다.",
+    rankingTitle: "X-Ranking",
+    rankingEmpty: "아직 랭킹에 표시할 선수가 없다.",
+    myRankTitle: "내 랭킹",
+    top3Title: "상위 3명",
+    top3Desc: "평균 점수 기준",
+    currentRank: "현재 순위",
+    noRank: "랭킹을 계산할 기록이 아직 없다.",
+    national: "전국",
+    region: "시/도",
+    allRegions: "전국",
+    totalScore: "총점",
+    avgArrow: "평균 화살",
+    bestSession: "최고 경기",
+    sessions: "세션",
+    xCount: "X",
+    me: "나",
+  },
+  en: {
+    tabRecord: "X-Session",
+    tabDashboard: "X-Dashboard",
+    tabRanking: "X-Ranking",
+    tabAnalysis: "X-Analysis",
+    tabProfile: "Profile",
+    tabAdmin: "Admin",
+    logout: "Log out",
+    profileTitle: "Profile",
+    profileHint: "The first character of the name is shown automatically.",
+    profileName: "Name",
+    profileEmail: "Email",
+    profileDivision: "Division",
+    profileGroup: "Team / Club",
+    profileRegionCity: "Region (State/City)",
+    profileRegionDistrict: "Region (District)",
+    profileLanguage: "Language",
+    saveProfile: "Save Profile",
+    profileSaved: "Profile saved.",
+    rankingTitle: "X-Ranking",
+    rankingEmpty: "No ranked players yet.",
+    myRankTitle: "My Rank",
+    top3Title: "Top 3",
+    top3Desc: "Sorted by average arrow score",
+    currentRank: "Current Rank",
+    noRank: "No completed ranking data yet.",
+    national: "National",
+    region: "Region",
+    allRegions: "All Regions",
+    totalScore: "Total",
+    avgArrow: "Avg Arrow",
+    bestSession: "Best Session",
+    sessions: "Sessions",
+    xCount: "X",
+    me: "Me",
+  },
+};
+
+function getLanguageValue(userOrLanguage) {
+  if (!userOrLanguage) return "ko";
+  if (typeof userOrLanguage === "string") return userOrLanguage;
+  return userOrLanguage.language || "ko";
+}
+
+function tLang(userOrLanguage, key) {
+  const language = getLanguageValue(userOrLanguage);
+  return I18N[language]?.[key] || I18N.ko[key] || key;
+}
+
+function getRankingCardAccent(rank, isCurrentUser) {
+  if (isCurrentUser) return "border-blue-200 bg-blue-50";
+  if (rank <= 3) return "border-amber-300 bg-amber-50";
+  return "border-slate-200 bg-white";
+}
+
+
 function getDistrictOptions(regionCity) {
   return REGION_DISTRICT_MAP[regionCity] || [];
 }
@@ -892,9 +991,21 @@ function fromFirestoreProfile(uidValue, data) {
     regionCity: data.regionCity || "",
     regionDistrict: data.regionDistrict || "",
     division: data.division || "",
+    language: data.language || "ko",
     avatar: "",
     photoURL: "",
     photoPath: "",
+    ranking: data.ranking || {
+      isPublic: true,
+      qualified: false,
+      totalSessions: 0,
+      totalScore: 0,
+      totalArrows: 0,
+      avgArrowScore: 0,
+      bestSessionScore: 0,
+      lastSessionAt: null,
+      updatedAt: null,
+    },
   };
 }
 
@@ -1508,13 +1619,14 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
 
 
 function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
+  const language = user?.language || "ko";
   const navs = [
-    { key: "record", label: "X-Session", icon: Target },
-    { key: "dashboard", label: "X-Dashboard", icon: BarChart3 },
-    { key: "ranking", label: "X-Ranking", icon: Trophy },
-    { key: "analysis", label: "X-Analysis", icon: CalendarRange },
-    { key: "profile", label: "Profile", icon: User },
-    ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield }] : []),
+    { key: "record", label: tLang(language, "tabRecord"), icon: Target },
+    { key: "dashboard", label: tLang(language, "tabDashboard"), icon: BarChart3 },
+    { key: "ranking", label: tLang(language, "tabRanking"), icon: Trophy },
+    { key: "analysis", label: tLang(language, "tabAnalysis"), icon: CalendarRange },
+    { key: "profile", label: tLang(language, "tabProfile"), icon: User },
+    ...(isAdminUser ? [{ key: "admin", label: tLang(language, "tabAdmin"), icon: Shield }] : []),
   ];
 
   return (
@@ -1529,7 +1641,7 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
-          <TabsList className="grid w-full grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1 md:w-auto lg:grid-cols-5">
+          <TabsList className={`grid w-full gap-1 rounded-2xl bg-slate-100 p-1 md:w-auto ${isAdminUser ? "grid-cols-3 lg:grid-cols-6" : "grid-cols-3 lg:grid-cols-5"}`}>
             {navs.map((item) => {
               const Icon = item.icon;
               return (
@@ -1546,7 +1658,7 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
         </Tabs>
 
         <Button variant="outline" className="rounded-2xl" onClick={onLogout}>
-          <LogOut className="mr-2 h-4 w-4" /> 로그아웃
+          <LogOut className="mr-2 h-4 w-4" /> {tLang(language, "logout")}
         </Button>
       </CardContent>
     </Card>
@@ -2561,32 +2673,94 @@ function StatCard({ title, value, sub, icon: Icon, tone }) {
   );
 }
 
-function RankingBoard({ users, sessions, currentUserId }) {
+function RankingBoard({ users, sessions, currentUserId, currentUser }) {
+  const language = currentUser?.language || "ko";
   const [rankingFilters, setRankingFilters] = useState({
-    distance: "all",
-    division: "all",
-    groupName: "all",
     regionCity: "all",
-    mode: "all",
-    dateFilter: "all",
   });
-  const groupOptions = useMemo(() => Array.from(new Set(users.map((u) => u.groupName).filter(Boolean))), [users]);
-  const regionOptions = useMemo(() => REGION_OPTIONS, []);
 
-  const rankings = useMemo(() => buildUserRankings(users, sessions, rankingFilters), [users, sessions, rankingFilters]);
+  const regionOptions = useMemo(
+    () => Array.from(new Set(users.map((u) => u.regionCity).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko")),
+    [users]
+  );
 
-  const sortedRankings = useMemo(() => {
-    const items = [...rankings];
-    items.sort((a, b) => {
-      if (b.avgArrow !== a.avgArrow) return b.avgArrow - a.avgArrow;
-      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-      return String(b.latestDate).localeCompare(String(a.latestDate));
-    });
-    return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [rankings]);
+  const rankingFallbackMap = useMemo(() => {
+    const map = new Map();
+    (sessions || [])
+      .filter((session) => session?.isComplete && session?.userId)
+      .forEach((session) => {
+        const summary = session.summary || calculateSessionSummary(session);
+        const current = map.get(session.userId) || {
+          totalSessions: 0,
+          totalScore: 0,
+          totalArrows: 0,
+          totalXCount: 0,
+          avgArrowScore: 0,
+          bestSessionScore: 0,
+          lastSessionAt: "",
+          qualified: false,
+          isPublic: true,
+        };
 
-  const myRank = sortedRankings.find((r) => r.userId === currentUserId);
-  const top3 = sortedRankings.slice(0, 3);
+        current.totalSessions += 1;
+        current.totalScore += Number(summary?.totalScore) || 0;
+        current.totalArrows += Number(summary?.totalArrows) || 0;
+        current.totalXCount += Number(summary?.xCount) || 0;
+        current.bestSessionScore = Math.max(current.bestSessionScore, Number(summary?.totalScore) || 0);
+
+        const candidateDate = session.updatedAt || session.sessionDate || "";
+        if (!current.lastSessionAt || String(candidateDate) > String(current.lastSessionAt)) {
+          current.lastSessionAt = candidateDate;
+        }
+
+        current.avgArrowScore = current.totalArrows > 0
+          ? Number((current.totalScore / current.totalArrows).toFixed(2))
+          : 0;
+        current.qualified = current.totalArrows >= 72;
+
+        map.set(session.userId, current);
+      });
+
+    return map;
+  }, [sessions]);
+
+  const rankingUsers = useMemo(() => {
+    return users
+      .map((user) => {
+        const storedRanking = user.ranking || {};
+        const fallbackRanking = rankingFallbackMap.get(user.id) || null;
+        const ranking = (storedRanking.totalSessions || 0) > 0 ? storedRanking : fallbackRanking;
+        if (!ranking || (ranking.totalSessions || 0) <= 0) return null;
+        if (ranking.isPublic === false) return null;
+        if (rankingFilters.regionCity !== "all" && user.regionCity !== rankingFilters.regionCity) return null;
+
+        return {
+          userId: user.id,
+          name: user.name,
+          groupName: user.groupName || "",
+          regionCity: user.regionCity || "",
+          division: user.division || "",
+          language: user.language || "ko",
+          ranking,
+          totalScore: ranking.totalScore || 0,
+          avgArrow: ranking.avgArrowScore || 0,
+          bestSession: ranking.bestSessionScore || 0,
+          sessions: ranking.totalSessions || 0,
+          xCount: ranking.totalXCount || 0,
+          latestDate: ranking.lastSessionAt || "",
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        if (b.avgArrow !== a.avgArrow) return b.avgArrow - a.avgArrow;
+        if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+        return String(b.latestDate).localeCompare(String(a.latestDate));
+      })
+      .map((item, idx) => ({ ...item, rank: idx + 1 }));
+  }, [users, rankingFilters, rankingFallbackMap]);
+
+  const myRank = rankingUsers.find((r) => r.userId === currentUserId);
+  const top3 = rankingUsers.slice(0, 3);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[0.7fr_1.3fr]">
@@ -2594,20 +2768,22 @@ function RankingBoard({ users, sessions, currentUserId }) {
         <Card className="rounded-[28px] border-0 bg-white shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-amber-500" /> 내 랭킹
+              <Crown className="h-5 w-5 text-amber-500" /> {tLang(language, "myRankTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {myRank ? (
               <div className="space-y-4">
                 <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-6 text-white shadow-lg">
-                  <div className="text-sm opacity-80">현재 순위</div>
+                  <div className="text-sm opacity-80">{tLang(language, "currentRank")}</div>
                   <div className="mt-2 text-5xl font-bold">#{myRank.rank}</div>
-                  <div className="mt-2 text-sm opacity-90">X {myRank.xCount} / 평균 화살 점수 {myRank.avgArrow.toFixed(2)}</div>
+                  <div className="mt-2 text-sm opacity-90">
+                    {tLang(language, "xCount")} {myRank.xCount} / {tLang(language, "avgArrow")} {myRank.avgArrow.toFixed(2)}
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">랭킹을 계산할 기록이 아직 없다.</div>
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">{tLang(language, "noRank")}</div>
             )}
           </CardContent>
         </Card>
@@ -2617,10 +2793,8 @@ function RankingBoard({ users, sessions, currentUserId }) {
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <Award className="h-5 w-5 text-amber-500" />
-                <span>상위 3명</span>
-                <span className="text-sm font-normal text-slate-500">
-                  평균점수가 높은 순서대로 등수 부여
-                </span>
+                <span>{tLang(language, "top3Title")}</span>
+                <span className="text-sm font-normal text-slate-500">{tLang(language, "top3Desc")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
@@ -2630,9 +2804,9 @@ function RankingBoard({ users, sessions, currentUserId }) {
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-300 font-bold text-slate-900">
                       {item.rank}
                     </div>
-                    <div>
-                      <div className="font-semibold">{item.name}</div>
-                      <div className="text-sm text-slate-500">{item.groupName} · {item.regionCity}</div>
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">{item.name}</div>
+                      <div className="truncate text-sm text-slate-500">{item.groupName} · {item.regionCity}</div>
                     </div>
                   </div>
                 </div>
@@ -2645,90 +2819,72 @@ function RankingBoard({ users, sessions, currentUserId }) {
       <Card className="rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Medal className="h-5 w-5 text-red-600" /> X-Ranking
+            <Medal className="h-5 w-5 text-red-600" /> {tLang(language, "rankingTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2">
             <div className="grid gap-2">
-              <Label>거리</Label>
-              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                <option value="all">전체 거리</option>
-                {DISTANCE_OPTIONS.map((distance) => (
-                  <option key={distance} value={String(distance)}>{distance}m</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>학년</Label>
-              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                <option value="all">전체 학년</option>
-                {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
-              </select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>학교/소속팀</Label>
-              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                <option value="all">전체 학교/소속팀</option>
-                {groupOptions.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>지역</Label>
-              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                <option value="all">전체 지역</option>
+              <Label>{tLang(language, "region")}</Label>
+              <select
+                value={rankingFilters.regionCity}
+                onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))}
+                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+              >
+                <option value="all">{tLang(language, "allRegions")}</option>
                 {regionOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>경기 방식</Label>
-              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                {MATCH_TYPE_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>날짜</Label>
-              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                {DATE_FILTER_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
             </div>
           </div>
 
           <div className="mt-4">
-            {sortedRankings.length === 0 ? (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">아직 기록된 선수가 없다.</div>
+            {rankingUsers.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">{tLang(language, "rankingEmpty")}</div>
             ) : (
               <div className="grid gap-3">
-                {sortedRankings.map((item) => (
-                  <div key={item.userId} className={`grid gap-3 rounded-3xl border p-4 md:grid-cols-[auto_1fr_auto] md:items-center ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
-                      {item.rank}
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-3">
+                {rankingUsers.map((item) => {
+                  const isCurrentUser = item.userId === currentUserId;
+                  return (
+                    <div
+                      key={item.userId}
+                      className={`rounded-[32px] border px-4 py-3 ${getRankingCardAccent(item.rank, isCurrentUser)}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white ${
+                          item.rank === 1
+                            ? "bg-[#f4c600] text-white"
+                            : item.rank === 2
+                              ? "bg-[#b8c1d1]"
+                              : item.rank === 3
+                                ? "bg-[#d97706]"
+                                : "bg-gradient-to-br from-blue-900 to-red-700"
+                        }`}>
+                          {item.rank}
+                        </div>
+
                         <ProfileAvatar user={item} size="sm" />
-                        <div className="font-semibold">{item.name}</div>
-                        {item.userId === currentUserId && <Badge className="rounded-full bg-blue-900 text-white">나</Badge>}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="truncate text-[15px] font-bold text-slate-950">{item.name}</div>
+                            {isCurrentUser && <Badge className="rounded-full bg-blue-900 text-white">{tLang(language, "me")}</Badge>}
+                          </div>
+                          <div className="truncate text-sm text-slate-500">{item.groupName} · {item.division}</div>
+                        </div>
+
+                        <div className="shrink-0 text-right text-[13px] text-slate-500">
+                          {tLang(language, "totalScore")} {item.totalScore}
+                        </div>
                       </div>
-                      <div className="mt-1 text-sm text-slate-500">{item.groupName} · {item.regionCity} · {item.division}</div>
-                      <div className="mt-2 text-sm text-slate-700">X {item.xCount} / 평균 화살 {item.avgArrow.toFixed(2)} / 최고 경기 {item.bestSession} / 세션 {item.sessions}</div>
+
+                      <div className="mt-2 truncate pl-[88px] text-[13px] leading-5 text-slate-700 md:pl-0">
+                        {tLang(language, "xCount")} {item.xCount} · {tLang(language, "avgArrow")} {item.avgArrow.toFixed(2)} · {tLang(language, "bestSession")} {item.bestSession} · {tLang(language, "sessions")} {item.sessions}
+                      </div>
                     </div>
-                    <div className="text-right text-sm text-slate-500">총점 {item.totalScore}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -3005,37 +3161,39 @@ function ProfilePanel({ user, onUpdate, saving }) {
         regionCity: user?.regionCity || "",
         regionDistrict: user?.regionDistrict || "",
         groupName: user?.groupName || "",
+        language: user?.language || "ko",
       }),
     [user]
   );
 
   const districtOptions = useMemo(() => getDistrictOptions(form?.regionCity), [form?.regionCity]);
+  const lang = form?.language || user?.language || "ko";
 
   async function submit(e) {
     e.preventDefault();
 
     if (!form.name?.trim()) {
-      setErrorMessage("이름을 입력해야 한다.");
+      setErrorMessage(lang === "en" ? "Name is required." : "이름을 입력해야 한다.");
       setSavedMessage("");
       return;
     }
     if (!form.division) {
-      setErrorMessage("학년/부문을 선택해야 한다.");
+      setErrorMessage(lang === "en" ? "Division is required." : "학년/부문을 선택해야 한다.");
       setSavedMessage("");
       return;
     }
     if (!form.groupName?.trim()) {
-      setErrorMessage("소속을 입력해야 한다.");
+      setErrorMessage(lang === "en" ? "Team / club is required." : "소속을 입력해야 한다.");
       setSavedMessage("");
       return;
     }
     if (!form.regionCity) {
-      setErrorMessage("지역(시/도)을 선택해야 한다.");
+      setErrorMessage(lang === "en" ? "Region is required." : "지역(시/도)을 선택해야 한다.");
       setSavedMessage("");
       return;
     }
     if (!form.regionDistrict) {
-      setErrorMessage("지역(구/군)을 선택해야 한다.");
+      setErrorMessage(lang === "en" ? "District is required." : "지역(구/군)을 선택해야 한다.");
       setSavedMessage("");
       return;
     }
@@ -3044,49 +3202,67 @@ function ProfilePanel({ user, onUpdate, saving }) {
     const result = await onUpdate(form);
 
     if (result?.ok) {
-      setSavedMessage(result.message || "프로필이 저장되었다.");
+      setSavedMessage(result.message || tLang(lang, "profileSaved"));
       setErrorMessage("");
       setTimeout(() => setSavedMessage(""), 1800);
       return;
     }
 
     setSavedMessage("");
-    setErrorMessage(result?.message || "프로필 저장에 실패했다.");
+    setErrorMessage(result?.message || (lang === "en" ? "Failed to save profile." : "프로필 저장에 실패했다."));
   }
 
   return (
     <div className="grid gap-4">
       <Card className="rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
-          <CardTitle>프로필 관리</CardTitle>
+          <CardTitle>{tLang(lang, "profileTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="grid gap-4" onSubmit={submit}>
             <div className="flex items-center gap-4">
               <ProfileAvatar user={form} size="lg" />
-              <div className="text-sm text-slate-500">이름의 첫 글자가 자동으로 표시된다.</div>
+              <div className="text-sm text-slate-500">{tLang(lang, "profileHint")}</div>
             </div>
 
             <div className="grid gap-2">
-              <Label>이름</Label>
+              <Label>{tLang(lang, "profileName")}</Label>
               <Input
                 value={form.name || ""}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="정확한 기록 관리를 위해 본명 사용 권장"
+                placeholder={lang === "en" ? "Use your real name for accurate ranking" : "정확한 기록 관리를 위해 본명 사용 권장"}
               />
-              <div className="text-xs text-slate-500">정확한 기록 비교와 랭킹 관리를 위해 본명으로 입력하는 것을 권장한다.</div>
+              <div className="text-xs text-slate-500">
+                {lang === "en"
+                  ? "Using the real name is recommended for accurate ranking and record matching."
+                  : "정확한 기록 비교와 랭킹 관리를 위해 본명으로 입력하는 것을 권장한다."}
+              </div>
             </div>
 
             <div className="grid gap-2">
-              <Label>이메일</Label>
+              <Label>{tLang(lang, "profileEmail")}</Label>
               <Input value={form.email || ""} disabled />
             </div>
 
             <div className="grid gap-2">
-              <Label>학년/부문</Label>
+              <Label>{tLang(lang, "profileLanguage")}</Label>
+              <Select value={form.language || "ko"} onValueChange={(value) => setForm({ ...form, language: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder={tLang(lang, "profileLanguage")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGE_OPTIONS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>{tLang(lang, "profileDivision")}</Label>
               <Select value={form.division || undefined} onValueChange={(value) => setForm({ ...form, division: value })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="학년 또는 부문 선택" />
+                  <SelectValue placeholder={tLang(lang, "profileDivision")} />
                 </SelectTrigger>
                 <SelectContent>
                   {DIVISION_OPTIONS.map((item) => (
@@ -3097,58 +3273,48 @@ function ProfilePanel({ user, onUpdate, saving }) {
             </div>
 
             <div className="grid gap-2">
-              <Label>소속</Label>
+              <Label>{tLang(lang, "profileGroup")}</Label>
               <Input
                 value={form.groupName || ""}
                 onChange={(e) => setForm({ ...form, groupName: e.target.value })}
-                placeholder="예: 서울체고, OO클럽, OO실업팀"
+                placeholder={lang === "en" ? "School / Club / Team" : "예: 서울체고, OO클럽, OO실업팀"}
               />
             </div>
 
             <div className="grid gap-2">
-              <Label>지역(시/도)</Label>
+              <Label>{tLang(lang, "profileRegionCity")}</Label>
               <select
                 value={form.regionCity || ""}
                 onChange={(e) => setForm({ ...form, regionCity: e.target.value, regionDistrict: "" })}
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                className="h-12 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
               >
-                <option value="">지역 선택</option>
-                {REGION_OPTIONS.map((region) => (
-                  <option key={region} value={region}>{region}</option>
+                <option value="">{lang === "en" ? "Select region" : "지역(시/도) 선택"}</option>
+                {REGION_CITY_OPTIONS.map((item) => (
+                  <option key={item} value={item}>{item}</option>
                 ))}
               </select>
             </div>
 
             <div className="grid gap-2">
-              <Label>지역(구/군)</Label>
+              <Label>{tLang(lang, "profileRegionDistrict")}</Label>
               <select
                 value={form.regionDistrict || ""}
                 onChange={(e) => setForm({ ...form, regionDistrict: e.target.value })}
                 disabled={!form.regionCity}
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none disabled:bg-slate-50"
+                className="h-12 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none disabled:bg-slate-100"
               >
-                <option value="">구/군 선택</option>
-                {districtOptions.map((district) => (
-                  <option key={district} value={district}>{district}</option>
+                <option value="">{lang === "en" ? "Select district" : "지역(구/군) 선택"}</option>
+                {districtOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
                 ))}
               </select>
             </div>
 
-            {errorMessage && (
-              <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
-                {errorMessage}
-              </div>
-            )}
+            {savedMessage && <div className="rounded-2xl bg-green-50 px-4 py-3 text-sm text-green-700">{savedMessage}</div>}
+            {errorMessage && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{errorMessage}</div>}
 
-            {savedMessage && (
-              <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                {savedMessage}
-              </div>
-            )}
-
-            <Button type="submit" disabled={saving} className="rounded-2xl bg-blue-900 hover:bg-blue-800">
-              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              프로필 저장
+            <Button type="submit" className="h-12 rounded-2xl bg-slate-950 text-white hover:bg-slate-800" disabled={saving}>
+              <Save className="mr-2 h-4 w-4" /> {tLang(lang, "saveProfile")}
             </Button>
           </form>
         </CardContent>
@@ -3156,7 +3322,6 @@ function ProfilePanel({ user, onUpdate, saving }) {
     </div>
   );
 }
-
 
 function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
   const [emailRegion, setEmailRegion] = useState("all");
@@ -3642,9 +3807,23 @@ function XSessionApp() {
   }
 
   async function saveProfileDocument(uidValue, payload) {
-    const existing = await getDoc(doc(appServices.db, "users", uidValue));
+    const existingRef = doc(appServices.db, "users", uidValue);
+    const existing = await getDoc(existingRef);
+    const existingData = existing.exists() ? existing.data() : {};
+    const baseRanking = existingData.ranking || {
+      isPublic: true,
+      qualified: false,
+      totalSessions: 0,
+      totalScore: 0,
+      totalArrows: 0,
+      avgArrowScore: 0,
+      bestSessionScore: 0,
+      lastSessionAt: null,
+      updatedAt: null,
+    };
+
     await setDoc(
-      doc(appServices.db, "users", uidValue),
+      existingRef,
       {
         uid: uidValue,
         email: payload.email,
@@ -3655,9 +3834,75 @@ function XSessionApp() {
         regionCity: payload.regionCity || "",
         regionDistrict: payload.regionDistrict || "",
         division: payload.division || "",
-        role: "player",
-        status: "active",
-        createdAt: existing.exists() ? existing.data().createdAt || serverTimestamp() : serverTimestamp(),
+        language: payload.language || existingData.language || "ko",
+        ranking: {
+          isPublic: typeof payload.isPublic === "boolean" ? payload.isPublic : (baseRanking.isPublic ?? true),
+          qualified: baseRanking.qualified ?? false,
+          totalSessions: baseRanking.totalSessions ?? 0,
+          totalScore: baseRanking.totalScore ?? 0,
+          totalArrows: baseRanking.totalArrows ?? 0,
+          avgArrowScore: baseRanking.avgArrowScore ?? 0,
+          bestSessionScore: baseRanking.bestSessionScore ?? 0,
+          lastSessionAt: baseRanking.lastSessionAt ?? null,
+          updatedAt: baseRanking.updatedAt ?? null,
+        },
+        role: existingData.role || "player",
+        status: existingData.status || "active",
+        createdAt: existing.exists() ? existingData.createdAt || serverTimestamp() : serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  }
+
+  async function recomputeAndSaveUserRanking(uidValue) {
+    if (!appServices?.db || !uidValue) return;
+
+    const userRef = doc(appServices.db, "users", uidValue);
+    const sessionsSnap = await getDocs(query(collection(appServices.db, "sessions"), where("userId", "==", uidValue)));
+    const completedSessions = sessionsSnap.docs
+      .map((snap) => fromFirestoreSession(snap))
+      .filter((session) => session.isComplete);
+
+    let totalScore = 0;
+    let totalArrows = 0;
+    let bestSessionScore = 0;
+    let lastSessionAt = null;
+    let xCount = 0;
+
+    completedSessions.forEach((session) => {
+      const summary = session.summary || calculateSessionSummary(session);
+      const sessionScore = Number(summary?.totalScore) || 0;
+      const sessionArrows = Number(summary?.totalArrows) || 0;
+      const sessionX = Number(summary?.xCount) || 0;
+      totalScore += sessionScore;
+      totalArrows += sessionArrows;
+      xCount += sessionX;
+      bestSessionScore = Math.max(bestSessionScore, sessionScore);
+
+      const sessionTime = session.updatedAt || session.sessionDate || null;
+      if (sessionTime && (!lastSessionAt || new Date(sessionTime) > new Date(lastSessionAt))) {
+        lastSessionAt = sessionTime;
+      }
+    });
+
+    const avgArrowScore = totalArrows > 0 ? Number((totalScore / totalArrows).toFixed(2)) : 0;
+
+    await setDoc(
+      userRef,
+      {
+        ranking: {
+          isPublic: true,
+          qualified: totalArrows >= 72,
+          totalSessions: completedSessions.length,
+          totalScore,
+          totalArrows,
+          totalXCount: xCount,
+          avgArrowScore,
+          bestSessionScore,
+          lastSessionAt: lastSessionAt ? new Date(lastSessionAt) : serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        },
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -3699,6 +3944,7 @@ function XSessionApp() {
             regionCity: pendingProfileRef.current.regionCity || "",
             regionDistrict: pendingProfileRef.current.regionDistrict || "",
             division: pendingProfileRef.current.division || "전체학년",
+            language: pendingProfileRef.current.language || "ko",
             avatar: "",
             photoURL: "",
             photoPath: "",
@@ -3723,6 +3969,7 @@ function XSessionApp() {
             regionCity: "",
             regionDistrict: "",
             division: "전체학년",
+            language: "ko",
             avatar: "",
             photoURL: "",
             photoPath: "",
@@ -3784,6 +4031,7 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
+        language: input.language || "ko",
       };
 
       const result = await createUserWithEmailAndPassword(appServices.auth, input.email, input.password);
@@ -3794,6 +4042,7 @@ function XSessionApp() {
         groupName: input.groupName || "",
         regionCity: input.regionCity || "",
         division: input.division || "전체학년",
+        language: input.language || "ko",
       });
 
       const nextProfile = {
@@ -3807,6 +4056,7 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
+        language: input.language || "ko",
         avatar: "",
         photoURL: "",
         photoPath: "",
@@ -3908,10 +4158,15 @@ function XSessionApp() {
         await setDoc(doc(appServices.db, "sessions", docRef.id), { sessionId: docRef.id }, { merge: true });
       }
 
+      await recomputeAndSaveUserRanking(authUser.uid);
+      await loadUsersAndSessions(appServices.db);
+      const refreshedUserSnap = await getDoc(doc(appServices.db, "users", authUser.uid));
+      if (refreshedUserSnap.exists()) {
+        setProfile(fromFirestoreProfile(authUser.uid, refreshedUserSnap.data()));
+      }
       clearDraftFromLocal(authUser.uid);
       setTempSaveMessage("");
       setEditingSessionId(null);
-      await loadUsersAndSessions(appServices.db);
       setDraftSession(normalizeSessionShape(createNewSession(profile, draftSession.mode), profile));
       setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
     } catch (error) {
@@ -3925,6 +4180,7 @@ function XSessionApp() {
     if (!appServices?.db || !editingSessionId || !authUser || !profile) return;
     try {
       await deleteDoc(doc(appServices.db, "sessions", editingSessionId));
+      await recomputeAndSaveUserRanking(authUser.uid);
       setEditingSessionId(null);
       setDraftSession(normalizeSessionShape(createNewSession(profile, "cumulative"), profile));
       clearDraftFromLocal(authUser.uid);
@@ -3992,6 +4248,7 @@ function XSessionApp() {
         regionCity: nextUser.regionCity,
         regionDistrict: nextUser.regionDistrict,
         division: nextUser.division,
+        language: nextUser.language || "ko",
       });
 
       const refreshed = {
@@ -4003,6 +4260,7 @@ function XSessionApp() {
         regionCity: nextUser.regionCity || "",
         regionDistrict: nextUser.regionDistrict || "",
         division: nextUser.division || "전체학년",
+        language: nextUser.language || "ko",
       };
 
       setProfile(refreshed);
@@ -4097,7 +4355,7 @@ function XSessionApp() {
                 />
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
-              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
+              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} currentUser={currentUser} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} />}
