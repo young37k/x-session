@@ -1030,8 +1030,8 @@ function Hero() {
    <div
   style={{
     width: "100%",
-    padding: "24px 20px",
-    borderRadius: 28,
+    padding: "20px 16px",
+    borderRadius: 24,
     background:
       "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #7f1d1d 100%)",
     color: "#fff",
@@ -1039,15 +1039,19 @@ function Hero() {
 >
   <div
     style={{
-      fontSize: 44,          // ✅ 전일 점수 숫자와 동일 레벨
-      fontWeight: 800,       // ✅ 동일 두께
-      lineHeight: 1.15,
-      letterSpacing: "-0.03em",
+      fontSize: "clamp(20px, 5vw, 28px)", // ✅ 핵심 (모바일 대응)
+      fontWeight: 800,
+      lineHeight: 1.2,
+      letterSpacing: "-0.02em",
       wordBreak: "keep-all",
     }}
   >
-    <div>X-Session으로 기록하고,</div>
-    <div>X-Ranking으로 증명한다.</div>
+    <div style={{ whiteSpace: "nowrap" }}>
+      X-Session으로 기록하고,
+    </div>
+    <div style={{ whiteSpace: "nowrap" }}>
+      X-Ranking으로 증명한다.
+    </div>
   </div>
 </div>
   );
