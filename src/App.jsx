@@ -281,7 +281,7 @@ function normalizeDivisionLabel(value) {
 
 function normalizeSessionShape(session, profile = null) {
   const safe = session || {};
-  const arrowsPerEnd = safe.arrowsPerEnd || 6;
+  const arrowsPerEnd = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(safe.arrowsPerEnd) || 6));
   const ends = Array.isArray(safe.ends) && safe.ends.length
     ? safe.ends.map((end, idx) => ({
         id: end.id || uid("end"),
@@ -852,7 +852,7 @@ function buildSessionPayload({ draftSession, profile, uid }) {
     groupName: profile.groupName || "",
     regionCity: profile.regionCity || "",
     division: draftSession.division || profile.division || "",
-    arrowsPerEnd: draftSession.arrowsPerEnd,
+    arrowsPerEnd: Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(draftSession.arrowsPerEnd) || 6)),
     arrowsPerDistance: draftSession.arrowsPerDistance || 36,
     endCount: isDistanceInput ? 0 : draftSession.ends.length,
     distanceRoundCount: isDistanceInput ? (draftSession.distanceRounds || []).length : 0,
@@ -916,7 +916,7 @@ function fromFirestoreSession(docSnap) {
     groupName: data.groupName || "",
     regionCity: data.regionCity || "",
     regionDistrict: data.regionDistrict || "",
-    arrowsPerEnd: data.arrowsPerEnd || 6,
+    arrowsPerEnd: Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(data.arrowsPerEnd) || 6)),
     arrowsPerDistance: data.arrowsPerDistance || 36,
     distanceRounds: (data.distanceRounds || []).map((round) => ({ distance: round.distance, total: round.total })),
     totalEnds: data.endCount || (data.ends?.length ?? 0),
@@ -1394,7 +1394,7 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
                   onChange={(e) =>
                     setForm({ ...form, regionCity: e.target.value, regionDistrict: "" })
                   }
-                  className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                  className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
                 >
                   <option value="">지역 선택</option>
                   {REGION_CITY_OPTIONS.map((item) => (
@@ -1855,7 +1855,7 @@ function SessionEditor({
 
   return (
     <>
-      <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
+      <div className="session-editor-grid grid gap-5 xl:grid-cols-[0.88fr_1.12fr]">
         <Card className="self-start rounded-[28px] border-0 bg-white shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center justify-between gap-2">
@@ -1875,8 +1875,8 @@ function SessionEditor({
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="space-y-5">
-            <div className="grid gap-3 md:grid-cols-2">
+          <CardContent className="space-y-5 overflow-hidden">
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="grid gap-2">
                 <Label>날짜</Label>
                 <Input
@@ -1954,13 +1954,10 @@ function SessionEditor({
               {session.recordInputType === "end" ? (
                 <div className="grid gap-2">
                   <Label>엔드당 화살 수</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={6}
-                    value={session.arrowsPerEnd}
-                    onChange={(e) => {
-                      const next = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(e.target.value) || 1));
+                  <Select
+                    value={String(session.arrowsPerEnd)}
+                    onValueChange={(value) => {
+                      const next = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(value) || 1));
                       patchSession((prev) => ({
                         ...prev,
                         arrowsPerEnd: next,
@@ -1970,7 +1967,18 @@ function SessionEditor({
                         })),
                       }));
                     }}
-                  />
+                  >
+                    <SelectTrigger className="w-full min-w-0">
+                      <SelectValue placeholder="화살 수 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6].map((count) => (
+                        <SelectItem key={count} value={String(count)}>
+                          {count}발
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               ) : (
                 <div className="grid gap-2">
@@ -1989,7 +1997,7 @@ function SessionEditor({
                 </div>
               )}
 
-              <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4 md:col-span-2">
+              <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4 sm:col-span-2">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span>X-Session 진행률</span>
                   <span>{progress}%</span>
@@ -2000,10 +2008,10 @@ function SessionEditor({
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 pb-28 md:pb-6">
+        <div className="grid gap-4 pb-32 md:pb-6">
           {session.recordInputType === "end" ? (
             <>
-              <div className="sticky top-2 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
+              <div className="sticky bottom-3 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90 md:bottom-auto md:top-2">
                 <Card className="border-0 bg-transparent shadow-none">
                   <CardContent className="p-3 md:p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
@@ -2159,7 +2167,7 @@ function SessionEditor({
                         </Button>
                       </div>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-4 md:grid-cols-2">
                         <div className="grid gap-2">
                           <Label>거리 (m)</Label>
                           <Input
@@ -2387,7 +2395,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
-            <div className="grid grid-cols-1 divide-y divide-white/20 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="grid grid-cols-2 divide-x divide-white/20">
               <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 누적 점수</div>
                 <div className="mt-2 text-3xl font-bold tracking-tight">
@@ -2413,7 +2421,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
 
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
-            <div className="grid grid-cols-1 divide-y divide-white/20 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="grid grid-cols-2 divide-x divide-white/20">
               <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 화살 평균 점수</div>
                 <div className="mt-2 text-3xl font-bold tracking-tight">
@@ -2439,7 +2447,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
 
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
-            <div className="grid grid-cols-1 divide-y divide-slate-900/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="grid grid-cols-2 divide-x divide-slate-900/10">
               <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 거리 최고 점수</div>
                 <div className="mt-2 text-3xl font-bold tracking-tight">
@@ -2487,39 +2495,39 @@ function Dashboard({ sessions, loading, onEditSession }) {
                     key={session.id}
                     className="grid gap-3 rounded-3xl border border-slate-200 p-4 md:grid-cols-[1fr_auto] md:items-center"
                   >
-                    <div className="min-w-0">
-                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div className="min-w-0">
-                          <div className="truncate text-base font-semibold">{session.title}</div>
-                          <div className="mt-1 text-sm text-slate-500">
-                            {formatDateTime(session.updatedAt)}
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
-                            {getModeLabel(session.mode)}
-                          </Badge>
-                          <Badge className="rounded-full bg-slate-700 text-white">
-                            {getInputTypeLabel(session.recordInputType)}
-                          </Badge>
-                          <Badge className="rounded-full bg-emerald-600 text-white">
-                            완료
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-sm leading-6 text-slate-700">
-                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} · X {session.summary?.xCount ?? getXs(session)} · 평균 {(session.summary?.averageArrow ?? getAverageArrow(session)).toFixed(2)}
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="font-semibold">{session.title}</div>
+                        <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
+                          {getModeLabel(session.mode)}
+                        </Badge>
+                        <Badge className="rounded-full bg-slate-700 text-white">
+                          {getInputTypeLabel(session.recordInputType)}
+                        </Badge>
+                        <Badge className="rounded-full bg-emerald-600 text-white">
+                          완료
+                        </Badge>
                       </div>
                       <div className="mt-1 text-sm text-slate-500">
+                        {formatDateTime(session.updatedAt)}
+                      </div>
+                      <div className="mt-2 text-sm text-slate-700">
+                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} / {getInputTypeLabel(session.recordInputType)} / X{" "}
+                        {session.summary?.xCount ?? getXs(session)} / 평균{" "}
+                        {(
+                          session.summary?.averageArrow ?? getAverageArrow(session)
+                        ).toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 text-right text-sm text-slate-500">
+                      <div>
                         {session.recordInputType === "distance"
                           ? `거리 기록 ${(session.distanceRounds || []).length}개`
                           : `${session.distance}m · 엔드 ${session.ends.length}개`}
                       </div>
-                    </div>
-                    <div className="flex items-stretch md:items-center">
                       <Button
                         variant="outline"
-                        className="w-full rounded-2xl md:w-auto"
+                        className="rounded-2xl"
                         onClick={() => onEditSession?.(session.id)}
                       >
                         <Pencil className="mr-2 h-4 w-4" /> 수정
@@ -2631,8 +2639,8 @@ function RankingBoard({ users, sessions, currentUserId }) {
                       {item.rank}
                     </div>
                     <div>
-                      <div className="truncate font-semibold">{item.name}</div>
-                      <div className="truncate text-sm text-slate-500">{item.groupName} · {item.regionCity}</div>
+                      <div className="font-semibold">{item.name}</div>
+                      <div className="text-sm text-slate-500">{item.groupName} · {item.regionCity}</div>
                     </div>
                   </div>
                 </div>
@@ -2652,7 +2660,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <div className="grid gap-2">
               <Label>거리</Label>
-              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 거리</option>
                 {DISTANCE_OPTIONS.map((distance) => (
                   <option key={distance} value={String(distance)}>{distance}m</option>
@@ -2662,7 +2670,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
             <div className="grid gap-2">
               <Label>학년</Label>
-              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 학년</option>
                 {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
@@ -2670,7 +2678,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
             <div className="grid gap-2">
               <Label>학교/소속팀</Label>
-              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 학교/소속팀</option>
                 {groupOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
@@ -2680,7 +2688,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
             <div className="grid gap-2">
               <Label>지역</Label>
-              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 지역</option>
                 {regionOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
@@ -2690,7 +2698,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
             <div className="grid gap-2">
               <Label>경기 방식</Label>
-              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -2699,7 +2707,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
             <div className="grid gap-2">
               <Label>날짜</Label>
-              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -2713,29 +2721,20 @@ function RankingBoard({ users, sessions, currentUserId }) {
             ) : (
               <div className="grid gap-3">
                 {sortedRankings.map((item) => (
-                  <div key={item.userId} className={`grid gap-3 rounded-3xl border p-4 ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
-                    <div className="flex items-start gap-3">
-                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-base font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
-                        {item.rank}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <ProfileAvatar user={item} size="sm" />
-                          <div className="min-w-0">
-                            <div className="truncate font-semibold">{item.name}</div>
-                            <div className="truncate text-sm text-slate-500">{item.groupName} · {item.regionCity} · {item.division}</div>
-                          </div>
-                          {item.userId === currentUserId && <Badge className="shrink-0 rounded-full bg-blue-900 text-white">나</Badge>}
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-700">
-                          <span>총점 {item.totalScore}</span>
-                          <span>X {item.xCount}</span>
-                          <span>평균 {item.avgArrow.toFixed(2)}</span>
-                          <span>최고 {item.bestSession}</span>
-                          <span>세션 {item.sessions}</span>
-                        </div>
-                      </div>
+                  <div key={item.userId} className={`grid gap-3 rounded-3xl border p-4 md:grid-cols-[auto_1fr_auto] md:items-center ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
+                      {item.rank}
                     </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <ProfileAvatar user={item} size="sm" />
+                        <div className="font-semibold">{item.name}</div>
+                        {item.userId === currentUserId && <Badge className="rounded-full bg-blue-900 text-white">나</Badge>}
+                      </div>
+                      <div className="mt-1 text-sm text-slate-500">{item.groupName} · {item.regionCity} · {item.division}</div>
+                      <div className="mt-2 text-sm text-slate-700">X {item.xCount} / 평균 화살 {item.avgArrow.toFixed(2)} / 최고 경기 {item.bestSession} / 세션 {item.sessions}</div>
+                    </div>
+                    <div className="text-right text-sm text-slate-500">총점 {item.totalScore}</div>
                   </div>
                 ))}
               </div>
@@ -2810,7 +2809,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             <div className="grid gap-2">
               <Label>거리</Label>
-              <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="">거리 선택</option>
                 {DISTANCE_OPTIONS.map((distance) => (
                   <option key={distance} value={String(distance)}>{distance}m</option>
@@ -2820,7 +2819,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>학년/부문</Label>
-              <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="">학년/부문 선택</option>
                 {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
@@ -2828,7 +2827,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>지역</Label>
-              <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 지역</option>
                 {REGION_OPTIONS.map((item) => (
                   <option key={item} value={item}>{item}</option>
@@ -2838,7 +2837,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>날짜</Label>
-              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -2847,7 +2846,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>경기 방식</Label>
-              <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -2856,7 +2855,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>분석 기준</Label>
-              <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {PERIOD_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -2965,7 +2964,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>라이벌 선택</Label>
-              <select value={selectedRival} onChange={(e) => setSelectedRival(e.target.value)} className="h-11 w-full max-w-full min-w-0 md:w-[240px] rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={selectedRival} onChange={(e) => setSelectedRival(e.target.value)} className="h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none md:w-[240px]">
                 {rivalCandidates.length === 0 ? (
                   <option value="none">비교할 선수가 없음</option>
                 ) : (
@@ -3119,7 +3118,7 @@ function ProfilePanel({ user, onUpdate, saving }) {
               <select
                 value={form.regionCity || ""}
                 onChange={(e) => setForm({ ...form, regionCity: e.target.value, regionDistrict: "" })}
-                className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
               >
                 <option value="">지역 선택</option>
                 {REGION_OPTIONS.map((region) => (
@@ -3487,7 +3486,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
               <select
                 value={emailDivision}
                 onChange={(e) => setEmailDivision(e.target.value)}
-                className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
               >
                 <option value="all">전체 학년/부문</option>
                 {divisionOptions.map((item) => (
@@ -3500,7 +3499,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
               <select
                 value={emailRegion}
                 onChange={(e) => setEmailRegion(e.target.value)}
-                className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
               >
                 <option value="all">전체 지역</option>
                 {regionOptions.map((item) => (
@@ -3546,22 +3545,6 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function MobileStabilityStyles() {
-  return (
-    <style>{`
-      *, *::before, *::after { box-sizing: border-box; }
-      html, body { overflow-x: hidden; }
-      .mobile-safe, .mobile-safe * { min-width: 0; }
-      .mobile-safe select,
-      .mobile-safe input,
-      .mobile-safe textarea,
-      .mobile-safe button,
-      .mobile-safe svg,
-      .mobile-safe canvas { max-width: 100%; }
-    `}</style>
   );
 }
 
@@ -3918,7 +3901,7 @@ function XSessionApp() {
           distance: payload.distance,
           groupName: payload.groupName,
           division: payload.division,
-          arrowsPerEnd: payload.arrowsPerEnd,
+          arrowsPerEnd: Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(payload.arrowsPerEnd) || 6)),
           arrowsPerDistance: payload.arrowsPerDistance,
           endCount: payload.endCount,
           distanceRoundCount: payload.distanceRoundCount,
@@ -3991,7 +3974,7 @@ function XSessionApp() {
         ...end,
         id: end.id || uid("edit_end"),
         index: idx + 1,
-        arrows: Array.from({ length: target.arrowsPerEnd || 6 }, (_, i) => end.arrows?.[i] ?? null),
+        arrows: Array.from({ length: Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(target.arrowsPerEnd) || 6)) }, (_, i) => end.arrows?.[i] ?? null),
       })),
     });
     setEditingSessionId(target.isSampleData ? null : target.id);
@@ -4088,9 +4071,24 @@ function XSessionApp() {
   const adminEmailGuard = isAdminEmail;
 
   return (
-    <div className="mobile-safe min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+    <div className="xsession-mobile-safe min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+      <style>{`
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { overflow-x: hidden; }
+        .xsession-mobile-safe .session-editor-grid,
+        .xsession-mobile-safe .session-editor-grid > *,
+        .xsession-mobile-safe .session-editor-grid .grid > *,
+        .xsession-mobile-safe .session-editor-grid [data-radix-popper-content-wrapper],
+        .xsession-mobile-safe .session-editor-grid input,
+        .xsession-mobile-safe .session-editor-grid select,
+        .xsession-mobile-safe .session-editor-grid button,
+        .xsession-mobile-safe .session-editor-grid svg,
+        .xsession-mobile-safe .session-editor-grid canvas { min-width: 0; max-width: 100%; }
+        @media (max-width: 767px) {
+          .xsession-mobile-safe .session-editor-grid .rounded-\[28px\] { border-radius: 24px; }
+        }
+      `}</style>
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
-        <MobileStabilityStyles />
         <Hero />
 
         {authLoading && !authUser ? (
