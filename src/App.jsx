@@ -387,10 +387,172 @@ function buildSampleDistanceSession({
 }
 
 function buildTestRecordSheets(userId) {
-  return [];
+  if (!userId) return [];
+  return [
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자초등 U-11',
+      division: '남자초등 U-11',
+      clubName: '연무초등학교',
+      groupName: '연무초등학교',
+      distance: 35,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 35, total: 337 },
+        { distance: 30, total: 342 },
+        { distance: 25, total: 342 },
+        { distance: 20, total: 351 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자초등 U-11',
+      division: '여자초등 U-11',
+      clubName: '천현초등학교',
+      groupName: '천현초등학교',
+      distance: 35,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 35, total: 305 },
+        { distance: 30, total: 325 },
+        { distance: 25, total: 339 },
+        { distance: 20, total: 343 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자 컴파운드',
+      division: '남자-컴파운드',
+      clubName: '팀 자이언트',
+      groupName: '팀 자이언트',
+      distance: 50,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 50, total: 354 },
+        { distance: 50, total: 347 },
+        { distance: 30, total: 356 },
+        { distance: 30, total: 358 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자 컴파운드',
+      division: '여자-컴파운드',
+      clubName: '신장중학교',
+      groupName: '신장중학교',
+      distance: 50,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 50, total: 328 },
+        { distance: 50, total: 324 },
+        { distance: 30, total: 339 },
+        { distance: 30, total: 348 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자중등부',
+      division: '남자중등부',
+      clubName: '성포중학교',
+      groupName: '성포중학교',
+      distance: 60,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 60, total: 338 },
+        { distance: 50, total: 322 },
+        { distance: 40, total: 347 },
+        { distance: 30, total: 357 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자중등부',
+      division: '여자중등부',
+      clubName: '여흥중학교',
+      groupName: '여흥중학교',
+      distance: 60,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 60, total: 331 },
+        { distance: 50, total: 324 },
+        { distance: 40, total: 339 },
+        { distance: 30, total: 351 },
+      ],
+    }),
+  ];
 }
 
-const SAMPLE_SHEETS = [];
+const SAMPLE_SHEETS = [
+  {
+    id: "sheet_2026_03_22",
+    date: "2026-03-22",
+    division: "초등4",
+    recordInputType: "distance",
+    sheetLabel: "테스트기록지 2026-03-22",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "황리우", school: "천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
+      { name: "김설", school: "안양서초등학교", rounds: [277, 312, 314, 332], total: 1235 },
+      { name: "김태리", school: "하성초등학교", rounds: [271, 302, 320, 334], total: 1227 },
+      { name: "조유나", school: "수진초등학교", rounds: [271, 302, 311, 326], total: 1210 },
+      { name: "장윤혜", school: "송정초등학교", rounds: [282, 288, 293, 336], total: 1199 },
+      { name: "원율", school: "여흥초등학교", rounds: [264, 291, 319, 310], total: 1184 },
+      { name: "김서우", school: "수진초등학교", rounds: [279, 276, 302, 291], total: 1148 },
+      { name: "홍지수", school: "송정초등학교", rounds: [248, 264, 294, 318], total: 1124 },
+      { name: "김소율", school: "타겟28양궁클럽", rounds: [278, 232, 272, 326], total: 1108 },
+      { name: "강민서", school: "여흥초등학교", rounds: [253, 263, 270, 303], total: 1089 },
+      { name: "조윤서", school: "안양서초등학교", rounds: [253, 242, 277, 300], total: 1072 },
+      { name: "송의나", school: "수진초등학교", rounds: [227, 270, 269, 304], total: 1070 },
+      { name: "백수연", school: "여흥초등학교", rounds: [202, 270, 275, 320], total: 1067 },
+      { name: "김윤서", school: "원미초등학교", rounds: [195, 255, 290, 301], total: 1041 },
+      { name: "백가은", school: "안양서초등학교", rounds: [165, 216, 273, 288], total: 942 },
+      { name: "김민채", school: "천현초등학교", rounds: [225, 213, 250, 243], total: 931 },
+      { name: "조예늘", school: "하성초등학교", rounds: [189, 203, 250, 278], total: 920 },
+      { name: "윤이진", school: "여흥초등학교", rounds: [145, 194, 231, 307], total: 877 },
+      { name: "고은", school: "안양서초등학교", rounds: [177, 212, 229, 255], total: 873 },
+      { name: "황리안", school: "천현초등학교", rounds: [159, 152, 209, 245], total: 765 },
+      { name: "이주아", school: "안양서초등학교", rounds: [65, 138, 117, 184], total: 504 },
+    ],
+  },
+  {
+    id: "sheet_2026_04_12",
+    date: "2026-04-12",
+    division: "초등4",
+    recordInputType: "distance",
+    sheetLabel: "테스트기록지 2026-04-12",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
+      { name: "김태리", school: "하성초등학교", rounds: [298, 311, 322, 345], total: 1276 },
+      { name: "조유나", school: "수진초등학교", rounds: [292, 301, 319, 339], total: 1251 },
+      { name: "장윤혜", school: "송정초등학교", rounds: [294, 286, 320, 330], total: 1230 },
+      { name: "김서우", school: "수진초등학교", rounds: [262, 304, 323, 338], total: 1227 },
+      { name: "김설", school: "안양서초등학교", rounds: [270, 301, 315, 327], total: 1213 },
+      { name: "강민서", school: "여흥초등학교", rounds: [272, 288, 317, 325], total: 1202 },
+      { name: "김소율", school: "타겟28양궁클럽", rounds: [244, 275, 307, 332], total: 1158 },
+      { name: "홍지수", school: "송정초등학교", rounds: [257, 288, 294, 314], total: 1153 },
+      { name: "원율", school: "여흥초등학교", rounds: [242, 261, 308, 327], total: 1138 },
+      { name: "송의나", school: "수진초등학교", rounds: [246, 257, 307, 325], total: 1135 },
+      { name: "김민채", school: "천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
+      { name: "백가은", school: "안양서초등학교", rounds: [238, 230, 272, 302], total: 1042 },
+      { name: "조예늘", school: "하성초등학교", rounds: [166, 242, 292, 304], total: 1004 },
+      { name: "백수연", school: "여흥초등학교", rounds: [179, 245, 252, 292], total: 968 },
+      { name: "김윤서", school: "원미초등학교", rounds: [165, 198, 258, 249], total: 870 },
+      { name: "조윤서", school: "안양서초등학교", rounds: [190, 230, 218, 223], total: 861 },
+      { name: "윤이진", school: "여흥초등학교", rounds: [139, 185, 252, 267], total: 843 },
+      { name: "고은", school: "안양서초등학교", rounds: [139, 185, 207, 260], total: 829 },
+      { name: "황리안", school: "천현초등학교", rounds: [157, 205, 211, 281], total: 755 },
+      { name: "김바다", school: "당정초등학교", rounds: [112, 151, 263, 312], total: 575 },
+      { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
+    ],
+  },
+];
 
 function makeSampleUserId(name, school) {
   return `sample_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
@@ -1025,49 +1187,34 @@ function ProfileAvatar({ user, size = "md" }) {
   );
 }
 
-function Hero() {
+function Hero({ activeTab = "record" }) {
+  const heroTitleMap = {
+    record: "X-SESSION",
+    dashboard: "X-DASHBOARD",
+    ranking: "X-RANKING",
+    analysis: "X-ANALYSIS",
+    profile: "PROFILE",
+    admin: "ADMIN",
+    login: "LOGIN",
+  };
+
+  const currentTitle = heroTitleMap[activeTab] || "X-SESSION";
+
   return (
-  <div
-  style={{
-    width: "100%",
-    padding: "20px 16px",
-    borderRadius: 24,
-    background:
-      "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #7f1d1d 100%)",
-    color: "#fff",
-    textAlign: "center",
-  }}
->
-  <div
-    style={{
-      fontSize: "clamp(28px, 7vw, 36px)",
-      fontWeight: 900,
-      letterSpacing: "-0.03em",
-    }}
-  >
-    X-SESSION
-  </div>
-
-  <div
-    style={{
-      fontSize: 14,
-      opacity: 0.6,
-      margin: "4px 0",
-    }}
-  >
-    →
-  </div>
-
-  <div
-    style={{
-      fontSize: "clamp(28px, 7vw, 36px)",
-      fontWeight: 900,
-      letterSpacing: "-0.03em",
-    }}
-  >
-    X-RANKING
-  </div>
-</div>
+    <div className="grid gap-4">
+      <Card className="overflow-hidden rounded-[28px] border-0 bg-gradient-to-br from-blue-950 via-slate-900 to-red-900 text-white shadow-2xl">
+        <CardContent className="px-5 py-6 sm:px-6 sm:py-7 md:px-8 md:py-8">
+          <div className="text-center">
+            <div className="text-base font-semibold tracking-[0.24em] text-white/80 sm:text-lg">
+              X-SESSION
+            </div>
+            <div className="mt-2 text-[clamp(28px,7vw,40px)] font-black leading-none tracking-[-0.04em] text-white">
+              {currentTitle}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -3919,7 +4066,7 @@ function XSessionApp() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
-        <Hero />
+        <Hero activeTab={currentUser ? ui.activeTab : "login"} />
 
         {authLoading && !authUser ? (
           <Card className="rounded-[28px] border-0 bg-white shadow-xl">
