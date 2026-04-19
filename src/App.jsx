@@ -281,7 +281,7 @@ function normalizeDivisionLabel(value) {
 
 function normalizeSessionShape(session, profile = null) {
   const safe = session || {};
-  const arrowsPerEnd = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(safe.arrowsPerEnd) || 6));
+  const arrowsPerEnd = safe.arrowsPerEnd || 6;
   const ends = Array.isArray(safe.ends) && safe.ends.length
     ? safe.ends.map((end, idx) => ({
         id: end.id || uid("end"),
@@ -852,7 +852,7 @@ function buildSessionPayload({ draftSession, profile, uid }) {
     groupName: profile.groupName || "",
     regionCity: profile.regionCity || "",
     division: draftSession.division || profile.division || "",
-    arrowsPerEnd: Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(draftSession.arrowsPerEnd) || 6)),
+    arrowsPerEnd: draftSession.arrowsPerEnd,
     arrowsPerDistance: draftSession.arrowsPerDistance || 36,
     endCount: isDistanceInput ? 0 : draftSession.ends.length,
     distanceRoundCount: isDistanceInput ? (draftSession.distanceRounds || []).length : 0,
@@ -916,7 +916,7 @@ function fromFirestoreSession(docSnap) {
     groupName: data.groupName || "",
     regionCity: data.regionCity || "",
     regionDistrict: data.regionDistrict || "",
-    arrowsPerEnd: Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(data.arrowsPerEnd) || 6)),
+    arrowsPerEnd: data.arrowsPerEnd || 6,
     arrowsPerDistance: data.arrowsPerDistance || 36,
     distanceRounds: (data.distanceRounds || []).map((round) => ({ distance: round.distance, total: round.total })),
     totalEnds: data.endCount || (data.ends?.length ?? 0),
@@ -1855,7 +1855,7 @@ function SessionEditor({
 
   return (
     <>
-      <div className="session-editor-grid grid gap-5 xl:grid-cols-[0.88fr_1.12fr]">
+      <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
         <Card className="self-start rounded-[28px] border-0 bg-white shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center justify-between gap-2">
@@ -1875,8 +1875,8 @@ function SessionEditor({
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="space-y-5 overflow-hidden">
-            <div className="grid gap-4 md:grid-cols-2">
+          <CardContent className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label>날짜</Label>
                 <Input
@@ -1954,10 +1954,13 @@ function SessionEditor({
               {session.recordInputType === "end" ? (
                 <div className="grid gap-2">
                   <Label>엔드당 화살 수</Label>
-                  <Select
-                    value={String(session.arrowsPerEnd)}
-                    onValueChange={(value) => {
-                      const next = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(value) || 1));
+                  <Input
+                    type="number"
+                    min={1}
+                    max={6}
+                    value={session.arrowsPerEnd}
+                    onChange={(e) => {
+                      const next = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(e.target.value) || 1));
                       patchSession((prev) => ({
                         ...prev,
                         arrowsPerEnd: next,
@@ -1967,18 +1970,7 @@ function SessionEditor({
                         })),
                       }));
                     }}
-                  >
-                    <SelectTrigger className="w-full min-w-0">
-                      <SelectValue placeholder="화살 수 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6].map((count) => (
-                        <SelectItem key={count} value={String(count)}>
-                          {count}발
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
               ) : (
                 <div className="grid gap-2">
@@ -2008,10 +2000,10 @@ function SessionEditor({
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 md:pb-6">
+        <div className="grid gap-4 pb-28 md:pb-6">
           {session.recordInputType === "end" ? (
-            <div className="grid gap-4">
-              <div className="rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
+            <>
+              <div className="sticky top-2 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
                 <Card className="border-0 bg-transparent shadow-none">
                   <CardContent className="p-3 md:p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
@@ -2041,8 +2033,7 @@ function SessionEditor({
                 </Card>
               </div>
 
-              <div className="grid gap-4 max-h-[calc(100vh-23rem)] overflow-y-auto overscroll-contain pr-1 md:max-h-none md:overflow-visible md:pr-0">
-                {session.ends.map((end) => (
+              {session.ends.map((end) => (
                 <Card key={end.id} className="rounded-[28px] border-0 bg-white shadow-xl">
                   <CardContent className="p-4 md:p-5">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -2145,8 +2136,7 @@ function SessionEditor({
                   </CardContent>
                 </Card>
               ))}
-              </div>
-            </div>
+            </>
           ) : (
             <>
               <div className="grid gap-3">
@@ -2169,7 +2159,7 @@ function SessionEditor({
                         </Button>
                       </div>
 
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <div className="grid gap-2">
                           <Label>거리 (m)</Label>
                           <Input
@@ -2966,7 +2956,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>라이벌 선택</Label>
-              <select value={selectedRival} onChange={(e) => setSelectedRival(e.target.value)} className="h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none md:w-[240px]">
+              <select value={selectedRival} onChange={(e) => setSelectedRival(e.target.value)} className="h-11 min-w-[240px] rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {rivalCandidates.length === 0 ? (
                   <option value="none">비교할 선수가 없음</option>
                 ) : (
@@ -3903,7 +3893,7 @@ function XSessionApp() {
           distance: payload.distance,
           groupName: payload.groupName,
           division: payload.division,
-          arrowsPerEnd: Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(payload.arrowsPerEnd) || 6)),
+          arrowsPerEnd: payload.arrowsPerEnd,
           arrowsPerDistance: payload.arrowsPerDistance,
           endCount: payload.endCount,
           distanceRoundCount: payload.distanceRoundCount,
@@ -3976,7 +3966,7 @@ function XSessionApp() {
         ...end,
         id: end.id || uid("edit_end"),
         index: idx + 1,
-        arrows: Array.from({ length: Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(target.arrowsPerEnd) || 6)) }, (_, i) => end.arrows?.[i] ?? null),
+        arrows: Array.from({ length: target.arrowsPerEnd || 6 }, (_, i) => end.arrows?.[i] ?? null),
       })),
     });
     setEditingSessionId(target.isSampleData ? null : target.id);
@@ -4073,23 +4063,7 @@ function XSessionApp() {
   const adminEmailGuard = isAdminEmail;
 
   return (
-    <div className="xsession-mobile-safe min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      <style>{`
-        *, *::before, *::after { box-sizing: border-box; }
-        html, body { overflow-x: hidden; }
-        .xsession-mobile-safe .session-editor-grid,
-        .xsession-mobile-safe .session-editor-grid > *,
-        .xsession-mobile-safe .session-editor-grid .grid > *,
-        .xsession-mobile-safe .session-editor-grid [data-radix-popper-content-wrapper],
-        .xsession-mobile-safe .session-editor-grid input,
-        .xsession-mobile-safe .session-editor-grid select,
-        .xsession-mobile-safe .session-editor-grid button,
-        .xsession-mobile-safe .session-editor-grid svg,
-        .xsession-mobile-safe .session-editor-grid canvas { min-width: 0; max-width: 100%; }
-        @media (max-width: 767px) {
-          .xsession-mobile-safe .session-editor-grid .rounded-\[28px\] { border-radius: 24px; }
-        }
-      `}</style>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
         <Hero />
 
