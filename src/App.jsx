@@ -1187,29 +1187,29 @@ function ProfileAvatar({ user, size = "md" }) {
   );
 }
 
-function Hero({ activeTab }) {
-  const heroLabelMap = {
-    record: "X-SESSION",
-    dashboard: "X-DASHBOARD",
-    ranking: "X-RANKING",
-    analysis: "X-ANALYSIS",
-    profile: "PROFILE",
-    admin: "ADMIN",
-  };
-
-  const currentLabel = heroLabelMap[activeTab] || "X-SESSION";
-
+function Hero() {
   return (
     <div className="grid gap-4">
       <Card className="overflow-hidden rounded-[28px] border-0 bg-gradient-to-br from-blue-950 via-slate-900 to-red-900 text-white shadow-2xl">
-        <CardContent className="px-5 py-5 md:px-8 md:py-7">
-          <div className="text-center">
-            <div className="text-[18px] font-semibold tracking-[0.18em] text-white/75 md:text-[20px]">
+        <CardContent className="p-6 md:p-8">
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge className="rounded-full border-0 bg-white/15 px-3 py-1 text-white">
               X-SESSION
-            </div>
-            <div className="mt-2 text-[clamp(28px,7vw,42px)] font-black leading-[1.05] tracking-[-0.03em] text-white">
-              {currentLabel}
-            </div>
+            </Badge>
+            <Badge className="rounded-full border-0 bg-red-500/80 px-3 py-1 text-white">
+              X-Session Platform
+            </Badge>
+            <Badge className="rounded-full border-0 bg-blue-500/80 px-3 py-1 text-white">
+              X Brand System
+            </Badge>
+          </div>
+          <div className="mt-6 max-w-4xl">
+            <h1 className="text-4xl font-black leading-tight tracking-tight md:text-6xl">
+              X-Session으로 기록하고, X-Ranking으로 증명한다.
+            </h1>
+            <p className="mt-5 max-w-3xl text-lg text-slate-200 md:text-2xl">
+              이 버전은 X-Session, X-Dashboard, X-Ranking, X-Analysis 구조를 기준으로 한 Firebase 실전 연결형 v1이다.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -1769,29 +1769,30 @@ function SessionEditor({
           </CardHeader>
 
           <CardContent className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label>날짜</Label>
+            <div className="grid gap-3">
+              <div className="flex items-center gap-3">
+                <Label className="w-24 shrink-0 text-sm">날짜</Label>
                 <Input
+                  className="h-11 flex-1"
                   type="date"
                   value={session.sessionDate}
                   onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value }))}
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label>입력 방식</Label>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-start gap-3">
+                <Label className="w-24 shrink-0 pt-3 text-sm">입력 방식</Label>
+                <div className="grid flex-1 grid-cols-2 gap-2">
                   <Button
                     variant={session.recordInputType === "end" ? "default" : "outline"}
-                    className="rounded-2xl bg-blue-900 hover:bg-blue-800"
+                    className="h-11 rounded-2xl bg-blue-900 px-3 hover:bg-blue-800"
                     onClick={() => applyRecordInputType("end")}
                   >
                     엔드 기반
                   </Button>
                   <Button
                     variant={session.recordInputType === "distance" ? "default" : "outline"}
-                    className="rounded-2xl bg-emerald-700 hover:bg-emerald-600"
+                    className="h-11 rounded-2xl bg-emerald-700 px-3 hover:bg-emerald-600"
                     onClick={() => applyRecordInputType("distance")}
                   >
                     거리 기반
@@ -1799,54 +1800,55 @@ function SessionEditor({
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label>기록 방식</Label>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-start gap-3">
+                <Label className="w-24 shrink-0 pt-3 text-sm">기록 방식</Label>
+                <div className="grid flex-1 grid-cols-2 gap-2">
                   <Button
                     variant={session.mode === "cumulative" ? "default" : "outline"}
-                    className="rounded-2xl bg-blue-900 hover:bg-blue-800"
+                    className="h-11 rounded-2xl bg-blue-900 px-3 hover:bg-blue-800"
                     onClick={() => applyMode("cumulative")}
                   >
                     누적제
                   </Button>
                   <Button
                     variant={session.mode === "set" ? "default" : "outline"}
-                    className="rounded-2xl bg-red-700 hover:bg-red-600"
+                    className="h-11 rounded-2xl bg-red-700 px-3 hover:bg-red-600"
                     onClick={() => applyMode("set")}
-                    
                   >
                     세트제
                   </Button>
                 </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label>거리 (m)</Label>
-                <Select
-                  value={String(session.distance)}
-                  onValueChange={(value) => patchSession((prev) => ({ ...prev, distance: Number(value) }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="거리 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DISTANCE_OPTIONS.map((distance) => (
-                      <SelectItem key={distance} value={String(distance)}>
-                        {distance}m
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-3">
+                <Label className="w-24 shrink-0 text-sm">거리 (m)</Label>
+                <div className="flex-1">
+                  <Select
+                    value={String(session.distance)}
+                    onValueChange={(value) => patchSession((prev) => ({ ...prev, distance: Number(value) }))}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="거리 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DISTANCE_OPTIONS.map((distance) => (
+                        <SelectItem key={distance} value={String(distance)}>
+                          {distance}m
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="grid gap-2">
-                <Label>학년</Label>
-                <Input value={session.division || ""} disabled />
+              <div className="flex items-center gap-3">
+                <Label className="w-24 shrink-0 text-sm">학년</Label>
+                <Input className="h-11 flex-1" value={session.division || ""} disabled />
               </div>
 
               {session.recordInputType === "end" ? (
-                <div className="grid gap-2">
-                  <Label>엔드당 화살 수</Label>
+                <div className="flex items-center gap-3">
+                  <Label className="w-24 shrink-0 text-sm">엔드당 화살 수</Label>
                   <select
                     value={String(session.arrowsPerEnd)}
                     onChange={(e) => {
@@ -1860,7 +1862,7 @@ function SessionEditor({
                         })),
                       }));
                     }}
-                    className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                    className="h-11 flex-1 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
                   >
                     {[1, 2, 3, 4, 5, 6].map((count) => (
                       <option key={count} value={String(count)}>{count}</option>
@@ -1868,9 +1870,10 @@ function SessionEditor({
                   </select>
                 </div>
               ) : (
-                <div className="grid gap-2">
-                  <Label>거리당 화살 수</Label>
+                <div className="flex items-center gap-3">
+                  <Label className="w-24 shrink-0 text-sm">거리당 화살 수</Label>
                   <Input
+                    className="h-11 flex-1"
                     type="number"
                     min={1}
                     value={session.arrowsPerDistance || 36}
@@ -1884,7 +1887,7 @@ function SessionEditor({
                 </div>
               )}
 
-              <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4 sm:col-span-2">
+              <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span>X-Session 진행률</span>
                   <span>{progress}%</span>
@@ -2279,26 +2282,26 @@ function Dashboard({ sessions, loading, onEditSession }) {
 
   return (
     <div className="grid gap-4">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
-              <div className="p-5">
-                <div className="text-sm opacity-80">전일 세션 누적 점수</div>
-                <div className="mt-2 text-3xl font-bold tracking-tight">
+              <div className="p-4 md:p-5">
+                <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 누적 점수</div>
+                <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {previousDayTotal}
                 </div>
-                <div className="mt-2 text-xs opacity-80">
+                <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
                   {yesterdayKey} 세션 점수 합산
                 </div>
               </div>
 
-              <div className="p-5">
-                <div className="text-sm opacity-80">당일 세션 누적 점수</div>
-                <div className="mt-2 text-3xl font-bold tracking-tight">
+              <div className="p-4 md:p-5">
+                <div className="text-[13px] leading-snug opacity-80 md:text-sm">당일 세션 누적 점수</div>
+                <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {todayTotal}
                 </div>
-                <div className="mt-2 text-xs opacity-80">
+                <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
                   {todayCount ? `오늘 세션 ${todayCount}개 · 평균 ${todayAverage}` : "오늘 기록 없음"}
                 </div>
               </div>
@@ -2309,22 +2312,22 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
-              <div className="p-5">
-                <div className="text-sm opacity-80">전일 세션 화살 평균 점수</div>
-                <div className="mt-2 text-3xl font-bold tracking-tight">
+              <div className="p-4 md:p-5">
+                <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 화살 평균 점수</div>
+                <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {previousDayAverage}
                 </div>
-                <div className="mt-2 text-xs opacity-80">
+                <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
                   X {previousDayXCount}개
                 </div>
               </div>
 
-              <div className="p-5">
-                <div className="text-sm opacity-80">당일 세션 화살 평균 점수</div>
-                <div className="mt-2 text-3xl font-bold tracking-tight">
+              <div className="p-4 md:p-5">
+                <div className="text-[13px] leading-snug opacity-80 md:text-sm">당일 세션 화살 평균 점수</div>
+                <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {todayAverage}
                 </div>
-                <div className="mt-2 text-xs opacity-80">
+                <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
                   {todayCount ? `X ${todayXCount}개` : "오늘 기록 없음"}
                 </div>
               </div>
@@ -2335,22 +2338,22 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
             <div className="grid grid-cols-2 divide-x divide-slate-900/10">
-              <div className="p-5">
-                <div className="text-sm opacity-80">전일 세션 거리 최고 점수</div>
-                <div className="mt-2 text-3xl font-bold tracking-tight">
+              <div className="p-4 md:p-5">
+                <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 거리 최고 점수</div>
+                <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {previousDayBestScore}
                 </div>
-                <div className="mt-2 text-xs opacity-80">
+                <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
                   {previousDayBest ? `${previousDayBestDistance}m 최고` : "전일 기록 없음"}
                 </div>
               </div>
 
-              <div className="p-5">
-                <div className="text-sm opacity-80">당일 세션 거리 최고 점수</div>
-                <div className="mt-2 text-3xl font-bold tracking-tight">
+              <div className="p-4 md:p-5">
+                <div className="text-[13px] leading-snug opacity-80 md:text-sm">당일 세션 거리 최고 점수</div>
+                <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {todayBestScore}
                 </div>
-                <div className="mt-2 text-xs opacity-80">
+                <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
                   {todayBest ? `${todayBestDistance}m 최고` : "오늘 기록 없음"}
                 </div>
               </div>
@@ -2380,11 +2383,10 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 .map((session) => (
                   <div
                     key={session.id}
-                    className="grid gap-3 rounded-3xl border border-slate-200 p-4 md:grid-cols-[1fr_auto] md:items-center"
+                    className="grid gap-2 rounded-3xl border border-slate-200 p-3 md:grid-cols-[1fr_auto] md:items-center md:gap-3 md:p-4"
                   >
-                    <div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="font-semibold">{session.title}</div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
                           {getModeLabel(session.mode)}
                         </Badge>
@@ -2395,10 +2397,10 @@ function Dashboard({ sessions, loading, onEditSession }) {
                           완료
                         </Badge>
                       </div>
-                      <div className="mt-1 text-sm text-slate-500">
+                      <div className="mt-2 text-sm text-slate-500">
                         {formatDateTime(session.updatedAt)}
                       </div>
-                      <div className="mt-2 text-sm text-slate-700">
+                      <div className="mt-2 text-sm leading-snug text-slate-700">
                         총점 {session.summary?.totalScore ?? getSessionTotal(session)} / {getInputTypeLabel(session.recordInputType)} / X{" "}
                         {session.summary?.xCount ?? getXs(session)} / 평균{" "}
                         {(
@@ -2406,15 +2408,15 @@ function Dashboard({ sessions, loading, onEditSession }) {
                         ).toFixed(2)}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2 text-right text-sm text-slate-500">
-                      <div>
+                    <div className="flex items-center justify-between gap-3 text-sm text-slate-500 md:flex-col md:items-end md:text-right">
+                      <div className="truncate">
                         {session.recordInputType === "distance"
                           ? `거리 기록 ${(session.distanceRounds || []).length}개`
                           : `${session.distance}m · 엔드 ${session.ends.length}개`}
                       </div>
                       <Button
                         variant="outline"
-                        className="rounded-2xl"
+                        className="h-10 rounded-2xl px-4"
                         onClick={() => onEditSession?.(session.id)}
                       >
                         <Pencil className="mr-2 h-4 w-4" /> 수정
@@ -2728,7 +2730,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             </div>
           ) : (
             <>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-3">
                 <Card className="rounded-[24px] border-0 bg-slate-50 shadow-none">
                   <CardContent className="p-5">
                     <div className="mb-2 text-sm text-slate-500">직전 경기 추세</div>
@@ -3932,7 +3934,7 @@ function XSessionApp() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
-        {currentUser ? <Hero activeTab={ui.activeTab} /> : null}
+        {currentUser ? <Hero /> : null}
 
         {authLoading && !authUser ? (
           <Card className="rounded-[28px] border-0 bg-white shadow-xl">
