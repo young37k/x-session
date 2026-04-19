@@ -2008,10 +2008,10 @@ function SessionEditor({
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 pb-32 md:pb-6">
+        <div className="grid gap-4 pb-44 md:pb-6">
           {session.recordInputType === "end" ? (
             <>
-              <div className="sticky bottom-3 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90 md:bottom-auto md:top-2">
+              <div className="fixed inset-x-2 bottom-3 z-40 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90 md:sticky md:inset-x-auto md:bottom-auto md:top-2">
                 <Card className="border-0 bg-transparent shadow-none">
                   <CardContent className="p-3 md:p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
