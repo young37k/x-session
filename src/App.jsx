@@ -1242,22 +1242,14 @@ function FirebaseSetupNoticeCompact() {
 }
 
 
-function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
+function AuthPanel({ onRegister, onLogin, authLoading }) {
   const SAVED_EMAIL_KEY = "elbowshot_saved_email";
   const [form, setForm] = useState({
-    name: "",
     email: "",
     password: "",
-    division: "전체학년",
-    groupName: "",
-    regionCity: "",
-    regionDistrict: "",
   });
   const [rememberEmail, setRememberEmail] = useState(false);
   const [error, setError] = useState("");
-  const [mode, setMode] = useState("login");
-
-  const districtOptions = useMemo(() => getDistrictOptions(form.regionCity), [form.regionCity]);
 
   useEffect(() => {
     try {
@@ -1271,9 +1263,7 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
     }
   }, []);
 
-  async function submit(e) {
-    e.preventDefault();
-
+  async function handleSubmit(action) {
     if (!form.email.trim() || !form.email.includes("@")) {
       return setError("올바른 이메일이 필요하다.");
     }
@@ -1282,29 +1272,9 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
       return setError("비밀번호는 최소 6자 이상이어야 한다.");
     }
 
-    if (mode === "register") {
-      if (!form.name.trim()) return setError("이름을 입력해야 한다.");
-      if (!form.division) return setError("학년 또는 부문을 선택해야 한다.");
-      if (!form.groupName.trim()) return setError("소속을 입력해야 한다.");
-      if (!form.regionCity) return setError("지역(시/도)을 선택해야 한다.");
-      if (!form.regionDistrict) return setError("지역(구/군)을 선택해야 한다.");
-
-      setError("");
-      await onRegister({
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-        division: form.division,
-        groupName: form.groupName.trim(),
-        regionCity: form.regionCity,
-        regionDistrict: form.regionDistrict,
-      });
-      return;
-    }
+    const normalizedEmail = form.email.trim().toLowerCase();
 
     try {
-      const normalizedEmail = form.email.trim().toLowerCase();
-
       if (rememberEmail) {
         localStorage.setItem(SAVED_EMAIL_KEY, normalizedEmail);
       } else {
@@ -1315,194 +1285,117 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
     }
 
     setError("");
+
+    if (action === "register") {
+      await onRegister({
+        name: normalizedEmail.split("@")[0],
+        email: normalizedEmail,
+        password: form.password,
+        division: "전체학년",
+        groupName: "",
+        regionCity: "",
+        regionDistrict: "",
+      });
+      return;
+    }
+
     await onLogin({
-      email: form.email.trim().toLowerCase(),
+      email: normalizedEmail,
       password: form.password,
     });
   }
 
   return (
-    <Card className="rounded-[28px] border-0 bg-white shadow-xl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl">
-          <User className="h-5 w-5 text-blue-700" />
-          {mode === "register" ? "회원가입" : "로그인"}
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <div className="mb-4 flex gap-2">
-          <Button
-            variant={mode === "login" ? "default" : "outline"}
-            className="rounded-2xl"
-            onClick={() => setMode("login")}
-          >
-            로그인
-          </Button>
-          <Button
-            variant={mode === "register" ? "default" : "outline"}
-            className="rounded-2xl"
-            onClick={() => setMode("register")}
-          >
-            회원가입
-          </Button>
-        </div>
-
-        <form className="grid gap-4 md:grid-cols-2" onSubmit={submit}>
-          {mode === "register" && (
-            <>
-              <div className="grid gap-2">
-                <Label>이름</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>학년/부문</Label>
-                <Select
-                  value={form.division || undefined}
-                  onValueChange={(value) => setForm({ ...form, division: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="학년 또는 부문 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DIVISION_OPTIONS.map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {item}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label>소속</Label>
-                <Input
-                  value={form.groupName}
-                  onChange={(e) => setForm({ ...form, groupName: e.target.value })}
-                  placeholder="예: 서울체고, OO클럽, OO실업팀"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label>지역(시/도)</Label>
-                <select
-                  value={form.regionCity || ""}
-                  onChange={(e) =>
-                    setForm({ ...form, regionCity: e.target.value, regionDistrict: "" })
-                  }
-                  className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
-                >
-                  <option value="">지역 선택</option>
-                  {REGION_CITY_OPTIONS.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid gap-2 md:col-span-2">
-                <Label>지역(구/군)</Label>
-                <select
-                  value={form.regionDistrict || ""}
-                  onChange={(e) => setForm({ ...form, regionDistrict: e.target.value })}
-                  disabled={!form.regionCity}
-                  className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none disabled:bg-slate-50"
-                >
-                  <option value="">구/군 선택</option>
-                  {districtOptions.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
-
-          <div className="grid gap-2">
-            <Label>이메일</Label>
-            <Input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label>비밀번호</Label>
-            <Input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-            />
-          </div>
-
-          {mode === "login" && (
-            <div className="md:col-span-2 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
-              <input
-                id="remember-email"
-                type="checkbox"
-                checked={rememberEmail}
-                onChange={(e) => setRememberEmail(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300"
-              />
-              <label htmlFor="remember-email" className="cursor-pointer select-none">
-                이메일 저장
-              </label>
-              <span className="text-xs text-slate-500">다음 로그인 때 이메일을 자동으로 불러온다.</span>
-            </div>
-          )}
-
-          <div className="md:col-span-2 flex flex-col gap-3">
+    <div
+      className="relative overflow-hidden rounded-[36px] shadow-2xl"
+      style={{
+        minHeight: "calc(100vh - 32px)",
+        backgroundImage: "url('/login-background.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.06)_0%,rgba(2,6,23,0.22)_100%)]" />
+      <div className="relative flex min-h-[calc(100vh-32px)] items-end justify-center p-4 sm:p-6">
+        <div className="w-full max-w-md rounded-[30px] bg-transparent p-4 sm:p-5">
+          <div className="grid gap-4">
             {error && (
-              <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
                 <AlertCircle className="h-4 w-4" /> {error}
               </div>
             )}
 
-            <Button
-              type="submit"
-              disabled={authLoading}
-              className="h-11 rounded-2xl bg-blue-900 text-base hover:bg-blue-800"
-            >
-              {authLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ArrowRight className="mr-2 h-4 w-4" />
-              )}
-              {mode === "register" ? "X-SESSION 가입" : "X-SESSION 로그인"}
-            </Button>
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="text-sm font-semibold text-white">이메일</Label>
+                <label htmlFor="remember-email" className="flex cursor-pointer items-center gap-2 text-xs font-medium text-white/95">
+                  <input
+                    id="remember-email"
+                    type="checkbox"
+                    checked={rememberEmail}
+                    onChange={(e) => setRememberEmail(e.target.checked)}
+                    className="h-4 w-4 rounded border-white/40"
+                  />
+                  이메일 저장
+                </label>
+              </div>
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="이메일 입력"
+                className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+              />
+            </div>
 
-            {mode === "login" && (
+            <div className="grid gap-2">
+              <Label className="text-sm font-semibold text-white">비밀번호</Label>
+              <Input
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="비밀번호 입력"
+                className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
               <Button
                 type="button"
-                variant="outline"
                 disabled={authLoading}
-                className="h-11 rounded-2xl"
+                className="h-12 rounded-2xl bg-blue-950 text-base font-semibold hover:bg-blue-900"
                 onClick={async () => {
-                  setError("");
                   try {
-                    await onAdminLogin({
-                      email: form.email.trim().toLowerCase(),
-                      password: form.password,
-                    });
+                    await handleSubmit("login");
                   } catch (error) {
-                    setError(error.message || "관리자 로그인에 실패했다.");
+                    setError(error.message || "로그인에 실패했다.");
                   }
                 }}
               >
-                관리자 페이지 로그인
+                {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
+                로그인
               </Button>
-            )}
+
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={authLoading}
+                className="h-12 rounded-2xl border-0 bg-white/92 text-base font-semibold text-slate-900 hover:bg-white"
+                onClick={async () => {
+                  try {
+                    await handleSubmit("register");
+                  } catch (error) {
+                    setError(error.message || "회원가입에 실패했다.");
+                  }
+                }}
+              >
+                회원가입
+              </Button>
+            </div>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -4039,7 +3932,7 @@ function XSessionApp() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
-        <Hero />
+        {currentUser ? <Hero /> : null}
 
         {authLoading && !authUser ? (
           <Card className="rounded-[28px] border-0 bg-white shadow-xl">
@@ -4049,7 +3942,7 @@ function XSessionApp() {
           </Card>
         ) : !currentUser ? (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <AuthPanel onRegister={handleRegister} onLogin={handleLogin} onAdminLogin={handleAdminLogin} authLoading={authLoading} />
+            <AuthPanel onRegister={handleRegister} onLogin={handleLogin} authLoading={authLoading} />
           </motion.div>
         ) : (
           <>
