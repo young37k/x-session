@@ -2387,7 +2387,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
-            <div className="grid grid-cols-1 divide-y divide-white/20 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="grid grid-cols-2 divide-x divide-white/20">
               <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 누적 점수</div>
                 <div className="mt-2 text-3xl font-bold tracking-tight">
@@ -2413,7 +2413,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
 
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
-            <div className="grid grid-cols-1 divide-y divide-white/20 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="grid grid-cols-2 divide-x divide-white/20">
               <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 화살 평균 점수</div>
                 <div className="mt-2 text-3xl font-bold tracking-tight">
@@ -2439,7 +2439,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
 
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
-            <div className="grid grid-cols-1 divide-y divide-slate-900/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="grid grid-cols-2 divide-x divide-slate-900/10">
               <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 거리 최고 점수</div>
                 <div className="mt-2 text-3xl font-bold tracking-tight">
@@ -2485,41 +2485,41 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 .map((session) => (
                   <div
                     key={session.id}
-                    className="rounded-3xl border border-slate-200 p-3 sm:p-4"
+                    className="grid gap-3 rounded-3xl border border-slate-200 p-4 md:grid-cols-[1fr_auto] md:items-center"
                   >
-                    <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                      <div className="min-w-0">
-                        <div className="truncate text-base font-semibold">{session.title}</div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 px-2 py-1 text-[11px] text-white sm:text-xs">
-                            {getModeLabel(session.mode)}
-                          </Badge>
-                          <Badge className="rounded-full bg-slate-700 px-2 py-1 text-[11px] text-white sm:text-xs">
-                            {getInputTypeLabel(session.recordInputType)}
-                          </Badge>
-                          <Badge className="rounded-full bg-emerald-600 px-2 py-1 text-[11px] text-white sm:text-xs">
-                            완료
-                          </Badge>
-                        </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="font-semibold">{session.title}</div>
+                        <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
+                          {getModeLabel(session.mode)}
+                        </Badge>
+                        <Badge className="rounded-full bg-slate-700 text-white">
+                          {getInputTypeLabel(session.recordInputType)}
+                        </Badge>
+                        <Badge className="rounded-full bg-emerald-600 text-white">
+                          완료
+                        </Badge>
                       </div>
-                      <div className="text-xs text-slate-500 md:shrink-0 md:text-right">
+                      <div className="mt-1 text-sm text-slate-500">
                         {formatDateTime(session.updatedAt)}
                       </div>
+                      <div className="mt-2 text-sm text-slate-700">
+                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} / {getInputTypeLabel(session.recordInputType)} / X{" "}
+                        {session.summary?.xCount ?? getXs(session)} / 평균{" "}
+                        {(
+                          session.summary?.averageArrow ?? getAverageArrow(session)
+                        ).toFixed(2)}
+                      </div>
                     </div>
-                    <div className="mt-2 text-sm text-slate-700">
-                      총점 {session.summary?.totalScore ?? getSessionTotal(session)} · {getInputTypeLabel(session.recordInputType)} · X {session.summary?.xCount ?? getXs(session)} · 평균 {(
-                        session.summary?.averageArrow ?? getAverageArrow(session)
-                      ).toFixed(2)}
-                    </div>
-                    <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
-                      <div className="min-w-0 truncate">
+                    <div className="flex flex-col items-end gap-2 text-right text-sm text-slate-500">
+                      <div>
                         {session.recordInputType === "distance"
                           ? `거리 기록 ${(session.distanceRounds || []).length}개`
                           : `${session.distance}m · 엔드 ${session.ends.length}개`}
                       </div>
                       <Button
                         variant="outline"
-                        className="h-10 rounded-2xl px-4 md:w-auto"
+                        className="rounded-2xl"
                         onClick={() => onEditSession?.(session.id)}
                       >
                         <Pencil className="mr-2 h-4 w-4" /> 수정
@@ -2600,7 +2600,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
           <CardContent>
             {myRank ? (
               <div className="space-y-4">
-                <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-4 sm:p-6 text-white shadow-lg">
+                <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-6 text-white shadow-lg">
                   <div className="text-sm opacity-80">현재 순위</div>
                   <div className="mt-2 text-5xl font-bold">#{myRank.rank}</div>
                   <div className="mt-2 text-sm opacity-90">X {myRank.xCount} / 평균 화살 점수 {myRank.avgArrow.toFixed(2)}</div>
@@ -2625,14 +2625,14 @@ function RankingBoard({ users, sessions, currentUserId }) {
             </CardHeader>
             <CardContent className="grid gap-3">
               {top3.map((item) => (
-                <div key={item.userId} className="rounded-3xl border border-slate-200 p-3 sm:p-4">
+                <div key={item.userId} className="rounded-3xl border border-slate-200 p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-300 text-sm font-bold text-slate-900 sm:h-10 sm:w-10 sm:text-base">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-300 font-bold text-slate-900">
                       {item.rank}
                     </div>
-                    <div className="min-w-0">
-                      <div className="truncate font-semibold">{item.name}</div>
-                      <div className="truncate text-xs text-slate-500 sm:text-sm">{item.groupName} · {item.regionCity}</div>
+                    <div>
+                      <div className="font-semibold">{item.name}</div>
+                      <div className="text-sm text-slate-500">{item.groupName} · {item.regionCity}</div>
                     </div>
                   </div>
                 </div>
@@ -2649,10 +2649,10 @@ function RankingBoard({ users, sessions, currentUserId }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <div className="grid gap-2">
-              <Label>거리</Label>
-              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+          <div className="grid gap-2.5">
+            <div className="flex items-center gap-2">
+              <Label className="w-20 shrink-0 text-sm font-semibold text-slate-800">거리</Label>
+              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 거리</option>
                 {DISTANCE_OPTIONS.map((distance) => (
                   <option key={distance} value={String(distance)}>{distance}m</option>
@@ -2660,17 +2660,17 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label>학년</Label>
-              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+            <div className="flex items-center gap-2">
+              <Label className="w-20 shrink-0 text-sm font-semibold text-slate-800">학년</Label>
+              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 학년</option>
                 {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label>학교/소속팀</Label>
-              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+            <div className="flex items-center gap-2">
+              <Label className="w-20 shrink-0 text-sm font-semibold text-slate-800">학교/소속팀</Label>
+              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 학교/소속팀</option>
                 {groupOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
@@ -2678,9 +2678,9 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label>지역</Label>
-              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+            <div className="flex items-center gap-2">
+              <Label className="w-20 shrink-0 text-sm font-semibold text-slate-800">지역</Label>
+              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 지역</option>
                 {regionOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
@@ -2688,18 +2688,18 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label>경기 방식</Label>
-              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+            <div className="flex items-center gap-2">
+              <Label className="w-20 shrink-0 text-sm font-semibold text-slate-800">경기 방식</Label>
+              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
             </div>
 
-            <div className="grid gap-2">
-              <Label>날짜</Label>
-              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+            <div className="flex items-center gap-2">
+              <Label className="w-20 shrink-0 text-sm font-semibold text-slate-800">날짜</Label>
+              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -2713,24 +2713,24 @@ function RankingBoard({ users, sessions, currentUserId }) {
             ) : (
               <div className="grid gap-3">
                 {sortedRankings.map((item) => (
-                  <div key={item.userId} className={`rounded-3xl border p-3 sm:p-4 ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
-                    <div className="flex items-start gap-3">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-base font-bold text-white sm:h-12 sm:w-12 sm:text-lg ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
+                  <div key={item.userId} className={`rounded-[26px] border p-3 sm:p-4 ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
+                    <div className="grid grid-cols-[44px_1fr_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[52px_1fr_auto]">
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-2xl text-base font-bold text-white sm:h-12 sm:w-12 sm:text-lg ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
                         {item.rank}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <ProfileAvatar user={item} size="sm" />
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-semibold sm:text-base">{item.name}</div>
-                            <div className="truncate text-xs text-slate-500 sm:text-sm">{item.groupName} · {item.regionCity}</div>
-                          </div>
-                          <div className="shrink-0 text-right text-xs text-slate-500 sm:text-sm">총점 {item.totalScore}</div>
+
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <div className="truncate text-base font-semibold text-slate-900">{item.name}</div>
+                          {item.userId === currentUserId && <Badge className="shrink-0 rounded-full bg-blue-900 px-2 py-0.5 text-[11px] text-white">나</Badge>}
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {item.userId === currentUserId && <Badge className="rounded-full bg-blue-900 px-2 py-0.5 text-[10px] text-white sm:text-xs">나</Badge>}
-                          <span className="text-xs text-slate-700 sm:text-sm">X {item.xCount} · 평균 {item.avgArrow.toFixed(2)} · 최고 {item.bestSession} · 세션 {item.sessions}</span>
-                        </div>
+                        <div className="truncate text-sm text-slate-500">{item.groupName}{item.division ? ` · ${item.division}` : ""}</div>
+                      </div>
+
+                      <div className="text-right text-xs font-medium text-slate-500 sm:text-sm">총점 {item.totalScore}</div>
+
+                      <div className="col-span-3 text-sm leading-6 text-slate-700">
+                        X {item.xCount} · 평균 {item.avgArrow.toFixed(2)} · 최고 {item.bestSession} · 세션 {item.sessions}
                       </div>
                     </div>
                   </div>
