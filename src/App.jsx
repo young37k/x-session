@@ -132,7 +132,6 @@ const REGION_CITY_OPTIONS = [
   "제주특별자치도",
   "충청남도",
   "충청북도",
-  "Overseas",
 ];
 
 
@@ -154,7 +153,6 @@ const REGION_OPTIONS = [
   "제주특별자치도",
   "충청남도",
   "충청북도",
-  "Overseas",
 ];
 
 
@@ -176,7 +174,6 @@ const REGION_DISTRICT_MAP = {
   "경상남도": ["창원시","진주시","통영시","사천시","김해시","밀양시","거제시","양산시","의령군","함안군","창녕군","고성군","남해군","하동군","산청군","함양군","거창군","합천군"],
   "경상북도": ["포항시","경주시","김천시","안동시","구미시","영주시","상주시","문경시","경산시","군위군","의성군","청송군","영양군","영덕군","청도군","고령군","성주군","칠곡군","예천군","봉화군","울진군","울릉군"],
   "전라남도": ["목포시","여수시","순천시","나주시","광양시","담양군","곡성군","구례군","고흥군","보성군","화순군","장흥군","강진군","해남군","영암군","무안군","함평군","영광군","장성군","완도군","진도군","신안군"],
-  "Overseas": ["N/A"],
 };
 
 function getDistrictOptions(regionCity) {
@@ -195,155 +192,6 @@ const DATE_FILTER_OPTIONS = [
   { value: "7days", label: "최근 7일" },
   { value: "30days", label: "최근 30일" },
 ];
-
-
-const LANGUAGE_STORAGE_KEY = "xsession_language";
-
-const I18N = {
-  ko: {
-    heroTitle: "X-Session으로 기록하고, X-Ranking으로 증명한다.",
-    heroBody: "이 버전은 X-Session, X-Dashboard, X-Ranking, X-Analysis 구조를 기준으로 한 Firebase 실전 연결형 v1이다.",
-    authTitleLogin: "로그인",
-    authTitleRegister: "회원가입",
-    login: "로그인",
-    register: "회원가입",
-    name: "이름",
-    division: "학년/부문",
-    groupName: "소속",
-    regionCity: "시/도",
-    regionDistrict: "구/군",
-    selectRegion: "지역 선택",
-    selectDistrict: "구/군 선택",
-    email: "이메일",
-    password: "비밀번호",
-    rememberEmail: "이메일 저장",
-    rememberEmailDesc: "다음 로그인 때 이메일을 자동으로 불러온다.",
-    loginButton: "X-SESSION 로그인",
-    registerButton: "X-SESSION 가입",
-    adminLogin: "관리자 페이지 로그인",
-    language: "언어",
-    korean: "한국어",
-    english: "English",
-    logout: "로그아웃",
-    profile: "프로필",
-    admin: "관리자",
-    ranking: "X-Ranking",
-    myRanking: "내 랭킹",
-    top3: "상위 3명",
-    top3Desc: "평균점수가 높은 순서대로 등수 부여",
-    noRankingData: "랭킹을 계산할 기록이 아직 없다.",
-    noPlayersYet: "아직 기록된 선수가 없다.",
-    distance: "거리",
-    allDistance: "전체 거리",
-    allDivision: "전체 학년",
-    schoolTeam: "학교/소속팀",
-    allSchoolTeam: "전체 학교/소속팀",
-    region: "시/도",
-    allRegion: "전국",
-    matchType: "경기 방식",
-    date: "날짜",
-    totalScore: "총점",
-    avgArrow: "평균 화살",
-    bestSession: "최고 경기",
-    sessions: "세션",
-    currentRank: "현재 순위",
-    profileTitle: "프로필 관리",
-    profileHint: "이름의 첫 글자가 자동으로 표시된다.",
-    realNameHint: "정확한 기록 비교와 랭킹 관리를 위해 본명으로 입력하는 것을 권장한다.",
-    saveProfile: "프로필 저장",
-    profileSaved: "프로필이 저장되었다.",
-    authChecking: "인증 상태 확인 중",
-    na: "미입력",
-    record: "X-Session",
-    dashboard: "X-Dashboard",
-    analysis: "X-Analysis",
-    save: "저장",
-    delete: "삭제",
-    temporarySave: "임시 저장",
-    distanceSelect: "거리 선택",
-    divisionSelect: "학년/부문 선택",
-    allRegionLabel: "전체 지역",
-  },
-  en: {
-    heroTitle: "Record with X-Session. Prove it with X-Ranking.",
-    heroBody: "This build is a Firebase-ready practical version based on X-Session, X-Dashboard, X-Ranking, and X-Analysis.",
-    authTitleLogin: "Login",
-    authTitleRegister: "Sign up",
-    login: "Login",
-    register: "Sign up",
-    name: "Name",
-    division: "Division",
-    groupName: "Team / School",
-    regionCity: "Province / City",
-    regionDistrict: "District",
-    selectRegion: "Select region",
-    selectDistrict: "Select district",
-    email: "Email",
-    password: "Password",
-    rememberEmail: "Remember email",
-    rememberEmailDesc: "Automatically fill this email next time.",
-    loginButton: "Login to X-SESSION",
-    registerButton: "Create X-SESSION account",
-    adminLogin: "Admin login",
-    language: "Language",
-    korean: "한국어",
-    english: "English",
-    logout: "Logout",
-    profile: "Profile",
-    admin: "Admin",
-    ranking: "X-Ranking",
-    myRanking: "My ranking",
-    top3: "Top 3",
-    top3Desc: "Ranked by highest average arrow score",
-    noRankingData: "No records are available for ranking yet.",
-    noPlayersYet: "No ranked players yet.",
-    distance: "Distance",
-    allDistance: "All distances",
-    allDivision: "All divisions",
-    schoolTeam: "School / Team",
-    allSchoolTeam: "All schools / teams",
-    region: "Province / City",
-    allRegion: "Nationwide",
-    matchType: "Match type",
-    date: "Date",
-    totalScore: "Total",
-    avgArrow: "Avg",
-    bestSession: "Best",
-    sessions: "Sessions",
-    currentRank: "Current rank",
-    profileTitle: "Profile",
-    profileHint: "The first letter of your name is shown automatically.",
-    realNameHint: "Using your real name is recommended for accurate ranking and record comparison.",
-    saveProfile: "Save profile",
-    profileSaved: "Profile saved.",
-    authChecking: "Checking authentication status",
-    na: "Not set",
-    record: "X-Session",
-    dashboard: "X-Dashboard",
-    analysis: "X-Analysis",
-    save: "Save",
-    delete: "Delete",
-    temporarySave: "Save draft",
-    distanceSelect: "Select distance",
-    divisionSelect: "Select division",
-    allRegionLabel: "All regions",
-  },
-};
-
-function tLanguage(language, key) {
-  return I18N[language]?.[key] || I18N.ko[key] || key;
-}
-
-function getRuntimeLanguage() {
-  try {
-    if (typeof window !== "undefined") {
-      const stored = window.localStorage?.getItem(LANGUAGE_STORAGE_KEY);
-      if (stored === "ko" || stored === "en") return stored;
-    }
-  } catch {}
-  return "ko";
-}
-
 const PERIOD_OPTIONS = [
   { value: "end", label: "엔드별" },
   { value: "match", label: "경기별" },
@@ -1044,7 +892,6 @@ function fromFirestoreProfile(uidValue, data) {
     regionCity: data.regionCity || "",
     regionDistrict: data.regionDistrict || "",
     division: data.division || "",
-    language: data.language || "ko",
     avatar: "",
     photoURL: "",
     photoPath: "",
@@ -1340,8 +1187,7 @@ function ProfileAvatar({ user, size = "md" }) {
   );
 }
 
-function Hero({ language = "ko" }) {
-  const t = (key) => tLanguage(language, key);
+function Hero() {
   return (
     <div className="grid gap-4">
       <Card className="overflow-hidden rounded-[28px] border-0 bg-gradient-to-br from-blue-950 via-slate-900 to-red-900 text-white shadow-2xl">
@@ -1359,10 +1205,10 @@ function Hero({ language = "ko" }) {
           </div>
           <div className="mt-6 max-w-4xl">
             <h1 className="text-4xl font-black leading-tight tracking-tight md:text-6xl">
-              {t("heroTitle")}
+              X-Session으로 기록하고, X-Ranking으로 증명한다.
             </h1>
             <p className="mt-5 max-w-3xl text-lg text-slate-200 md:text-2xl">
-              {t("heroBody")}
+              이 버전은 X-Session, X-Dashboard, X-Ranking, X-Analysis 구조를 기준으로 한 Firebase 실전 연결형 v1이다.
             </p>
           </div>
         </CardContent>
@@ -1396,8 +1242,7 @@ function FirebaseSetupNoticeCompact() {
 }
 
 
-function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = "ko", onLanguageChange }) {
-  const t = (key) => tLanguage(language, key);
+function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
   const SAVED_EMAIL_KEY = "elbowshot_saved_email";
   const [form, setForm] = useState({
     name: "",
@@ -1407,17 +1252,12 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
     groupName: "",
     regionCity: "",
     regionDistrict: "",
-    language,
   });
   const [rememberEmail, setRememberEmail] = useState(false);
   const [error, setError] = useState("");
   const [mode, setMode] = useState("login");
 
   const districtOptions = useMemo(() => getDistrictOptions(form.regionCity), [form.regionCity]);
-
-  useEffect(() => {
-    setForm((prev) => ({ ...prev, language }));
-  }, [language]);
 
   useEffect(() => {
     try {
@@ -1458,7 +1298,6 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
         groupName: form.groupName.trim(),
         regionCity: form.regionCity,
         regionDistrict: form.regionDistrict,
-        language: form.language || language,
       });
       return;
     }
@@ -1487,46 +1326,33 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <User className="h-5 w-5 text-blue-700" />
-          {mode === "register" ? t("authTitleRegister") : t("authTitleLogin")}
+          {mode === "register" ? "회원가입" : "로그인"}
         </CardTitle>
       </CardHeader>
 
       <CardContent>
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex gap-2">
+        <div className="mb-4 flex gap-2">
           <Button
             variant={mode === "login" ? "default" : "outline"}
             className="rounded-2xl"
             onClick={() => setMode("login")}
           >
-            {t("login")}
+            로그인
           </Button>
           <Button
             variant={mode === "register" ? "default" : "outline"}
             className="rounded-2xl"
             onClick={() => setMode("register")}
           >
-            {t("register")}
+            회원가입
           </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-xs text-slate-500">{t("language")}</Label>
-            <select
-              value={language}
-              onChange={(e) => onLanguageChange?.(e.target.value)}
-              className="h-10 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
-            >
-              <option value="ko">{t("korean")}</option>
-              <option value="en">{t("english")}</option>
-            </select>
-          </div>
         </div>
 
         <form className="grid gap-4 md:grid-cols-2" onSubmit={submit}>
           {mode === "register" && (
             <>
               <div className="grid gap-2">
-                <Label>{t("name")}</Label>
+                <Label>이름</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -1534,7 +1360,7 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
               </div>
 
               <div className="grid gap-2">
-                <Label>{t("division")}</Label>
+                <Label>학년/부문</Label>
                 <Select
                   value={form.division || undefined}
                   onValueChange={(value) => setForm({ ...form, division: value })}
@@ -1553,7 +1379,7 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
               </div>
 
               <div className="grid gap-2">
-                <Label>{t("groupName")}</Label>
+                <Label>소속</Label>
                 <Input
                   value={form.groupName}
                   onChange={(e) => setForm({ ...form, groupName: e.target.value })}
@@ -1562,15 +1388,15 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
               </div>
 
               <div className="grid gap-2">
-                <Label>{t("regionCity")}</Label>
+                <Label>지역(시/도)</Label>
                 <select
                   value={form.regionCity || ""}
                   onChange={(e) =>
                     setForm({ ...form, regionCity: e.target.value, regionDistrict: "" })
                   }
-                  className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                  className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
                 >
-                  <option value="">{t("selectRegion")}</option>
+                  <option value="">지역 선택</option>
                   {REGION_CITY_OPTIONS.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -1580,14 +1406,14 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
               </div>
 
               <div className="grid gap-2 md:col-span-2">
-                <Label>{t("regionDistrict")}</Label>
+                <Label>지역(구/군)</Label>
                 <select
                   value={form.regionDistrict || ""}
                   onChange={(e) => setForm({ ...form, regionDistrict: e.target.value })}
                   disabled={!form.regionCity}
                   className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none disabled:bg-slate-50"
                 >
-                  <option value="">{t("selectDistrict")}</option>
+                  <option value="">구/군 선택</option>
                   {districtOptions.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -1599,7 +1425,7 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
           )}
 
           <div className="grid gap-2">
-            <Label>{t("email")}</Label>
+            <Label>이메일</Label>
             <Input
               type="email"
               value={form.email}
@@ -1608,7 +1434,7 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
           </div>
 
           <div className="grid gap-2">
-            <Label>{t("password")}</Label>
+            <Label>비밀번호</Label>
             <Input
               type="password"
               value={form.password}
@@ -1626,9 +1452,9 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
                 className="h-4 w-4 rounded border-slate-300"
               />
               <label htmlFor="remember-email" className="cursor-pointer select-none">
-                {t("rememberEmail")}
+                이메일 저장
               </label>
-              <span className="text-xs text-slate-500">{t("rememberEmailDesc")}</span>
+              <span className="text-xs text-slate-500">다음 로그인 때 이메일을 자동으로 불러온다.</span>
             </div>
           )}
 
@@ -1649,7 +1475,7 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
               ) : (
                 <ArrowRight className="mr-2 h-4 w-4" />
               )}
-              {mode === "register" ? t("registerButton") : t("loginButton")}
+              {mode === "register" ? "X-SESSION 가입" : "X-SESSION 로그인"}
             </Button>
 
             {mode === "login" && (
@@ -1670,7 +1496,7 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
                   }
                 }}
               >
-                {t("adminLogin")}
+                관리자 페이지 로그인
               </Button>
             )}
           </div>
@@ -1681,15 +1507,14 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading, language = 
 }
 
 
-function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, language = "ko" }) {
-  const t = (key) => tLanguage(language, key);
+function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
   const navs = [
     { key: "record", label: "X-Session", icon: Target },
     { key: "dashboard", label: "X-Dashboard", icon: BarChart3 },
     { key: "ranking", label: "X-Ranking", icon: Trophy },
     { key: "analysis", label: "X-Analysis", icon: CalendarRange },
-    { key: "profile", label: t("profile"), icon: User },
-    ...(isAdminUser ? [{ key: "admin", label: t("admin"), icon: Shield }] : []),
+    { key: "profile", label: "Profile", icon: User },
+    ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield }] : []),
   ];
 
   return (
@@ -1721,7 +1546,7 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, language
         </Tabs>
 
         <Button variant="outline" className="rounded-2xl" onClick={onLogout}>
-          <LogOut className="mr-2 h-4 w-4" /> {t("logout")}
+          <LogOut className="mr-2 h-4 w-4" /> 로그아웃
         </Button>
       </CardContent>
     </Card>
@@ -1746,8 +1571,6 @@ function SessionEditor({
   const [lastQuickScore, setLastQuickScore] = useState(null);
   const [flashKey, setFlashKey] = useState("");
   const arrowRefs = useRef({});
-  const language = getRuntimeLanguage();
-  const t = (key) => tLanguage(language, key);
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -2053,9 +1876,9 @@ function SessionEditor({
           </CardHeader>
 
           <CardContent className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               <div className="grid gap-2">
-                <Label>{t("date")}</Label>
+                <Label>날짜</Label>
                 <Input
                   type="date"
                   value={session.sessionDate}
@@ -2124,7 +1947,7 @@ function SessionEditor({
               </div>
 
               <div className="grid gap-2">
-                <Label>{t("division")}</Label>
+                <Label>학년</Label>
                 <Input value={session.division || ""} disabled />
               </div>
 
@@ -2166,7 +1989,7 @@ function SessionEditor({
                 </div>
               )}
 
-              <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4 sm:col-span-2">
+              <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4 md:col-span-2">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span>X-Session 진행률</span>
                   <span>{progress}%</span>
@@ -2485,8 +2308,6 @@ function SessionEditor({
 }
 
 function Dashboard({ sessions, loading, onEditSession }) {
-  const language = getRuntimeLanguage();
-  const t = (key) => tLanguage(language, key);
   const completed = sessions.filter((s) => s.isComplete);
 
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -2566,7 +2387,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
-            <div className="grid grid-cols-2 divide-x divide-white/20">
+            <div className="grid grid-cols-1 divide-y divide-white/20 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
               <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 누적 점수</div>
                 <div className="mt-2 text-3xl font-bold tracking-tight">
@@ -2592,7 +2413,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
 
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
-            <div className="grid grid-cols-2 divide-x divide-white/20">
+            <div className="grid grid-cols-1 divide-y divide-white/20 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
               <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 화살 평균 점수</div>
                 <div className="mt-2 text-3xl font-bold tracking-tight">
@@ -2618,7 +2439,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
 
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
-            <div className="grid grid-cols-2 divide-x divide-slate-900/10">
+            <div className="grid grid-cols-1 divide-y divide-slate-900/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
               <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 거리 최고 점수</div>
                 <div className="mt-2 text-3xl font-bold tracking-tight">
@@ -2667,38 +2488,38 @@ function Dashboard({ sessions, loading, onEditSession }) {
                     className="grid gap-3 rounded-3xl border border-slate-200 p-4 md:grid-cols-[1fr_auto] md:items-center"
                   >
                     <div className="min-w-0">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <div className="font-semibold">{session.title}</div>
-                        <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
-                          {getModeLabel(session.mode)}
-                        </Badge>
-                        <Badge className="rounded-full bg-slate-700 text-white">
-                          {getInputTypeLabel(session.recordInputType)}
-                        </Badge>
-                        <Badge className="rounded-full bg-emerald-600 text-white">
-                          완료
-                        </Badge>
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div className="min-w-0">
+                          <div className="truncate text-base font-semibold">{session.title}</div>
+                          <div className="mt-1 text-sm text-slate-500">
+                            {formatDateTime(session.updatedAt)}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
+                            {getModeLabel(session.mode)}
+                          </Badge>
+                          <Badge className="rounded-full bg-slate-700 text-white">
+                            {getInputTypeLabel(session.recordInputType)}
+                          </Badge>
+                          <Badge className="rounded-full bg-emerald-600 text-white">
+                            완료
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-sm leading-6 text-slate-700">
+                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} · X {session.summary?.xCount ?? getXs(session)} · 평균 {(session.summary?.averageArrow ?? getAverageArrow(session)).toFixed(2)}
                       </div>
                       <div className="mt-1 text-sm text-slate-500">
-                        {formatDateTime(session.updatedAt)}
-                      </div>
-                      <div className="mt-2 text-sm text-slate-700">
-                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} / {getInputTypeLabel(session.recordInputType)} / X{" "}
-                        {session.summary?.xCount ?? getXs(session)} / 평균{" "}
-                        {(
-                          session.summary?.averageArrow ?? getAverageArrow(session)
-                        ).toFixed(2)}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2 text-right text-sm text-slate-500">
-                      <div>
                         {session.recordInputType === "distance"
                           ? `거리 기록 ${(session.distanceRounds || []).length}개`
                           : `${session.distance}m · 엔드 ${session.ends.length}개`}
                       </div>
+                    </div>
+                    <div className="flex items-stretch md:items-center">
                       <Button
                         variant="outline"
-                        className="rounded-2xl"
+                        className="w-full rounded-2xl md:w-auto"
                         onClick={() => onEditSession?.(session.id)}
                       >
                         <Pencil className="mr-2 h-4 w-4" /> 수정
@@ -2740,8 +2561,7 @@ function StatCard({ title, value, sub, icon: Icon, tone }) {
   );
 }
 
-function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
-  const t = (key) => tLanguage(language, key);
+function RankingBoard({ users, sessions, currentUserId }) {
   const [rankingFilters, setRankingFilters] = useState({
     distance: "all",
     division: "all",
@@ -2774,20 +2594,20 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
         <Card className="rounded-[28px] border-0 bg-white shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-amber-500" /> {t("myRanking")}
+              <Crown className="h-5 w-5 text-amber-500" /> 내 랭킹
             </CardTitle>
           </CardHeader>
           <CardContent>
             {myRank ? (
               <div className="space-y-4">
                 <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-6 text-white shadow-lg">
-                  <div className="text-sm opacity-80">{t("currentRank")}</div>
+                  <div className="text-sm opacity-80">현재 순위</div>
                   <div className="mt-2 text-5xl font-bold">#{myRank.rank}</div>
-                  <div className="mt-2 text-sm opacity-90">X {myRank.xCount} / {t("avgArrow")} {myRank.avgArrow.toFixed(2)}</div>
+                  <div className="mt-2 text-sm opacity-90">X {myRank.xCount} / 평균 화살 점수 {myRank.avgArrow.toFixed(2)}</div>
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">{t("noRankingData")}</div>
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">랭킹을 계산할 기록이 아직 없다.</div>
             )}
           </CardContent>
         </Card>
@@ -2797,9 +2617,9 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <Award className="h-5 w-5 text-amber-500" />
-                <span>{t("top3")}</span>
+                <span>상위 3명</span>
                 <span className="text-sm font-normal text-slate-500">
-                  {t("top3Desc")}
+                  평균점수가 높은 순서대로 등수 부여
                 </span>
               </CardTitle>
             </CardHeader>
@@ -2811,8 +2631,8 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
                       {item.rank}
                     </div>
                     <div>
-                      <div className="min-w-0 truncate font-semibold">{item.name}</div>
-                      <div className="text-sm text-slate-500">{item.groupName} · {item.regionCity}</div>
+                      <div className="truncate font-semibold">{item.name}</div>
+                      <div className="truncate text-sm text-slate-500">{item.groupName} · {item.regionCity}</div>
                     </div>
                   </div>
                 </div>
@@ -2825,15 +2645,15 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
       <Card className="rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Medal className="h-5 w-5 text-red-600" /> {t("ranking")}
+            <Medal className="h-5 w-5 text-red-600" /> X-Ranking
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <div className="grid gap-2">
-              <Label>{t("distance")}</Label>
-              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                <option value="all">{t("allDistance")}</option>
+              <Label>거리</Label>
+              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="all">전체 거리</option>
                 {DISTANCE_OPTIONS.map((distance) => (
                   <option key={distance} value={String(distance)}>{distance}m</option>
                 ))}
@@ -2842,16 +2662,16 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
 
             <div className="grid gap-2">
               <Label>학년</Label>
-              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                <option value="all">{t("allDivision")}</option>
+              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="all">전체 학년</option>
                 {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
             </div>
 
             <div className="grid gap-2">
-              <Label>{t("schoolTeam")}</Label>
-              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                <option value="all">{t("allSchoolTeam")}</option>
+              <Label>학교/소속팀</Label>
+              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="all">전체 학교/소속팀</option>
                 {groupOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
                 ))}
@@ -2859,9 +2679,9 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
             </div>
 
             <div className="grid gap-2">
-              <Label>{t("region")}</Label>
-              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                <option value="all">{t("allRegion")}</option>
+              <Label>지역</Label>
+              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+                <option value="all">전체 지역</option>
                 {regionOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
                 ))}
@@ -2869,8 +2689,8 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
             </div>
 
             <div className="grid gap-2">
-              <Label>{t("matchType")}</Label>
-              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <Label>경기 방식</Label>
+              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -2879,7 +2699,7 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
 
             <div className="grid gap-2">
               <Label>날짜</Label>
-              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -2889,24 +2709,33 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
 
           <div className="mt-4">
             {sortedRankings.length === 0 ? (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">{t("noPlayersYet")}</div>
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">아직 기록된 선수가 없다.</div>
             ) : (
               <div className="grid gap-3">
                 {sortedRankings.map((item) => (
-                  <div key={item.userId} className={`grid gap-2 rounded-3xl border px-3 py-3 md:grid-cols-[auto_1fr_auto] md:items-center ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
-                      {item.rank}
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <ProfileAvatar user={item} size="sm" />
-                        <div className="font-semibold">{item.name}</div>
-                        {item.userId === currentUserId && <Badge className="rounded-full bg-blue-900 text-white">나</Badge>}
+                  <div key={item.userId} className={`grid gap-3 rounded-3xl border p-4 ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-base font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
+                        {item.rank}
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-slate-500">{item.groupName || t("na")} · {item.division || t("na")}</div>
-                      <div className="mt-1 text-xs text-slate-700 md:text-sm">X {item.xCount} · {t("avgArrow")} {item.avgArrow.toFixed(2)} · {t("bestSession")} {item.bestSession} · {t("sessions")} {item.sessions}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <ProfileAvatar user={item} size="sm" />
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold">{item.name}</div>
+                            <div className="truncate text-sm text-slate-500">{item.groupName} · {item.regionCity} · {item.division}</div>
+                          </div>
+                          {item.userId === currentUserId && <Badge className="shrink-0 rounded-full bg-blue-900 text-white">나</Badge>}
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-700">
+                          <span>총점 {item.totalScore}</span>
+                          <span>X {item.xCount}</span>
+                          <span>평균 {item.avgArrow.toFixed(2)}</span>
+                          <span>최고 {item.bestSession}</span>
+                          <span>세션 {item.sessions}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right text-xs text-slate-500 md:text-sm">{t("totalScore")} {item.totalScore}</div>
                   </div>
                 ))}
               </div>
@@ -2919,8 +2748,6 @@ function RankingBoard({ users, sessions, currentUserId, language = "ko" }) {
 }
 
 function AnalysisBoard({ currentUser, users, sessions }) {
-  const language = getRuntimeLanguage();
-  const t = (key) => tLanguage(language, key);
   const [period, setPeriod] = useState("day");
   const [matchType, setMatchType] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
@@ -2983,7 +2810,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             <div className="grid gap-2">
               <Label>거리</Label>
-              <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="">거리 선택</option>
                 {DISTANCE_OPTIONS.map((distance) => (
                   <option key={distance} value={String(distance)}>{distance}m</option>
@@ -2992,8 +2819,8 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             </div>
 
             <div className="grid gap-2">
-              <Label>{t("division")}</Label>
-              <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <Label>학년/부문</Label>
+              <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="">학년/부문 선택</option>
                 {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
@@ -3001,7 +2828,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>지역</Label>
-              <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 지역</option>
                 {REGION_OPTIONS.map((item) => (
                   <option key={item} value={item}>{item}</option>
@@ -3011,7 +2838,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>날짜</Label>
-              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -3020,7 +2847,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>경기 방식</Label>
-              <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -3029,7 +2856,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>분석 기준</Label>
-              <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {PERIOD_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -3138,7 +2965,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="grid gap-2">
               <Label>라이벌 선택</Label>
-              <select value={selectedRival} onChange={(e) => setSelectedRival(e.target.value)} className="h-11 min-w-[240px] rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
+              <select value={selectedRival} onChange={(e) => setSelectedRival(e.target.value)} className="h-11 w-full max-w-full min-w-0 md:w-[240px] rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {rivalCandidates.length === 0 ? (
                   <option value="none">비교할 선수가 없음</option>
                 ) : (
@@ -3174,8 +3001,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   );
 }
 
-function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChange }) {
-  const t = (key) => tLanguage(language, key);
+function ProfilePanel({ user, onUpdate, saving }) {
   const [form, setForm] = useState(user);
   const [savedMessage, setSavedMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -3188,7 +3014,6 @@ function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChang
         regionCity: user?.regionCity || "",
         regionDistrict: user?.regionDistrict || "",
         groupName: user?.groupName || "",
-        language: user?.language || language || "ko",
       }),
     [user]
   );
@@ -3228,7 +3053,7 @@ function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChang
     const result = await onUpdate(form);
 
     if (result?.ok) {
-      setSavedMessage(result.message || t("profileSaved"));
+      setSavedMessage(result.message || "프로필이 저장되었다.");
       setErrorMessage("");
       setTimeout(() => setSavedMessage(""), 1800);
       return;
@@ -3242,27 +3067,27 @@ function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChang
     <div className="grid gap-4">
       <Card className="rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
-          <CardTitle>{t("profileTitle")}</CardTitle>
+          <CardTitle>프로필 관리</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="grid gap-4" onSubmit={submit}>
             <div className="flex items-center gap-4">
               <ProfileAvatar user={form} size="lg" />
-              <div className="text-sm text-slate-500">{t("profileHint")}</div>
+              <div className="text-sm text-slate-500">이름의 첫 글자가 자동으로 표시된다.</div>
             </div>
 
             <div className="grid gap-2">
-              <Label>{t("name")}</Label>
+              <Label>이름</Label>
               <Input
                 value={form.name || ""}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder={t("realNameHint")}
+                placeholder="정확한 기록 관리를 위해 본명 사용 권장"
               />
-              <div className="text-xs text-slate-500">{t("realNameHint")}</div>
+              <div className="text-xs text-slate-500">정확한 기록 비교와 랭킹 관리를 위해 본명으로 입력하는 것을 권장한다.</div>
             </div>
 
             <div className="grid gap-2">
-              <Label>{t("email")}</Label>
+              <Label>이메일</Label>
               <Input value={form.email || ""} disabled />
             </div>
 
@@ -3281,7 +3106,7 @@ function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChang
             </div>
 
             <div className="grid gap-2">
-              <Label>{t("groupName")}</Label>
+              <Label>소속</Label>
               <Input
                 value={form.groupName || ""}
                 onChange={(e) => setForm({ ...form, groupName: e.target.value })}
@@ -3290,13 +3115,13 @@ function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChang
             </div>
 
             <div className="grid gap-2">
-              <Label>{t("regionCity")}</Label>
+              <Label>지역(시/도)</Label>
               <select
                 value={form.regionCity || ""}
                 onChange={(e) => setForm({ ...form, regionCity: e.target.value, regionDistrict: "" })}
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
               >
-                <option value="">{t("selectRegion")}</option>
+                <option value="">지역 선택</option>
                 {REGION_OPTIONS.map((region) => (
                   <option key={region} value={region}>{region}</option>
                 ))}
@@ -3304,33 +3129,17 @@ function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChang
             </div>
 
             <div className="grid gap-2">
-              <Label>{t("regionDistrict")}</Label>
+              <Label>지역(구/군)</Label>
               <select
                 value={form.regionDistrict || ""}
                 onChange={(e) => setForm({ ...form, regionDistrict: e.target.value })}
                 disabled={!form.regionCity}
                 className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none disabled:bg-slate-50"
               >
-                <option value="">{t("selectDistrict")}</option>
+                <option value="">구/군 선택</option>
                 {districtOptions.map((district) => (
                   <option key={district} value={district}>{district}</option>
                 ))}
-              </select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label>{t("language")}</Label>
-              <select
-                value={form.language || language}
-                onChange={(e) => {
-                  const nextLanguage = e.target.value;
-                  setForm({ ...form, language: nextLanguage });
-                  onLanguageChange?.(nextLanguage);
-                }}
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
-              >
-                <option value="ko">{t("korean")}</option>
-                <option value="en">{t("english")}</option>
               </select>
             </div>
 
@@ -3348,7 +3157,7 @@ function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChang
 
             <Button type="submit" disabled={saving} className="rounded-2xl bg-blue-900 hover:bg-blue-800">
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              {t("saveProfile")}
+              프로필 저장
             </Button>
           </form>
         </CardContent>
@@ -3359,8 +3168,6 @@ function ProfilePanel({ user, onUpdate, saving, language = "ko", onLanguageChang
 
 
 function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
-  const language = getRuntimeLanguage();
-  const t = (key) => tLanguage(language, key);
   const [emailRegion, setEmailRegion] = useState("all");
   const [emailDivision, setEmailDivision] = useState("all");
   const [emailSubject, setEmailSubject] = useState("[X-SESSION 안내]");
@@ -3680,7 +3487,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
               <select
                 value={emailDivision}
                 onChange={(e) => setEmailDivision(e.target.value)}
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
               >
                 <option value="all">전체 학년/부문</option>
                 {divisionOptions.map((item) => (
@@ -3693,7 +3500,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
               <select
                 value={emailRegion}
                 onChange={(e) => setEmailRegion(e.target.value)}
-                className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                className="h-11 w-full max-w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
               >
                 <option value="all">전체 지역</option>
                 {regionOptions.map((item) => (
@@ -3742,6 +3549,22 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
   );
 }
 
+function MobileStabilityStyles() {
+  return (
+    <style>{`
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body { overflow-x: hidden; }
+      .mobile-safe, .mobile-safe * { min-width: 0; }
+      .mobile-safe select,
+      .mobile-safe input,
+      .mobile-safe textarea,
+      .mobile-safe button,
+      .mobile-safe svg,
+      .mobile-safe canvas { max-width: 100%; }
+    `}</style>
+  );
+}
+
 function XSessionApp() {
   const [ui, setUi] = useState(DEFAULT_UI);
   const [appServices, setAppServices] = useState(null);
@@ -3753,10 +3576,6 @@ function XSessionApp() {
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
-  const [language, setLanguage] = useState(() => {
-    if (typeof window === "undefined") return "ko";
-    return localStorage.getItem(LANGUAGE_STORAGE_KEY) || "ko";
-  });
   const [sessionSaving, setSessionSaving] = useState(false);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
@@ -3766,11 +3585,6 @@ function XSessionApp() {
 
 
   const authTimeoutRef = useRef(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
-  }, [language]);
 
 
   useEffect(() => {
@@ -3866,7 +3680,6 @@ function XSessionApp() {
         regionCity: payload.regionCity || "",
         regionDistrict: payload.regionDistrict || "",
         division: payload.division || "",
-        language: payload.language || existing.data()?.language || "ko",
         role: "player",
         status: "active",
         createdAt: existing.exists() ? existing.data().createdAt || serverTimestamp() : serverTimestamp(),
@@ -3911,7 +3724,6 @@ function XSessionApp() {
             regionCity: pendingProfileRef.current.regionCity || "",
             regionDistrict: pendingProfileRef.current.regionDistrict || "",
             division: pendingProfileRef.current.division || "전체학년",
-            language: pendingProfileRef.current.language || localStorage.getItem(LANGUAGE_STORAGE_KEY) || "ko",
             avatar: "",
             photoURL: "",
             photoPath: "",
@@ -3923,7 +3735,6 @@ function XSessionApp() {
             regionCity: nextProfile.regionCity,
             regionDistrict: nextProfile.regionDistrict,
             division: nextProfile.division,
-            language: nextProfile.language || localStorage.getItem(LANGUAGE_STORAGE_KEY) || "ko",
           });
         } else {
           nextProfile = {
@@ -3937,7 +3748,6 @@ function XSessionApp() {
             regionCity: "",
             regionDistrict: "",
             division: "전체학년",
-            language: localStorage.getItem(LANGUAGE_STORAGE_KEY) || "ko",
             avatar: "",
             photoURL: "",
             photoPath: "",
@@ -3945,7 +3755,6 @@ function XSessionApp() {
         }
 
         setProfile(nextProfile);
-      setLanguage(nextProfile.language || localStorage.getItem(LANGUAGE_STORAGE_KEY) || "ko");
 
         const tempDraft = loadDraftFromLocal(user.uid);
         if (tempDraft) {
@@ -4000,7 +3809,6 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
-        language: input.language || language || "ko",
       };
 
       const result = await createUserWithEmailAndPassword(appServices.auth, input.email, input.password);
@@ -4010,9 +3818,7 @@ function XSessionApp() {
         name: input.name || input.email.split("@")[0],
         groupName: input.groupName || "",
         regionCity: input.regionCity || "",
-        regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
-        language: input.language || language || "ko",
       });
 
       const nextProfile = {
@@ -4026,14 +3832,12 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
-        language: input.language || language || "ko",
         avatar: "",
         photoURL: "",
         photoPath: "",
       };
 
       setProfile(nextProfile);
-      setLanguage(nextProfile.language || language || "ko");
       setDraftSession(
         normalizeSessionShape(createNewSession(nextProfile, "cumulative"), nextProfile)
       );
@@ -4213,7 +4017,6 @@ function XSessionApp() {
         regionCity: nextUser.regionCity,
         regionDistrict: nextUser.regionDistrict,
         division: nextUser.division,
-        language: nextUser.language || language || "ko",
       });
 
       const refreshed = {
@@ -4225,11 +4028,9 @@ function XSessionApp() {
         regionCity: nextUser.regionCity || "",
         regionDistrict: nextUser.regionDistrict || "",
         division: nextUser.division || "전체학년",
-        language: nextUser.language || language || "ko",
       };
 
       setProfile(refreshed);
-      setLanguage(refreshed.language || "ko");
       setDraftSession((prev) =>
         prev
           ? {
@@ -4247,7 +4048,7 @@ function XSessionApp() {
       }
 
       await loadUsersAndSessions(appServices.db);
-      return { ok: true, message: tLanguage(nextUser.language || language || "ko", "profileSaved") };
+      return { ok: true, message: "프로필이 저장되었다. 앱 전체 표시 정보에도 반영된다." };
     } catch (error) {
       const message = error.message || "프로필 저장에 실패했다.";
       setGlobalError(message);
@@ -4287,23 +4088,24 @@ function XSessionApp() {
   const adminEmailGuard = isAdminEmail;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+    <div className="mobile-safe min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
-        <Hero language={language} />
+        <MobileStabilityStyles />
+        <Hero />
 
         {authLoading && !authUser ? (
           <Card className="rounded-[28px] border-0 bg-white shadow-xl">
             <CardContent className="flex items-center gap-3 p-6 text-slate-600">
-              <Loader2 className="h-5 w-5 animate-spin" /> {tLanguage(language, "authChecking")}
+              <Loader2 className="h-5 w-5 animate-spin" /> 인증 상태 확인 중
             </CardContent>
           </Card>
         ) : !currentUser ? (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <AuthPanel onRegister={handleRegister} onLogin={handleLogin} onAdminLogin={handleAdminLogin} authLoading={authLoading} language={language} onLanguageChange={setLanguage} />
+            <AuthPanel onRegister={handleRegister} onLogin={handleLogin} onAdminLogin={handleAdminLogin} authLoading={authLoading} />
           </motion.div>
         ) : (
           <>
-            <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} language={language} />
+            <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} />
 
             {globalError && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
 
@@ -4321,9 +4123,9 @@ function XSessionApp() {
                 />
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
-              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} language={language} />}
+              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
-              {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} language={language} onLanguageChange={setLanguage} />}
+              {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} />}
             </motion.div>
           </>
