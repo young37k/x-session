@@ -1325,7 +1325,7 @@ function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
     <div
       className="relative min-h-[calc(100vh-2rem)] overflow-hidden rounded-[32px] bg-slate-950 shadow-2xl md:min-h-[820px]"
       style={{
-        backgroundImage: "linear-gradient(to bottom, rgba(2,6,23,0.18), rgba(2,6,23,0.72)), url('/login-background.jpg')",
+        backgroundImage: "linear-gradient(to bottom, rgba(2,6,23,0.18), rgba(2,6,23,0.72)), url('/login-background.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
       }}
