@@ -1027,20 +1027,29 @@ function ProfileAvatar({ user, size = "md" }) {
 
 function Hero() {
   return (
-    <div className="grid gap-4">
-      <Card className="overflow-hidden rounded-[28px] border-0 bg-gradient-to-br from-blue-950 via-slate-900 to-red-900 text-white shadow-2xl">
-        <CardContent className="p-5 md:p-6">
-          <div className="max-w-4xl">
-            <div className="text-[13px] font-semibold leading-[1.6] tracking-[-0.01em] text-white md:text-[13px]">
-              <div>X-Session으로</div>
-              <div>기록하고,</div>
-              <div>X-Ranking으로</div>
-              <div>증명한다.</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+   <div
+  style={{
+    width: "100%",
+    padding: "24px 20px",
+    borderRadius: 28,
+    background:
+      "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #7f1d1d 100%)",
+    color: "#fff",
+  }}
+>
+  <div
+    style={{
+      fontSize: 44,          // ✅ 전일 점수 숫자와 동일 레벨
+      fontWeight: 800,       // ✅ 동일 두께
+      lineHeight: 1.15,
+      letterSpacing: "-0.03em",
+      wordBreak: "keep-all",
+    }}
+  >
+    <div>X-Session으로 기록하고,</div>
+    <div>X-Ranking으로 증명한다.</div>
+  </div>
+</div>
   );
 }
 
