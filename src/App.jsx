@@ -387,172 +387,10 @@ function buildSampleDistanceSession({
 }
 
 function buildTestRecordSheets(userId) {
-  if (!userId) return [];
-  return [
-    buildSampleDistanceSession({
-      userId,
-      date: '2026-04-12',
-      title: '테스트기록지 · 남자초등 U-11',
-      division: '남자초등 U-11',
-      clubName: '연무초등학교',
-      groupName: '연무초등학교',
-      distance: 35,
-      arrowsPerDistance: 36,
-      rounds: [
-        { distance: 35, total: 337 },
-        { distance: 30, total: 342 },
-        { distance: 25, total: 342 },
-        { distance: 20, total: 351 },
-      ],
-    }),
-    buildSampleDistanceSession({
-      userId,
-      date: '2026-04-12',
-      title: '테스트기록지 · 여자초등 U-11',
-      division: '여자초등 U-11',
-      clubName: '천현초등학교',
-      groupName: '천현초등학교',
-      distance: 35,
-      arrowsPerDistance: 36,
-      rounds: [
-        { distance: 35, total: 305 },
-        { distance: 30, total: 325 },
-        { distance: 25, total: 339 },
-        { distance: 20, total: 343 },
-      ],
-    }),
-    buildSampleDistanceSession({
-      userId,
-      date: '2026-04-12',
-      title: '테스트기록지 · 남자 컴파운드',
-      division: '남자-컴파운드',
-      clubName: '팀 자이언트',
-      groupName: '팀 자이언트',
-      distance: 50,
-      arrowsPerDistance: 36,
-      rounds: [
-        { distance: 50, total: 354 },
-        { distance: 50, total: 347 },
-        { distance: 30, total: 356 },
-        { distance: 30, total: 358 },
-      ],
-    }),
-    buildSampleDistanceSession({
-      userId,
-      date: '2026-04-12',
-      title: '테스트기록지 · 여자 컴파운드',
-      division: '여자-컴파운드',
-      clubName: '신장중학교',
-      groupName: '신장중학교',
-      distance: 50,
-      arrowsPerDistance: 36,
-      rounds: [
-        { distance: 50, total: 328 },
-        { distance: 50, total: 324 },
-        { distance: 30, total: 339 },
-        { distance: 30, total: 348 },
-      ],
-    }),
-    buildSampleDistanceSession({
-      userId,
-      date: '2026-04-12',
-      title: '테스트기록지 · 남자중등부',
-      division: '남자중등부',
-      clubName: '성포중학교',
-      groupName: '성포중학교',
-      distance: 60,
-      arrowsPerDistance: 36,
-      rounds: [
-        { distance: 60, total: 338 },
-        { distance: 50, total: 322 },
-        { distance: 40, total: 347 },
-        { distance: 30, total: 357 },
-      ],
-    }),
-    buildSampleDistanceSession({
-      userId,
-      date: '2026-04-12',
-      title: '테스트기록지 · 여자중등부',
-      division: '여자중등부',
-      clubName: '여흥중학교',
-      groupName: '여흥중학교',
-      distance: 60,
-      arrowsPerDistance: 36,
-      rounds: [
-        { distance: 60, total: 331 },
-        { distance: 50, total: 324 },
-        { distance: 40, total: 339 },
-        { distance: 30, total: 351 },
-      ],
-    }),
-  ];
+  return [];
 }
 
-const SAMPLE_SHEETS = [
-  {
-    id: "sheet_2026_03_22",
-    date: "2026-03-22",
-    division: "초등4",
-    recordInputType: "distance",
-    sheetLabel: "테스트기록지 2026-03-22",
-    distances: [35, 30, 25, 20],
-    rows: [
-      { name: "황리우", school: "천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
-      { name: "김설", school: "안양서초등학교", rounds: [277, 312, 314, 332], total: 1235 },
-      { name: "김태리", school: "하성초등학교", rounds: [271, 302, 320, 334], total: 1227 },
-      { name: "조유나", school: "수진초등학교", rounds: [271, 302, 311, 326], total: 1210 },
-      { name: "장윤혜", school: "송정초등학교", rounds: [282, 288, 293, 336], total: 1199 },
-      { name: "원율", school: "여흥초등학교", rounds: [264, 291, 319, 310], total: 1184 },
-      { name: "김서우", school: "수진초등학교", rounds: [279, 276, 302, 291], total: 1148 },
-      { name: "홍지수", school: "송정초등학교", rounds: [248, 264, 294, 318], total: 1124 },
-      { name: "김소율", school: "타겟28양궁클럽", rounds: [278, 232, 272, 326], total: 1108 },
-      { name: "강민서", school: "여흥초등학교", rounds: [253, 263, 270, 303], total: 1089 },
-      { name: "조윤서", school: "안양서초등학교", rounds: [253, 242, 277, 300], total: 1072 },
-      { name: "송의나", school: "수진초등학교", rounds: [227, 270, 269, 304], total: 1070 },
-      { name: "백수연", school: "여흥초등학교", rounds: [202, 270, 275, 320], total: 1067 },
-      { name: "김윤서", school: "원미초등학교", rounds: [195, 255, 290, 301], total: 1041 },
-      { name: "백가은", school: "안양서초등학교", rounds: [165, 216, 273, 288], total: 942 },
-      { name: "김민채", school: "천현초등학교", rounds: [225, 213, 250, 243], total: 931 },
-      { name: "조예늘", school: "하성초등학교", rounds: [189, 203, 250, 278], total: 920 },
-      { name: "윤이진", school: "여흥초등학교", rounds: [145, 194, 231, 307], total: 877 },
-      { name: "고은", school: "안양서초등학교", rounds: [177, 212, 229, 255], total: 873 },
-      { name: "황리안", school: "천현초등학교", rounds: [159, 152, 209, 245], total: 765 },
-      { name: "이주아", school: "안양서초등학교", rounds: [65, 138, 117, 184], total: 504 },
-    ],
-  },
-  {
-    id: "sheet_2026_04_12",
-    date: "2026-04-12",
-    division: "초등4",
-    recordInputType: "distance",
-    sheetLabel: "테스트기록지 2026-04-12",
-    distances: [35, 30, 25, 20],
-    rows: [
-      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
-      { name: "김태리", school: "하성초등학교", rounds: [298, 311, 322, 345], total: 1276 },
-      { name: "조유나", school: "수진초등학교", rounds: [292, 301, 319, 339], total: 1251 },
-      { name: "장윤혜", school: "송정초등학교", rounds: [294, 286, 320, 330], total: 1230 },
-      { name: "김서우", school: "수진초등학교", rounds: [262, 304, 323, 338], total: 1227 },
-      { name: "김설", school: "안양서초등학교", rounds: [270, 301, 315, 327], total: 1213 },
-      { name: "강민서", school: "여흥초등학교", rounds: [272, 288, 317, 325], total: 1202 },
-      { name: "김소율", school: "타겟28양궁클럽", rounds: [244, 275, 307, 332], total: 1158 },
-      { name: "홍지수", school: "송정초등학교", rounds: [257, 288, 294, 314], total: 1153 },
-      { name: "원율", school: "여흥초등학교", rounds: [242, 261, 308, 327], total: 1138 },
-      { name: "송의나", school: "수진초등학교", rounds: [246, 257, 307, 325], total: 1135 },
-      { name: "김민채", school: "천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
-      { name: "백가은", school: "안양서초등학교", rounds: [238, 230, 272, 302], total: 1042 },
-      { name: "조예늘", school: "하성초등학교", rounds: [166, 242, 292, 304], total: 1004 },
-      { name: "백수연", school: "여흥초등학교", rounds: [179, 245, 252, 292], total: 968 },
-      { name: "김윤서", school: "원미초등학교", rounds: [165, 198, 258, 249], total: 870 },
-      { name: "조윤서", school: "안양서초등학교", rounds: [190, 230, 218, 223], total: 861 },
-      { name: "윤이진", school: "여흥초등학교", rounds: [139, 185, 252, 267], total: 843 },
-      { name: "고은", school: "안양서초등학교", rounds: [139, 185, 207, 260], total: 829 },
-      { name: "황리안", school: "천현초등학교", rounds: [157, 205, 211, 281], total: 755 },
-      { name: "김바다", school: "당정초등학교", rounds: [112, 151, 263, 312], total: 575 },
-      { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
-    ],
-  },
-];
+const SAMPLE_SHEETS = [];
 
 function makeSampleUserId(name, school) {
   return `sample_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
@@ -1191,14 +1029,14 @@ function Hero() {
   return (
     <div className="grid gap-4">
       <Card className="overflow-hidden rounded-[28px] border-0 bg-gradient-to-br from-blue-950 via-slate-900 to-red-900 text-white shadow-2xl">
-        <CardContent className="px-6 py-7 md:px-8 md:py-8">
+        <CardContent className="p-5 md:p-6">
           <div className="max-w-4xl">
-            <h1 className="text-[2.9rem] font-black leading-[1.06] tracking-tight sm:text-[3.4rem] md:text-6xl">
-              <span className="block">X-Session으로</span>
-              <span className="block">기록하고,</span>
-              <span className="block">X-Ranking으로</span>
-              <span className="block">증명한다.</span>
-            </h1>
+            <div className="text-[13px] font-semibold leading-[1.6] tracking-[-0.01em] text-white md:text-[13px]">
+              <div>X-Session으로</div>
+              <div>기록하고,</div>
+              <div>X-Ranking으로</div>
+              <div>증명한다.</div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1231,14 +1069,22 @@ function FirebaseSetupNoticeCompact() {
 }
 
 
-function AuthPanel({ onRegister, onLogin, authLoading }) {
+function AuthPanel({ onRegister, onLogin, onAdminLogin, authLoading }) {
   const SAVED_EMAIL_KEY = "elbowshot_saved_email";
   const [form, setForm] = useState({
+    name: "",
     email: "",
     password: "",
+    division: "전체학년",
+    groupName: "",
+    regionCity: "",
+    regionDistrict: "",
   });
   const [rememberEmail, setRememberEmail] = useState(false);
   const [error, setError] = useState("");
+  const [mode, setMode] = useState("login");
+
+  const districtOptions = useMemo(() => getDistrictOptions(form.regionCity), [form.regionCity]);
 
   useEffect(() => {
     try {
@@ -1252,7 +1098,9 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     }
   }, []);
 
-  async function handleSubmit(action) {
+  async function submit(e) {
+    e.preventDefault();
+
     if (!form.email.trim() || !form.email.includes("@")) {
       return setError("올바른 이메일이 필요하다.");
     }
@@ -1261,9 +1109,29 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
       return setError("비밀번호는 최소 6자 이상이어야 한다.");
     }
 
-    const normalizedEmail = form.email.trim().toLowerCase();
+    if (mode === "register") {
+      if (!form.name.trim()) return setError("이름을 입력해야 한다.");
+      if (!form.division) return setError("학년 또는 부문을 선택해야 한다.");
+      if (!form.groupName.trim()) return setError("소속을 입력해야 한다.");
+      if (!form.regionCity) return setError("지역(시/도)을 선택해야 한다.");
+      if (!form.regionDistrict) return setError("지역(구/군)을 선택해야 한다.");
+
+      setError("");
+      await onRegister({
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        division: form.division,
+        groupName: form.groupName.trim(),
+        regionCity: form.regionCity,
+        regionDistrict: form.regionDistrict,
+      });
+      return;
+    }
 
     try {
+      const normalizedEmail = form.email.trim().toLowerCase();
+
       if (rememberEmail) {
         localStorage.setItem(SAVED_EMAIL_KEY, normalizedEmail);
       } else {
@@ -1274,117 +1142,194 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     }
 
     setError("");
-
-    if (action === "register") {
-      await onRegister({
-        name: normalizedEmail.split("@")[0],
-        email: normalizedEmail,
-        password: form.password,
-        division: "전체학년",
-        groupName: "",
-        regionCity: "",
-        regionDistrict: "",
-      });
-      return;
-    }
-
     await onLogin({
-      email: normalizedEmail,
+      email: form.email.trim().toLowerCase(),
       password: form.password,
     });
   }
 
   return (
-    <div
-      className="relative overflow-hidden rounded-[36px] shadow-2xl"
-      style={{
-        minHeight: "calc(100vh - 32px)",
-        backgroundImage: "url('/login-background.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.06)_0%,rgba(2,6,23,0.22)_100%)]" />
-      <div className="relative flex min-h-[calc(100vh-32px)] items-end justify-center p-4 sm:p-6">
-        <div className="w-full max-w-md rounded-[30px] bg-transparent p-4 sm:p-5">
-          <div className="grid gap-4">
+    <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <User className="h-5 w-5 text-blue-700" />
+          {mode === "register" ? "회원가입" : "로그인"}
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <div className="mb-4 flex gap-2">
+          <Button
+            variant={mode === "login" ? "default" : "outline"}
+            className="rounded-2xl"
+            onClick={() => setMode("login")}
+          >
+            로그인
+          </Button>
+          <Button
+            variant={mode === "register" ? "default" : "outline"}
+            className="rounded-2xl"
+            onClick={() => setMode("register")}
+          >
+            회원가입
+          </Button>
+        </div>
+
+        <form className="grid gap-4 md:grid-cols-2" onSubmit={submit}>
+          {mode === "register" && (
+            <>
+              <div className="grid gap-2">
+                <Label>이름</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>학년/부문</Label>
+                <Select
+                  value={form.division || undefined}
+                  onValueChange={(value) => setForm({ ...form, division: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="학년 또는 부문 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIVISION_OPTIONS.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>소속</Label>
+                <Input
+                  value={form.groupName}
+                  onChange={(e) => setForm({ ...form, groupName: e.target.value })}
+                  placeholder="예: 서울체고, OO클럽, OO실업팀"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>지역(시/도)</Label>
+                <select
+                  value={form.regionCity || ""}
+                  onChange={(e) =>
+                    setForm({ ...form, regionCity: e.target.value, regionDistrict: "" })
+                  }
+                  className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                >
+                  <option value="">지역 선택</option>
+                  {REGION_CITY_OPTIONS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-2 md:col-span-2">
+                <Label>지역(구/군)</Label>
+                <select
+                  value={form.regionDistrict || ""}
+                  onChange={(e) => setForm({ ...form, regionDistrict: e.target.value })}
+                  disabled={!form.regionCity}
+                  className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none disabled:bg-slate-50"
+                >
+                  <option value="">구/군 선택</option>
+                  {districtOptions.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          <div className="grid gap-2">
+            <Label>이메일</Label>
+            <Input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label>비밀번호</Label>
+            <Input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+          </div>
+
+          {mode === "login" && (
+            <div className="md:col-span-2 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
+              <input
+                id="remember-email"
+                type="checkbox"
+                checked={rememberEmail}
+                onChange={(e) => setRememberEmail(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              <label htmlFor="remember-email" className="cursor-pointer select-none">
+                이메일 저장
+              </label>
+              <span className="text-xs text-slate-500">다음 로그인 때 이메일을 자동으로 불러온다.</span>
+            </div>
+          )}
+
+          <div className="md:col-span-2 flex flex-col gap-3">
             {error && (
-              <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
+              <div className="flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
                 <AlertCircle className="h-4 w-4" /> {error}
               </div>
             )}
 
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <Label className="text-sm font-semibold text-white">이메일</Label>
-                <label htmlFor="remember-email" className="flex cursor-pointer items-center gap-2 text-xs font-medium text-white/95">
-                  <input
-                    id="remember-email"
-                    type="checkbox"
-                    checked={rememberEmail}
-                    onChange={(e) => setRememberEmail(e.target.checked)}
-                    className="h-4 w-4 rounded border-white/40"
-                  />
-                  이메일 저장
-                </label>
-              </div>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="이메일 입력"
-                className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
-              />
-            </div>
+            <Button
+              type="submit"
+              disabled={authLoading}
+              className="h-11 rounded-2xl bg-blue-900 text-base hover:bg-blue-800"
+            >
+              {authLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowRight className="mr-2 h-4 w-4" />
+              )}
+              {mode === "register" ? "X-SESSION 가입" : "X-SESSION 로그인"}
+            </Button>
 
-            <div className="grid gap-2">
-              <Label className="text-sm font-semibold text-white">비밀번호</Label>
-              <Input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="비밀번호 입력"
-                className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-1">
+            {mode === "login" && (
               <Button
                 type="button"
+                variant="outline"
                 disabled={authLoading}
-                className="h-12 rounded-2xl bg-blue-950 text-base font-semibold hover:bg-blue-900"
+                className="h-11 rounded-2xl"
                 onClick={async () => {
+                  setError("");
                   try {
-                    await handleSubmit("login");
+                    await onAdminLogin({
+                      email: form.email.trim().toLowerCase(),
+                      password: form.password,
+                    });
                   } catch (error) {
-                    setError(error.message || "로그인에 실패했다.");
+                    setError(error.message || "관리자 로그인에 실패했다.");
                   }
                 }}
               >
-                {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
-                로그인
+                관리자 페이지 로그인
               </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={authLoading}
-                className="h-12 rounded-2xl border-0 bg-white/92 text-base font-semibold text-slate-900 hover:bg-white"
-                onClick={async () => {
-                  try {
-                    await handleSubmit("register");
-                  } catch (error) {
-                    setError(error.message || "회원가입에 실패했다.");
-                  }
-                }}
-              >
-                회원가입
-              </Button>
-            </div>
+            )}
           </div>
-        </div>
-      </div>
-    </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -1759,10 +1704,9 @@ function SessionEditor({
 
           <CardContent className="space-y-5">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex items-center gap-3 sm:grid sm:gap-2">
-                <Label className="w-20 shrink-0 sm:w-auto">날짜</Label>
+              <div className="grid gap-2">
+                <Label>날짜</Label>
                 <Input
-                  className="flex-1"
                   type="date"
                   value={session.sessionDate}
                   onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value }))}
@@ -1810,13 +1754,13 @@ function SessionEditor({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 sm:grid sm:gap-2">
-                <Label className="w-20 shrink-0 sm:w-auto">거리 (m)</Label>
+              <div className="grid gap-2">
+                <Label>거리 (m)</Label>
                 <Select
                   value={String(session.distance)}
                   onValueChange={(value) => patchSession((prev) => ({ ...prev, distance: Number(value) }))}
                 >
-                  <SelectTrigger className="flex-1">
+                  <SelectTrigger>
                     <SelectValue placeholder="거리 선택" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1829,16 +1773,19 @@ function SessionEditor({
                 </Select>
               </div>
 
-              <div className="flex items-center gap-3 sm:grid sm:gap-2">
-                <Label className="w-20 shrink-0 sm:w-auto">학년</Label>
-                <Input className="flex-1" value={session.division || ""} disabled />
+              <div className="grid gap-2">
+                <Label>학년</Label>
+                <Input value={session.division || ""} disabled />
               </div>
 
               {session.recordInputType === "end" ? (
-                <div className="flex items-center gap-3 sm:grid sm:gap-2">
-                  <Label className="w-20 shrink-0 sm:w-auto">엔드당 화살 수</Label>
-                  <select
-                    value={String(session.arrowsPerEnd)}
+                <div className="grid gap-2">
+                  <Label>엔드당 화살 수</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={6}
+                    value={session.arrowsPerEnd}
                     onChange={(e) => {
                       const next = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(e.target.value) || 1));
                       patchSession((prev) => ({
@@ -1850,18 +1797,12 @@ function SessionEditor({
                         })),
                       }));
                     }}
-                    className="h-11 flex-1 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
-                  >
-                    {[1, 2, 3, 4, 5, 6].map((count) => (
-                      <option key={count} value={String(count)}>{count}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
               ) : (
-                <div className="flex items-center gap-3 sm:grid sm:gap-2">
-                  <Label className="w-20 shrink-0 sm:w-auto">거리당 화살 수</Label>
+                <div className="grid gap-2">
+                  <Label>거리당 화살 수</Label>
                   <Input
-                    className="flex-1"
                     type="number"
                     min={1}
                     value={session.arrowsPerDistance || 36}
@@ -2274,9 +2215,9 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
-              <div className="p-4 sm:p-5">
+              <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 누적 점수</div>
-                <div className="mt-2 text-[2.35rem] leading-none font-bold tracking-tight">
+                <div className="mt-2 text-3xl font-bold tracking-tight">
                   {previousDayTotal}
                 </div>
                 <div className="mt-2 text-xs opacity-80">
@@ -2284,9 +2225,9 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 </div>
               </div>
 
-              <div className="p-4 sm:p-5">
+              <div className="p-5">
                 <div className="text-sm opacity-80">당일 세션 누적 점수</div>
-                <div className="mt-2 text-[2.35rem] leading-none font-bold tracking-tight">
+                <div className="mt-2 text-3xl font-bold tracking-tight">
                   {todayTotal}
                 </div>
                 <div className="mt-2 text-xs opacity-80">
@@ -2300,9 +2241,9 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
-              <div className="p-4 sm:p-5">
+              <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 화살 평균 점수</div>
-                <div className="mt-2 text-[2.35rem] leading-none font-bold tracking-tight">
+                <div className="mt-2 text-3xl font-bold tracking-tight">
                   {previousDayAverage}
                 </div>
                 <div className="mt-2 text-xs opacity-80">
@@ -2310,9 +2251,9 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 </div>
               </div>
 
-              <div className="p-4 sm:p-5">
+              <div className="p-5">
                 <div className="text-sm opacity-80">당일 세션 화살 평균 점수</div>
-                <div className="mt-2 text-[2.35rem] leading-none font-bold tracking-tight">
+                <div className="mt-2 text-3xl font-bold tracking-tight">
                   {todayAverage}
                 </div>
                 <div className="mt-2 text-xs opacity-80">
@@ -2326,9 +2267,9 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
             <div className="grid grid-cols-2 divide-x divide-slate-900/10">
-              <div className="p-4 sm:p-5">
+              <div className="p-5">
                 <div className="text-sm opacity-80">전일 세션 거리 최고 점수</div>
-                <div className="mt-2 text-[2.35rem] leading-none font-bold tracking-tight">
+                <div className="mt-2 text-3xl font-bold tracking-tight">
                   {previousDayBestScore}
                 </div>
                 <div className="mt-2 text-xs opacity-80">
@@ -2336,9 +2277,9 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 </div>
               </div>
 
-              <div className="p-4 sm:p-5">
+              <div className="p-5">
                 <div className="text-sm opacity-80">당일 세션 거리 최고 점수</div>
-                <div className="mt-2 text-[2.35rem] leading-none font-bold tracking-tight">
+                <div className="mt-2 text-3xl font-bold tracking-tight">
                   {todayBestScore}
                 </div>
                 <div className="mt-2 text-xs opacity-80">
@@ -2371,10 +2312,11 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 .map((session) => (
                   <div
                     key={session.id}
-                    className="grid gap-2 rounded-3xl border border-slate-200 p-3 md:grid-cols-[1fr_auto] md:items-center md:p-4"
+                    className="grid gap-3 rounded-3xl border border-slate-200 p-4 md:grid-cols-[1fr_auto] md:items-center"
                   >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="font-semibold">{session.title}</div>
                         <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
                           {getModeLabel(session.mode)}
                         </Badge>
@@ -2388,8 +2330,10 @@ function Dashboard({ sessions, loading, onEditSession }) {
                       <div className="mt-1 text-sm text-slate-500">
                         {formatDateTime(session.updatedAt)}
                       </div>
-                      <div className="mt-1 text-sm leading-6 text-slate-700">
-                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} / X {session.summary?.xCount ?? getXs(session)} / 평균 {(
+                      <div className="mt-2 text-sm text-slate-700">
+                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} / {getInputTypeLabel(session.recordInputType)} / X{" "}
+                        {session.summary?.xCount ?? getXs(session)} / 평균{" "}
+                        {(
                           session.summary?.averageArrow ?? getAverageArrow(session)
                         ).toFixed(2)}
                       </div>
@@ -2402,7 +2346,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                       </div>
                       <Button
                         variant="outline"
-                        className="h-10 rounded-2xl px-5"
+                        className="rounded-2xl"
                         onClick={() => onEditSession?.(session.id)}
                       >
                         <Pencil className="mr-2 h-4 w-4" /> 수정
@@ -2469,6 +2413,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
   }, [rankings]);
 
   const myRank = sortedRankings.find((r) => r.userId === currentUserId);
+  const top3 = sortedRankings.slice(0, 3);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[0.7fr_1.3fr]">
@@ -2494,6 +2439,34 @@ function RankingBoard({ users, sessions, currentUserId }) {
           </CardContent>
         </Card>
 
+        {top3.length > 0 && (
+          <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Award className="h-5 w-5 text-amber-500" />
+                <span>상위 3명</span>
+                <span className="text-sm font-normal text-slate-500">
+                  평균점수가 높은 순서대로 등수 부여
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {top3.map((item) => (
+                <div key={item.userId} className="rounded-3xl border border-slate-200 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-300 font-bold text-slate-900">
+                      {item.rank}
+                    </div>
+                    <div>
+                      <div className="font-semibold">{item.name}</div>
+                      <div className="text-sm text-slate-500">{item.groupName} · {item.regionCity}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <Card className="rounded-[28px] border-0 bg-white shadow-xl">
@@ -2503,10 +2476,10 @@ function RankingBoard({ users, sessions, currentUserId }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-2">
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">거리</Label>
-              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-2">
+              <Label>거리</Label>
+              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 거리</option>
                 {DISTANCE_OPTIONS.map((distance) => (
                   <option key={distance} value={String(distance)}>{distance}m</option>
@@ -2514,17 +2487,17 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">학년</Label>
-              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>학년</Label>
+              <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 학년</option>
                 {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">학교/소속</Label>
-              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>학교/소속팀</Label>
+              <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 학교/소속팀</option>
                 {groupOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
@@ -2532,9 +2505,9 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">지역</Label>
-              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>지역</Label>
+              <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 지역</option>
                 {regionOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
@@ -2542,18 +2515,18 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">경기 방식</Label>
-              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>경기 방식</Label>
+              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">날짜</Label>
-              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>날짜</Label>
+              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -2567,21 +2540,20 @@ function RankingBoard({ users, sessions, currentUserId }) {
             ) : (
               <div className="grid gap-3">
                 {sortedRankings.map((item) => (
-                  <div key={item.userId} className={`rounded-2xl border px-3 py-2 ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
-                    <div className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-xl text-sm font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
-                        {item.rank}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <div className="truncate text-sm font-semibold">{item.name}</div>
-                          {item.userId === currentUserId && <Badge className="h-5 rounded-full bg-blue-900 px-2 text-[10px] text-white">나</Badge>}
-                        </div>
-                        <div className="truncate text-[11px] text-slate-500">{item.groupName} · {item.regionCity} · {item.division}</div>
-                      </div>
-                      <div className="text-right text-xs font-semibold text-slate-500">총점 {item.totalScore}</div>
+                  <div key={item.userId} className={`grid gap-3 rounded-3xl border p-4 md:grid-cols-[auto_1fr_auto] md:items-center ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
+                      {item.rank}
                     </div>
-                    <div className="mt-1 pl-10 text-[11px] text-slate-700">X {item.xCount} · 평균 {item.avgArrow.toFixed(2)} · 최고 {item.bestSession} · 세션 {item.sessions}</div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <ProfileAvatar user={item} size="sm" />
+                        <div className="font-semibold">{item.name}</div>
+                        {item.userId === currentUserId && <Badge className="rounded-full bg-blue-900 text-white">나</Badge>}
+                      </div>
+                      <div className="mt-1 text-sm text-slate-500">{item.groupName} · {item.regionCity} · {item.division}</div>
+                      <div className="mt-2 text-sm text-slate-700">X {item.xCount} / 평균 화살 {item.avgArrow.toFixed(2)} / 최고 경기 {item.bestSession} / 세션 {item.sessions}</div>
+                    </div>
+                    <div className="text-right text-sm text-slate-500">총점 {item.totalScore}</div>
                   </div>
                 ))}
               </div>
@@ -2653,10 +2625,10 @@ function AnalysisBoard({ currentUser, users, sessions }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">거리</Label>
-              <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-2">
+              <Label>거리</Label>
+              <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="">거리 선택</option>
                 {DISTANCE_OPTIONS.map((distance) => (
                   <option key={distance} value={String(distance)}>{distance}m</option>
@@ -2664,17 +2636,17 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">학년/부문</Label>
-              <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>학년/부문</Label>
+              <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="">학년/부문 선택</option>
                 {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">지역</Label>
-              <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>지역</Label>
+              <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 <option value="all">전체 지역</option>
                 {REGION_OPTIONS.map((item) => (
                   <option key={item} value={item}>{item}</option>
@@ -2682,27 +2654,27 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">날짜</Label>
-              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>날짜</Label>
+              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">경기 방식</Label>
-              <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>경기 방식</Label>
+              <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">분석 기준</Label>
-              <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+            <div className="grid gap-2">
+              <Label>분석 기준</Label>
+              <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-11 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
                 {PERIOD_OPTIONS.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -3920,7 +3892,7 @@ function XSessionApp() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
-        {currentUser ? <Hero /> : null}
+        <Hero />
 
         {authLoading && !authUser ? (
           <Card className="rounded-[28px] border-0 bg-white shadow-xl">
@@ -3930,7 +3902,7 @@ function XSessionApp() {
           </Card>
         ) : !currentUser ? (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <AuthPanel onRegister={handleRegister} onLogin={handleLogin} authLoading={authLoading} />
+            <AuthPanel onRegister={handleRegister} onLogin={handleLogin} onAdminLogin={handleAdminLogin} authLoading={authLoading} />
           </motion.div>
         ) : (
           <>
