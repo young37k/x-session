@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 
 function XSessionApp() {
-  const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [saveEmail, setSaveEmail] = useState(true);
@@ -23,44 +22,12 @@ function XSessionApp() {
           maxWidth: 420,
           padding: 24,
           borderRadius: 20,
-          backdropFilter: "blur(10px)",
-          background: "rgba(0,0,0,0.4)",
+          backdropFilter: "blur(6px)",
+          background: "transparent", // ✅ 불투명 박스 제거
         }}
       >
-        {/* 로그인 / 회원가입 선택 */}
-        <div style={{ display: "flex", marginBottom: 20 }}>
-          <button
-            onClick={() => setMode("login")}
-            style={{
-              flex: 1,
-              padding: 10,
-              borderRadius: 10,
-              border: "none",
-              background: mode === "login" ? "#0f172a" : "#e5e7eb",
-              color: mode === "login" ? "#fff" : "#111",
-            }}
-          >
-            로그인
-          </button>
-
-          <button
-            onClick={() => setMode("signup")}
-            style={{
-              flex: 1,
-              padding: 10,
-              borderRadius: 10,
-              border: "none",
-              background: mode === "signup" ? "#0f172a" : "#e5e7eb",
-              color: mode === "signup" ? "#fff" : "#111",
-              marginLeft: 8,
-            }}
-          >
-            회원가입
-          </button>
-        </div>
-
         {/* 이메일 */}
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ marginBottom: 14 }}>
           <div
             style={{
               display: "flex",
@@ -93,12 +60,13 @@ function XSessionApp() {
               borderRadius: 10,
               border: "none",
               padding: "0 12px",
+              background: "rgba(255,255,255,0.9)",
             }}
           />
         </div>
 
         {/* 비밀번호 */}
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 24 }}>
           <label style={{ color: "#fff", fontSize: 14 }}>비밀번호</label>
           <input
             type="password"
@@ -112,24 +80,41 @@ function XSessionApp() {
               border: "none",
               padding: "0 12px",
               marginTop: 6,
+              background: "rgba(255,255,255,0.9)",
             }}
           />
         </div>
 
-        {/* 로그인 버튼 */}
-        <button
-          style={{
-            width: "100%",
-            height: 48,
-            borderRadius: 12,
-            border: "none",
-            background: "#0f172a",
-            color: "#fff",
-            fontWeight: "bold",
-          }}
-        >
-          X-SESSION {mode === "login" ? "로그인" : "회원가입"}
-        </button>
+        {/* 로그인 / 회원가입 버튼 */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            style={{
+              flex: 1,
+              height: 48,
+              borderRadius: 12,
+              border: "none",
+              background: "#0f172a",
+              color: "#fff",
+              fontWeight: "bold",
+            }}
+          >
+            로그인
+          </button>
+
+          <button
+            style={{
+              flex: 1,
+              height: 48,
+              borderRadius: 12,
+              border: "none",
+              background: "#e5e7eb",
+              color: "#111",
+              fontWeight: "bold",
+            }}
+          >
+            회원가입
+          </button>
+        </div>
       </div>
     </div>
   );
