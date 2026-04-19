@@ -2008,10 +2008,10 @@ function SessionEditor({
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 pb-44 md:pb-6">
+        <div className="grid gap-4 md:pb-6">
           {session.recordInputType === "end" ? (
-            <>
-              <div className="fixed inset-x-2 bottom-3 z-40 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90 md:sticky md:inset-x-auto md:bottom-auto md:top-2">
+            <div className="grid gap-4">
+              <div className="rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
                 <Card className="border-0 bg-transparent shadow-none">
                   <CardContent className="p-3 md:p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
@@ -2041,7 +2041,8 @@ function SessionEditor({
                 </Card>
               </div>
 
-              {session.ends.map((end) => (
+              <div className="grid gap-4 max-h-[calc(100vh-23rem)] overflow-y-auto overscroll-contain pr-1 md:max-h-none md:overflow-visible md:pr-0">
+                {session.ends.map((end) => (
                 <Card key={end.id} className="rounded-[28px] border-0 bg-white shadow-xl">
                   <CardContent className="p-4 md:p-5">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -2144,7 +2145,8 @@ function SessionEditor({
                   </CardContent>
                 </Card>
               ))}
-            </>
+              </div>
+            </div>
           ) : (
             <>
               <div className="grid gap-3">
