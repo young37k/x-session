@@ -1187,29 +1187,29 @@ function ProfileAvatar({ user, size = "md" }) {
   );
 }
 
-function Hero() {
+function Hero({ activeTab = "dashboard" }) {
+  const heroLabelMap = {
+    record: "X-SESSION",
+    dashboard: "X-DASHBOARD",
+    ranking: "X-RANKING",
+    analysis: "X-ANALYSIS",
+    profile: "PROFILE",
+    admin: "ADMIN",
+  };
+
+  const currentLabel = heroLabelMap[activeTab] || "X-DASHBOARD";
+
   return (
     <div className="grid gap-4">
       <Card className="overflow-hidden rounded-[28px] border-0 bg-gradient-to-br from-blue-950 via-slate-900 to-red-900 text-white shadow-2xl">
         <CardContent className="p-6 md:p-8">
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge className="rounded-full border-0 bg-white/15 px-3 py-1 text-white">
+          <div className="text-center">
+            <div className="text-sm font-semibold tracking-[0.28em] text-white/70 md:text-base">
               X-SESSION
-            </Badge>
-            <Badge className="rounded-full border-0 bg-red-500/80 px-3 py-1 text-white">
-              X-Session Platform
-            </Badge>
-            <Badge className="rounded-full border-0 bg-blue-500/80 px-3 py-1 text-white">
-              X Brand System
-            </Badge>
-          </div>
-          <div className="mt-6 max-w-4xl">
-            <h1 className="text-4xl font-black leading-tight tracking-tight md:text-6xl">
-              X-Session으로 기록하고, X-Ranking으로 증명한다.
+            </div>
+            <h1 className="mt-3 text-[clamp(28px,7vw,44px)] font-black leading-[1.05] tracking-[-0.04em] text-white">
+              {currentLabel}
             </h1>
-            <p className="mt-5 max-w-3xl text-lg text-slate-200 md:text-2xl">
-              이 버전은 X-Session, X-Dashboard, X-Ranking, X-Analysis 구조를 기준으로 한 Firebase 실전 연결형 v1이다.
-            </p>
           </div>
         </CardContent>
       </Card>
@@ -3934,7 +3934,7 @@ function XSessionApp() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
-        {currentUser ? <Hero /> : null}
+        {currentUser ? <Hero activeTab={ui.activeTab} /> : null}
 
         {authLoading && !authUser ? (
           <Card className="rounded-[28px] border-0 bg-white shadow-xl">
