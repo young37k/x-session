@@ -1027,7 +1027,7 @@ function ProfileAvatar({ user, size = "md" }) {
 
 function Hero() {
   return (
-   <div
+  <div
   style={{
     width: "100%",
     padding: "20px 16px",
@@ -1035,23 +1035,37 @@ function Hero() {
     background:
       "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #7f1d1d 100%)",
     color: "#fff",
+    textAlign: "center",
   }}
 >
   <div
     style={{
-      fontSize: "clamp(20px, 5vw, 28px)", // ✅ 핵심 (모바일 대응)
-      fontWeight: 800,
-      lineHeight: 1.2,
-      letterSpacing: "-0.02em",
-      wordBreak: "keep-all",
+      fontSize: "clamp(28px, 7vw, 36px)",
+      fontWeight: 900,
+      letterSpacing: "-0.03em",
     }}
   >
-    <div style={{ whiteSpace: "nowrap" }}>
-      X-Session으로 기록하고,
-    </div>
-    <div style={{ whiteSpace: "nowrap" }}>
-      X-Ranking으로 증명한다.
-    </div>
+    X-SESSION
+  </div>
+
+  <div
+    style={{
+      fontSize: 14,
+      opacity: 0.6,
+      margin: "4px 0",
+    }}
+  >
+    →
+  </div>
+
+  <div
+    style={{
+      fontSize: "clamp(28px, 7vw, 36px)",
+      fontWeight: 900,
+      letterSpacing: "-0.03em",
+    }}
+  >
+    X-RANKING
   </div>
 </div>
   );
