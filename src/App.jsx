@@ -1191,25 +1191,14 @@ function Hero() {
   return (
     <div className="grid gap-4">
       <Card className="overflow-hidden rounded-[28px] border-0 bg-gradient-to-br from-blue-950 via-slate-900 to-red-900 text-white shadow-2xl">
-        <CardContent className="p-6 md:p-8">
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge className="rounded-full border-0 bg-white/15 px-3 py-1 text-white">
-              X-SESSION
-            </Badge>
-            <Badge className="rounded-full border-0 bg-red-500/80 px-3 py-1 text-white">
-              X-Session Platform
-            </Badge>
-            <Badge className="rounded-full border-0 bg-blue-500/80 px-3 py-1 text-white">
-              X Brand System
-            </Badge>
-          </div>
-          <div className="mt-6 max-w-4xl">
-            <h1 className="text-4xl font-black leading-tight tracking-tight md:text-6xl">
-              X-Session으로 기록하고, X-Ranking으로 증명한다.
+        <CardContent className="px-6 py-7 md:px-8 md:py-8">
+          <div className="max-w-4xl">
+            <h1 className="text-[2.9rem] font-black leading-[1.06] tracking-tight sm:text-[3.4rem] md:text-6xl">
+              <span className="block">X-Session으로</span>
+              <span className="block">기록하고,</span>
+              <span className="block">X-Ranking으로</span>
+              <span className="block">증명한다.</span>
             </h1>
-            <p className="mt-5 max-w-3xl text-lg text-slate-200 md:text-2xl">
-              이 버전은 X-Session, X-Dashboard, X-Ranking, X-Analysis 구조를 기준으로 한 Firebase 실전 연결형 v1이다.
-            </p>
           </div>
         </CardContent>
       </Card>
