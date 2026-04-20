@@ -1898,10 +1898,10 @@ function SessionEditor({
           </CardContent>
         </Card>
 
-        <div className="flex min-h-[68vh] flex-col gap-4 pb-28 md:min-h-[72vh] md:pb-6">
+        <div className="flex min-h-0 flex-col gap-4 pb-28 md:pb-6 xl:max-h-[calc(100vh-2rem)]">
           {session.recordInputType === "end" ? (
-            <>
-              <div className="sticky top-2 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
+            <div className="flex min-h-0 flex-1 flex-col gap-4">
+              <div className="sticky top-2 z-30 shrink-0 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
                 <Card className="border-0 bg-transparent shadow-none">
                   <CardContent className="p-3 md:p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
@@ -1931,7 +1931,7 @@ function SessionEditor({
                 </Card>
               </div>
 
-              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 space-y-4">
                 {session.ends.map((end) => (
                   <Card key={end.id} className="rounded-[28px] border-0 bg-white shadow-xl">
                     <CardContent className="p-4 md:p-5">
@@ -2036,9 +2036,9 @@ function SessionEditor({
                   </Card>
                 ))}
               </div>
-            </>
+            </div>
           ) : (
-            <>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
               <div className="grid gap-3">
                 {(session.distanceRounds || []).map((round) => (
                   <Card key={round.id} className="rounded-[28px] border-0 bg-white shadow-xl">
@@ -2087,7 +2087,7 @@ function SessionEditor({
                   </Card>
                 ))}
               </div>
-            </>
+            </div>
           )}
           <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
             <CardContent className="p-4 md:p-5">
