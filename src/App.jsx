@@ -1898,7 +1898,7 @@ function SessionEditor({
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 pb-28 md:pb-6">
+        <div className="flex min-h-[68vh] flex-col gap-4 pb-28 md:min-h-[72vh] md:pb-6">
           {session.recordInputType === "end" ? (
             <>
               <div className="sticky top-2 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
@@ -1931,109 +1931,111 @@ function SessionEditor({
                 </Card>
               </div>
 
-              {session.ends.map((end) => (
-                <Card key={end.id} className="rounded-[28px] border-0 bg-white shadow-xl">
-                  <CardContent className="p-4 md:p-5">
-                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <div className="text-base font-semibold">End {end.index}</div>
-                        <div className="text-sm text-slate-500">합계 {endTotal(end)}점</div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" className="rounded-2xl" onClick={() => resetEnd(end.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" /> 초기화
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
-                          onClick={() => setDeleteDialog({ open: true, endId: end.id })}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> 엔드 삭제
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                      {end.arrows.map((arrow, arrowIndex) => {
-                        const key = `${end.id}_${arrowIndex}`;
-                        const isCurrent = isCurrentArrow(end.id, arrowIndex);
-                        const isFlashed = flashKey === key;
-
-                        return (
-                          <div
-                            key={key}
-                            className={`rounded-2xl border p-2 transition-all duration-150 ${
-                              isCurrent
-                                ? "border-blue-400 bg-blue-50 shadow-sm ring-1 ring-blue-200"
-                                : isFlashed
-                                  ? "border-emerald-300 bg-emerald-50"
-                                  : "border-slate-200"
-                            }`}
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
+                {session.ends.map((end) => (
+                  <Card key={end.id} className="rounded-[28px] border-0 bg-white shadow-xl">
+                    <CardContent className="p-4 md:p-5">
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="text-base font-semibold">End {end.index}</div>
+                          <div className="text-sm text-slate-500">합계 {endTotal(end)}점</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" className="rounded-2xl" onClick={() => resetEnd(end.id)}>
+                            <Trash2 className="mr-2 h-4 w-4" /> 초기화
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                            onClick={() => setDeleteDialog({ open: true, endId: end.id })}
                           >
-                            <div className="mb-2 text-center text-xs text-slate-500">화살 {arrowIndex + 1}</div>
-                            <select
-                              ref={(el) => {
-                                if (el) arrowRefs.current[key] = el;
-                              }}
-                              value={arrow ?? ""}
-                              onChange={(e) =>
-                                updateArrow(
-                                  end.id,
-                                  arrowIndex,
-                                  e.target.value === ""
-                                    ? null
-                                    : isNaN(Number(e.target.value))
-                                      ? e.target.value
-                                      : Number(e.target.value),
-                                  { autoFocusNext: true, haptic: true }
-                                )
-                              }
-                              className={`h-10 w-full rounded-xl border bg-white px-2 text-center text-sm outline-none transition ${
+                            <Trash2 className="mr-2 h-4 w-4" /> 엔드 삭제
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                        {end.arrows.map((arrow, arrowIndex) => {
+                          const key = `${end.id}_${arrowIndex}`;
+                          const isCurrent = isCurrentArrow(end.id, arrowIndex);
+                          const isFlashed = flashKey === key;
+
+                          return (
+                            <div
+                              key={key}
+                              className={`rounded-2xl border p-2 transition-all duration-150 ${
                                 isCurrent
-                                  ? "border-blue-300 text-blue-900"
+                                  ? "border-blue-400 bg-blue-50 shadow-sm ring-1 ring-blue-200"
                                   : isFlashed
-                                    ? "border-emerald-300 text-emerald-900"
+                                    ? "border-emerald-300 bg-emerald-50"
                                     : "border-slate-200"
                               }`}
                             >
-                              <option value="">선택</option>
-                              {SCORE_OPTIONS.map((option) => (
-                                <option key={String(option)} value={String(option)}>
-                                  {option}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {session.mode === "set" && (
-                      <div className="mt-4 grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
-                        <div className="grid gap-2">
-                          <Label>상대 엔드 점수</Label>
-                          <Input
-                            type="number"
-                            value={end.opponentTotal ?? 0}
-                            onChange={(e) => {
-                              const value = Math.max(0, Number(e.target.value) || 0);
-                              patchSession((prev) => ({
-                                ...prev,
-                                ends: prev.ends.map((item) =>
-                                  item.id === end.id ? { ...item, opponentTotal: value } : item
-                                ),
-                              }));
-                            }}
-                          />
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
-                          엔드별 상대 점수를 입력해 세트 포인트를 계산한다.
-                        </div>
+                              <div className="mb-2 text-center text-xs text-slate-500">화살 {arrowIndex + 1}</div>
+                              <select
+                                ref={(el) => {
+                                  if (el) arrowRefs.current[key] = el;
+                                }}
+                                value={arrow ?? ""}
+                                onChange={(e) =>
+                                  updateArrow(
+                                    end.id,
+                                    arrowIndex,
+                                    e.target.value === ""
+                                      ? null
+                                      : isNaN(Number(e.target.value))
+                                        ? e.target.value
+                                        : Number(e.target.value),
+                                    { autoFocusNext: true, haptic: true }
+                                  )
+                                }
+                                className={`h-10 w-full rounded-xl border bg-white px-2 text-center text-sm outline-none transition ${
+                                  isCurrent
+                                    ? "border-blue-300 text-blue-900"
+                                    : isFlashed
+                                      ? "border-emerald-300 text-emerald-900"
+                                      : "border-slate-200"
+                                }`}
+                              >
+                                <option value="">선택</option>
+                                {SCORE_OPTIONS.map((option) => (
+                                  <option key={String(option)} value={String(option)}>
+                                    {option}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          );
+                        })}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+
+                      {session.mode === "set" && (
+                        <div className="mt-4 grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
+                          <div className="grid gap-2">
+                            <Label>상대 엔드 점수</Label>
+                            <Input
+                              type="number"
+                              value={end.opponentTotal ?? 0}
+                              onChange={(e) => {
+                                const value = Math.max(0, Number(e.target.value) || 0);
+                                patchSession((prev) => ({
+                                  ...prev,
+                                  ends: prev.ends.map((item) =>
+                                    item.id === end.id ? { ...item, opponentTotal: value } : item
+                                  ),
+                                }));
+                              }}
+                            />
+                          </div>
+                          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                            엔드별 상대 점수를 입력해 세트 포인트를 계산한다.
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </>
           ) : (
             <>
