@@ -1221,7 +1221,7 @@ function FirebaseSetupNoticeCompact() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="w-full max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
       <div
         className="cursor-pointer text-sm font-medium text-slate-700"
         onDoubleClick={() => setOpen((prev) => !prev)}
@@ -2362,7 +2362,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         </Card>
       </div>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle>Recent X-Sessions</CardTitle>
         </CardHeader>
@@ -2386,7 +2386,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                     className="grid gap-2 rounded-3xl border border-slate-200 p-3 md:grid-cols-[1fr_auto] md:items-center md:gap-3 md:p-4"
                   >
                     <div className="min-w-0">
-                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
                           {getModeLabel(session.mode)}
                         </Badge>
@@ -2510,7 +2510,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
       </div>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Medal className="h-5 w-5 text-red-600" /> X-Ranking
@@ -2518,7 +2518,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">거리</Label>
               <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 거리</option>
@@ -2528,7 +2528,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학년</Label>
               <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 학년</option>
@@ -2536,7 +2536,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학교/소속</Label>
               <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 학교/소속팀</option>
@@ -2546,7 +2546,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">지역</Label>
               <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 지역</option>
@@ -2556,7 +2556,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">경기 방식</Label>
               <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
@@ -2565,7 +2565,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">날짜</Label>
               <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
@@ -2660,7 +2660,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
   return (
     <div className="grid gap-4">
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-blue-700" /> X-Analysis
@@ -2668,7 +2668,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">거리</Label>
               <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="">거리 선택</option>
@@ -2678,7 +2678,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학년/부문</Label>
               <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="">학년/부문 선택</option>
@@ -2686,7 +2686,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">지역</Label>
               <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 지역</option>
@@ -2696,7 +2696,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">날짜</Label>
               <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
@@ -2705,7 +2705,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">경기 방식</Label>
               <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
@@ -2714,7 +2714,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">분석 기준</Label>
               <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {PERIOD_OPTIONS.map((item) => (
@@ -2809,7 +2809,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
         </CardContent>
       </Card>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Swords className="h-5 w-5 text-red-700" /> X-Analysis Rival Compare
@@ -2925,7 +2925,7 @@ function ProfilePanel({ user, onUpdate, saving }) {
 
   return (
     <div className="grid gap-4">
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle>프로필 관리</CardTitle>
         </CardHeader>
@@ -3177,14 +3177,14 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
   }
 
   return (
-    <div className="grid w-full min-w-0 max-w-full gap-4 overflow-x-hidden md:gap-6">
+    <div className="grid w-full max-w-full gap-6 overflow-x-hidden">
             <FirebaseSetupNoticeCompact />
 
-<Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+<Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">관리자 페이지</CardTitle>
         </CardHeader>
-        <CardContent className="grid min-w-0 grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div className="min-w-0 rounded-2xl bg-slate-50 p-4">
             <div className="text-sm text-slate-500">관리자</div>
             <div className="mt-2 text-lg font-semibold">{currentUser?.name || "관리자"}</div>
@@ -3201,11 +3201,11 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </CardContent>
       </Card>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">관리자 계정 설정</CardTitle>
         </CardHeader>
-        <CardContent className="grid min-w-0 gap-4 p-4 sm:p-6">
+        <CardContent className="grid gap-4 min-w-0">
           <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             추가 관리자 이메일을 등록하면 다음 로그인부터 관리자 모드 진입이 가능하다.
           </div>
@@ -3242,15 +3242,15 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </CardContent>
       </Card>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">가입자 목록 / 프로필 보기</CardTitle>
         </CardHeader>
-        <CardContent className="grid min-w-0 gap-4 p-4 sm:p-6">
+        <CardContent className="grid gap-4 min-w-0">
           <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             비밀번호는 표시하지 않는다. 이름을 더블 클릭하면 자세한 정보를 볼 수 있다. 가입자 삭제는 프로필 문서와 저장 기록을 삭제한다.
           </div>
-          <div className="grid w-full min-w-0 gap-2 md:max-w-md">
+          <div className="grid gap-2 md:max-w-md">
             <Label>이름 검색</Label>
             <Input
               value={userSearch}
@@ -3260,7 +3260,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
           </div>
           <div className="grid gap-2">
             {visibleUsers.length === 0 ? (
-              <div className="w-full min-w-0 rounded-2xl border border-slate-200 px-4 py-6 text-sm text-slate-500">
+              <div className="rounded-2xl border border-slate-200 px-4 py-6 text-sm text-slate-500">
                 검색 결과가 없다.
               </div>
             ) : (
@@ -3276,7 +3276,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
                       <div className="truncate font-semibold">{getDisplayName(user)}</div>
                       <div className="truncate text-sm text-slate-500">{user.email || "이메일 없음"}</div>
                     </div>
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge className="rounded-full bg-slate-700 text-white">기록 {userSessions.length}</Badge>
                       <Button
                         type="button"
@@ -3321,7 +3321,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </DialogContent>
       </Dialog>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">운영 메모</CardTitle>
         </CardHeader>
@@ -3336,12 +3336,12 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </CardContent>
       </Card>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">메일 발송 준비</CardTitle>
         </CardHeader>
-        <CardContent className="grid min-w-0 gap-4 p-4 sm:p-6">
-          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-4 min-w-0">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <div className="grid gap-2">
               <Label>학년/부문</Label>
               <select
@@ -3395,7 +3395,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
             />
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <div className="flex flex-wrap gap-2">
             <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={() => recipientEmails && window.open(mailtoHref, "_self")}>
               메일앱으로 열기
             </Button>
@@ -3932,8 +3932,8 @@ function XSessionApp() {
   const adminEmailGuard = isAdminEmail;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 overflow-x-hidden p-4 md:p-6 xl:p-8">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
         {currentUser ? <Hero activeTab={ui.activeTab} /> : null}
 
         {authLoading && !authUser ? (
