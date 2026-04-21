@@ -1357,10 +1357,11 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
         backgroundSize: "contain",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "top center",
-        backgroundColor: "#dfe6f3",
+        backgroundColor: "#22303f",
       }}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.03)_0%,rgba(2,6,23,0.18)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.03)_0%,rgba(2,6,23,0.12)_55%,rgba(34,48,63,0.55)_78%,rgba(34,48,63,0.92)_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-[24svh] bg-[linear-gradient(180deg,rgba(34,48,63,0)_0%,rgba(34,48,63,0.45)_38%,rgba(34,48,63,0.88)_100%)] pointer-events-none" />
       <div className="relative flex min-h-[100svh] items-end justify-center px-2 pb-2 pt-[32svh] sm:px-4 sm:pb-4 sm:pt-[34svh] lg:pt-[38svh]">
         <div className="w-full max-w-lg rounded-[24px] sm:rounded-[30px] bg-transparent p-3 sm:p-5">
           <div className="grid gap-4">
