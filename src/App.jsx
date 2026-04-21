@@ -717,7 +717,7 @@ function getSessionTotal(session) {
 }
 
 function getHits(session) {
-  return session.ends.flatMap((end) => end.arrows).filter((v) => v !== null && v !== "M").length;
+  return session.ends.flatMap((end) => end.arrows).filter((v) => v !== null && v !== undefined && v !== "").length;
 }
 
 function getXs(session) {
@@ -921,7 +921,7 @@ function buildSessionPayload({ draftSession, profile, uid }) {
           opponentScoreEntered: Boolean(end.opponentScoreEntered),
           endTotal: endTotal(end),
           xCount: end.arrows.filter((v) => v === "X").length,
-          hitCount: end.arrows.filter((v) => v !== null && v !== "M").length,
+          hitCount: end.arrows.filter((v) => v !== null && v !== undefined && v !== "").length,
         })),
     summary,
     status: "completed",
@@ -1128,7 +1128,7 @@ function getQualifiedDistanceAttempts(session) {
 
   const actualArrowCount = (session.ends || [])
     .flatMap((end) => end.arrows || [])
-    .filter((arrow) => arrow !== null && arrow !== undefined && arrow !== "")
+    .filter((arrow) => arrow !== null && arrow !== undefined && String(arrow).trim() !== "")
     .length;
 
   if (actualArrowCount !== 36) return [];
@@ -2757,7 +2757,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
     <div className="grid gap-4">
       <div className="grid gap-3 md:grid-cols-3">
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
-          <CardContent className="bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
+          <CardContent className="h-full bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
               <div className="p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 누적 점수</div>
@@ -2783,7 +2783,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         </Card>
 
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
-          <CardContent className="bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
+          <CardContent className="h-full bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
               <div className="p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 화살 평균 점수</div>
@@ -2809,7 +2809,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         </Card>
 
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
-          <CardContent className="bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
+          <CardContent className="h-full bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
             <div className="grid grid-cols-2 divide-x divide-slate-900/10">
               <div className="p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 거리 최고 점수</div>
