@@ -74,6 +74,7 @@ import {
   reauthenticateWithCredential,
   updatePassword,
   deleteUser,
+  fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -1248,18 +1249,33 @@ function FirebaseSetupNoticeCompact() {
 
 function AuthPanel({ onRegister, onLogin, authLoading }) {
   const SAVED_EMAIL_KEY = "elbowshot_saved_email";
-  const [form, setForm] = useState({
+  const [mode, setMode] = useState("login");
+  const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
   });
+  const [registerForm, setRegisterForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    division: "전체학년",
+    groupName: "",
+    regionCity: "",
+    regionDistrict: "",
+  });
   const [rememberEmail, setRememberEmail] = useState(false);
   const [error, setError] = useState("");
+
+  const registerDistrictOptions = useMemo(
+    () => getDistrictOptions(registerForm.regionCity),
+    [registerForm.regionCity]
+  );
 
   useEffect(() => {
     try {
       const savedEmail = localStorage.getItem(SAVED_EMAIL_KEY) || "";
       if (savedEmail) {
-        setForm((prev) => ({ ...prev, email: savedEmail }));
+        setLoginForm((prev) => ({ ...prev, email: savedEmail }));
         setRememberEmail(true);
       }
     } catch {
@@ -1267,16 +1283,13 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     }
   }, []);
 
-  async function handleSubmit(action) {
-    if (!form.email.trim() || !form.email.includes("@")) {
-      return setError("올바른 이메일이 필요하다.");
+  async function handleLoginSubmit() {
+    if (!loginForm.email.trim() || !loginForm.password.trim()) {
+      setError("이메일/비밀번호를 입력해 주세요.");
+      return;
     }
 
-    if (!form.password.trim() || form.password.length < 6) {
-      return setError("비밀번호는 최소 6자 이상이어야 한다.");
-    }
-
-    const normalizedEmail = form.email.trim().toLowerCase();
+    const normalizedEmail = loginForm.email.trim().toLowerCase();
 
     try {
       if (rememberEmail) {
@@ -1289,24 +1302,51 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     }
 
     setError("");
-
-    if (action === "register") {
-      await onRegister({
-        name: normalizedEmail.split("@")[0],
+    try {
+      await onLogin({
         email: normalizedEmail,
-        password: form.password,
-        division: "전체학년",
-        groupName: "",
-        regionCity: "",
-        regionDistrict: "",
+        password: loginForm.password,
       });
+    } catch (error) {
+      setError(error.message || "로그인에 실패했다.");
+    }
+  }
+
+  async function handleRegisterSubmit() {
+    if (
+      !registerForm.name.trim() ||
+      !registerForm.email.trim() ||
+      !registerForm.password.trim() ||
+      !registerForm.groupName.trim() ||
+      !registerForm.regionCity ||
+      !registerForm.regionDistrict ||
+      !registerForm.division
+    ) {
+      setError("해당 칸을 입력 후 버튼을 눌러주세요.");
       return;
     }
 
-    await onLogin({
-      email: normalizedEmail,
-      password: form.password,
-    });
+    if (!registerForm.email.includes("@")) {
+      setError("해당 칸을 입력 후 버튼을 눌러주세요.");
+      return;
+    }
+
+    if (registerForm.password.length < 6) {
+      setError("비밀번호는 최소 6자 이상이어야 합니다.");
+      return;
+    }
+
+    setError("");
+    try {
+      await onRegister({
+        ...registerForm,
+        email: registerForm.email.trim().toLowerCase(),
+        name: registerForm.name.trim(),
+        groupName: registerForm.groupName.trim(),
+      });
+    } catch (error) {
+      setError(error.message || "회원가입에 실패했다.");
+    }
   }
 
   return (
@@ -1323,79 +1363,176 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
       <div className="relative flex min-h-[calc(100vh-32px)] items-end justify-center p-4 sm:p-6">
         <div className="w-full max-w-md rounded-[30px] bg-transparent p-4 sm:p-5">
           <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-2 rounded-2xl bg-black/20 p-1 backdrop-blur-sm">
+              <Button
+                type="button"
+                variant="ghost"
+                className={`h-11 rounded-2xl text-base font-semibold ${mode === "login" ? "bg-white text-slate-900 hover:bg-white" : "text-white hover:bg-white/10"}`}
+                onClick={() => {
+                  setMode("login");
+                  setError("");
+                }}
+              >
+                로그인
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className={`h-11 rounded-2xl text-base font-semibold ${mode === "register" ? "bg-white text-slate-900 hover:bg-white" : "text-white hover:bg-white/10"}`}
+                onClick={() => {
+                  setMode("register");
+                  setError("");
+                }}
+              >
+                회원가입
+              </Button>
+            </div>
+
             {error && (
               <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
                 <AlertCircle className="h-4 w-4" /> {error}
               </div>
             )}
 
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <Label className="text-sm font-semibold text-white">이메일</Label>
-                <label htmlFor="remember-email" className="flex cursor-pointer items-center gap-2 text-xs font-medium text-white/95">
-                  <input
-                    id="remember-email"
-                    type="checkbox"
-                    checked={rememberEmail}
-                    onChange={(e) => setRememberEmail(e.target.checked)}
-                    className="h-4 w-4 rounded border-white/40"
+            {mode === "login" ? (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="text-sm font-semibold text-white">이메일</Label>
+                    <label htmlFor="remember-email" className="flex cursor-pointer items-center gap-2 text-xs font-medium text-white/95">
+                      <input
+                        id="remember-email"
+                        type="checkbox"
+                        checked={rememberEmail}
+                        onChange={(e) => setRememberEmail(e.target.checked)}
+                        className="h-4 w-4 rounded border-white/40"
+                      />
+                      이메일 저장
+                    </label>
+                  </div>
+                  <Input
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="이메일 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
                   />
-                  이메일 저장
-                </label>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">비밀번호</Label>
+                  <Input
+                    type="password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
+                    placeholder="비밀번호 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  disabled={authLoading}
+                  className="h-12 rounded-2xl bg-blue-950 text-base font-semibold hover:bg-blue-900"
+                  onClick={handleLoginSubmit}
+                >
+                  {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
+                  로그인
+                </Button>
               </div>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="이메일 입력"
-                className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
-              />
-            </div>
+            ) : (
+              <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">이름</Label>
+                  <Input
+                    type="text"
+                    value={registerForm.name}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="이름 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">이메일</Label>
+                  <Input
+                    type="email"
+                    value={registerForm.email}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="이메일 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">비밀번호</Label>
+                  <Input
+                    type="password"
+                    value={registerForm.password}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, password: e.target.value }))}
+                    placeholder="비밀번호 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">학년/부문</Label>
+                  <select
+                    value={registerForm.division}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, division: e.target.value }))}
+                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
+                  >
+                    {DIVISION_OPTIONS.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">소속</Label>
+                  <Input
+                    type="text"
+                    value={registerForm.groupName}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, groupName: e.target.value }))}
+                    placeholder="예: 엘보샷"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">지역(시/도)</Label>
+                  <select
+                    value={registerForm.regionCity}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, regionCity: e.target.value, regionDistrict: "" }))}
+                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
+                  >
+                    <option value="">지역 선택</option>
+                    {REGION_OPTIONS.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">지역(구/군)</Label>
+                  <select
+                    value={registerForm.regionDistrict}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, regionDistrict: e.target.value }))}
+                    disabled={!registerForm.regionCity}
+                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none disabled:bg-white/70"
+                  >
+                    <option value="">구/군 선택</option>
+                    {registerDistrictOptions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="grid gap-2">
-              <Label className="text-sm font-semibold text-white">비밀번호</Label>
-              <Input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="비밀번호 입력"
-                className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <Button
-                type="button"
-                disabled={authLoading}
-                className="h-12 rounded-2xl bg-blue-950 text-base font-semibold hover:bg-blue-900"
-                onClick={async () => {
-                  try {
-                    await handleSubmit("login");
-                  } catch (error) {
-                    setError(error.message || "로그인에 실패했다.");
-                  }
-                }}
-              >
-                {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
-                로그인
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={authLoading}
-                className="h-12 rounded-2xl border-0 bg-white/92 text-base font-semibold text-slate-900 hover:bg-white"
-                onClick={async () => {
-                  try {
-                    await handleSubmit("register");
-                  } catch (error) {
-                    setError(error.message || "회원가입에 실패했다.");
-                  }
-                }}
-              >
-                회원가입
-              </Button>
-            </div>
+                <Button
+                  type="button"
+                  disabled={authLoading}
+                  className="h-12 rounded-2xl bg-white/92 text-base font-semibold text-slate-900 hover:bg-white"
+                  onClick={handleRegisterSubmit}
+                >
+                  {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
+                  회원가입 완료
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -3819,12 +3956,19 @@ function XSessionApp() {
 
 
   async function handleRegister(input) {
-    if (!appServices?.auth || !appServices?.db) return;
+    if (!appServices?.auth || !appServices?.db) {
+      throw new Error("Firebase 연결이 아직 준비되지 않았습니다.");
+    }
 
     setAuthLoading(true);
     setGlobalError("");
 
     try {
+      const signInMethods = await fetchSignInMethodsForEmail(appServices.auth, input.email);
+      if (signInMethods.length > 0) {
+        throw new Error("이미 가입한 이메일 주소입니다.");
+      }
+
       pendingProfileRef.current = {
         name: input.name || input.email.split("@")[0],
         email: input.email,
@@ -3841,6 +3985,7 @@ function XSessionApp() {
         name: input.name || input.email.split("@")[0],
         groupName: input.groupName || "",
         regionCity: input.regionCity || "",
+        regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
       });
 
@@ -3866,25 +4011,39 @@ function XSessionApp() {
       );
       setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
       await loadUsersAndSessions(appServices.db);
+      return { ok: true };
     } catch (error) {
       pendingProfileRef.current = null;
-      setGlobalError(error.message || "회원가입에 실패했다.");
+      const message = error.message || "회원가입에 실패했다.";
+      setGlobalError(message);
+      throw new Error(message);
     } finally {
       setAuthLoading(false);
     }
   }
 
   async function handleLogin(input) {
-    if (!appServices?.auth) return;
+    if (!appServices?.auth) {
+      throw new Error("Firebase 연결이 아직 준비되지 않았습니다.");
+    }
 
     setAdminRequested(false);
     setAuthLoading(true);
     setGlobalError("");
 
     try {
+      const signInMethods = await fetchSignInMethodsForEmail(appServices.auth, input.email);
+      if (!signInMethods.length) {
+        throw new Error("회원가입후 이용해 주세요.");
+      }
+
       await signInWithEmailAndPassword(appServices.auth, input.email, input.password);
+      return { ok: true };
     } catch (error) {
-      setGlobalError(error.message || "로그인에 실패했다.");
+      const message = error.message || "로그인에 실패했다.";
+      setGlobalError(message);
+      throw new Error(message);
+    } finally {
       setAuthLoading(false);
     }
   }
