@@ -2645,7 +2645,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
   const rankings = useMemo(() => buildUserRankings(users, sessions, rankingFilters), [users, sessions, rankingFilters]);
 
   const sortedRankings = useMemo(() => {
-    const items = [...rankings];
+    const items = rankings.filter((item) => Number(item.sessions || 0) >= 3);
     items.sort((a, b) => {
       if (b.avgArrow !== a.avgArrow) return b.avgArrow - a.avgArrow;
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
@@ -2664,11 +2664,11 @@ function RankingBoard({ users, sessions, currentUserId }) {
             <CardTitle className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-amber-500" /> 내 랭킹
             </CardTitle>
-            <div className="text-xs leading-relaxed text-slate-500 sm:text-sm">
-              랭킹은 평균 화살 점수 우선, 동률 시 총점, 그다음 최신 기록 순으로 계산된다.
-            </div>
           </CardHeader>
           <CardContent>
+            <div className="mb-3 rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">
+              랭킹은 평균 화살 점수 우선, 동률 시 총점, 그다음 최신 기록 순으로 계산되며 3회 이상 기록된 사용자만 반영된다.
+            </div>
             {myRank ? (
               <div className="space-y-4">
                 <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-6 text-white shadow-lg">
@@ -2678,7 +2678,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">랭킹을 계산할 기록이 아직 없다.</div>
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">랭킹은 3회 이상 기록된 사용자부터 반영된다.</div>
             )}
           </CardContent>
         </Card>
@@ -2786,9 +2786,6 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   const [period, setPeriod] = useState("day");
   const [matchType, setMatchType] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
-  const [isMobileChart, setIsMobileChart] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth < 768 : false
-  );
   const [requiredFilters, setRequiredFilters] = useState({
     distance: "",
     division: "",
@@ -2817,29 +2814,6 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   );
 
   const rivalUser = users.find((u) => u.id === selectedRival);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-    const handleResize = () => setIsMobileChart(window.innerWidth < 768);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const chartCommonProps = useMemo(
-    () => ({
-      margin: isMobileChart
-        ? { top: 8, right: 6, left: -26, bottom: 0 }
-        : { top: 8, right: 16, left: 0, bottom: 8 },
-      xTick: isMobileChart ? { fontSize: 11 } : { fontSize: 12 },
-      yTick: isMobileChart ? { fontSize: 11 } : { fontSize: 12 },
-      yAxisWidth: isMobileChart ? 26 : 40,
-      legendWrapperStyle: isMobileChart ? { fontSize: "11px", paddingTop: "4px" } : { fontSize: "12px" },
-      chartHeight: isMobileChart ? "h-[260px]" : "h-[320px]",
-      compareHeight: isMobileChart ? "h-[280px]" : "h-[340px]",
-    }),
-    [isMobileChart]
-  );
 
   const rivalSessions = sessions
     .filter((s) => s.userId === selectedRival && s.isComplete)
@@ -2959,14 +2933,14 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               <div className="grid gap-4 xl:grid-cols-2">
                 <div className="rounded-3xl bg-slate-50 p-4">
                   <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 변화</div>
-                  <div className={`${chartCommonProps.chartHeight} w-full`}>
+                  <div className="h-[320px] w-full">
                     <ResponsiveContainer>
-                      <LineChart data={analytics} margin={chartCommonProps.margin}>
+                      <LineChart data={analytics}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={chartCommonProps.xTick} minTickGap={isMobileChart ? 8 : 16} interval="preserveStartEnd" />
-                        <YAxis domain={[0, 10]} tick={chartCommonProps.yTick} width={chartCommonProps.yAxisWidth} tickCount={4} />
+                        <XAxis dataKey="label" />
+                        <YAxis domain={[0, 10]} />
                         <Tooltip />
-                        <Legend wrapperStyle={chartCommonProps.legendWrapperStyle} />
+                        <Legend />
                         <Line type="monotone" dataKey="avgArrow" name="평균 화살 점수" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.avg }} activeDot={{ r: 6 }} />
                       </LineChart>
                     </ResponsiveContainer>
@@ -2975,14 +2949,14 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
                 <div className="rounded-3xl bg-slate-50 p-4">
                   <div className="mb-3 text-sm font-semibold text-slate-700">구간별 총점</div>
-                  <div className={`${chartCommonProps.chartHeight} w-full`}>
+                  <div className="h-[320px] w-full">
                     <ResponsiveContainer>
-                      <BarChart data={analytics} margin={chartCommonProps.margin}>
+                      <BarChart data={analytics}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={chartCommonProps.xTick} minTickGap={isMobileChart ? 8 : 16} interval="preserveStartEnd" />
-                        <YAxis tick={chartCommonProps.yTick} width={chartCommonProps.yAxisWidth} />
+                        <XAxis dataKey="label" />
+                        <YAxis />
                         <Tooltip />
-                        <Legend wrapperStyle={chartCommonProps.legendWrapperStyle} />
+                        <Legend />
                         <Bar dataKey="score" name="총점" fill={CHART_COLORS.score} radius={[8, 8, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -2992,14 +2966,14 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
               <div className="rounded-3xl bg-slate-50 p-4">
                 <div className="mb-3 text-sm font-semibold text-slate-700">거리별 성능 비교</div>
-                <div className={`${chartCommonProps.chartHeight} w-full`}>
+                <div className="h-[320px] w-full">
                   <ResponsiveContainer>
-                    <BarChart data={distancePerformance} margin={chartCommonProps.margin}>
+                    <BarChart data={distancePerformance}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" tick={chartCommonProps.xTick} minTickGap={isMobileChart ? 8 : 16} interval="preserveStartEnd" />
-                      <YAxis domain={[0, 10]} tick={chartCommonProps.yTick} width={chartCommonProps.yAxisWidth} tickCount={4} />
+                      <XAxis dataKey="label" />
+                      <YAxis domain={[0, 10]} />
                       <Tooltip />
-                      <Legend wrapperStyle={chartCommonProps.legendWrapperStyle} />
+                      <Legend />
                       <Bar dataKey="avgArrow" name="거리별 평균 화살 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -3042,14 +3016,14 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
           <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4">
             <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 비교</div>
-            <div className={`${chartCommonProps.compareHeight} w-full`}>
+            <div className="h-[340px] w-full">
               <ResponsiveContainer>
-                <LineChart data={comparison} margin={chartCommonProps.margin}>
+                <LineChart data={comparison}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" tick={chartCommonProps.xTick} minTickGap={isMobileChart ? 8 : 16} interval="preserveStartEnd" />
-                  <YAxis domain={[0, 10]} tick={chartCommonProps.yTick} width={chartCommonProps.yAxisWidth} tickCount={4} />
+                  <XAxis dataKey="label" />
+                  <YAxis domain={[0, 10]} />
                   <Tooltip />
-                  <Legend wrapperStyle={chartCommonProps.legendWrapperStyle} />
+                  <Legend />
                   <Line type="monotone" dataKey="나" stroke={CHART_COLORS.me} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.me }} />
                   <Line type="monotone" dataKey="라이벌" stroke={CHART_COLORS.rival} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.rival }} />
                 </LineChart>
