@@ -786,10 +786,38 @@ function getYearKey(dateInput) {
   return String(new Date(dateInput).getFullYear());
 }
 
+function toLocalDateKey(value) {
+  if (!value) return "";
+  const raw =
+    typeof value?.toDate === "function"
+      ? value.toDate()
+      : value instanceof Date
+        ? value
+        : new Date(value);
+
+  if (Number.isNaN(raw.getTime())) return "";
+  const year = raw.getFullYear();
+  const month = String(raw.getMonth() + 1).padStart(2, "0");
+  const day = String(raw.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getTodayKey() {
+  return toLocalDateKey(new Date());
+}
+
 function getYesterdayKey() {
   const date = new Date();
   date.setDate(date.getDate() - 1);
-  return date.toISOString().slice(0, 10);
+  return toLocalDateKey(date);
+}
+
+function getSessionDayKey(session) {
+  return (
+    toLocalDateKey(session?.createdAt) ||
+    toLocalDateKey(session?.updatedAt) ||
+    toLocalDateKey(session?.sessionDate)
+  );
 }
 
 function isWithinDateFilter(sessionDate, dateFilter) {
@@ -2657,15 +2685,11 @@ function SessionEditor({
 function Dashboard({ sessions, loading, onEditSession }) {
   const completed = sessions.filter((s) => s.isComplete);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getTodayKey();
   const yesterdayKey = getYesterdayKey();
 
-  const todaySessions = completed.filter(
-    (s) => String(s.sessionDate || "").slice(0, 10) === todayKey
-  );
-  const yesterdaySessions = completed.filter(
-    (s) => String(s.sessionDate || "").slice(0, 10) === yesterdayKey
-  );
+  const todaySessions = completed.filter((s) => getSessionDayKey(s) === todayKey);
+  const yesterdaySessions = completed.filter((s) => getSessionDayKey(s) === yesterdayKey);
 
   const todayTotal = todaySessions.reduce(
     (sum, s) => sum + (s.summary?.totalScore ?? getSessionTotal(s)),
@@ -2741,7 +2765,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                   {previousDayTotal}
                 </div>
                 <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
-                  {yesterdayKey} 세션 점수 합산
+                  {yesterdayKey} 기록 기준 점수 합산
                 </div>
               </div>
 
