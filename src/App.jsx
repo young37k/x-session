@@ -813,11 +813,7 @@ function getYesterdayKey() {
 }
 
 function getSessionDayKey(session) {
-  return (
-    toLocalDateKey(session?.createdAt) ||
-    toLocalDateKey(session?.updatedAt) ||
-    toLocalDateKey(session?.sessionDate)
-  );
+  return toLocalDateKey(session?.sessionDate);
 }
 
 function isWithinDateFilter(sessionDate, dateFilter) {
