@@ -1787,6 +1787,7 @@ function SessionEditor({
   }
 
   function confirmOpponentScore(endId) {
+    triggerHaptic(16);
     const raw = String(opponentInputBuffers[endId] ?? "");
     if (raw === "") return;
     const value = Math.max(0, Number(raw) || 0);
@@ -1800,6 +1801,7 @@ function SessionEditor({
   }
 
   function handleOpponentKeypadInput(endId, digit) {
+    triggerHaptic(10);
     const nextValue = `${String(opponentInputBuffers[endId] ?? "")}${digit}`.slice(0, 2);
     setOpponentBuffer(endId, nextValue);
     if (nextValue.length >= 2) {
@@ -1825,11 +1827,13 @@ function SessionEditor({
   }
 
   function handleOpponentKeypadDelete(endId) {
+    triggerHaptic(6);
     const raw = String(opponentInputBuffers[endId] ?? "");
     setOpponentBuffer(endId, raw.slice(0, -1));
   }
 
   function activateOpponentInput(endId) {
+    triggerHaptic(10);
     const end = session.ends.find((item) => item.id === endId);
     setActiveOpponentEndId(endId);
     setOpponentBuffer(
