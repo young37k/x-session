@@ -288,6 +288,7 @@ function normalizeSessionShape(session, profile = null) {
         index: idx + 1,
         arrows: Array.from({ length: arrowsPerEnd }, (_, i) => end.arrows?.[i] ?? null),
         opponentTotal: end.opponentTotal || 0,
+        opponentScoreEntered: Boolean(end.opponentScoreEntered),
       }))
     : Array.from({ length: safe.totalEnds || 6 }, (_, i) => createEmptyEnd(i + 1, arrowsPerEnd));
 
@@ -651,6 +652,7 @@ function createEmptyEnd(index, arrowsPerEnd) {
     index,
     arrows: Array.from({ length: arrowsPerEnd }, () => null),
     opponentTotal: 0,
+    opponentScoreEntered: false,
   };
 }
 
@@ -869,6 +871,7 @@ function buildSessionPayload({ draftSession, profile, uid }) {
           endNo: end.index,
           arrows: end.arrows,
           opponentTotal: Number(end.opponentTotal) || 0,
+          opponentScoreEntered: Boolean(end.opponentScoreEntered),
           endTotal: endTotal(end),
           xCount: end.arrows.filter((v) => v === "X").length,
           hitCount: end.arrows.filter((v) => v !== null && v !== "M").length,
@@ -925,6 +928,7 @@ function fromFirestoreSession(docSnap) {
       index: end.endNo,
       arrows: end.arrows || [],
       opponentTotal: end.opponentTotal || 0,
+      opponentScoreEntered: Boolean(end.opponentScoreEntered),
     })),
     isComplete: data.status === "completed",
     summary: data.summary || null,
@@ -1593,6 +1597,7 @@ function SessionEditor({
   }
 
   function quickInputScore(score) {
+    if (session.mode === "set" && activeOpponentEndId) return;
     const emptyTarget = findFirstEmptyTarget(session.ends);
     if (!emptyTarget) return;
 
@@ -1619,6 +1624,7 @@ function SessionEditor({
               ...end,
               arrows: Array.from({ length: prev.arrowsPerEnd }, () => null),
               opponentTotal: 0,
+              opponentScoreEntered: false,
             }
           : end
       ),
@@ -1725,6 +1731,13 @@ function SessionEditor({
     }
     const hasAnyArrow = session.ends.some((end) => end.arrows.some((v) => v !== null));
     if (!hasAnyArrow) return "최소 1발 이상 입력해야 저장 가능하다.";
+    if (session.mode === "set") {
+      const missingOpponentScore = session.ends.some((end) => {
+        const hasEndInput = end.arrows.some((v) => v !== null);
+        return hasEndInput && !end.opponentScoreEntered;
+      });
+      if (missingOpponentScore) return "세트제는 각 엔드의 상대 점수를 입력해야 저장 가능하다.";
+    }
     return "";
   }
 
@@ -1777,7 +1790,7 @@ function SessionEditor({
     patchSession((prev) => ({
       ...prev,
       ends: prev.ends.map((item) =>
-        item.id === endId ? { ...item, opponentTotal: value } : item
+        item.id === endId ? { ...item, opponentTotal: value, opponentScoreEntered: true } : item
       ),
     }));
     moveToNextEndFromOpponent(endId);
@@ -1796,7 +1809,7 @@ function SessionEditor({
               patchSession((sessionPrev) => ({
                 ...sessionPrev,
                 ends: sessionPrev.ends.map((item) =>
-                  item.id === endId ? { ...item, opponentTotal: value } : item
+                  item.id === endId ? { ...item, opponentTotal: value, opponentScoreEntered: true } : item
                 ),
               }));
               moveToNextEndFromOpponent(endId);
@@ -1816,7 +1829,10 @@ function SessionEditor({
   function activateOpponentInput(endId) {
     const end = session.ends.find((item) => item.id === endId);
     setActiveOpponentEndId(endId);
-    setOpponentBuffer(endId, end && Number(end.opponentTotal) > 0 ? String(end.opponentTotal) : "");
+    setOpponentBuffer(
+      endId,
+      end && end.opponentScoreEntered ? String(end.opponentTotal ?? 0) : ""
+    );
   }
 
   function getQuickButtonClass(score) {
@@ -2068,6 +2084,7 @@ function SessionEditor({
                               ref={(el) => {
                                 if (el) arrowRefs.current[key] = el;
                               }}
+                              disabled={session.mode === "set" && !!activeOpponentEndId}
                               value={arrow ?? ""}
                               onChange={(e) =>
                                 updateArrow(
