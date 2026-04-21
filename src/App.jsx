@@ -3668,10 +3668,29 @@ function XBriefPage({ appServices, briefRefreshKey = 0 }) {
       try {
         const snap = await getDocs(query(collection(appServices.db, "brief_notices"), orderBy("createdAt", "desc")));
         if (cancelled) return;
-        setNotices(snap.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        })));
+        const loadedNotices = snap.docs
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+          .sort((a, b) => {
+            const aPinned = a.isPinned ? 1 : 0;
+            const bPinned = b.isPinned ? 1 : 0;
+            if (bPinned !== aPinned) return bPinned - aPinned;
+
+            const aTime =
+              typeof a.createdAt?.toDate === "function"
+                ? a.createdAt.toDate().getTime()
+                : new Date(a.createdAt || 0).getTime();
+
+            const bTime =
+              typeof b.createdAt?.toDate === "function"
+                ? b.createdAt.toDate().getTime()
+                : new Date(b.createdAt || 0).getTime();
+
+            return bTime - aTime;
+          });
+        setNotices(loadedNotices);
       } catch (error) {
         if (!cancelled) setNotices([]);
       } finally {
