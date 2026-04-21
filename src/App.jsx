@@ -27,9 +27,8 @@ import {
   TrendingUp,
   TrendingDown,
   Award,
-  Megaphone,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -804,6 +803,7 @@ function formatDateOnly(value) {
   } catch {
     return String(value);
   }
+}
 
 function formatFullDate(value) {
   if (!value) return "-";
@@ -820,7 +820,6 @@ function formatFullDate(value) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-}
 
 function getWeekKey(dateInput) {
   const date = new Date(dateInput);
@@ -1797,8 +1796,8 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
     { key: "dashboard", label: "X-Dashboard", icon: BarChart3 },
     { key: "ranking", label: "X-Ranking", icon: Trophy },
     { key: "analysis", label: "X-Analysis", icon: CalendarRange },
-    { key: "stage", label: "X-Stage", icon: Trophy },
-    { key: "brief", label: "X-Brief", icon: Megaphone },
+    { key: "stage", label: "X-Stage", icon: Award },
+    { key: "brief", label: "X-Brief", icon: Archive },
     { key: "profile", label: "Profile", icon: User },
     ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield }] : []),
   ];
@@ -3561,27 +3560,16 @@ function XStagePage() {
     <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
       <CardHeader>
         <CardTitle>X-Stage</CardTitle>
-        <CardDescription>대회 일정과 양궁 뉴스를 확인하는 공간이다.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">
-        <Card className="rounded-[22px] border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-lg">대회 일정</CardTitle>
-            <CardDescription>예정된 대회 일정이 여기에 표시된다.</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-500">
-            아직 등록된 대회 일정이 없다.
-          </CardContent>
-        </Card>
-        <Card className="rounded-[22px] border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-lg">양궁 뉴스</CardTitle>
-            <CardDescription>주요 뉴스와 업데이트를 모아본다.</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-500">
-            아직 등록된 뉴스가 없다.
-          </CardContent>
-        </Card>
+        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
+          <div className="text-lg font-semibold text-slate-900">대회 일정</div>
+          <div className="mt-2 text-sm text-slate-500">아직 등록된 대회 일정이 없다.</div>
+        </div>
+        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
+          <div className="text-lg font-semibold text-slate-900">양궁 뉴스</div>
+          <div className="mt-2 text-sm text-slate-500">아직 등록된 뉴스가 없다.</div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -3592,18 +3580,12 @@ function XBriefPage() {
     <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
       <CardHeader>
         <CardTitle>X-Brief</CardTitle>
-        <CardDescription>X-Session 공지사항을 확인하는 공간이다.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Card className="rounded-[22px] border-slate-200">
-          <CardHeader>
-            <CardTitle className="text-lg">공지사항</CardTitle>
-            <CardDescription>운영 공지와 업데이트 노트를 안내한다.</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-slate-500">
-            아직 등록된 공지가 없다.
-          </CardContent>
-        </Card>
+        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
+          <div className="text-lg font-semibold text-slate-900">공지사항</div>
+          <div className="mt-2 text-sm text-slate-500">아직 등록된 공지가 없다.</div>
+        </div>
       </CardContent>
     </Card>
   );
