@@ -1250,6 +1250,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
   });
   const [rememberEmail, setRememberEmail] = useState(false);
   const [error, setError] = useState("");
+  const [bgFailed, setBgFailed] = useState(false);
 
   useEffect(() => {
     try {
@@ -1309,25 +1310,28 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     <div className="relative overflow-hidden rounded-[18px] sm:rounded-[22px] md:rounded-[30px] shadow-2xl">
       <div className="absolute inset-0 bg-[#dfe6f3]" />
 
-      <div
-        className="absolute inset-0 md:hidden"
-        style={{
-          backgroundImage: "url('/login-bg-mobile.png')",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "top center",
-          backgroundSize: "contain",
-        }}
-      />
-
-      <div
-        className="absolute inset-0 hidden md:block"
-        style={{
-          backgroundImage: "url('/login-bg-desktop.png')",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "top center",
-          backgroundSize: "cover",
-        }}
-      />
+      {!bgFailed ? (
+        <>
+          <img
+            src="/login-bg-mobile.png"
+            alt=""
+            className="absolute inset-0 h-full w-full object-contain object-top md:hidden"
+            onError={() => setBgFailed(true)}
+          />
+          <img
+            src="/login-bg-desktop.png"
+            alt=""
+            className="absolute inset-0 hidden h-full w-full object-cover object-top md:block"
+            onError={() => setBgFailed(true)}
+          />
+        </>
+      ) : (
+        <img
+          src="/login-background.png"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-top"
+        />
+      )}
 
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.04)_0%,rgba(2,6,23,0.18)_100%)]" />
 
