@@ -3555,7 +3555,54 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 }
 
 
-function XStagePage() {
+function XStagePage({ appServices, stageRefreshKey = 0 }) {
+  const [events, setEvents] = useState([]);
+  const [newsItems, setNewsItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadStageData() {
+      if (!appServices?.db) {
+        if (!cancelled) {
+          setEvents([]);
+          setNewsItems([]);
+          setLoading(false);
+        }
+        return;
+      }
+      setLoading(true);
+      try {
+        const [eventSnap, newsSnap] = await Promise.all([
+          getDocs(query(collection(appServices.db, "stage_events"), orderBy("date", "asc"))),
+          getDocs(query(collection(appServices.db, "stage_news"), orderBy("createdAt", "desc"))),
+        ]);
+
+        if (cancelled) return;
+        setEvents(eventSnap.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        })));
+        setNewsItems(newsSnap.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        })));
+      } catch (error) {
+        if (!cancelled) {
+          setEvents([]);
+          setNewsItems([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadStageData();
+    return () => {
+      cancelled = true;
+    };
+  }, [appServices, stageRefreshKey]);
+
   return (
     <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
       <CardHeader>
@@ -3564,27 +3611,102 @@ function XStagePage() {
       <CardContent className="grid gap-4 md:grid-cols-2">
         <div className="rounded-[22px] border border-slate-200 bg-white p-5">
           <div className="text-lg font-semibold text-slate-900">대회 일정</div>
-          <div className="mt-2 text-sm text-slate-500">아직 등록된 대회 일정이 없다.</div>
+          <div className="mt-4 grid gap-3">
+            {loading ? (
+              <div className="text-sm text-slate-500">불러오는 중...</div>
+            ) : events.length === 0 ? (
+              <div className="text-sm text-slate-500">아직 등록된 대회 일정이 없다.</div>
+            ) : (
+              events.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="text-sm font-semibold text-slate-900">{item.title || "제목 없음"}</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    {item.date || "-"} · {item.location || "장소 미정"}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
         <div className="rounded-[22px] border border-slate-200 bg-white p-5">
           <div className="text-lg font-semibold text-slate-900">양궁 뉴스</div>
-          <div className="mt-2 text-sm text-slate-500">아직 등록된 뉴스가 없다.</div>
+          <div className="mt-4 grid gap-3">
+            {loading ? (
+              <div className="text-sm text-slate-500">불러오는 중...</div>
+            ) : newsItems.length === 0 ? (
+              <div className="text-sm text-slate-500">아직 등록된 뉴스가 없다.</div>
+            ) : (
+              newsItems.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="text-sm font-semibold text-slate-900">{item.title || "제목 없음"}</div>
+                  <div className="mt-1 whitespace-pre-wrap text-xs text-slate-600">{item.content || ""}</div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function XBriefPage() {
+function XBriefPage({ appServices, briefRefreshKey = 0 }) {
+  const [notices, setNotices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadNotices() {
+      if (!appServices?.db) {
+        if (!cancelled) {
+          setNotices([]);
+          setLoading(false);
+        }
+        return;
+      }
+      setLoading(true);
+      try {
+        const snap = await getDocs(query(collection(appServices.db, "brief_notices"), orderBy("createdAt", "desc")));
+        if (cancelled) return;
+        setNotices(snap.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        })));
+      } catch (error) {
+        if (!cancelled) setNotices([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadNotices();
+    return () => {
+      cancelled = true;
+    };
+  }, [appServices, briefRefreshKey]);
+
   return (
     <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
       <CardHeader>
         <CardTitle>X-Brief</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
-          <div className="text-lg font-semibold text-slate-900">공지사항</div>
-          <div className="mt-2 text-sm text-slate-500">아직 등록된 공지가 없다.</div>
+        <div className="grid gap-3">
+          {loading ? (
+            <div className="text-sm text-slate-500">불러오는 중...</div>
+          ) : notices.length === 0 ? (
+            <div className="rounded-[22px] border border-slate-200 bg-white p-5">
+              <div className="text-lg font-semibold text-slate-900">공지사항</div>
+              <div className="mt-2 text-sm text-slate-500">아직 등록된 공지가 없다.</div>
+            </div>
+          ) : (
+            notices.map((item) => (
+              <div key={item.id} className="rounded-[22px] border border-slate-200 bg-white p-5">
+                <div className="text-lg font-semibold text-slate-900">{item.title || "제목 없음"}</div>
+                <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content || ""}</div>
+                <div className="mt-2 text-xs text-slate-400">{formatDateTime(item.createdAt)}</div>
+              </div>
+            ))
+          )}
         </div>
       </CardContent>
     </Card>
@@ -3775,7 +3897,7 @@ function ProfilePanel({ user, onUpdate, saving }) {
 }
 
 
-function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
+function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onStageRefresh, onBriefRefresh }) {
   const [emailRegion, setEmailRegion] = useState("all");
   const [emailDivision, setEmailDivision] = useState("all");
   const [emailSubject, setEmailSubject] = useState("[X-SESSION 안내]");
@@ -3792,6 +3914,10 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
   const [userSearch, setUserSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [deletingUserId, setDeletingUserId] = useState("");
+  const [eventForm, setEventForm] = useState({ title: "", date: "", location: "" });
+  const [newsForm, setNewsForm] = useState({ title: "", content: "" });
+  const [briefForm, setBriefForm] = useState({ title: "", content: "" });
+  const [publishMessage, setPublishMessage] = useState("");
 
   useEffect(() => {
     try {
@@ -3859,6 +3985,68 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
       .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ko"))
       .slice(0, 10);
   }, [realUsers, userSearch]);
+
+
+  async function createStageEvent() {
+    if (!appServices?.db) return alert("DB 연결이 준비되지 않았다.");
+    if (!eventForm.title.trim() || !eventForm.date.trim()) {
+      return alert("대회 제목과 날짜를 입력해줘.");
+    }
+    try {
+      await addDoc(collection(appServices.db, "stage_events"), {
+        title: eventForm.title.trim(),
+        date: eventForm.date.trim(),
+        location: eventForm.location.trim(),
+        createdAt: serverTimestamp(),
+        createdBy: currentUser?.email || "",
+      });
+      setEventForm({ title: "", date: "", location: "" });
+      setPublishMessage("대회 일정이 등록되었다.");
+      onStageRefresh?.();
+    } catch (error) {
+      alert(error.message || "대회 일정 등록에 실패했다.");
+    }
+  }
+
+  async function createStageNews() {
+    if (!appServices?.db) return alert("DB 연결이 준비되지 않았다.");
+    if (!newsForm.title.trim() || !newsForm.content.trim()) {
+      return alert("뉴스 제목과 내용을 입력해줘.");
+    }
+    try {
+      await addDoc(collection(appServices.db, "stage_news"), {
+        title: newsForm.title.trim(),
+        content: newsForm.content.trim(),
+        createdAt: serverTimestamp(),
+        createdBy: currentUser?.email || "",
+      });
+      setNewsForm({ title: "", content: "" });
+      setPublishMessage("양궁 뉴스가 등록되었다.");
+      onStageRefresh?.();
+    } catch (error) {
+      alert(error.message || "양궁 뉴스 등록에 실패했다.");
+    }
+  }
+
+  async function createBriefNotice() {
+    if (!appServices?.db) return alert("DB 연결이 준비되지 않았다.");
+    if (!briefForm.title.trim() || !briefForm.content.trim()) {
+      return alert("공지 제목과 내용을 입력해줘.");
+    }
+    try {
+      await addDoc(collection(appServices.db, "brief_notices"), {
+        title: briefForm.title.trim(),
+        content: briefForm.content.trim(),
+        createdAt: serverTimestamp(),
+        createdBy: currentUser?.email || "",
+      });
+      setBriefForm({ title: "", content: "" });
+      setPublishMessage("공지사항이 등록되었다.");
+      onBriefRefresh?.();
+    } catch (error) {
+      alert(error.message || "공지 등록에 실패했다.");
+    }
+  }
 
   async function copyRecipients() {
     try {
@@ -4070,6 +4258,77 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </DialogContent>
       </Dialog>
 
+
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">X-Stage / X-Brief 발행</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-6">
+          {publishMessage ? (
+            <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              {publishMessage}
+            </div>
+          ) : null}
+
+          <div className="grid gap-6 xl:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 p-4">
+              <div className="text-base font-semibold text-slate-900">대회 일정 등록</div>
+              <div className="mt-4 grid gap-3">
+                <div className="grid gap-2">
+                  <Label>제목</Label>
+                  <Input value={eventForm.title} onChange={(e) => setEventForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="예: 전국 초등 양궁대회" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>날짜</Label>
+                  <Input type="date" value={eventForm.date} onChange={(e) => setEventForm((prev) => ({ ...prev, date: e.target.value }))} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>장소</Label>
+                  <Input value={eventForm.location} onChange={(e) => setEventForm((prev) => ({ ...prev, location: e.target.value }))} placeholder="예: 예천 진호국제양궁장" />
+                </div>
+                <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createStageEvent}>
+                  대회 일정 등록
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 p-4">
+              <div className="text-base font-semibold text-slate-900">양궁 뉴스 등록</div>
+              <div className="mt-4 grid gap-3">
+                <div className="grid gap-2">
+                  <Label>제목</Label>
+                  <Input value={newsForm.title} onChange={(e) => setNewsForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="예: 국가대표 선발전 시작" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>내용</Label>
+                  <textarea value={newsForm.content} onChange={(e) => setNewsForm((prev) => ({ ...prev, content: e.target.value }))} className="min-h-[140px] rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" placeholder="뉴스 내용을 입력해줘." />
+                </div>
+                <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createStageNews}>
+                  뉴스 등록
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 p-4">
+              <div className="text-base font-semibold text-slate-900">공지사항 등록</div>
+              <div className="mt-4 grid gap-3">
+                <div className="grid gap-2">
+                  <Label>제목</Label>
+                  <Input value={briefForm.title} onChange={(e) => setBriefForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="예: 점검 안내" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>내용</Label>
+                  <textarea value={briefForm.content} onChange={(e) => setBriefForm((prev) => ({ ...prev, content: e.target.value }))} className="min-h-[140px] rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" placeholder="공지 내용을 입력해줘." />
+                </div>
+                <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createBriefNotice}>
+                  공지 등록
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">운영 메모</CardTitle>
@@ -4174,6 +4433,8 @@ function XSessionApp() {
   const [globalError, setGlobalError] = useState("");
   const [tempSaveMessage, setTempSaveMessage] = useState("");
   const [adminRequested, setAdminRequested] = useState(false);
+  const [stageRefreshKey, setStageRefreshKey] = useState(0);
+  const [briefRefreshKey, setBriefRefreshKey] = useState(0);
   const pendingProfileRef = useRef(null);
 
 
@@ -4748,10 +5009,10 @@ function XSessionApp() {
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
-              {ui.activeTab === "stage" && <XStagePage />}
-              {ui.activeTab === "brief" && <XBriefPage />}
+              {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
+              {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
-              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} />}
+              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
             </motion.div>
           </>
         )}
