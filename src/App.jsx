@@ -4415,19 +4415,24 @@ function XSessionApp() {
         await setDoc(doc(appServices.db, "sessions", docRef.id), { sessionId: docRef.id }, { merge: true });
       }
 
-      await recalculateRankingsForUser(appServices.db, authUser.uid, {
-        division: draftSession.division || profile.division || "",
-        name: profile.name || "",
-        groupName: profile.groupName || "",
-        regionCity: profile.regionCity || "",
-      });
-
       clearDraftFromLocal(authUser.uid);
       setTempSaveMessage("");
       setEditingSessionId(null);
       await loadUsersAndSessions(appServices.db);
       setDraftSession(normalizeSessionShape(createNewSession(profile, draftSession.mode), profile));
       setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
+
+      recalculateRankingsForUser(appServices.db, authUser.uid, {
+        division: draftSession.division || profile.division || "",
+        name: profile.name || "",
+        groupName: profile.groupName || "",
+        regionCity: profile.regionCity || "",
+      }).catch((rankingError) => {
+        console.error("RANKING_RECALC_FAILED", rankingError);
+        setGlobalError((prev) =>
+          prev || "세션 저장은 완료됐지만 랭킹 갱신은 실패했다. Firestore Rules 또는 컬렉션 권한을 확인해줘."
+        );
+      });
     } catch (error) {
       setGlobalError(error.message || "X-Session 저장에 실패했다.");
     } finally {
