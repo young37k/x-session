@@ -2061,13 +2061,25 @@ function SessionEditor({
                           <Label>상대 엔드 점수</Label>
                           <Input
                             type="number"
-                            value={end.opponentTotal ?? 0}
+                            inputMode="numeric"
+                            value={end.opponentTotal ?? ""}
                             onChange={(e) => {
-                              const value = Math.max(0, Number(e.target.value) || 0);
+                              const raw = e.target.value;
+                              const value = raw === "" ? "" : Math.max(0, Number(raw) || 0);
                               patchSession((prev) => ({
                                 ...prev,
                                 ends: prev.ends.map((item) =>
                                   item.id === end.id ? { ...item, opponentTotal: value } : item
+                                ),
+                              }));
+                            }}
+                            onBlur={() => {
+                              patchSession((prev) => ({
+                                ...prev,
+                                ends: prev.ends.map((item) =>
+                                  item.id === end.id
+                                    ? { ...item, opponentTotal: item.opponentTotal === "" ? 0 : item.opponentTotal }
+                                    : item
                                 ),
                               }));
                             }}
@@ -3478,7 +3490,7 @@ function XSessionApp() {
   const loadMySessions = useCallback(async (db, uidValue) => {
     setSessionsLoading(true);
     try {
-      const sessionsSnap = await getDocs(query(collection(db, 'sessions'), where('userId', '==', uidValue), orderBy('sessionDate', 'desc')));
+      const sessionsSnap = await getDocs(query(collection(db, 'sessions'), where('userId', '==', uidValue), orderBy('createdAt', 'desc')));
       setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
     } catch (error) {
       setGlobalError(error.message || '내 기록 로딩에 실패했다.');
@@ -3493,7 +3505,7 @@ function XSessionApp() {
     try {
       const [usersSnap, sessionsSnap] = await Promise.all([
         getDocs(collection(db, 'users')),
-        getDocs(query(collection(db, 'sessions'), orderBy('sessionDate', 'desc'))),
+        getDocs(query(collection(db, 'sessions'), orderBy('createdAt', 'desc'))),
       ]);
       setUsers(usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data())));
       setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
@@ -3650,7 +3662,7 @@ function XSessionApp() {
       setTempSaveMessage('');
       setEditingSessionId(null);
       await refreshData(appServices.db, authUser.uid, isAdminUser);
-      const latestOwnSessionsSnap = await getDocs(query(collection(appServices.db, 'sessions'), where('userId', '==', authUser.uid), orderBy('sessionDate', 'desc')));
+      const latestOwnSessionsSnap = await getDocs(query(collection(appServices.db, 'sessions'), where('userId', '==', authUser.uid), orderBy('createdAt', 'desc')));
       const latestOwnSessions = latestOwnSessionsSnap.docs.map((snap) => fromFirestoreSession(snap));
       await trySyncPublicRanking(appServices.db, profile, authUser.uid, latestOwnSessions);
       await loadPublicRankings(appServices.db);
@@ -3672,7 +3684,7 @@ function XSessionApp() {
       clearDraftFromLocal(authUser.uid);
       setTempSaveMessage('');
       await refreshData(appServices.db, authUser.uid, isAdminUser);
-      const latestOwnSessionsSnap = await getDocs(query(collection(appServices.db, 'sessions'), where('userId', '==', authUser.uid), orderBy('sessionDate', 'desc')));
+      const latestOwnSessionsSnap = await getDocs(query(collection(appServices.db, 'sessions'), where('userId', '==', authUser.uid), orderBy('createdAt', 'desc')));
       const latestOwnSessions = latestOwnSessionsSnap.docs.map((snap) => fromFirestoreSession(snap));
       await trySyncPublicRanking(appServices.db, profile, authUser.uid, latestOwnSessions);
       await loadPublicRankings(appServices.db);
