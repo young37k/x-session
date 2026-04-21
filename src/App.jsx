@@ -1510,8 +1510,9 @@ function SessionEditor({
   const [history, setHistory] = useState([]);
   const [lastQuickScore, setLastQuickScore] = useState(null);
   const [flashKey, setFlashKey] = useState("");
+  const [activeOpponentEndId, setActiveOpponentEndId] = useState(null);
+  const [opponentDrafts, setOpponentDrafts] = useState({});
   const arrowRefs = useRef({});
-  const opponentInputRefs = useRef({});
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -1581,27 +1582,6 @@ function SessionEditor({
     });
   }
 
-  function focusOpponentField(endId) {
-    const target = opponentInputRefs.current[endId];
-    if (!target) return;
-    requestAnimationFrame(() => {
-      try {
-        target.focus();
-        target.select?.();
-      } catch {
-        // ignore
-      }
-    });
-  }
-
-  function focusNextEndFirstArrow(endId) {
-    const currentIndex = session.ends.findIndex((end) => end.id === endId);
-    if (currentIndex < 0) return;
-    const nextEnd = session.ends[currentIndex + 1];
-    if (!nextEnd) return;
-    focusArrowField(nextEnd.id, 0);
-  }
-
   function findFirstEmptyTarget(ends) {
     for (const end of ends) {
       for (let i = 0; i < end.arrows.length; i += 1) {
@@ -1611,6 +1591,86 @@ function SessionEditor({
       }
     }
     return null;
+  }
+
+  function isEndFullyFilled(ends, endId) {
+    const targetEnd = ends.find((end) => end.id === endId);
+    return Boolean(targetEnd && targetEnd.arrows.every((arrow) => arrow !== null));
+  }
+
+  function activateOpponentEntry(endId) {
+    const targetEnd = session.ends.find((end) => end.id === endId);
+    setActiveOpponentEndId(endId);
+    setOpponentDrafts((prev) => ({
+      ...prev,
+      [endId]: prev[endId] ?? (targetEnd && Number(targetEnd.opponentTotal) > 0 ? String(targetEnd.opponentTotal) : ""),
+    }));
+  }
+
+  function moveToNextEndStart(endId) {
+    const currentIndex = session.ends.findIndex((end) => end.id === endId);
+    const nextEnd = session.ends[currentIndex + 1];
+    if (nextEnd) {
+      setActiveOpponentEndId(null);
+      focusArrowField(nextEnd.id, 0);
+      return;
+    }
+    setActiveOpponentEndId(null);
+  }
+
+  function commitOpponentDraft(endId) {
+    const raw = String(opponentDrafts[endId] ?? "").trim();
+    const normalized = raw === "" ? 0 : Math.max(0, Math.min(60, Number(raw) || 0));
+
+    patchSession((prev) => ({
+      ...prev,
+      ends: prev.ends.map((end) =>
+        end.id === endId ? { ...end, opponentTotal: normalized } : end
+      ),
+    }));
+
+    setOpponentDrafts((prev) => ({
+      ...prev,
+      [endId]: normalized === 0 ? "" : String(normalized),
+    }));
+    moveToNextEndStart(endId);
+  }
+
+  function handleOpponentKeypadPress(endId, key) {
+    if (key === "confirm") {
+      commitOpponentDraft(endId);
+      return;
+    }
+
+    if (key === "backspace") {
+      setOpponentDrafts((prev) => ({
+        ...prev,
+        [endId]: String(prev[endId] ?? "").slice(0, -1),
+      }));
+      return;
+    }
+
+    if (key === "M") {
+      setOpponentDrafts((prev) => ({ ...prev, [endId]: "0" }));
+      return;
+    }
+
+    if (key === "X") {
+      setOpponentDrafts((prev) => ({ ...prev, [endId]: "10" }));
+      return;
+    }
+
+    const digit = String(key);
+    setOpponentDrafts((prev) => {
+      const current = String(prev[endId] ?? "");
+      const next = `${current}${digit}`.slice(0, 2);
+      const numeric = Number(next);
+      if (Number.isNaN(numeric) || numeric > 60) return prev;
+      return {
+        ...prev,
+        [endId]: next,
+      };
+    });
   }
 
   function updateArrow(endId, arrowIndex, value, options = {}) {
@@ -1642,17 +1702,19 @@ function SessionEditor({
     setFlashKey(`${endId}_${arrowIndex}`);
 
     if (autoFocusNext) {
-      if (session.mode === "set") {
-        const updatedEnd = nextEnds.find((end) => end.id === endId);
-        const isEndComplete = updatedEnd?.arrows?.every((arrow) => arrow !== null && arrow !== "");
-        if (isEndComplete) {
-          focusOpponentField(endId);
-          return;
-        }
-      }
+      const shouldActivateOpponent =
+        session.mode === "set" && session.recordInputType === "end" && isEndFullyFilled(nextEnds, endId);
 
-      const nextTarget = findFirstEmptyTarget(nextEnds);
-      if (nextTarget) focusArrowField(nextTarget.endId, nextTarget.arrowIndex);
+      if (shouldActivateOpponent) {
+        setActiveOpponentEndId(endId);
+        setOpponentDrafts((prev) => ({
+          ...prev,
+          [endId]: prev[endId] ?? "",
+        }));
+      } else {
+        const nextTarget = findFirstEmptyTarget(nextEnds);
+        if (nextTarget) focusArrowField(nextTarget.endId, nextTarget.arrowIndex);
+      }
     }
   }
 
@@ -2087,62 +2149,89 @@ function SessionEditor({
                     </div>
 
                     {session.mode === "set" && (
-                      <div className="mt-4 grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
-                        <div className="grid gap-2">
-                          <Label>상대 엔드 점수</Label>
-                          <Input
-                            ref={(el) => {
-                              if (el) opponentInputRefs.current[end.id] = el;
-                            }}
-                            type="number"
-                            inputMode="numeric"
-                            value={end.opponentTotal ?? ""}
-                            onFocus={(e) => {
-                              e.target.select?.();
-                            }}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              const value = raw === "" ? "" : Math.max(0, Number(raw) || 0);
-                              patchSession((prev) => ({
-                                ...prev,
-                                ends: prev.ends.map((item) =>
-                                  item.id === end.id ? { ...item, opponentTotal: value } : item
-                                ),
-                              }));
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                patchSession((prev) => ({
-                                  ...prev,
-                                  ends: prev.ends.map((item) =>
-                                    item.id === end.id
-                                      ? { ...item, opponentTotal: item.opponentTotal === "" ? 0 : item.opponentTotal }
-                                      : item
-                                  ),
-                                }));
-                                focusNextEndFirstArrow(end.id);
-                              }
-                            }}
-                            onBlur={(e) => {
-                              const normalized = e.target.value === "" ? 0 : Math.max(0, Number(e.target.value) || 0);
-                              patchSession((prev) => ({
-                                ...prev,
-                                ends: prev.ends.map((item) =>
-                                  item.id === end.id
-                                    ? { ...item, opponentTotal: normalized }
-                                    : item
-                                ),
-                              }));
-                              if (session.mode === "set" && normalized !== "") {
-                                focusNextEndFirstArrow(end.id);
-                              }
-                            }}
-                          />
+                      <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                          <div className="grid gap-1">
+                            <Label>상대 엔드 점수</Label>
+                            <div className="text-xs text-slate-500">
+                              내 6발 입력 후 상대 점수를 입력하고 다음 엔드로 이동한다.
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => activateOpponentEntry(end.id)}
+                            className={`min-w-[92px] rounded-2xl border px-4 py-3 text-center text-lg font-semibold transition ${
+                              activeOpponentEndId === end.id
+                                ? "border-blue-300 bg-blue-50 text-blue-900"
+                                : "border-slate-200 bg-white text-slate-900"
+                            }`}
+                          >
+                            {String(opponentDrafts[end.id] ?? "").trim() !== ""
+                              ? opponentDrafts[end.id]
+                              : Number(end.opponentTotal) > 0
+                                ? end.opponentTotal
+                                : "입력"}
+                          </button>
                         </div>
-                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
-                          엔드별 상대 점수를 입력해 세트 포인트를 계산한다.
-                        </div>
+
+                        {activeOpponentEndId === end.id && (
+                          <div className="grid gap-3">
+                            <div className="grid grid-cols-3 gap-2">
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
+                                <Button
+                                  key={`${end.id}_${digit}`}
+                                  type="button"
+                                  variant="outline"
+                                  className="h-11 rounded-2xl text-base font-semibold"
+                                  onClick={() => handleOpponentKeypadPress(end.id, digit)}
+                                >
+                                  {digit}
+                                </Button>
+                              ))}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-11 rounded-2xl text-base font-semibold"
+                                onClick={() => handleOpponentKeypadPress(end.id, "0")}
+                              >
+                                0
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-11 rounded-2xl text-base font-semibold"
+                                onClick={() => handleOpponentKeypadPress(end.id, "backspace")}
+                              >
+                                ←
+                              </Button>
+                              <Button
+                                type="button"
+                                className="h-11 rounded-2xl bg-blue-900 text-base font-semibold hover:bg-blue-800"
+                                onClick={() => handleOpponentKeypadPress(end.id, "confirm")}
+                              >
+                                확인
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-11 rounded-2xl text-base font-semibold"
+                                onClick={() => handleOpponentKeypadPress(end.id, "X")}
+                              >
+                                X
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-11 rounded-2xl text-base font-semibold"
+                                onClick={() => handleOpponentKeypadPress(end.id, "M")}
+                              >
+                                M
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
