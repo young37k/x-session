@@ -3579,14 +3579,26 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
         ]);
 
         if (cancelled) return;
-        setEvents(eventSnap.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        })));
-        setNewsItems(newsSnap.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        })));
+        const loadedEvents = eventSnap.docs
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+          .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+
+        const loadedNews = newsSnap.docs
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+          .sort((a, b) => {
+            const aTime = typeof a.createdAt?.toDate === "function" ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
+            const bTime = typeof b.createdAt?.toDate === "function" ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+            return bTime - aTime;
+          });
+
+        setEvents(loadedEvents);
+        setNewsItems(loadedNews);
       } catch (error) {
         if (!cancelled) {
           setEvents([]);
@@ -3611,6 +3623,7 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
       <CardContent className="grid gap-4 md:grid-cols-2">
         <div className="rounded-[22px] border border-slate-200 bg-white p-5">
           <div className="text-lg font-semibold text-slate-900">대회 일정</div>
+          <div className="mt-1 text-xs text-slate-500">가까운 일정부터 날짜순으로 노출된다.</div>
           <div className="mt-4 grid gap-3">
             {loading ? (
               <div className="text-sm text-slate-500">불러오는 중...</div>
@@ -3630,6 +3643,7 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
         </div>
         <div className="rounded-[22px] border border-slate-200 bg-white p-5">
           <div className="text-lg font-semibold text-slate-900">양궁 뉴스</div>
+          <div className="mt-1 text-xs text-slate-500">최신 등록 뉴스가 먼저 노출된다.</div>
           <div className="mt-4 grid gap-3">
             {loading ? (
               <div className="text-sm text-slate-500">불러오는 중...</div>
@@ -3668,10 +3682,20 @@ function XBriefPage({ appServices, briefRefreshKey = 0 }) {
       try {
         const snap = await getDocs(query(collection(appServices.db, "brief_notices"), orderBy("createdAt", "desc")));
         if (cancelled) return;
-        setNotices(snap.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        })));
+        const loadedNotices = snap.docs
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+          .sort((a, b) => {
+            const aPinned = a.isPinned ? 1 : 0;
+            const bPinned = b.isPinned ? 1 : 0;
+            if (bPinned !== aPinned) return bPinned - aPinned;
+            const aTime = typeof a.createdAt?.toDate === "function" ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
+            const bTime = typeof b.createdAt?.toDate === "function" ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+            return bTime - aTime;
+          });
+        setNotices(loadedNotices);
       } catch (error) {
         if (!cancelled) setNotices([]);
       } finally {
@@ -3700,8 +3724,13 @@ function XBriefPage({ appServices, briefRefreshKey = 0 }) {
             </div>
           ) : (
             notices.map((item) => (
-              <div key={item.id} className="rounded-[22px] border border-slate-200 bg-white p-5">
-                <div className="text-lg font-semibold text-slate-900">{item.title || "제목 없음"}</div>
+              <div key={item.id} className={`rounded-[22px] border bg-white p-5 ${item.isPinned ? "border-amber-300 bg-amber-50/40" : "border-slate-200"}`}>
+                <div className="flex items-center gap-2">
+                  {item.isPinned ? (
+                    <Badge className="rounded-full bg-amber-500 text-white">상단 고정</Badge>
+                  ) : null}
+                  <div className="text-lg font-semibold text-slate-900">{item.title || "제목 없음"}</div>
+                </div>
                 <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content || ""}</div>
                 <div className="mt-2 text-xs text-slate-400">{formatDateTime(item.createdAt)}</div>
               </div>
@@ -3916,7 +3945,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
   const [deletingUserId, setDeletingUserId] = useState("");
   const [eventForm, setEventForm] = useState({ title: "", date: "", location: "" });
   const [newsForm, setNewsForm] = useState({ title: "", content: "" });
-  const [briefForm, setBriefForm] = useState({ title: "", content: "" });
+  const [briefForm, setBriefForm] = useState({ title: "", content: "", isPinned: false });
   const [publishMessage, setPublishMessage] = useState("");
 
   useEffect(() => {
@@ -4037,10 +4066,11 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
       await addDoc(collection(appServices.db, "brief_notices"), {
         title: briefForm.title.trim(),
         content: briefForm.content.trim(),
+        isPinned: Boolean(briefForm.isPinned),
         createdAt: serverTimestamp(),
         createdBy: currentUser?.email || "",
       });
-      setBriefForm({ title: "", content: "" });
+      setBriefForm({ title: "", content: "", isPinned: false });
       setPublishMessage("공지사항이 등록되었다.");
       onBriefRefresh?.();
     } catch (error) {
