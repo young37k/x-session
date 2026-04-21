@@ -74,7 +74,6 @@ import {
   reauthenticateWithCredential,
   updatePassword,
   deleteUser,
-  fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -3964,11 +3963,6 @@ function XSessionApp() {
     setGlobalError("");
 
     try {
-      const signInMethods = await fetchSignInMethodsForEmail(appServices.auth, input.email);
-      if (signInMethods.length > 0) {
-        throw new Error("이미 가입한 이메일 주소입니다.");
-      }
-
       pendingProfileRef.current = {
         name: input.name || input.email.split("@")[0],
         email: input.email,
@@ -4014,7 +4008,10 @@ function XSessionApp() {
       return { ok: true };
     } catch (error) {
       pendingProfileRef.current = null;
-      const message = error.message || "회원가입에 실패했다.";
+      let message = error.message || "회원가입에 실패했다.";
+      if (error?.code === "auth/email-already-in-use") {
+        message = "이미 가입한 이메일 주소입니다.";
+      }
       setGlobalError(message);
       throw new Error(message);
     } finally {
@@ -4032,15 +4029,17 @@ function XSessionApp() {
     setGlobalError("");
 
     try {
-      const signInMethods = await fetchSignInMethodsForEmail(appServices.auth, input.email);
-      if (!signInMethods.length) {
-        throw new Error("회원가입후 이용해 주세요.");
-      }
-
       await signInWithEmailAndPassword(appServices.auth, input.email, input.password);
       return { ok: true };
     } catch (error) {
-      const message = error.message || "로그인에 실패했다.";
+      let message = error.message || "로그인에 실패했다.";
+      if (error?.code === "auth/user-not-found" || error?.code === "auth/invalid-credential") {
+        message = "회원가입후 이용해 주세요.";
+      } else if (error?.code === "auth/wrong-password") {
+        message = "비밀번호를 다시 확인해 주세요.";
+      } else if (error?.code === "auth/invalid-email") {
+        message = "올바른 이메일 주소를 입력해 주세요.";
+      }
       setGlobalError(message);
       throw new Error(message);
     } finally {
