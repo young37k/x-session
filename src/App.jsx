@@ -288,6 +288,7 @@ function normalizeSessionShape(session, profile = null) {
         index: idx + 1,
         arrows: Array.from({ length: arrowsPerEnd }, (_, i) => end.arrows?.[i] ?? null),
         opponentTotal: end.opponentTotal || 0,
+        opponentScoreEntered: Boolean(end.opponentScoreEntered),
       }))
     : Array.from({ length: safe.totalEnds || 6 }, (_, i) => createEmptyEnd(i + 1, arrowsPerEnd));
 
@@ -651,6 +652,7 @@ function createEmptyEnd(index, arrowsPerEnd) {
     index,
     arrows: Array.from({ length: arrowsPerEnd }, () => null),
     opponentTotal: 0,
+    opponentScoreEntered: false,
   };
 }
 
@@ -869,6 +871,7 @@ function buildSessionPayload({ draftSession, profile, uid }) {
           endNo: end.index,
           arrows: end.arrows,
           opponentTotal: Number(end.opponentTotal) || 0,
+          opponentScoreEntered: Boolean(end.opponentScoreEntered),
           endTotal: endTotal(end),
           xCount: end.arrows.filter((v) => v === "X").length,
           hitCount: end.arrows.filter((v) => v !== null && v !== "M").length,
@@ -925,6 +928,7 @@ function fromFirestoreSession(docSnap) {
       index: end.endNo,
       arrows: end.arrows || [],
       opponentTotal: end.opponentTotal || 0,
+      opponentScoreEntered: Boolean(end.opponentScoreEntered),
     })),
     isComplete: data.status === "completed",
     summary: data.summary || null,
@@ -1221,7 +1225,7 @@ function FirebaseSetupNoticeCompact() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="w-full max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
       <div
         className="cursor-pointer text-sm font-medium text-slate-700"
         onDoubleClick={() => setOpen((prev) => !prev)}
@@ -1244,19 +1248,33 @@ function FirebaseSetupNoticeCompact() {
 
 function AuthPanel({ onRegister, onLogin, authLoading }) {
   const SAVED_EMAIL_KEY = "elbowshot_saved_email";
-  const [form, setForm] = useState({
+  const [mode, setMode] = useState("login");
+  const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
   });
+  const [registerForm, setRegisterForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    division: "전체학년",
+    groupName: "",
+    regionCity: "",
+    regionDistrict: "",
+  });
   const [rememberEmail, setRememberEmail] = useState(false);
   const [error, setError] = useState("");
-  const [bgFailed, setBgFailed] = useState(false);
+
+  const registerDistrictOptions = useMemo(
+    () => getDistrictOptions(registerForm.regionCity),
+    [registerForm.regionCity]
+  );
 
   useEffect(() => {
     try {
       const savedEmail = localStorage.getItem(SAVED_EMAIL_KEY) || "";
       if (savedEmail) {
-        setForm((prev) => ({ ...prev, email: savedEmail }));
+        setLoginForm((prev) => ({ ...prev, email: savedEmail }));
         setRememberEmail(true);
       }
     } catch {
@@ -1264,16 +1282,13 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     }
   }, []);
 
-  async function handleSubmit(action) {
-    if (!form.email.trim() || !form.email.includes("@")) {
-      return setError("올바른 이메일이 필요하다.");
+  async function handleLoginSubmit() {
+    if (!loginForm.email.trim() || !loginForm.password.trim()) {
+      setError("이메일/비밀번호를 입력해 주세요.");
+      return;
     }
 
-    if (!form.password.trim() || form.password.length < 6) {
-      return setError("비밀번호는 최소 6자 이상이어야 한다.");
-    }
-
-    const normalizedEmail = form.email.trim().toLowerCase();
+    const normalizedEmail = loginForm.email.trim().toLowerCase();
 
     try {
       if (rememberEmail) {
@@ -1286,126 +1301,239 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     }
 
     setError("");
-
-    if (action === "register") {
-      await onRegister({
-        name: normalizedEmail.split("@")[0],
+    try {
+      await onLogin({
         email: normalizedEmail,
-        password: form.password,
-        division: "전체학년",
-        groupName: "",
-        regionCity: "",
-        regionDistrict: "",
+        password: loginForm.password,
       });
+    } catch (error) {
+      setError(error.message || "로그인에 실패했다.");
+    }
+  }
+
+  async function handleRegisterSubmit() {
+    if (
+      !registerForm.name.trim() ||
+      !registerForm.email.trim() ||
+      !registerForm.password.trim() ||
+      !registerForm.groupName.trim() ||
+      !registerForm.regionCity ||
+      !registerForm.regionDistrict ||
+      !registerForm.division
+    ) {
+      setError("해당 칸을 입력 후 버튼을 눌러주세요.");
       return;
     }
 
-    await onLogin({
-      email: normalizedEmail,
-      password: form.password,
-    });
+    if (!registerForm.email.includes("@")) {
+      setError("해당 칸을 입력 후 버튼을 눌러주세요.");
+      return;
+    }
+
+    if (registerForm.password.length < 6) {
+      setError("비밀번호는 최소 6자 이상이어야 합니다.");
+      return;
+    }
+
+    setError("");
+    try {
+      await onRegister({
+        ...registerForm,
+        email: registerForm.email.trim().toLowerCase(),
+        name: registerForm.name.trim(),
+        groupName: registerForm.groupName.trim(),
+      });
+    } catch (error) {
+      setError(error.message || "회원가입에 실패했다.");
+    }
   }
 
   return (
-    <div className="relative overflow-hidden rounded-[18px] sm:rounded-[22px] md:rounded-[30px] shadow-2xl">
-      <div className="absolute inset-0 bg-[#dfe6f3]" />
-
-      {!bgFailed ? (
-        <>
-          <img
-            src="/login-bg-mobile.png"
-            alt=""
-            className="absolute inset-0 h-full w-full object-contain object-top md:hidden"
-            onError={() => setBgFailed(true)}
-          />
-          <img
-            src="/login-bg-desktop.png"
-            alt=""
-            className="absolute inset-0 hidden h-full w-full object-cover object-top md:block"
-            onError={() => setBgFailed(true)}
-          />
-        </>
-      ) : (
-        <img
-          src="/login-background.png"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-top"
-        />
-      )}
-
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.04)_0%,rgba(2,6,23,0.18)_100%)]" />
-
-      <div className="relative flex min-h-[100svh] items-end justify-center px-2 pb-2 pt-[34svh] sm:px-3 sm:pb-3 sm:pt-[36svh] md:min-h-[calc(100svh-16px)] md:px-5 md:pb-5 md:pt-[42svh] lg:pt-[46svh] xl:pt-[48svh]">
-        <div className="w-full max-w-md rounded-[28px] bg-transparent p-4 sm:p-5">
+    <div
+      className="relative overflow-hidden rounded-[22px] sm:rounded-[28px] shadow-2xl"
+      style={{
+        minHeight: "100svh",
+        backgroundImage: "url('/login-background.png')",
+        backgroundSize: "contain",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "top center",
+        backgroundColor: "#dfe6f3",
+      }}
+    >
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.03)_0%,rgba(2,6,23,0.18)_100%)]" />
+      <div className="relative flex min-h-[100svh] items-end justify-center px-2 pb-2 pt-[32svh] sm:px-4 sm:pb-4 sm:pt-[34svh] lg:pt-[38svh]">
+        <div className="w-full max-w-lg rounded-[24px] sm:rounded-[30px] bg-transparent p-3 sm:p-5">
           <div className="grid gap-4">
-            {error && (
-              <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
-                <AlertCircle className="h-4 w-4" /> {error}
-              </div>
-            )}
-
             <div className="grid grid-cols-2 gap-2 rounded-2xl bg-black/20 p-1 backdrop-blur-sm">
               <Button
                 type="button"
-                className="h-12 rounded-2xl bg-white text-lg font-semibold text-slate-900 hover:bg-white"
-                onClick={() => handleSubmit("login")}
-                disabled={authLoading}
+                variant="ghost"
+                className={`h-11 rounded-2xl text-base font-semibold ${mode === "login" ? "bg-white text-slate-900 hover:bg-white" : "text-white hover:bg-white/10"}`}
+                onClick={() => {
+                  setMode("login");
+                  setError("");
+                }}
               >
                 로그인
               </Button>
               <Button
                 type="button"
                 variant="ghost"
-                className="h-12 rounded-2xl text-lg font-semibold text-white hover:bg-white/10"
-                onClick={() => handleSubmit("register")}
-                disabled={authLoading}
+                className={`h-11 rounded-2xl text-base font-semibold ${mode === "register" ? "bg-white text-slate-900 hover:bg-white" : "text-white hover:bg-white/10"}`}
+                onClick={() => {
+                  setMode("register");
+                  setError("");
+                }}
               >
                 회원가입
               </Button>
             </div>
 
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <Label className="text-sm font-semibold text-white">이메일</Label>
-                <label htmlFor="remember-email" className="flex cursor-pointer items-center gap-2 text-xs font-medium text-white/95">
-                  <input
-                    id="remember-email"
-                    type="checkbox"
-                    checked={rememberEmail}
-                    onChange={(e) => setRememberEmail(e.target.checked)}
-                    className="h-4 w-4 rounded border-white/40"
-                  />
-                  이메일 저장
-                </label>
+            {error && (
+              <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
+                <AlertCircle className="h-4 w-4" /> {error}
               </div>
-              <Input
-                value={form.email}
-                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                placeholder="이메일 입력"
-                className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
-              />
-            </div>
+            )}
 
-            <div className="grid gap-2">
-              <Label className="text-sm font-semibold text-white">비밀번호</Label>
-              <Input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                placeholder="비밀번호 입력"
-                className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
-              />
-            </div>
+            {mode === "login" ? (
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="text-sm font-semibold text-white">이메일</Label>
+                    <label htmlFor="remember-email" className="flex cursor-pointer items-center gap-2 text-xs font-medium text-white/95">
+                      <input
+                        id="remember-email"
+                        type="checkbox"
+                        checked={rememberEmail}
+                        onChange={(e) => setRememberEmail(e.target.checked)}
+                        className="h-4 w-4 rounded border-white/40"
+                      />
+                      이메일 저장
+                    </label>
+                  </div>
+                  <Input
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="이메일 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
 
-            <Button
-              type="button"
-              disabled={authLoading}
-              className="h-12 rounded-2xl bg-blue-950 text-base font-semibold hover:bg-blue-900"
-              onClick={() => handleSubmit("login")}
-            >
-              {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
-              로그인
-            </Button>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">비밀번호</Label>
+                  <Input
+                    type="password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm((prev) => ({ ...prev, password: e.target.value }))}
+                    placeholder="비밀번호 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  disabled={authLoading}
+                  className="h-12 rounded-2xl bg-blue-950 text-base font-semibold hover:bg-blue-900"
+                  onClick={handleLoginSubmit}
+                >
+                  {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
+                  로그인
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">이름</Label>
+                  <Input
+                    type="text"
+                    value={registerForm.name}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="이름 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">이메일</Label>
+                  <Input
+                    type="email"
+                    value={registerForm.email}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="이메일 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">비밀번호</Label>
+                  <Input
+                    type="password"
+                    value={registerForm.password}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, password: e.target.value }))}
+                    placeholder="비밀번호 입력"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">학년/부문</Label>
+                  <select
+                    value={registerForm.division}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, division: e.target.value }))}
+                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
+                  >
+                    {DIVISION_OPTIONS.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">소속</Label>
+                  <Input
+                    type="text"
+                    value={registerForm.groupName}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, groupName: e.target.value }))}
+                    placeholder="예: 엘보샷"
+                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">지역(시/도)</Label>
+                  <select
+                    value={registerForm.regionCity}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, regionCity: e.target.value, regionDistrict: "" }))}
+                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
+                  >
+                    <option value="">지역 선택</option>
+                    {REGION_OPTIONS.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">지역(구/군)</Label>
+                  <select
+                    value={registerForm.regionDistrict}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, regionDistrict: e.target.value }))}
+                    disabled={!registerForm.regionCity}
+                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none disabled:bg-white/70"
+                  >
+                    <option value="">구/군 선택</option>
+                    {registerDistrictOptions.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <Button
+                  type="button"
+                  disabled={authLoading}
+                  className="h-12 rounded-2xl bg-white/92 text-base font-semibold text-slate-900 hover:bg-white"
+                  onClick={handleRegisterSubmit}
+                >
+                  {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
+                  회원가입 완료
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1477,6 +1605,8 @@ function SessionEditor({
   const [history, setHistory] = useState([]);
   const [lastQuickScore, setLastQuickScore] = useState(null);
   const [flashKey, setFlashKey] = useState("");
+  const [activeOpponentEndId, setActiveOpponentEndId] = useState(null);
+  const [opponentInputBuffers, setOpponentInputBuffers] = useState({});
   const arrowRefs = useRef({});
 
   const totalArrows = useMemo(
@@ -1496,6 +1626,9 @@ function SessionEditor({
   }, [session, totalArrows]);
 
   const currentTarget = useMemo(() => {
+    if (session.mode === "set" && activeOpponentEndId) {
+      return null;
+    }
     for (const end of session.ends) {
       for (let i = 0; i < end.arrows.length; i += 1) {
         if (end.arrows[i] === null) {
@@ -1504,7 +1637,7 @@ function SessionEditor({
       }
     }
     return null;
-  }, [session]);
+  }, [session, activeOpponentEndId]);
 
   useEffect(() => {
     if (!flashKey) return;
@@ -1586,6 +1719,18 @@ function SessionEditor({
 
     setFlashKey(`${endId}_${arrowIndex}`);
 
+    const updatedEnd = nextEnds.find((item) => item.id === endId);
+    const isSetOpponentStep =
+      session.recordInputType === "end" &&
+      session.mode === "set" &&
+      updatedEnd &&
+      updatedEnd.arrows.every((item) => item !== null);
+
+    if (isSetOpponentStep) {
+      activateOpponentInput(endId);
+      return;
+    }
+
     if (autoFocusNext) {
       const nextTarget = findFirstEmptyTarget(nextEnds);
       if (nextTarget) focusArrowField(nextTarget.endId, nextTarget.arrowIndex);
@@ -1593,6 +1738,7 @@ function SessionEditor({
   }
 
   function quickInputScore(score) {
+    if (session.mode === "set" && activeOpponentEndId) return;
     const emptyTarget = findFirstEmptyTarget(session.ends);
     if (!emptyTarget) return;
 
@@ -1619,10 +1765,13 @@ function SessionEditor({
               ...end,
               arrows: Array.from({ length: prev.arrowsPerEnd }, () => null),
               opponentTotal: 0,
+              opponentScoreEntered: false,
             }
           : end
       ),
     }));
+    setActiveOpponentEndId((prev) => (prev === endId ? null : prev));
+    setOpponentInputBuffers((prev) => ({ ...prev, [endId]: "" }));
   }
 
   function addEnd() {
@@ -1679,6 +1828,10 @@ function SessionEditor({
     recordInputType: "end",
       title: `${mode === "set" ? "세트제" : "누적제"} X-Session`,
     }));
+    if (mode !== "set") {
+      setActiveOpponentEndId(null);
+      setOpponentInputBuffers({});
+    }
   }
 
   function applyRecordInputType(recordInputType) {
@@ -1697,6 +1850,10 @@ function SessionEditor({
             ]
           : prev.distanceRounds,
     }));
+    if (recordInputType !== "end") {
+      setActiveOpponentEndId(null);
+      setOpponentInputBuffers({});
+    }
   }
 
   function validateBeforeSave() {
@@ -1715,6 +1872,13 @@ function SessionEditor({
     }
     const hasAnyArrow = session.ends.some((end) => end.arrows.some((v) => v !== null));
     if (!hasAnyArrow) return "최소 1발 이상 입력해야 저장 가능하다.";
+    if (session.mode === "set") {
+      const missingOpponentScore = session.ends.some((end) => {
+        const hasEndInput = end.arrows.some((v) => v !== null);
+        return hasEndInput && !end.opponentScoreEntered;
+      });
+      if (missingOpponentScore) return "세트제는 각 엔드의 상대 점수를 입력해야 저장 가능하다.";
+    }
     return "";
   }
 
@@ -1738,6 +1902,82 @@ function SessionEditor({
 
   function isCurrentArrow(endId, arrowIndex) {
     return currentTarget?.endId === endId && currentTarget?.arrowIndex === arrowIndex;
+  }
+
+  function setOpponentBuffer(endId, value) {
+    setOpponentInputBuffers((prev) => ({ ...prev, [endId]: value }));
+  }
+
+  function focusFirstArrowOfEnd(endId) {
+    const target = session.ends.find((item) => item.id === endId);
+    if (!target) return;
+    focusArrowField(target.id, 0);
+  }
+
+  function moveToNextEndFromOpponent(endId) {
+    const currentIndex = session.ends.findIndex((item) => item.id === endId);
+    setActiveOpponentEndId(null);
+    if (currentIndex === -1) return;
+    const nextEnd = session.ends[currentIndex + 1];
+    if (nextEnd) {
+      requestAnimationFrame(() => focusFirstArrowOfEnd(nextEnd.id));
+    }
+  }
+
+  function confirmOpponentScore(endId) {
+    triggerHaptic(16);
+    const raw = String(opponentInputBuffers[endId] ?? "");
+    if (raw === "") return;
+    const value = Math.max(0, Number(raw) || 0);
+    patchSession((prev) => ({
+      ...prev,
+      ends: prev.ends.map((item) =>
+        item.id === endId ? { ...item, opponentTotal: value, opponentScoreEntered: true } : item
+      ),
+    }));
+    moveToNextEndFromOpponent(endId);
+  }
+
+  function handleOpponentKeypadInput(endId, digit) {
+    triggerHaptic(10);
+    const nextValue = `${String(opponentInputBuffers[endId] ?? "")}${digit}`.slice(0, 2);
+    setOpponentBuffer(endId, nextValue);
+    if (nextValue.length >= 2) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          setOpponentInputBuffers((prev) => {
+            const latest = String(prev[endId] ?? nextValue);
+            if (latest !== "") {
+              const value = Math.max(0, Number(latest) || 0);
+              patchSession((sessionPrev) => ({
+                ...sessionPrev,
+                ends: sessionPrev.ends.map((item) =>
+                  item.id === endId ? { ...item, opponentTotal: value, opponentScoreEntered: true } : item
+                ),
+              }));
+              moveToNextEndFromOpponent(endId);
+            }
+            return prev;
+          });
+        }, 0);
+      });
+    }
+  }
+
+  function handleOpponentKeypadDelete(endId) {
+    triggerHaptic(6);
+    const raw = String(opponentInputBuffers[endId] ?? "");
+    setOpponentBuffer(endId, raw.slice(0, -1));
+  }
+
+  function activateOpponentInput(endId) {
+    triggerHaptic(10);
+    const end = session.ends.find((item) => item.id === endId);
+    setActiveOpponentEndId(endId);
+    setOpponentBuffer(
+      endId,
+      end && end.opponentScoreEntered ? String(end.opponentTotal ?? 0) : ""
+    );
   }
 
   function getQuickButtonClass(score) {
@@ -1769,7 +2009,7 @@ function SessionEditor({
               <span className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-blue-700" /> X-Session Setup
               </span>
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {editingSavedSession && (
                   <Badge className="rounded-full bg-amber-500 px-3 py-1 text-white">
                     세션 편집중
@@ -1989,6 +2229,7 @@ function SessionEditor({
                               ref={(el) => {
                                 if (el) arrowRefs.current[key] = el;
                               }}
+                              disabled={session.mode === "set" && !!activeOpponentEndId}
                               value={arrow ?? ""}
                               onChange={(e) =>
                                 updateArrow(
@@ -2023,25 +2264,84 @@ function SessionEditor({
                     </div>
 
                     {session.mode === "set" && (
-                      <div className="mt-4 grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
+                      <div className="mt-4 rounded-2xl bg-slate-50 p-4">
                         <div className="grid gap-2">
-                          <Label>상대 엔드 점수</Label>
-                          <Input
-                            type="number"
-                            value={end.opponentTotal ?? 0}
-                            onChange={(e) => {
-                              const value = Math.max(0, Number(e.target.value) || 0);
-                              patchSession((prev) => ({
-                                ...prev,
-                                ends: prev.ends.map((item) =>
-                                  item.id === end.id ? { ...item, opponentTotal: value } : item
-                                ),
-                              }));
-                            }}
-                          />
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
-                          엔드별 상대 점수를 입력해 세트 포인트를 계산한다.
+                          <div className="flex items-center justify-between gap-3">
+                            <Label>상대 엔드 점수</Label>
+                            <div
+                              className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
+                                activeOpponentEndId === end.id
+                                  ? "bg-blue-100 text-blue-900 ring-1 ring-blue-300"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {activeOpponentEndId === end.id ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span>{String(opponentInputBuffers[end.id] ?? "") || "입력 대기"}</span>
+                                  <span className="animate-pulse text-blue-500">|</span>
+                                </span>
+                              ) : (
+                                String(end.opponentTotal ?? 0)
+                              )}
+                            </div>
+                          </div>
+
+                          {activeOpponentEndId === end.id ? (
+                            <>
+                              <div className="grid grid-cols-3 gap-2">
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                                  <Button
+                                    key={`${end.id}_${num}`}
+                                    type="button"
+                                    variant="outline"
+                                    className="h-11 rounded-2xl text-base font-semibold"
+                                    onClick={() => handleOpponentKeypadInput(end.id, num)}
+                                  >
+                                    {num}
+                                  </Button>
+                                ))}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="h-11 rounded-2xl text-base font-semibold"
+                                  onClick={() => handleOpponentKeypadDelete(end.id)}
+                                >
+                                  ←
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="h-11 rounded-2xl text-base font-semibold"
+                                  onClick={() => handleOpponentKeypadInput(end.id, 0)}
+                                >
+                                  0
+                                </Button>
+                                <Button
+                                  type="button"
+                                  className="h-11 rounded-2xl bg-blue-900 text-base font-semibold hover:bg-blue-800"
+                                  onClick={() => confirmOpponentScore(end.id)}
+                                  disabled={String(opponentInputBuffers[end.id] ?? "") === ""}
+                                >
+                                  확인
+                                </Button>
+                              </div>
+                              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                                지금은 상대 엔드 점수 입력 단계다. 0점도 0을 직접 눌러 입력해야 다음 엔드로 이동한다.
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                              <div className="text-sm text-slate-500">입력된 상대 엔드 점수로 세트 포인트를 계산한다.</div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="rounded-2xl"
+                                onClick={() => activateOpponentInput(end.id)}
+                              >
+                                점수 수정
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -2376,7 +2676,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         </Card>
       </div>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle>Recent X-Sessions</CardTitle>
         </CardHeader>
@@ -2400,7 +2700,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                     className="grid gap-2 rounded-3xl border border-slate-200 p-3 md:grid-cols-[1fr_auto] md:items-center md:gap-3 md:p-4"
                   >
                     <div className="min-w-0">
-                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
                           {getModeLabel(session.mode)}
                         </Badge>
@@ -2487,7 +2787,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
   const rankings = useMemo(() => buildUserRankings(users, sessions, rankingFilters), [users, sessions, rankingFilters]);
 
   const sortedRankings = useMemo(() => {
-    const items = [...rankings];
+    const items = rankings.filter((item) => Number(item.sessions || 0) >= 3);
     items.sort((a, b) => {
       if (b.avgArrow !== a.avgArrow) return b.avgArrow - a.avgArrow;
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
@@ -2508,6 +2808,9 @@ function RankingBoard({ users, sessions, currentUserId }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="mb-3 rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">
+              랭킹은 평균 화살 점수 우선, 동률 시 총점, 그다음 최신 기록 순으로 계산되며 3회 이상 기록된 사용자만 반영된다.
+            </div>
             {myRank ? (
               <div className="space-y-4">
                 <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-6 text-white shadow-lg">
@@ -2517,14 +2820,14 @@ function RankingBoard({ users, sessions, currentUserId }) {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">랭킹을 계산할 기록이 아직 없다.</div>
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">랭킹은 3회 이상 기록된 사용자부터 반영된다.</div>
             )}
           </CardContent>
         </Card>
 
       </div>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Medal className="h-5 w-5 text-red-600" /> X-Ranking
@@ -2532,7 +2835,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">거리</Label>
               <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 거리</option>
@@ -2542,7 +2845,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학년</Label>
               <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 학년</option>
@@ -2550,7 +2853,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학교/소속</Label>
               <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 학교/소속팀</option>
@@ -2560,7 +2863,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">지역</Label>
               <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 지역</option>
@@ -2570,7 +2873,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">경기 방식</Label>
               <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
@@ -2579,7 +2882,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">날짜</Label>
               <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
@@ -2674,7 +2977,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
   return (
     <div className="grid gap-4">
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-blue-700" /> X-Analysis
@@ -2682,7 +2985,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">거리</Label>
               <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="">거리 선택</option>
@@ -2692,7 +2995,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학년/부문</Label>
               <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="">학년/부문 선택</option>
@@ -2700,7 +3003,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">지역</Label>
               <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 지역</option>
@@ -2710,7 +3013,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">날짜</Label>
               <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {DATE_FILTER_OPTIONS.map((item) => (
@@ -2719,7 +3022,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">경기 방식</Label>
               <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {MATCH_TYPE_OPTIONS.map((item) => (
@@ -2728,7 +3031,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </select>
             </div>
 
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">분석 기준</Label>
               <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 {PERIOD_OPTIONS.map((item) => (
@@ -2823,7 +3126,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
         </CardContent>
       </Card>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Swords className="h-5 w-5 text-red-700" /> X-Analysis Rival Compare
@@ -2939,7 +3242,7 @@ function ProfilePanel({ user, onUpdate, saving }) {
 
   return (
     <div className="grid gap-4">
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle>프로필 관리</CardTitle>
         </CardHeader>
@@ -3191,14 +3494,14 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
   }
 
   return (
-    <div className="grid w-full min-w-0 max-w-full gap-4 overflow-x-hidden md:gap-6">
+    <div className="grid w-full max-w-full gap-6 overflow-x-hidden">
             <FirebaseSetupNoticeCompact />
 
-<Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+<Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">관리자 페이지</CardTitle>
         </CardHeader>
-        <CardContent className="grid min-w-0 grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:p-6 xl:grid-cols-3">
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div className="min-w-0 rounded-2xl bg-slate-50 p-4">
             <div className="text-sm text-slate-500">관리자</div>
             <div className="mt-2 text-lg font-semibold">{currentUser?.name || "관리자"}</div>
@@ -3215,11 +3518,11 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </CardContent>
       </Card>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">관리자 계정 설정</CardTitle>
         </CardHeader>
-        <CardContent className="grid min-w-0 gap-4 p-4 sm:p-6">
+        <CardContent className="grid gap-4 min-w-0">
           <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             추가 관리자 이메일을 등록하면 다음 로그인부터 관리자 모드 진입이 가능하다.
           </div>
@@ -3256,15 +3559,15 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </CardContent>
       </Card>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">가입자 목록 / 프로필 보기</CardTitle>
         </CardHeader>
-        <CardContent className="grid min-w-0 gap-4 p-4 sm:p-6">
+        <CardContent className="grid gap-4 min-w-0">
           <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             비밀번호는 표시하지 않는다. 이름을 더블 클릭하면 자세한 정보를 볼 수 있다. 가입자 삭제는 프로필 문서와 저장 기록을 삭제한다.
           </div>
-          <div className="grid w-full min-w-0 gap-2 md:max-w-md">
+          <div className="grid gap-2 md:max-w-md">
             <Label>이름 검색</Label>
             <Input
               value={userSearch}
@@ -3274,7 +3577,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
           </div>
           <div className="grid gap-2">
             {visibleUsers.length === 0 ? (
-              <div className="w-full min-w-0 rounded-2xl border border-slate-200 px-4 py-6 text-sm text-slate-500">
+              <div className="rounded-2xl border border-slate-200 px-4 py-6 text-sm text-slate-500">
                 검색 결과가 없다.
               </div>
             ) : (
@@ -3290,7 +3593,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
                       <div className="truncate font-semibold">{getDisplayName(user)}</div>
                       <div className="truncate text-sm text-slate-500">{user.email || "이메일 없음"}</div>
                     </div>
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Badge className="rounded-full bg-slate-700 text-white">기록 {userSessions.length}</Badge>
                       <Button
                         type="button"
@@ -3335,7 +3638,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </DialogContent>
       </Dialog>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">운영 메모</CardTitle>
         </CardHeader>
@@ -3350,12 +3653,12 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
         </CardContent>
       </Card>
 
-      <Card className="w-full min-w-0 max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">메일 발송 준비</CardTitle>
         </CardHeader>
-        <CardContent className="grid min-w-0 gap-4 p-4 sm:p-6">
-          <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+        <CardContent className="grid gap-4 min-w-0">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <div className="grid gap-2">
               <Label>학년/부문</Label>
               <select
@@ -3409,7 +3712,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
             />
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <div className="flex flex-wrap gap-2">
             <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={() => recipientEmails && window.open(mailtoHref, "_self")}>
               메일앱으로 열기
             </Button>
@@ -3654,7 +3957,9 @@ function XSessionApp() {
 
 
   async function handleRegister(input) {
-    if (!appServices?.auth || !appServices?.db) return;
+    if (!appServices?.auth || !appServices?.db) {
+      throw new Error("Firebase 연결이 아직 준비되지 않았습니다.");
+    }
 
     setAuthLoading(true);
     setGlobalError("");
@@ -3676,6 +3981,7 @@ function XSessionApp() {
         name: input.name || input.email.split("@")[0],
         groupName: input.groupName || "",
         regionCity: input.regionCity || "",
+        regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
       });
 
@@ -3701,16 +4007,24 @@ function XSessionApp() {
       );
       setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
       await loadUsersAndSessions(appServices.db);
+      return { ok: true };
     } catch (error) {
       pendingProfileRef.current = null;
-      setGlobalError(error.message || "회원가입에 실패했다.");
+      let message = error.message || "회원가입에 실패했다.";
+      if (error?.code === "auth/email-already-in-use") {
+        message = "이미 가입한 이메일 주소입니다.";
+      }
+      setGlobalError(message);
+      throw new Error(message);
     } finally {
       setAuthLoading(false);
     }
   }
 
   async function handleLogin(input) {
-    if (!appServices?.auth) return;
+    if (!appServices?.auth) {
+      throw new Error("Firebase 연결이 아직 준비되지 않았습니다.");
+    }
 
     setAdminRequested(false);
     setAuthLoading(true);
@@ -3718,8 +4032,19 @@ function XSessionApp() {
 
     try {
       await signInWithEmailAndPassword(appServices.auth, input.email, input.password);
+      return { ok: true };
     } catch (error) {
-      setGlobalError(error.message || "로그인에 실패했다.");
+      let message = error.message || "로그인에 실패했다.";
+      if (error?.code === "auth/user-not-found" || error?.code === "auth/invalid-credential") {
+        message = "회원가입후 이용해 주세요.";
+      } else if (error?.code === "auth/wrong-password") {
+        message = "비밀번호를 다시 확인해 주세요.";
+      } else if (error?.code === "auth/invalid-email") {
+        message = "올바른 이메일 주소를 입력해 주세요.";
+      }
+      setGlobalError(message);
+      throw new Error(message);
+    } finally {
       setAuthLoading(false);
     }
   }
@@ -3946,8 +4271,8 @@ function XSessionApp() {
   const adminEmailGuard = isAdminEmail;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 overflow-x-hidden p-4 md:p-6 xl:p-8">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+      <div className={`mx-auto flex w-full flex-col ${currentUser ? "max-w-7xl gap-3 px-2 py-2 md:gap-6 md:p-6 xl:p-8" : "max-w-[min(96vw,1440px)] gap-0 px-0 py-0 md:px-4 md:py-4 xl:px-6 xl:py-6"}`}>
         {currentUser ? <Hero activeTab={ui.activeTab} /> : null}
 
         {authLoading && !authUser ? (
