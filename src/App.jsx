@@ -113,6 +113,31 @@ const DIVISION_OPTIONS = [
   "국가대표"
 ];
 const DISTANCE_OPTIONS = [18, 20, 25, 30, 35, 40, 50, 60, 70, 90];
+const RANKING_COLLECTIONS = {
+  mainDistance: "rankings_main_distance",
+  mainTotal: "rankings_main_total",
+  weeklyDistance: "rankings_weekly_distance",
+  weeklyTotal: "rankings_weekly_total",
+};
+
+const DIVISION_DISTANCE_RULES = {
+  "초등1": [35, 30, 25, 20],
+  "초등2": [35, 30, 25, 20],
+  "초등3": [35, 30, 25, 20],
+  "초등4": [35, 30, 25, 20],
+  "초등5": [35, 30, 25, 20],
+  "초등6": [35, 30, 25, 20],
+  "중등1": [60, 50, 40, 30],
+  "중등2": [60, 50, 40, 30],
+  "중등3": [60, 50, 40, 30],
+  "고등1": [70, 60, 50, 30],
+  "고등2": [70, 60, 50, 30],
+  "고등3": [70, 60, 50, 30],
+  "대학부": [70, 60, 50, 30],
+  "일반부": [70, 60, 50, 30],
+  "국가대표": [70, 60, 50, 30],
+};
+
 
 const REGION_CITY_OPTIONS = [
   "강원특별자치도",
@@ -773,6 +798,215 @@ function getYesterdayKey() {
   return date.toISOString().slice(0, 10);
 }
 
+
+function getRankingDivision(division) {
+  return DIVISION_DISTANCE_RULES[division] ? division : null;
+}
+
+function toIsoDate(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value.slice(0, 10);
+  try {
+    return new Date(value).toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
+}
+
+function isWithinLast7Days(sessionDate) {
+  const iso = toIsoDate(sessionDate);
+  if (!iso) return false;
+  const target = new Date(iso);
+  target.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(start.getDate() - 6);
+  return target >= start && target <= today;
+}
+
+function getCurrentWeekKey() {
+  return getWeekKey(new Date());
+}
+
+function getQualifiedDistanceSegments(session) {
+  if (!session || !session.isComplete || session.mode !== "cumulative") return [];
+
+  const sessionDate = session.sessionDate || session.updatedAt || session.createdAt || new Date().toISOString();
+  const weekKey = getWeekKey(new Date(sessionDate));
+
+  if (session.recordInputType === "distance") {
+    const arrowsPerDistance = Number(session.arrowsPerDistance || 0);
+    if (arrowsPerDistance !== 36) return [];
+    return (session.distanceRounds || [])
+      .map((round) => ({
+        distance: Number(round.distance),
+        score: Number(round.total) || 0,
+        sessionDate,
+        weekKey,
+      }))
+      .filter((item) => Number.isFinite(item.distance) && item.distance > 0 && item.score >= 0 && item.score <= 360);
+  }
+
+  const totalArrows = Number(session.summary?.totalArrows ?? getArrowCount(session));
+  const totalScore = Number(session.summary?.totalScore ?? getSessionTotal(session));
+  if (totalArrows !== 36) return [];
+  if (totalScore < 0 || totalScore > 360) return [];
+  return [
+    {
+      distance: Number(session.distance),
+      score: totalScore,
+      sessionDate,
+      weekKey,
+    },
+  ].filter((item) => Number.isFinite(item.distance) && item.distance > 0);
+}
+
+async function clearRankingDocsForUser(db, userId) {
+  const tasks = Object.values(RANKING_COLLECTIONS).map(async (name) => {
+    const snap = await getDocs(query(collection(db, name), where("userId", "==", userId)));
+    await Promise.all(snap.docs.map((item) => deleteDoc(doc(db, name, item.id))));
+  });
+  await Promise.all(tasks);
+}
+
+async function recalculateRankingsForUser(db, userId, profileMeta = {}) {
+  if (!db || !userId) return;
+
+  const division = getRankingDivision(profileMeta.division || "");
+  await clearRankingDocsForUser(db, userId);
+
+  const sessionsSnap = await getDocs(query(collection(db, "sessions"), where("userId", "==", userId)));
+  const userSessions = sessionsSnap.docs.map((snap) => fromFirestoreSession(snap));
+  const qualifiedSegments = userSessions.flatMap((session) => getQualifiedDistanceSegments(session));
+
+  if (!qualifiedSegments.length) return;
+
+  const baseMeta = {
+    userId,
+    division: profileMeta.division || "",
+    name: profileMeta.name || "",
+    groupName: profileMeta.groupName || "",
+    regionCity: profileMeta.regionCity || "",
+    updatedAt: serverTimestamp(),
+  };
+
+  const distanceMap = new Map();
+  qualifiedSegments.forEach((segment) => {
+    const key = String(segment.distance);
+    if (!distanceMap.has(key)) distanceMap.set(key, []);
+    distanceMap.get(key).push(segment);
+  });
+
+  for (const [distanceKey, segments] of distanceMap.entries()) {
+    const scores = segments.map((item) => Number(item.score) || 0).sort((a, b) => b - a);
+    const bestScore = scores[0] || 0;
+    await setDoc(doc(db, RANKING_COLLECTIONS.mainDistance, `${userId}_${distanceKey}`), {
+      ...baseMeta,
+      distance: Number(distanceKey),
+      bestScore,
+      qualifiedSessions: scores.length,
+      latestQualifiedDate: segments
+        .map((item) => toIsoDate(item.sessionDate))
+        .sort((a, b) => String(b).localeCompare(String(a)))[0] || "",
+      isQualified: scores.length > 0,
+    });
+  }
+
+  if (division) {
+    const requiredDistances = DIVISION_DISTANCE_RULES[division];
+    const distanceScores = {};
+    let totalScore = 0;
+    let isQualified = true;
+
+    requiredDistances.forEach((distance) => {
+      const segments = distanceMap.get(String(distance)) || [];
+      if (!segments.length) {
+        isQualified = false;
+        return;
+      }
+      const bestScore = segments.map((item) => Number(item.score) || 0).sort((a, b) => b - a)[0] || 0;
+      distanceScores[String(distance)] = bestScore;
+      totalScore += bestScore;
+    });
+
+    if (isQualified) {
+      await setDoc(doc(db, RANKING_COLLECTIONS.mainTotal, userId), {
+        ...baseMeta,
+        requiredDistances,
+        distanceScores,
+        totalScore,
+        isQualified: true,
+      });
+    }
+  }
+
+  const weeklyMap = new Map();
+  qualifiedSegments
+    .filter((segment) => isWithinLast7Days(segment.sessionDate))
+    .forEach((segment) => {
+      const key = `${segment.weekKey}_${segment.distance}`;
+      if (!weeklyMap.has(key)) weeklyMap.set(key, []);
+      weeklyMap.get(key).push(segment);
+    });
+
+  const activeWeekKeys = new Set();
+
+  for (const [key, segments] of weeklyMap.entries()) {
+    const [weekKey, distanceKey] = key.split("_");
+    activeWeekKeys.add(weekKey);
+    const bestScore = segments.map((item) => Number(item.score) || 0).sort((a, b) => b - a)[0] || 0;
+
+    await setDoc(doc(db, RANKING_COLLECTIONS.weeklyDistance, `${weekKey}_${userId}_${distanceKey}`), {
+      ...baseMeta,
+      weekKey,
+      distance: Number(distanceKey),
+      bestScore,
+      qualifiedSessions: segments.length,
+      latestQualifiedDate: segments
+        .map((item) => toIsoDate(item.sessionDate))
+        .sort((a, b) => String(b).localeCompare(String(a)))[0] || "",
+      isQualified: segments.length > 0,
+    });
+  }
+
+  if (division) {
+    const requiredDistances = DIVISION_DISTANCE_RULES[division];
+    for (const weekKey of activeWeekKeys) {
+      const distanceScores = {};
+      let totalScore = 0;
+      let isQualified = true;
+
+      requiredDistances.forEach((distance) => {
+        const segments = qualifiedSegments.filter(
+          (segment) =>
+            segment.weekKey === weekKey &&
+            Number(segment.distance) === Number(distance) &&
+            isWithinLast7Days(segment.sessionDate)
+        );
+        if (!segments.length) {
+          isQualified = false;
+          return;
+        }
+        const bestScore = segments.map((item) => Number(item.score) || 0).sort((a, b) => b - a)[0] || 0;
+        distanceScores[String(distance)] = bestScore;
+        totalScore += bestScore;
+      });
+
+      if (isQualified) {
+        await setDoc(doc(db, RANKING_COLLECTIONS.weeklyTotal, `${weekKey}_${userId}`), {
+          ...baseMeta,
+          weekKey,
+          requiredDistances,
+          distanceScores,
+          totalScore,
+          isQualified: true,
+        });
+      }
+    }
+  }
+}
+
 function isWithinDateFilter(sessionDate, dateFilter) {
   if (!sessionDate || dateFilter === "all") return true;
   const target = new Date(sessionDate);
@@ -1357,11 +1591,10 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
         backgroundSize: "contain",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "top center",
-        backgroundColor: "#22303f",
+        backgroundColor: "#dfe6f3",
       }}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.03)_0%,rgba(2,6,23,0.12)_55%,rgba(34,48,63,0.55)_78%,rgba(34,48,63,0.92)_100%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-[24svh] bg-[linear-gradient(180deg,rgba(34,48,63,0)_0%,rgba(34,48,63,0.45)_38%,rgba(34,48,63,0.88)_100%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.03)_0%,rgba(2,6,23,0.18)_100%)]" />
       <div className="relative flex min-h-[100svh] items-end justify-center px-2 pb-2 pt-[32svh] sm:px-4 sm:pb-4 sm:pt-[34svh] lg:pt-[38svh]">
         <div className="w-full max-w-lg rounded-[24px] sm:rounded-[30px] bg-transparent p-3 sm:p-5">
           <div className="grid gap-4">
@@ -1527,7 +1760,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <Button
                   type="button"
                   disabled={authLoading}
-                  className="h-12 rounded-2xl bg-white/92 text-base font-semibold text-slate-900 hover:bg-white/90 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-white/50"
+                  className="h-12 rounded-2xl bg-white/92 text-base font-semibold text-slate-900 hover:bg-white"
                   onClick={handleRegisterSubmit}
                 >
                   {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
@@ -2773,34 +3006,73 @@ function StatCard({ title, value, sub, icon: Icon, tone }) {
   );
 }
 
-function RankingBoard({ users, sessions, currentUserId }) {
+function RankingBoard({ currentUser, rankingsData }) {
+  const [viewMode, setViewMode] = useState("mainDistance");
   const [rankingFilters, setRankingFilters] = useState({
     distance: "all",
     division: "all",
     groupName: "all",
     regionCity: "all",
-    mode: "all",
-    dateFilter: "all",
   });
-  const groupOptions = useMemo(() => Array.from(new Set(users.map((u) => u.groupName).filter(Boolean))), [users]);
-  const regionOptions = useMemo(() => REGION_OPTIONS, []);
 
-  const rankings = useMemo(() => buildUserRankings(users, sessions, rankingFilters), [users, sessions, rankingFilters]);
+  const currentWeekKey = getCurrentWeekKey();
 
-  const sortedRankings = useMemo(() => {
-    const items = rankings.filter((item) => Number(item.sessions || 0) >= 3);
+  const sourceItems = useMemo(() => {
+    if (!rankingsData) return [];
+    if (viewMode === "mainDistance") return rankingsData.mainDistance || [];
+    if (viewMode === "mainTotal") return rankingsData.mainTotal || [];
+    if (viewMode === "weeklyDistance") {
+      return (rankingsData.weeklyDistance || []).filter((item) => item.weekKey === currentWeekKey);
+    }
+    if (viewMode === "weeklyTotal") {
+      return (rankingsData.weeklyTotal || []).filter((item) => item.weekKey === currentWeekKey);
+    }
+    return [];
+  }, [rankingsData, viewMode, currentWeekKey]);
+
+  const groupOptions = useMemo(
+    () => Array.from(new Set(sourceItems.map((item) => item.groupName).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko")),
+    [sourceItems]
+  );
+
+  const filteredItems = useMemo(() => {
+    return sourceItems.filter((item) => {
+      if (rankingFilters.division !== "all" && item.division !== rankingFilters.division) return false;
+      if (rankingFilters.groupName !== "all" && item.groupName !== rankingFilters.groupName) return false;
+      if (rankingFilters.regionCity !== "all" && item.regionCity !== rankingFilters.regionCity) return false;
+      if ((viewMode === "mainDistance" || viewMode === "weeklyDistance") && rankingFilters.distance !== "all" && String(item.distance) !== String(rankingFilters.distance)) return false;
+      return true;
+    });
+  }, [sourceItems, rankingFilters, viewMode]);
+
+  const sortedItems = useMemo(() => {
+    const items = filteredItems.slice();
     items.sort((a, b) => {
-      if (b.avgArrow !== a.avgArrow) return b.avgArrow - a.avgArrow;
-      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-      return String(b.latestDate).localeCompare(String(a.latestDate));
+      const aScore = Number(viewMode === "mainTotal" || viewMode === "weeklyTotal" ? a.totalScore : a.bestScore) || 0;
+      const bScore = Number(viewMode === "mainTotal" || viewMode === "weeklyTotal" ? b.totalScore : b.bestScore) || 0;
+      if (bScore !== aScore) return bScore - aScore;
+      return String(b.latestQualifiedDate || b.updatedAt || "").localeCompare(String(a.latestQualifiedDate || a.updatedAt || ""));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [rankings]);
+  }, [filteredItems, viewMode]);
 
-  const myRank = sortedRankings.find((r) => r.userId === currentUserId);
+  const myRank = sortedItems.find((item) => item.userId === currentUser?.id);
+
+  const noticeText = useMemo(() => {
+    if (viewMode === "mainDistance") {
+      return "36발 경기 기준, 최고 점수로 순위가 결정됩니다.";
+    }
+    if (viewMode === "mainTotal") {
+      return "각 거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
+    }
+    if (viewMode === "weeklyDistance") {
+      return "최근 7일 기준 최고 점수로 순위가 결정됩니다.";
+    }
+    return "최근 7일 동안 각 거리 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
+  }, [viewMode]);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[0.7fr_1.3fr]">
+    <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
       <div className="grid gap-4">
         <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
           <CardHeader>
@@ -2810,22 +3082,43 @@ function RankingBoard({ users, sessions, currentUserId }) {
           </CardHeader>
           <CardContent>
             <div className="mb-3 rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">
-              랭킹은 평균 화살 점수 우선, 동률 시 총점, 그다음 최신 기록 순으로 계산되며 3회 이상 기록된 사용자만 반영된다.
+              {noticeText}
             </div>
+
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <Button type="button" variant={viewMode === "mainDistance" ? "default" : "outline"} className="rounded-2xl" onClick={() => setViewMode("mainDistance")}>
+                거리 랭킹
+              </Button>
+              <Button type="button" variant={viewMode === "mainTotal" ? "default" : "outline"} className="rounded-2xl" onClick={() => setViewMode("mainTotal")}>
+                종합 랭킹
+              </Button>
+              <Button type="button" variant={viewMode === "weeklyDistance" ? "default" : "outline"} className="rounded-2xl" onClick={() => setViewMode("weeklyDistance")}>
+                주간 거리
+              </Button>
+              <Button type="button" variant={viewMode === "weeklyTotal" ? "default" : "outline"} className="rounded-2xl" onClick={() => setViewMode("weeklyTotal")}>
+                주간 종합
+              </Button>
+            </div>
+
             {myRank ? (
               <div className="space-y-4">
                 <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-6 text-white shadow-lg">
                   <div className="text-sm opacity-80">현재 순위</div>
                   <div className="mt-2 text-5xl font-bold">#{myRank.rank}</div>
-                  <div className="mt-2 text-sm opacity-90">X {myRank.xCount} / 평균 화살 점수 {myRank.avgArrow.toFixed(2)}</div>
+                  <div className="mt-2 text-sm opacity-90">
+                    {viewMode === "mainTotal" || viewMode === "weeklyTotal"
+                      ? `총점 ${Number(myRank.totalScore || 0).toFixed(2)}`
+                      : `${myRank.distance}m · 최고 ${Number(myRank.bestScore || 0).toFixed(0)}점`}
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">랭킹은 3회 이상 기록된 사용자부터 반영된다.</div>
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                현재 선택한 기준에서 아직 랭킹에 포함된 기록이 없다.
+              </div>
             )}
           </CardContent>
         </Card>
-
       </div>
 
       <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
@@ -2836,15 +3129,17 @@ function RankingBoard({ users, sessions, currentUserId }) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">거리</Label>
-              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                <option value="all">전체 거리</option>
-                {DISTANCE_OPTIONS.map((distance) => (
-                  <option key={distance} value={String(distance)}>{distance}m</option>
-                ))}
-              </select>
-            </div>
+            {(viewMode === "mainDistance" || viewMode === "weeklyDistance") && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Label className="w-16 shrink-0 text-sm">거리</Label>
+                <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+                  <option value="all">전체 거리</option>
+                  {DISTANCE_OPTIONS.map((distance) => (
+                    <option key={distance} value={String(distance)}>{distance}m</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학년</Label>
@@ -2868,54 +3163,42 @@ function RankingBoard({ users, sessions, currentUserId }) {
               <Label className="w-16 shrink-0 text-sm">지역</Label>
               <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 지역</option>
-                {regionOptions.map((item) => (
+                {REGION_OPTIONS.map((item) => (
                   <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">경기 방식</Label>
-              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                {MATCH_TYPE_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">날짜</Label>
-              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                {DATE_FILTER_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </select>
             </div>
           </div>
 
           <div className="mt-4">
-            {sortedRankings.length === 0 ? (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">아직 기록된 선수가 없다.</div>
+            {sortedItems.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                현재 조건을 만족하는 랭킹 데이터가 없다.
+              </div>
             ) : (
               <div className="grid gap-3">
-                {sortedRankings.map((item) => (
-                  <div key={item.userId} className={`rounded-2xl border px-3 py-2 ${item.userId === currentUserId ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
-                    <div className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-xl text-sm font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
-                        {item.rank}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex min-w-0 items-center gap-2">
-                          <div className="truncate text-sm font-semibold">{item.name}</div>
-                          {item.userId === currentUserId && <Badge className="h-5 rounded-full bg-blue-900 px-2 text-[10px] text-white">나</Badge>}
+                {sortedItems.map((item) => {
+                  const scoreText = viewMode === "mainTotal" || viewMode === "weeklyTotal"
+                    ? `총점 ${Number(item.totalScore || 0).toFixed(2)}`
+                    : `${item.distance}m · 최고 ${Number(item.bestScore || 0).toFixed(0)}점`;
+                  return (
+                    <div key={`${viewMode}_${item.userId}_${item.distance || "total"}_${item.weekKey || "main"}`} className={`rounded-2xl border px-3 py-2 ${item.userId === currentUser?.id ? "border-blue-300 bg-blue-50" : item.rank <= 3 ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
+                      <div className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-2">
+                        <div className={`flex h-8 w-8 items-center justify-center rounded-xl text-sm font-bold text-white ${item.rank === 1 ? "bg-gradient-to-br from-amber-400 to-yellow-300 text-slate-900" : item.rank === 2 ? "bg-gradient-to-br from-slate-400 to-slate-300 text-slate-900" : item.rank === 3 ? "bg-gradient-to-br from-orange-500 to-amber-700" : "bg-gradient-to-br from-blue-900 to-red-700"}`}>
+                          {item.rank}
                         </div>
-                        <div className="truncate text-[11px] text-slate-500">{item.groupName} · {item.regionCity} · {item.division}</div>
+                        <div className="min-w-0">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <div className="truncate text-sm font-semibold">{item.name || getDisplayName(currentUser)}</div>
+                            {item.userId === currentUser?.id && <Badge className="h-5 rounded-full bg-blue-900 px-2 text-[10px] text-white">나</Badge>}
+                          </div>
+                          <div className="truncate text-[11px] text-slate-500">{item.groupName || "-"} · {item.regionCity || "-"} · {item.division || "-"}</div>
+                        </div>
+                        <div className="text-right text-xs font-semibold text-slate-500">{scoreText}</div>
                       </div>
-                      <div className="text-right text-xs font-semibold text-slate-500">총점 {item.totalScore}</div>
                     </div>
-                    <div className="mt-1 pl-10 text-[11px] text-slate-700">X {item.xCount} · 평균 {item.avgArrow.toFixed(2)} · 최고 {item.bestSession} · 세션 {item.sessions}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -2924,6 +3207,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
     </div>
   );
 }
+
 
 function AnalysisBoard({ currentUser, users, sessions }) {
   const [period, setPeriod] = useState("day");
@@ -3734,6 +4018,7 @@ function XSessionApp() {
   const [profile, setProfile] = useState(null);
   const [users, setUsers] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [rankingsData, setRankingsData] = useState({ mainDistance: [], mainTotal: [], weeklyDistance: [], weeklyTotal: [] });
   const [draftSession, setDraftSession] = useState(null);
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -3785,12 +4070,22 @@ function XSessionApp() {
   const loadUsersAndSessions = useCallback(async (db) => {
     setSessionsLoading(true);
     try {
-      const [usersSnap, sessionsSnap] = await Promise.all([
+      const [usersSnap, sessionsSnap, mainDistanceSnap, mainTotalSnap, weeklyDistanceSnap, weeklyTotalSnap] = await Promise.all([
         getDocs(collection(db, "users")),
         getDocs(query(collection(db, "sessions"), orderBy("sessionDate", "desc"))),
+        getDocs(collection(db, RANKING_COLLECTIONS.mainDistance)),
+        getDocs(collection(db, RANKING_COLLECTIONS.mainTotal)),
+        getDocs(collection(db, RANKING_COLLECTIONS.weeklyDistance)),
+        getDocs(collection(db, RANKING_COLLECTIONS.weeklyTotal)),
       ]);
       setUsers(usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data())));
       setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
+      setRankingsData({
+        mainDistance: mainDistanceSnap.docs.map((snap) => ({ id: snap.id, ...snap.data() })),
+        mainTotal: mainTotalSnap.docs.map((snap) => ({ id: snap.id, ...snap.data() })),
+        weeklyDistance: weeklyDistanceSnap.docs.map((snap) => ({ id: snap.id, ...snap.data() })),
+        weeklyTotal: weeklyTotalSnap.docs.map((snap) => ({ id: snap.id, ...snap.data() })),
+      });
     } catch (error) {
       setGlobalError(error.message || "데이터 로딩에 실패했다.");
     } finally {
@@ -3865,6 +4160,7 @@ function XSessionApp() {
           setEditingSessionId(null);
           setUsers([]);
           setSessions([]);
+          setRankingsData({ mainDistance: [], mainTotal: [], weeklyDistance: [], weeklyTotal: [] });
           setUi(DEFAULT_UI);
           return;
         }
@@ -4079,6 +4375,7 @@ function XSessionApp() {
     setEditingSessionId(null);
     setUsers([]);
     setSessions([]);
+    setRankingsData({ mainDistance: [], mainTotal: [], weeklyDistance: [], weeklyTotal: [] });
     setUi(DEFAULT_UI);
     setTempSaveMessage("");
     setAdminRequested(false);
@@ -4101,6 +4398,7 @@ function XSessionApp() {
           recordInputType: payload.recordInputType,
           distance: payload.distance,
           groupName: payload.groupName,
+          regionCity: payload.regionCity,
           division: payload.division,
           arrowsPerEnd: payload.arrowsPerEnd,
           arrowsPerDistance: payload.arrowsPerDistance,
@@ -4116,6 +4414,13 @@ function XSessionApp() {
         const docRef = await addDoc(collection(appServices.db, "sessions"), payload);
         await setDoc(doc(appServices.db, "sessions", docRef.id), { sessionId: docRef.id }, { merge: true });
       }
+
+      await recalculateRankingsForUser(appServices.db, authUser.uid, {
+        division: draftSession.division || profile.division || "",
+        name: profile.name || "",
+        groupName: profile.groupName || "",
+        regionCity: profile.regionCity || "",
+      });
 
       clearDraftFromLocal(authUser.uid);
       setTempSaveMessage("");
@@ -4134,6 +4439,12 @@ function XSessionApp() {
     if (!appServices?.db || !editingSessionId || !authUser || !profile) return;
     try {
       await deleteDoc(doc(appServices.db, "sessions", editingSessionId));
+      await recalculateRankingsForUser(appServices.db, authUser.uid, {
+        division: profile.division || "",
+        name: profile.name || "",
+        groupName: profile.groupName || "",
+        regionCity: profile.regionCity || "",
+      });
       setEditingSessionId(null);
       setDraftSession(normalizeSessionShape(createNewSession(profile, "cumulative"), profile));
       clearDraftFromLocal(authUser.uid);
@@ -4231,6 +4542,13 @@ function XSessionApp() {
         });
       }
 
+      await recalculateRankingsForUser(appServices.db, authUser.uid, {
+        division: refreshed.division || "",
+        name: refreshed.name || "",
+        groupName: refreshed.groupName || "",
+        regionCity: refreshed.regionCity || "",
+      });
+
       await loadUsersAndSessions(appServices.db);
       return { ok: true, message: "프로필이 저장되었다. 앱 전체 표시 정보에도 반영된다." };
     } catch (error) {
@@ -4306,7 +4624,7 @@ function XSessionApp() {
                 />
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
-              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
+              {ui.activeTab === "ranking" && <RankingBoard currentUser={currentUser} rankingsData={rankingsData} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} />}
