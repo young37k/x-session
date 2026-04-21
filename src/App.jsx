@@ -688,7 +688,7 @@ function createNewSession(profile, mode = "cumulative") {
   return {
     id: uid("draft"),
     title: `${mode === "set" ? "세트제" : "누적제"} X-Session`,
-    sessionDate: new Date().toISOString().slice(0, 10),
+    sessionDate: getCurrentLocalDateString(),
     mode,
     recordInputType: "end",
     distance: 70,
@@ -803,6 +803,10 @@ function toLocalDateKey(value) {
 }
 
 function getTodayKey() {
+  return toLocalDateKey(new Date());
+}
+
+function getCurrentLocalDateString() {
   return toLocalDateKey(new Date());
 }
 
@@ -4376,6 +4380,10 @@ function XSessionApp() {
 
     try {
       const payload = buildSessionPayload({ draftSession, profile, uid: authUser.uid });
+      const fixedSessionDate = editingSessionId
+        ? (draftSession?.sessionDate || getCurrentLocalDateString())
+        : getCurrentLocalDateString();
+      payload.sessionDate = fixedSessionDate;
 
       if (editingSessionId) {
         await updateDoc(doc(appServices.db, "sessions", editingSessionId), {
