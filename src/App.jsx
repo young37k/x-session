@@ -3719,7 +3719,10 @@ function XBriefPage({ appServices, briefRefreshKey = 0 }) {
             </div>
           ) : (
             notices.map((item) => (
-              <div key={item.id} className={`rounded-[22px] border p-5 ${item.isPinned ? "border-amber-300 bg-amber-50/50" : "border-slate-200 bg-white"}`}>
+              <div
+                key={item.id}
+                className={`rounded-[22px] border p-5 ${item.isPinned ? "border-amber-300 bg-amber-50/50" : "border-slate-200 bg-white"}`}
+              >
                 <div className="flex items-center gap-2">
                   {item.isPinned ? (
                     <span className="inline-flex rounded-full bg-amber-500 px-2 py-1 text-[11px] font-semibold text-white">
@@ -3944,6 +3947,12 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
   const [newsForm, setNewsForm] = useState({ title: "", content: "" });
   const [briefForm, setBriefForm] = useState({ title: "", content: "", isPinned: false });
   const [publishMessage, setPublishMessage] = useState("");
+  const [adminEvents, setAdminEvents] = useState([]);
+  const [adminNewsItems, setAdminNewsItems] = useState([]);
+  const [adminBriefItems, setAdminBriefItems] = useState([]);
+  const [editingEventId, setEditingEventId] = useState("");
+  const [editingNewsId, setEditingNewsId] = useState("");
+  const [editingBriefId, setEditingBriefId] = useState("");
 
   useEffect(() => {
     try {
@@ -3956,6 +3965,55 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
       localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(extraAdmins));
     } catch {}
   }, [extraAdmins]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAdminContent() {
+      if (!appServices?.db) return;
+      try {
+        const [eventSnap, newsSnap, briefSnap] = await Promise.all([
+          getDocs(query(collection(appServices.db, "stage_events"), orderBy("date", "asc"))),
+          getDocs(query(collection(appServices.db, "stage_news"), orderBy("createdAt", "desc"))),
+          getDocs(query(collection(appServices.db, "brief_notices"), orderBy("createdAt", "desc"))),
+        ]);
+        if (cancelled) return;
+
+        setAdminEvents(
+          eventSnap.docs.map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+        );
+        setAdminNewsItems(
+          newsSnap.docs.map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+        );
+        setAdminBriefItems(
+          briefSnap.docs
+            .map((docSnap) => ({
+              id: docSnap.id,
+              ...docSnap.data(),
+            }))
+            .sort((a, b) => {
+              const aPinned = a.isPinned ? 1 : 0;
+              const bPinned = b.isPinned ? 1 : 0;
+              if (bPinned !== aPinned) return bPinned - aPinned;
+              const aTime = typeof a.createdAt?.toDate === "function" ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
+              const bTime = typeof b.createdAt?.toDate === "function" ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+              return bTime - aTime;
+            })
+        );
+      } catch {}
+    }
+
+    loadAdminContent();
+    return () => {
+      cancelled = true;
+    };
+  }, [appServices, publishMessage]);
 
   const realUsers = useMemo(() => users.filter((user) => !user.isSampleData), [users]);
   const realSessions = useMemo(() => sessions.filter((session) => !session.isSampleData), [sessions]);
@@ -4019,18 +4077,30 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
       return alert("대회 제목과 날짜를 입력해줘.");
     }
     try {
-      await addDoc(collection(appServices.db, "stage_events"), {
-        title: eventForm.title.trim(),
-        date: eventForm.date.trim(),
-        location: eventForm.location.trim(),
-        createdAt: serverTimestamp(),
-        createdBy: currentUser?.email || "",
-      });
+      if (editingEventId) {
+        await updateDoc(doc(appServices.db, "stage_events", editingEventId), {
+          title: eventForm.title.trim(),
+          date: eventForm.date.trim(),
+          location: eventForm.location.trim(),
+          updatedAt: serverTimestamp(),
+          updatedBy: currentUser?.email || "",
+        });
+        setPublishMessage("대회 일정이 수정되었다.");
+      } else {
+        await addDoc(collection(appServices.db, "stage_events"), {
+          title: eventForm.title.trim(),
+          date: eventForm.date.trim(),
+          location: eventForm.location.trim(),
+          createdAt: serverTimestamp(),
+          createdBy: currentUser?.email || "",
+        });
+        setPublishMessage("대회 일정이 등록되었다.");
+      }
       setEventForm({ title: "", date: "", location: "" });
-      setPublishMessage("대회 일정이 등록되었다.");
+      setEditingEventId("");
       onStageRefresh?.();
     } catch (error) {
-      alert(error.message || "대회 일정 등록에 실패했다.");
+      alert(error.message || "대회 일정 저장에 실패했다.");
     }
   }
 
@@ -4040,17 +4110,28 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
       return alert("뉴스 제목과 내용을 입력해줘.");
     }
     try {
-      await addDoc(collection(appServices.db, "stage_news"), {
-        title: newsForm.title.trim(),
-        content: newsForm.content.trim(),
-        createdAt: serverTimestamp(),
-        createdBy: currentUser?.email || "",
-      });
+      if (editingNewsId) {
+        await updateDoc(doc(appServices.db, "stage_news", editingNewsId), {
+          title: newsForm.title.trim(),
+          content: newsForm.content.trim(),
+          updatedAt: serverTimestamp(),
+          updatedBy: currentUser?.email || "",
+        });
+        setPublishMessage("양궁 뉴스가 수정되었다.");
+      } else {
+        await addDoc(collection(appServices.db, "stage_news"), {
+          title: newsForm.title.trim(),
+          content: newsForm.content.trim(),
+          createdAt: serverTimestamp(),
+          createdBy: currentUser?.email || "",
+        });
+        setPublishMessage("양궁 뉴스가 등록되었다.");
+      }
       setNewsForm({ title: "", content: "" });
-      setPublishMessage("양궁 뉴스가 등록되었다.");
+      setEditingNewsId("");
       onStageRefresh?.();
     } catch (error) {
-      alert(error.message || "양궁 뉴스 등록에 실패했다.");
+      alert(error.message || "양궁 뉴스 저장에 실패했다.");
     }
   }
 
@@ -4063,15 +4144,92 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
       await addDoc(collection(appServices.db, "brief_notices"), {
         title: briefForm.title.trim(),
         content: briefForm.content.trim(),
-        isPinned: Boolean(briefForm.isPinned),
         createdAt: serverTimestamp(),
         createdBy: currentUser?.email || "",
       });
-      setBriefForm({ title: "", content: "", isPinned: false });
+      setBriefForm({ title: "", content: "" });
       setPublishMessage("공지사항이 등록되었다.");
       onBriefRefresh?.();
     } catch (error) {
       alert(error.message || "공지 등록에 실패했다.");
+    }
+  }
+
+
+  function editStageEvent(item) {
+    setEventForm({
+      title: item.title || "",
+      date: item.date || "",
+      location: item.location || "",
+    });
+    setEditingEventId(item.id);
+    setPublishMessage("대회 일정 수정 모드다.");
+  }
+
+  async function deleteStageEvent(item) {
+    if (!appServices?.db) return;
+    if (!window.confirm(`"${item.title || "대회 일정"}"을(를) 삭제할까?`)) return;
+    try {
+      await deleteDoc(doc(appServices.db, "stage_events", item.id));
+      setPublishMessage("대회 일정이 삭제되었다.");
+      if (editingEventId === item.id) {
+        setEditingEventId("");
+        setEventForm({ title: "", date: "", location: "" });
+      }
+      onStageRefresh?.();
+    } catch (error) {
+      alert(error.message || "대회 일정 삭제에 실패했다.");
+    }
+  }
+
+  function editStageNews(item) {
+    setNewsForm({
+      title: item.title || "",
+      content: item.content || "",
+    });
+    setEditingNewsId(item.id);
+    setPublishMessage("양궁 뉴스 수정 모드다.");
+  }
+
+  async function deleteStageNews(item) {
+    if (!appServices?.db) return;
+    if (!window.confirm(`"${item.title || "양궁 뉴스"}"을(를) 삭제할까?`)) return;
+    try {
+      await deleteDoc(doc(appServices.db, "stage_news", item.id));
+      setPublishMessage("양궁 뉴스가 삭제되었다.");
+      if (editingNewsId === item.id) {
+        setEditingNewsId("");
+        setNewsForm({ title: "", content: "" });
+      }
+      onStageRefresh?.();
+    } catch (error) {
+      alert(error.message || "양궁 뉴스 삭제에 실패했다.");
+    }
+  }
+
+  function editBriefNotice(item) {
+    setBriefForm({
+      title: item.title || "",
+      content: item.content || "",
+      isPinned: Boolean(item.isPinned),
+    });
+    setEditingBriefId(item.id);
+    setPublishMessage("공지사항 수정 모드다.");
+  }
+
+  async function deleteBriefNotice(item) {
+    if (!appServices?.db) return;
+    if (!window.confirm(`"${item.title || "공지사항"}"을(를) 삭제할까?`)) return;
+    try {
+      await deleteDoc(doc(appServices.db, "brief_notices", item.id));
+      setPublishMessage("공지사항이 삭제되었다.");
+      if (editingBriefId === item.id) {
+        setEditingBriefId("");
+        setBriefForm({ title: "", content: "", isPinned: false });
+      }
+      onBriefRefresh?.();
+    } catch (error) {
+      alert(error.message || "공지사항 삭제에 실패했다.");
     }
   }
 
@@ -4313,9 +4471,47 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
                   <Label>장소</Label>
                   <Input value={eventForm.location} onChange={(e) => setEventForm((prev) => ({ ...prev, location: e.target.value }))} placeholder="예: 예천 진호국제양궁장" />
                 </div>
-                <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createStageEvent}>
-                  대회 일정 등록
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createStageEvent}>
+                    {editingEventId ? "대회 일정 수정" : "대회 일정 등록"}
+                  </Button>
+                  {editingEventId ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-2xl"
+                      onClick={() => {
+                        setEditingEventId("");
+                        setEventForm({ title: "", date: "", location: "" });
+                      }}
+                    >
+                      수정 취소
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="grid gap-2 rounded-2xl bg-slate-50 p-3">
+                  <div className="text-sm font-semibold text-slate-700">등록된 대회 일정</div>
+                  {adminEvents.length === 0 ? (
+                    <div className="text-xs text-slate-500">등록된 일정이 없다.</div>
+                  ) : (
+                    adminEvents.map((item) => (
+                      <div key={item.id} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-3 md:flex-row md:items-center md:justify-between">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-slate-900">{item.title || "대회 일정"}</div>
+                          <div className="text-xs text-slate-500">{item.date || "-"} · {item.location || "장소 미정"}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" className="rounded-2xl" onClick={() => editStageEvent(item)}>
+                            수정
+                          </Button>
+                          <Button type="button" variant="outline" className="rounded-2xl text-red-600" onClick={() => deleteStageEvent(item)}>
+                            삭제
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 
@@ -4330,9 +4526,47 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
                   <Label>내용</Label>
                   <textarea value={newsForm.content} onChange={(e) => setNewsForm((prev) => ({ ...prev, content: e.target.value }))} className="min-h-[140px] rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" placeholder="뉴스 내용을 입력해줘." />
                 </div>
-                <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createStageNews}>
-                  뉴스 등록
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createStageNews}>
+                    {editingNewsId ? "뉴스 수정" : "뉴스 등록"}
+                  </Button>
+                  {editingNewsId ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-2xl"
+                      onClick={() => {
+                        setEditingNewsId("");
+                        setNewsForm({ title: "", content: "" });
+                      }}
+                    >
+                      수정 취소
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="grid gap-2 rounded-2xl bg-slate-50 p-3">
+                  <div className="text-sm font-semibold text-slate-700">등록된 양궁 뉴스</div>
+                  {adminNewsItems.length === 0 ? (
+                    <div className="text-xs text-slate-500">등록된 뉴스가 없다.</div>
+                  ) : (
+                    adminNewsItems.map((item) => (
+                      <div key={item.id} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-slate-900">{item.title || "양궁 뉴스"}</div>
+                          <div className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-slate-500">{item.content || ""}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" className="rounded-2xl" onClick={() => editStageNews(item)}>
+                            수정
+                          </Button>
+                          <Button type="button" variant="outline" className="rounded-2xl text-red-600" onClick={() => deleteStageNews(item)}>
+                            삭제
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 
@@ -4347,17 +4581,52 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
                   <Label>내용</Label>
                   <textarea value={briefForm.content} onChange={(e) => setBriefForm((prev) => ({ ...prev, content: e.target.value }))} className="min-h-[140px] rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" placeholder="공지 내용을 입력해줘." />
                 </div>
-                <label className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(briefForm.isPinned)}
-                    onChange={(e) => setBriefForm((prev) => ({ ...prev, isPinned: e.target.checked }))}
-                  />
-                  상단 고정 공지로 등록
-                </label>
-                <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createBriefNotice}>
-                  공지 등록
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createBriefNotice}>
+                    {editingBriefId ? "공지 수정" : "공지 등록"}
+                  </Button>
+                  {editingBriefId ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-2xl"
+                      onClick={() => {
+                        setEditingBriefId("");
+                        setBriefForm({ title: "", content: "", isPinned: false });
+                      }}
+                    >
+                      수정 취소
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="grid gap-2 rounded-2xl bg-slate-50 p-3">
+                  <div className="text-sm font-semibold text-slate-700">등록된 공지사항</div>
+                  {adminBriefItems.length === 0 ? (
+                    <div className="text-xs text-slate-500">등록된 공지가 없다.</div>
+                  ) : (
+                    adminBriefItems.map((item) => (
+                      <div key={item.id} className={`flex flex-col gap-2 rounded-2xl border p-3 ${item.isPinned ? "border-amber-300 bg-amber-50/50" : "border-slate-200 bg-white"}`}>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            {item.isPinned ? (
+                              <span className="inline-flex rounded-full bg-amber-500 px-2 py-1 text-[11px] font-semibold text-white">상단 고정</span>
+                            ) : null}
+                            <div className="truncate text-sm font-semibold text-slate-900">{item.title || "공지사항"}</div>
+                          </div>
+                          <div className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-slate-500">{item.content || ""}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" className="rounded-2xl" onClick={() => editBriefNotice(item)}>
+                            수정
+                          </Button>
+                          <Button type="button" variant="outline" className="rounded-2xl text-red-600" onClick={() => deleteBriefNotice(item)}>
+                            삭제
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>
