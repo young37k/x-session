@@ -1488,6 +1488,9 @@ function SessionEditor({
   }, [session, totalArrows]);
 
   const currentTarget = useMemo(() => {
+    if (session.mode === "set" && activeOpponentEndId) {
+      return null;
+    }
     for (const end of session.ends) {
       for (let i = 0; i < end.arrows.length; i += 1) {
         if (end.arrows[i] === null) {
@@ -1496,7 +1499,7 @@ function SessionEditor({
       }
     }
     return null;
-  }, [session]);
+  }, [session, activeOpponentEndId]);
 
   useEffect(() => {
     if (!flashKey) return;
@@ -2123,10 +2126,21 @@ function SessionEditor({
                         <div className="grid gap-2">
                           <div className="flex items-center justify-between gap-3">
                             <Label>상대 엔드 점수</Label>
-                            <div className="text-sm font-semibold text-slate-600">
-                              {activeOpponentEndId === end.id
-                                ? (String(opponentInputBuffers[end.id] ?? "") || "입력 대기")
-                                : String(end.opponentTotal ?? 0)}
+                            <div
+                              className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
+                                activeOpponentEndId === end.id
+                                  ? "bg-blue-100 text-blue-900 ring-1 ring-blue-300"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {activeOpponentEndId === end.id ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span>{String(opponentInputBuffers[end.id] ?? "") || "입력 대기"}</span>
+                                  <span className="animate-pulse text-blue-500">|</span>
+                                </span>
+                              ) : (
+                                String(end.opponentTotal ?? 0)
+                              )}
                             </div>
                           </div>
 
@@ -2169,8 +2183,8 @@ function SessionEditor({
                                   확인
                                 </Button>
                               </div>
-                              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
-                                상대 점수는 반드시 직접 입력해야 다음 엔드로 이동한다. 0점도 0을 눌러 입력해야 한다.
+                              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                                지금은 상대 엔드 점수 입력 단계다. 0점도 0을 직접 눌러 입력해야 다음 엔드로 이동한다.
                               </div>
                             </>
                           ) : (
