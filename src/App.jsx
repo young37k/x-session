@@ -3585,7 +3585,6 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
             ...docSnap.data(),
           }))
           .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-
         const loadedNews = newsSnap.docs
           .map((docSnap) => ({
             id: docSnap.id,
@@ -3596,7 +3595,6 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
             const bTime = typeof b.createdAt?.toDate === "function" ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
             return bTime - aTime;
           });
-
         setEvents(loadedEvents);
         setNewsItems(loadedNews);
       } catch (error) {
@@ -3623,7 +3621,6 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
       <CardContent className="grid gap-4 md:grid-cols-2">
         <div className="rounded-[22px] border border-slate-200 bg-white p-5">
           <div className="text-lg font-semibold text-slate-900">대회 일정</div>
-          <div className="mt-1 text-xs text-slate-500">가까운 일정부터 날짜순으로 노출된다.</div>
           <div className="mt-4 grid gap-3">
             {loading ? (
               <div className="text-sm text-slate-500">불러오는 중...</div>
@@ -3632,7 +3629,7 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
             ) : (
               events.map((item) => (
                 <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div className="text-sm font-semibold text-slate-900">{item.title || "제목 없음"}</div>
+                  <div className="text-sm font-semibold text-slate-900">{item.title || "대회 일정"}</div>
                   <div className="mt-1 text-xs text-slate-500">
                     {item.date || "-"} · {item.location || "장소 미정"}
                   </div>
@@ -3643,7 +3640,6 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
         </div>
         <div className="rounded-[22px] border border-slate-200 bg-white p-5">
           <div className="text-lg font-semibold text-slate-900">양궁 뉴스</div>
-          <div className="mt-1 text-xs text-slate-500">최신 등록 뉴스가 먼저 노출된다.</div>
           <div className="mt-4 grid gap-3">
             {loading ? (
               <div className="text-sm text-slate-500">불러오는 중...</div>
@@ -3724,10 +3720,15 @@ function XBriefPage({ appServices, briefRefreshKey = 0 }) {
             </div>
           ) : (
             notices.map((item) => (
-              <div key={item.id} className={`rounded-[22px] border bg-white p-5 ${item.isPinned ? "border-amber-300 bg-amber-50/40" : "border-slate-200"}`}>
+              <div
+                key={item.id}
+                className={`rounded-[22px] border p-5 ${item.isPinned ? "border-amber-300 bg-amber-50/50" : "border-slate-200 bg-white"}`}
+              >
                 <div className="flex items-center gap-2">
                   {item.isPinned ? (
-                    <Badge className="rounded-full bg-amber-500 text-white">상단 고정</Badge>
+                    <span className="inline-flex rounded-full bg-amber-500 px-2 py-1 text-[11px] font-semibold text-white">
+                      상단 고정
+                    </span>
                   ) : null}
                   <div className="text-lg font-semibold text-slate-900">{item.title || "제목 없음"}</div>
                 </div>
@@ -4350,6 +4351,14 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
                   <Label>내용</Label>
                   <textarea value={briefForm.content} onChange={(e) => setBriefForm((prev) => ({ ...prev, content: e.target.value }))} className="min-h-[140px] rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none" placeholder="공지 내용을 입력해줘." />
                 </div>
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(briefForm.isPinned)}
+                    onChange={(e) => setBriefForm((prev) => ({ ...prev, isPinned: e.target.checked }))}
+                  />
+                  상단 고정 공지로 등록
+                </label>
                 <Button type="button" className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800" onClick={createBriefNotice}>
                   공지 등록
                 </Button>
