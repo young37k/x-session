@@ -1350,17 +1350,19 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-[28px] sm:rounded-[36px] shadow-2xl"
+      className="relative overflow-hidden rounded-[22px] sm:rounded-[28px] shadow-2xl"
       style={{
-        minHeight: "calc(100svh - 8px)",
+        minHeight: "100svh",
         backgroundImage: "url('/login-background.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundSize: "contain",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "top center",
+        backgroundColor: "#dfe6f3",
       }}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.06)_0%,rgba(2,6,23,0.22)_100%)]" />
-      <div className="relative flex min-h-[calc(100svh-8px)] items-end justify-center p-2 sm:p-6">
-        <div className="w-full max-w-md rounded-[24px] sm:rounded-[30px] bg-transparent p-3 sm:p-5">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.03)_0%,rgba(2,6,23,0.18)_100%)]" />
+      <div className="relative flex min-h-[100svh] items-end justify-center px-2 pb-2 pt-[32svh] sm:px-4 sm:pb-4 sm:pt-[34svh] lg:pt-[38svh]">
+        <div className="w-full max-w-lg rounded-[24px] sm:rounded-[30px] bg-transparent p-3 sm:p-5">
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-2 rounded-2xl bg-black/20 p-1 backdrop-blur-sm">
               <Button
@@ -4270,7 +4272,7 @@ function XSessionApp() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-2 py-2 md:gap-6 md:p-6 xl:p-8">
+      <div className={`mx-auto flex w-full flex-col ${currentUser ? "max-w-7xl gap-3 px-2 py-2 md:gap-6 md:p-6 xl:p-8" : "max-w-[min(96vw,1440px)] gap-0 px-0 py-0 md:px-4 md:py-4 xl:px-6 xl:py-6"}`}>
         {currentUser ? <Hero activeTab={ui.activeTab} /> : null}
 
         {authLoading && !authUser ? (
