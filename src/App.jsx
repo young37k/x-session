@@ -66,7 +66,6 @@ import { initializeApp, getApps } from "firebase/app";
 import {
   getAuth,
   onAuthStateChanged,
-  getIdTokenResult,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -881,52 +880,6 @@ function buildSessionPayload({ draftSession, profile, uid }) {
   };
 }
 
-function buildPublicRankingDoc(profile, sessions, userId) {
-  const completed = (sessions || []).filter((s) => s.isComplete && s.userId === userId);
-  const totalScore = completed.reduce((sum, s) => sum + (s.summary?.totalScore ?? getSessionTotal(s)), 0);
-  const totalArrows = completed.reduce((sum, s) => sum + (s.summary?.totalArrows ?? getArrowCount(s)), 0);
-  const xCount = completed.reduce((sum, s) => sum + (s.summary?.xCount ?? getXs(s)), 0);
-  const bestSession = completed.length
-    ? Math.max(...completed.map((s) => s.summary?.totalScore ?? getSessionTotal(s)))
-    : 0;
-  const latestDate = completed
-    .map((s) => s.sessionDate || '')
-    .sort()
-    .slice(-1)[0] || '';
-  return {
-    userId,
-    name: getDisplayName(profile),
-    groupName: profile?.groupName || '',
-    regionCity: profile?.regionCity || '',
-    division: profile?.division || '',
-    sessions: completed.length,
-    totalScore,
-    avgArrow: totalArrows ? Number((totalScore / totalArrows).toFixed(2)) : 0,
-    bestSession,
-    xCount,
-    latestDate,
-    updatedAt: serverTimestamp(),
-  };
-}
-
-function fromPublicRanking(docSnap) {
-  const data = docSnap.data();
-  return {
-    id: docSnap.id,
-    userId: data.userId || docSnap.id,
-    name: data.name || '이름없음',
-    groupName: data.groupName || '-',
-    regionCity: data.regionCity || '-',
-    division: data.division || '-',
-    sessions: Number(data.sessions || 0),
-    totalScore: Number(data.totalScore || 0),
-    avgArrow: Number(data.avgArrow || 0),
-    bestSession: Number(data.bestSession || 0),
-    xCount: Number(data.xCount || 0),
-    latestDate: data.latestDate || '',
-  };
-}
-
 function fromFirestoreProfile(uidValue, data) {
   return {
     id: uidValue,
@@ -1511,7 +1464,7 @@ function SessionEditor({
   const [lastQuickScore, setLastQuickScore] = useState(null);
   const [flashKey, setFlashKey] = useState("");
   const [activeOpponentEndId, setActiveOpponentEndId] = useState(null);
-  const [opponentDrafts, setOpponentDrafts] = useState({});
+  const [opponentInputBuffers, setOpponentInputBuffers] = useState({});
   const arrowRefs = useRef({});
 
   const totalArrows = useMemo(
@@ -1593,91 +1546,6 @@ function SessionEditor({
     return null;
   }
 
-  function isEndFullyFilled(ends, endId) {
-    const targetEnd = ends.find((end) => end.id === endId);
-    return Boolean(targetEnd && targetEnd.arrows.every((arrow) => arrow !== null));
-  }
-
-  function activateOpponentEntry(endId) {
-    const targetEnd = session.ends.find((end) => end.id === endId);
-    setActiveOpponentEndId(endId);
-    setOpponentDrafts((prev) => ({
-      ...prev,
-      [endId]: prev[endId] ?? (targetEnd && Number(targetEnd.opponentTotal) > 0 ? String(targetEnd.opponentTotal) : ""),
-    }));
-  }
-
-  function moveToNextEndStart(endId) {
-    const currentIndex = session.ends.findIndex((end) => end.id === endId);
-    const nextEnd = session.ends[currentIndex + 1];
-    if (nextEnd) {
-      setActiveOpponentEndId(null);
-      focusArrowField(nextEnd.id, 0);
-      return;
-    }
-    setActiveOpponentEndId(null);
-  }
-
-  function commitOpponentDraft(endId) {
-    const raw = String(opponentDrafts[endId] ?? "").trim();
-    const normalized = raw === "" ? 0 : Math.max(0, Math.min(60, Number(raw) || 0));
-
-    patchSession((prev) => ({
-      ...prev,
-      ends: prev.ends.map((end) =>
-        end.id === endId ? { ...end, opponentTotal: normalized } : end
-      ),
-    }));
-
-    setOpponentDrafts((prev) => ({
-      ...prev,
-      [endId]: normalized === 0 ? "" : String(normalized),
-    }));
-    moveToNextEndStart(endId);
-  }
-
-  function handleOpponentKeypadPress(endId, key) {
-    if (key === "confirm") {
-      commitOpponentDraft(endId);
-      return;
-    }
-
-    if (key === "backspace") {
-      setOpponentDrafts((prev) => ({
-        ...prev,
-        [endId]: String(prev[endId] ?? "").slice(0, -1),
-      }));
-      return;
-    }
-
-    const digit = String(key);
-    const current = String(opponentDrafts[endId] ?? "");
-    const next = `${current}${digit}`.slice(0, 2);
-    const numeric = Number(next);
-    if (Number.isNaN(numeric) || numeric > 60) return;
-
-    setOpponentDrafts((prev) => ({
-      ...prev,
-      [endId]: next,
-    }));
-
-    if (next.length >= 2) {
-      requestAnimationFrame(() => {
-        setOpponentDrafts((prev) => ({
-          ...prev,
-          [endId]: next,
-        }));
-        patchSession((prev) => ({
-          ...prev,
-          ends: prev.ends.map((end) =>
-            end.id === endId ? { ...end, opponentTotal: numeric } : end
-          ),
-        }));
-        moveToNextEndStart(endId);
-      });
-    }
-  }
-
   function updateArrow(endId, arrowIndex, value, options = {}) {
     const { autoFocusNext = true, haptic = false } = options;
 
@@ -1706,20 +1574,21 @@ function SessionEditor({
 
     setFlashKey(`${endId}_${arrowIndex}`);
 
-    if (autoFocusNext) {
-      const shouldActivateOpponent =
-        session.mode === "set" && session.recordInputType === "end" && isEndFullyFilled(nextEnds, endId);
+    const updatedEnd = nextEnds.find((item) => item.id === endId);
+    const isSetOpponentStep =
+      session.recordInputType === "end" &&
+      session.mode === "set" &&
+      updatedEnd &&
+      updatedEnd.arrows.every((item) => item !== null);
 
-      if (shouldActivateOpponent) {
-        setActiveOpponentEndId(endId);
-        setOpponentDrafts((prev) => ({
-          ...prev,
-          [endId]: prev[endId] ?? "",
-        }));
-      } else {
-        const nextTarget = findFirstEmptyTarget(nextEnds);
-        if (nextTarget) focusArrowField(nextTarget.endId, nextTarget.arrowIndex);
-      }
+    if (isSetOpponentStep) {
+      activateOpponentInput(endId);
+      return;
+    }
+
+    if (autoFocusNext) {
+      const nextTarget = findFirstEmptyTarget(nextEnds);
+      if (nextTarget) focusArrowField(nextTarget.endId, nextTarget.arrowIndex);
     }
   }
 
@@ -1754,6 +1623,8 @@ function SessionEditor({
           : end
       ),
     }));
+    setActiveOpponentEndId((prev) => (prev === endId ? null : prev));
+    setOpponentInputBuffers((prev) => ({ ...prev, [endId]: "" }));
   }
 
   function addEnd() {
@@ -1810,6 +1681,10 @@ function SessionEditor({
     recordInputType: "end",
       title: `${mode === "set" ? "세트제" : "누적제"} X-Session`,
     }));
+    if (mode !== "set") {
+      setActiveOpponentEndId(null);
+      setOpponentInputBuffers({});
+    }
   }
 
   function applyRecordInputType(recordInputType) {
@@ -1828,6 +1703,10 @@ function SessionEditor({
             ]
           : prev.distanceRounds,
     }));
+    if (recordInputType !== "end") {
+      setActiveOpponentEndId(null);
+      setOpponentInputBuffers({});
+    }
   }
 
   function validateBeforeSave() {
@@ -1869,6 +1748,75 @@ function SessionEditor({
 
   function isCurrentArrow(endId, arrowIndex) {
     return currentTarget?.endId === endId && currentTarget?.arrowIndex === arrowIndex;
+  }
+
+  function setOpponentBuffer(endId, value) {
+    setOpponentInputBuffers((prev) => ({ ...prev, [endId]: value }));
+  }
+
+  function focusFirstArrowOfEnd(endId) {
+    const target = session.ends.find((item) => item.id === endId);
+    if (!target) return;
+    focusArrowField(target.id, 0);
+  }
+
+  function moveToNextEndFromOpponent(endId) {
+    const currentIndex = session.ends.findIndex((item) => item.id === endId);
+    setActiveOpponentEndId(null);
+    if (currentIndex === -1) return;
+    const nextEnd = session.ends[currentIndex + 1];
+    if (nextEnd) {
+      requestAnimationFrame(() => focusFirstArrowOfEnd(nextEnd.id));
+    }
+  }
+
+  function confirmOpponentScore(endId) {
+    const raw = String(opponentInputBuffers[endId] ?? "");
+    if (raw === "") return;
+    const value = Math.max(0, Number(raw) || 0);
+    patchSession((prev) => ({
+      ...prev,
+      ends: prev.ends.map((item) =>
+        item.id === endId ? { ...item, opponentTotal: value } : item
+      ),
+    }));
+    moveToNextEndFromOpponent(endId);
+  }
+
+  function handleOpponentKeypadInput(endId, digit) {
+    const nextValue = `${String(opponentInputBuffers[endId] ?? "")}${digit}`.slice(0, 2);
+    setOpponentBuffer(endId, nextValue);
+    if (nextValue.length >= 2) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          setOpponentInputBuffers((prev) => {
+            const latest = String(prev[endId] ?? nextValue);
+            if (latest !== "") {
+              const value = Math.max(0, Number(latest) || 0);
+              patchSession((sessionPrev) => ({
+                ...sessionPrev,
+                ends: sessionPrev.ends.map((item) =>
+                  item.id === endId ? { ...item, opponentTotal: value } : item
+                ),
+              }));
+              moveToNextEndFromOpponent(endId);
+            }
+            return prev;
+          });
+        }, 0);
+      });
+    }
+  }
+
+  function handleOpponentKeypadDelete(endId) {
+    const raw = String(opponentInputBuffers[endId] ?? "");
+    setOpponentBuffer(endId, raw.slice(0, -1));
+  }
+
+  function activateOpponentInput(endId) {
+    const end = session.ends.find((item) => item.id === endId);
+    setActiveOpponentEndId(endId);
+    setOpponentBuffer(endId, end && Number(end.opponentTotal) > 0 ? String(end.opponentTotal) : "");
   }
 
   function getQuickButtonClass(score) {
@@ -2155,70 +2103,73 @@ function SessionEditor({
 
                     {session.mode === "set" && (
                       <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                          <div className="grid gap-1">
+                        <div className="grid gap-2">
+                          <div className="flex items-center justify-between gap-3">
                             <Label>상대 엔드 점수</Label>
-                            <div className="text-xs text-slate-500">
-                              내 6발 입력 후 상대 점수를 입력하고 다음 엔드로 이동한다.
+                            <div className="text-sm font-semibold text-slate-600">
+                              {activeOpponentEndId === end.id
+                                ? (String(opponentInputBuffers[end.id] ?? "") || "입력 대기")
+                                : String(end.opponentTotal ?? 0)}
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => activateOpponentEntry(end.id)}
-                            className={`min-w-[92px] rounded-2xl border px-4 py-3 text-center text-lg font-semibold transition ${
-                              activeOpponentEndId === end.id
-                                ? "border-blue-300 bg-blue-50 text-blue-900"
-                                : "border-slate-200 bg-white text-slate-900"
-                            }`}
-                          >
-                            {String(opponentDrafts[end.id] ?? "").trim() !== ""
-                              ? opponentDrafts[end.id]
-                              : Number(end.opponentTotal) > 0
-                                ? end.opponentTotal
-                                : "입력"}
-                          </button>
-                        </div>
 
-                        {activeOpponentEndId === end.id && (
-                          <div className="grid gap-3">
-                            <div className="grid grid-cols-3 gap-2">
-                              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
+                          {activeOpponentEndId === end.id ? (
+                            <>
+                              <div className="grid grid-cols-3 gap-2">
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                                  <Button
+                                    key={`${end.id}_${num}`}
+                                    type="button"
+                                    variant="outline"
+                                    className="h-11 rounded-2xl text-base font-semibold"
+                                    onClick={() => handleOpponentKeypadInput(end.id, num)}
+                                  >
+                                    {num}
+                                  </Button>
+                                ))}
                                 <Button
-                                  key={`${end.id}_${digit}`}
                                   type="button"
                                   variant="outline"
                                   className="h-11 rounded-2xl text-base font-semibold"
-                                  onClick={() => handleOpponentKeypadPress(end.id, digit)}
+                                  onClick={() => handleOpponentKeypadDelete(end.id)}
                                 >
-                                  {digit}
+                                  ←
                                 </Button>
-                              ))}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="h-11 rounded-2xl text-base font-semibold"
+                                  onClick={() => handleOpponentKeypadInput(end.id, 0)}
+                                >
+                                  0
+                                </Button>
+                                <Button
+                                  type="button"
+                                  className="h-11 rounded-2xl bg-blue-900 text-base font-semibold hover:bg-blue-800"
+                                  onClick={() => confirmOpponentScore(end.id)}
+                                  disabled={String(opponentInputBuffers[end.id] ?? "") === ""}
+                                >
+                                  확인
+                                </Button>
+                              </div>
+                              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                                상대 점수는 반드시 직접 입력해야 다음 엔드로 이동한다. 0점도 0을 눌러 입력해야 한다.
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                              <div className="text-sm text-slate-500">입력된 상대 엔드 점수로 세트 포인트를 계산한다.</div>
                               <Button
                                 type="button"
                                 variant="outline"
-                                className="h-11 rounded-2xl text-base font-semibold"
-                                onClick={() => handleOpponentKeypadPress(end.id, "0")}
+                                className="rounded-2xl"
+                                onClick={() => activateOpponentInput(end.id)}
                               >
-                                0
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="h-11 rounded-2xl text-base font-semibold"
-                                onClick={() => handleOpponentKeypadPress(end.id, "backspace")}
-                              >
-                                ←
-                              </Button>
-                              <Button
-                                type="button"
-                                className="h-11 rounded-2xl bg-blue-900 text-base font-semibold hover:bg-blue-800"
-                                onClick={() => handleOpponentKeypadPress(end.id, "confirm")}
-                              >
-                                확인
+                                점수 수정
                               </Button>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -2648,31 +2599,29 @@ function StatCard({ title, value, sub, icon: Icon, tone }) {
   );
 }
 
-function RankingBoard({ rankings, currentUserId }) {
+function RankingBoard({ users, sessions, currentUserId }) {
   const [rankingFilters, setRankingFilters] = useState({
+    distance: "all",
     division: "all",
     groupName: "all",
     regionCity: "all",
+    mode: "all",
+    dateFilter: "all",
   });
-
-  const groupOptions = useMemo(() => Array.from(new Set(rankings.map((u) => u.groupName).filter(Boolean))), [rankings]);
+  const groupOptions = useMemo(() => Array.from(new Set(users.map((u) => u.groupName).filter(Boolean))), [users]);
   const regionOptions = useMemo(() => REGION_OPTIONS, []);
 
-  const sortedRankings = useMemo(() => {
-    const filtered = (rankings || []).filter((item) => {
-      if (rankingFilters.division !== 'all' && normalizeDivisionLabel(item.division) !== normalizeDivisionLabel(rankingFilters.division)) return false;
-      if (rankingFilters.groupName !== 'all' && (item.groupName || '') !== rankingFilters.groupName) return false;
-      if (rankingFilters.regionCity !== 'all' && (item.regionCity || '') !== rankingFilters.regionCity) return false;
-      return true;
-    });
+  const rankings = useMemo(() => buildUserRankings(users, sessions, rankingFilters), [users, sessions, rankingFilters]);
 
-    const items = [...filtered].sort((a, b) => {
+  const sortedRankings = useMemo(() => {
+    const items = [...rankings];
+    items.sort((a, b) => {
       if (b.avgArrow !== a.avgArrow) return b.avgArrow - a.avgArrow;
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [rankings, rankingFilters]);
+  }, [rankings]);
 
   const myRank = sortedRankings.find((r) => r.userId === currentUserId);
 
@@ -2699,6 +2648,7 @@ function RankingBoard({ rankings, currentUserId }) {
             )}
           </CardContent>
         </Card>
+
       </div>
 
       <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
@@ -2709,6 +2659,16 @@ function RankingBoard({ rankings, currentUserId }) {
         </CardHeader>
         <CardContent>
           <div className="grid gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="w-16 shrink-0 text-sm">거리</Label>
+              <select value={rankingFilters.distance} onChange={(e) => setRankingFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+                <option value="all">전체 거리</option>
+                {DISTANCE_OPTIONS.map((distance) => (
+                  <option key={distance} value={String(distance)}>{distance}m</option>
+                ))}
+              </select>
+            </div>
+
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학년</Label>
               <select value={rankingFilters.division} onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
@@ -2721,7 +2681,9 @@ function RankingBoard({ rankings, currentUserId }) {
               <Label className="w-16 shrink-0 text-sm">학교/소속</Label>
               <select value={rankingFilters.groupName} onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 학교/소속팀</option>
-                {groupOptions.map((item) => (<option key={item} value={item}>{item}</option>))}
+                {groupOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
               </select>
             </div>
 
@@ -2729,14 +2691,34 @@ function RankingBoard({ rankings, currentUserId }) {
               <Label className="w-16 shrink-0 text-sm">지역</Label>
               <select value={rankingFilters.regionCity} onChange={(e) => setRankingFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
                 <option value="all">전체 지역</option>
-                {regionOptions.map((item) => (<option key={item} value={item}>{item}</option>))}
+                {regionOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="w-16 shrink-0 text-sm">경기 방식</Label>
+              <select value={rankingFilters.mode} onChange={(e) => setRankingFilters((prev) => ({ ...prev, mode: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+                {MATCH_TYPE_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="w-16 shrink-0 text-sm">날짜</Label>
+              <select value={rankingFilters.dateFilter} onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+                {DATE_FILTER_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>{item.label}</option>
+                ))}
               </select>
             </div>
           </div>
 
           <div className="mt-4">
             {sortedRankings.length === 0 ? (
-              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">공개 랭킹 데이터가 아직 없다.</div>
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">아직 기록된 선수가 없다.</div>
             ) : (
               <div className="grid gap-3">
                 {sortedRankings.map((item) => (
@@ -3575,7 +3557,6 @@ function XSessionApp() {
   const [profile, setProfile] = useState(null);
   const [users, setUsers] = useState([]);
   const [sessions, setSessions] = useState([]);
-  const [publicRankings, setPublicRankings] = useState([]);
   const [draftSession, setDraftSession] = useState(null);
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -3584,177 +3565,272 @@ function XSessionApp() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
   const [tempSaveMessage, setTempSaveMessage] = useState("");
-  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [adminRequested, setAdminRequested] = useState(false);
   const pendingProfileRef = useRef(null);
+
+
   const authTimeoutRef = useRef(null);
+
 
   useEffect(() => {
     if (!authLoading) {
-      if (authTimeoutRef.current) clearTimeout(authTimeoutRef.current);
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current);
+        authTimeoutRef.current = null;
+      }
       return;
     }
+
     authTimeoutRef.current = setTimeout(() => {
       setAuthLoading(false);
       setGlobalError((prev) => prev || "인증 확인이 지연되어 기본 화면으로 전환했다. 다시 로그인해줘.");
     }, 5000);
-    return () => authTimeoutRef.current && clearTimeout(authTimeoutRef.current);
+
+    return () => {
+      if (authTimeoutRef.current) {
+        clearTimeout(authTimeoutRef.current);
+        authTimeoutRef.current = null;
+      }
+    };
   }, [authLoading]);
+
 
   useEffect(() => {
     if (!FIREBASE_READY) return;
     const app = getApps().length ? getApps()[0] : initializeApp(FIREBASE_CONFIG);
-    setAppServices({ app, auth: getAuth(app), db: getFirestore(app) });
+    setAppServices({
+      app,
+      auth: getAuth(app),
+      db: getFirestore(app),
+    });
   }, []);
 
-  const loadPublicRankings = useCallback(async (db) => {
-    try {
-      const snap = await getDocs(collection(db, 'public_rankings'));
-      const items = snap.docs.map((docSnap) => fromPublicRanking(docSnap));
-      items.sort((a, b) => (b.avgArrow - a.avgArrow) || (b.totalScore - a.totalScore) || String(b.latestDate).localeCompare(String(a.latestDate)));
-      setPublicRankings(items);
-    } catch (error) {
-      console.error('PUBLIC_RANKINGS_LOAD_ERROR', error);
-      setPublicRankings([]);
-    }
-  }, []);
-
-  const loadMySessions = useCallback(async (db, uidValue) => {
-    setSessionsLoading(true);
-    try {
-      const sessionsSnap = await getDocs(query(collection(db, 'sessions'), where('userId', '==', uidValue), orderBy('createdAt', 'desc')));
-      setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
-    } catch (error) {
-      setGlobalError(error.message || '내 기록 로딩에 실패했다.');
-      setSessions([]);
-    } finally {
-      setSessionsLoading(false);
-    }
-  }, []);
-
-  const loadAdminData = useCallback(async (db) => {
+  const loadUsersAndSessions = useCallback(async (db) => {
     setSessionsLoading(true);
     try {
       const [usersSnap, sessionsSnap] = await Promise.all([
-        getDocs(collection(db, 'users')),
-        getDocs(query(collection(db, 'sessions'), orderBy('createdAt', 'desc'))),
+        getDocs(collection(db, "users")),
+        getDocs(query(collection(db, "sessions"), orderBy("sessionDate", "desc"))),
       ]);
       setUsers(usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data())));
       setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
     } catch (error) {
-      setGlobalError(error.message || '관리자 데이터 로딩에 실패했다.');
+      setGlobalError(error.message || "데이터 로딩에 실패했다.");
     } finally {
       setSessionsLoading(false);
     }
   }, []);
 
-  const refreshData = useCallback(async (db, uidValue, adminFlag) => {
-    await loadPublicRankings(db);
-    if (adminFlag) {
-      await loadAdminData(db);
-    } else {
-      setUsers([]);
-      await loadMySessions(db, uidValue);
-    }
-  }, [loadAdminData, loadMySessions, loadPublicRankings]);
-
-  function getDraftStorageKey(userId) { return `elbowshot_temp_draft_${userId}`; }
-  function saveDraftToLocal(userId, draft) { try { localStorage.setItem(getDraftStorageKey(userId), JSON.stringify(draft)); } catch {} }
-  function loadDraftFromLocal(userId) { try { const raw = localStorage.getItem(getDraftStorageKey(userId)); return raw ? JSON.parse(raw) : null; } catch { return null; } }
-  function clearDraftFromLocal(userId) { try { localStorage.removeItem(getDraftStorageKey(userId)); } catch {} }
-
-  async function saveProfileDocument(uidValue, payload) {
-    const existing = await getDoc(doc(appServices.db, 'users', uidValue));
-    await setDoc(doc(appServices.db, 'users', uidValue), {
-      uid: uidValue,
-      email: payload.email,
-      displayName: payload.name,
-      photoURL: '',
-      photoPath: '',
-      groupName: payload.groupName || '',
-      regionCity: payload.regionCity || '',
-      regionDistrict: payload.regionDistrict || '',
-      division: payload.division || '',
-      role: 'player',
-      status: 'active',
-      createdAt: existing.exists() ? existing.data().createdAt || serverTimestamp() : serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
+  function getDraftStorageKey(userId) {
+    return `elbowshot_temp_draft_${userId}`;
   }
 
-  async function trySyncPublicRanking(db, currentProfile, uidValue, nextSessions = null) {
+  function saveDraftToLocal(userId, draft) {
     try {
-      const baseSessions = nextSessions || sessions;
-      const docData = buildPublicRankingDoc(currentProfile, baseSessions, uidValue);
-      await setDoc(doc(db, 'public_rankings', uidValue), docData, { merge: true });
-    } catch (error) {
-      console.warn('PUBLIC_RANKING_SYNC_SKIPPED', error?.message || error);
+      localStorage.setItem(getDraftStorageKey(userId), JSON.stringify(draft));
+    } catch {
+      // ignore
     }
+  }
+
+  function loadDraftFromLocal(userId) {
+    try {
+      const raw = localStorage.getItem(getDraftStorageKey(userId));
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function clearDraftFromLocal(userId) {
+    try {
+      localStorage.removeItem(getDraftStorageKey(userId));
+    } catch {
+      // ignore
+    }
+  }
+
+  async function saveProfileDocument(uidValue, payload) {
+    const existing = await getDoc(doc(appServices.db, "users", uidValue));
+    await setDoc(
+      doc(appServices.db, "users", uidValue),
+      {
+        uid: uidValue,
+        email: payload.email,
+        displayName: payload.name,
+        photoURL: "",
+        photoPath: "",
+        groupName: payload.groupName || "",
+        regionCity: payload.regionCity || "",
+        regionDistrict: payload.regionDistrict || "",
+        division: payload.division || "",
+        role: "player",
+        status: "active",
+        createdAt: existing.exists() ? existing.data().createdAt || serverTimestamp() : serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
   }
 
   useEffect(() => {
     if (!appServices?.auth || !appServices?.db) return;
+
     const unsubscribe = onAuthStateChanged(appServices.auth, async (user) => {
       setAuthUser(user || null);
       setAuthLoading(false);
+
       try {
         if (!user) {
-          setProfile(null); setDraftSession(null); setEditingSessionId(null); setUsers([]); setSessions([]); setPublicRankings([]); setIsAdminUser(false); setUi(DEFAULT_UI); return;
+          setProfile(null);
+          setDraftSession(null);
+          setEditingSessionId(null);
+          setUsers([]);
+          setSessions([]);
+          setUi(DEFAULT_UI);
+          return;
         }
-        const tokenResult = await getIdTokenResult(user, true);
-        const adminFlag = tokenResult?.claims?.admin === true;
-        setIsAdminUser(adminFlag);
 
         let nextProfile = null;
-        const snap = await getDoc(doc(appServices.db, 'users', user.uid));
+        const snap = await getDoc(doc(appServices.db, "users", user.uid));
+
         if (snap.exists()) {
           nextProfile = fromFirestoreProfile(user.uid, snap.data());
         } else if (pendingProfileRef.current && pendingProfileRef.current.email === user.email) {
-          nextProfile = { id: user.uid, uid: user.uid, name: pendingProfileRef.current.name || user.email?.split('@')[0] || '사용자', email: pendingProfileRef.current.email || user.email || '', club: '', clubName: '', groupName: pendingProfileRef.current.groupName || '', regionCity: pendingProfileRef.current.regionCity || '', regionDistrict: pendingProfileRef.current.regionDistrict || '', division: pendingProfileRef.current.division || '전체학년', avatar: '', photoURL: '', photoPath: '' };
-          await saveProfileDocument(user.uid, { email: nextProfile.email, name: nextProfile.name, groupName: nextProfile.groupName, regionCity: nextProfile.regionCity, regionDistrict: nextProfile.regionDistrict, division: nextProfile.division });
+          nextProfile = {
+            id: user.uid,
+            uid: user.uid,
+            name: pendingProfileRef.current.name || user.email?.split("@")[0] || "사용자",
+            email: pendingProfileRef.current.email || user.email || "",
+            club: "",
+            clubName: "",
+            groupName: pendingProfileRef.current.groupName || "",
+            regionCity: pendingProfileRef.current.regionCity || "",
+            regionDistrict: pendingProfileRef.current.regionDistrict || "",
+            division: pendingProfileRef.current.division || "전체학년",
+            avatar: "",
+            photoURL: "",
+            photoPath: "",
+          };
+          await saveProfileDocument(user.uid, {
+            email: nextProfile.email,
+            name: nextProfile.name,
+            groupName: nextProfile.groupName,
+            regionCity: nextProfile.regionCity,
+            regionDistrict: nextProfile.regionDistrict,
+            division: nextProfile.division,
+          });
         } else {
-          nextProfile = { id: user.uid, uid: user.uid, name: user.displayName || user.email?.split('@')[0] || '사용자', email: user.email || '', club: '', clubName: '', groupName: '', regionCity: '', regionDistrict: '', division: '전체학년', avatar: '', photoURL: '', photoPath: '' };
+          nextProfile = {
+            id: user.uid,
+            uid: user.uid,
+            name: user.displayName || user.email?.split("@")[0] || "사용자",
+            email: user.email || "",
+            club: "",
+            clubName: "",
+            groupName: "",
+            regionCity: "",
+            regionDistrict: "",
+            division: "전체학년",
+            avatar: "",
+            photoURL: "",
+            photoPath: "",
+          };
         }
+
         setProfile(nextProfile);
 
         const tempDraft = loadDraftFromLocal(user.uid);
         if (tempDraft) {
-          setDraftSession(normalizeSessionShape({ ...tempDraft, division: tempDraft.division || nextProfile.division || '전체학년' }, nextProfile));
-          setTempSaveMessage('임시 저장된 X-Session을 불러왔다.');
+          setDraftSession(
+            normalizeSessionShape(
+              { ...tempDraft, division: tempDraft.division || nextProfile.division || "전체학년" },
+              nextProfile
+            )
+          );
+          setTempSaveMessage("임시 저장된 X-Session을 불러왔다.");
         } else {
-          setDraftSession(normalizeSessionShape(createNewSession(nextProfile, 'cumulative'), nextProfile));
-          setTempSaveMessage('');
+          setDraftSession(
+            normalizeSessionShape(createNewSession(nextProfile, "cumulative"), nextProfile)
+          );
+          setTempSaveMessage("");
         }
 
         setEditingSessionId(null);
-        setUi((prev) => ({ ...prev, activeTab: adminFlag ? prev.activeTab : (prev.activeTab === 'admin' ? 'dashboard' : prev.activeTab || 'dashboard') }));
-        await refreshData(appServices.db, user.uid, adminFlag);
+        setUi((prev) => ({
+          ...prev,
+          activeTab: adminRequested && isAdminEmail(nextProfile.email) ? "admin" : "dashboard",
+        }));
+
+        await loadUsersAndSessions(appServices.db);
       } catch (error) {
-        console.error('AUTH_FLOW_ERROR', error);
-        setGlobalError(error.message || '인증 후 데이터 로딩에 실패했다.');
-        setDraftSession(null); setEditingSessionId(null); setUi(DEFAULT_UI);
+        console.error("AUTH_FLOW_ERROR", error);
+        setGlobalError(error.message || "인증 후 데이터 로딩에 실패했다.");
+        setDraftSession(null);
+        setEditingSessionId(null);
+        setUi(DEFAULT_UI);
       } finally {
         pendingProfileRef.current = null;
       }
     });
+
     return () => unsubscribe();
-  }, [appServices, refreshData]);
+  }, [appServices, loadUsersAndSessions, adminRequested]);
+
+
 
   async function handleRegister(input) {
     if (!appServices?.auth || !appServices?.db) return;
-    setAuthLoading(true); setGlobalError('');
+
+    setAuthLoading(true);
+    setGlobalError("");
+
     try {
-      pendingProfileRef.current = { name: input.name || input.email.split('@')[0], email: input.email, groupName: input.groupName || '', regionCity: input.regionCity || '', regionDistrict: input.regionDistrict || '', division: input.division || '전체학년' };
+      pendingProfileRef.current = {
+        name: input.name || input.email.split("@")[0],
+        email: input.email,
+        groupName: input.groupName || "",
+        regionCity: input.regionCity || "",
+        regionDistrict: input.regionDistrict || "",
+        division: input.division || "전체학년",
+      };
+
       const result = await createUserWithEmailAndPassword(appServices.auth, input.email, input.password);
-      await saveProfileDocument(result.user.uid, { email: input.email, name: input.name || input.email.split('@')[0], groupName: input.groupName || '', regionCity: input.regionCity || '', regionDistrict: input.regionDistrict || '', division: input.division || '전체학년' });
-      const nextProfile = { id: result.user.uid, uid: result.user.uid, name: input.name || input.email.split('@')[0], email: input.email, club: '', clubName: '', groupName: input.groupName || '', regionCity: input.regionCity || '', regionDistrict: input.regionDistrict || '', division: input.division || '전체학년', avatar: '', photoURL: '', photoPath: '' };
+
+      await saveProfileDocument(result.user.uid, {
+        email: input.email,
+        name: input.name || input.email.split("@")[0],
+        groupName: input.groupName || "",
+        regionCity: input.regionCity || "",
+        division: input.division || "전체학년",
+      });
+
+      const nextProfile = {
+        id: result.user.uid,
+        uid: result.user.uid,
+        name: input.name || input.email.split("@")[0],
+        email: input.email,
+        club: "",
+        clubName: "",
+        groupName: input.groupName || "",
+        regionCity: input.regionCity || "",
+        regionDistrict: input.regionDistrict || "",
+        division: input.division || "전체학년",
+        avatar: "",
+        photoURL: "",
+        photoPath: "",
+      };
+
       setProfile(nextProfile);
-      setDraftSession(normalizeSessionShape(createNewSession(nextProfile, 'cumulative'), nextProfile));
-      setUi((prev) => ({ ...prev, activeTab: 'dashboard' }));
-      await refreshData(appServices.db, result.user.uid, false);
-      await trySyncPublicRanking(appServices.db, nextProfile, result.user.uid, []);
+      setDraftSession(
+        normalizeSessionShape(createNewSession(nextProfile, "cumulative"), nextProfile)
+      );
+      setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
+      await loadUsersAndSessions(appServices.db);
     } catch (error) {
       pendingProfileRef.current = null;
-      setGlobalError(error.message || '회원가입에 실패했다.');
+      setGlobalError(error.message || "회원가입에 실패했다.");
     } finally {
       setAuthLoading(false);
     }
@@ -3762,45 +3838,94 @@ function XSessionApp() {
 
   async function handleLogin(input) {
     if (!appServices?.auth) return;
+
+    setAdminRequested(false);
     setAuthLoading(true);
-    setGlobalError('');
+    setGlobalError("");
+
     try {
       await signInWithEmailAndPassword(appServices.auth, input.email, input.password);
     } catch (error) {
-      setGlobalError(error.message || '로그인에 실패했다.');
+      setGlobalError(error.message || "로그인에 실패했다.");
       setAuthLoading(false);
+    }
+  }
+
+  async function handleAdminLogin(input) {
+    if (!isAdminEmail(input.email)) {
+      setGlobalError("관리자 권한이 없는 이메일이다.");
+      return;
+    }
+
+    setAdminRequested(true);
+    setAuthLoading(true);
+    setGlobalError("");
+
+    try {
+      await signInWithEmailAndPassword(appServices.auth, input.email, input.password);
+    } catch (error) {
+      setGlobalError(error.message || "관리자 로그인에 실패했다.");
+      setAuthLoading(false);
+      setAdminRequested(false);
     }
   }
 
   async function handleLogout() {
     if (!appServices?.auth) return;
+
     await signOut(appServices.auth);
-    setAuthUser(null); setProfile(null); setDraftSession(null); setEditingSessionId(null); setUsers([]); setSessions([]); setPublicRankings([]); setUi(DEFAULT_UI); setTempSaveMessage(''); setIsAdminUser(false);
+    setAuthUser(null);
+    setProfile(null);
+    setDraftSession(null);
+    setEditingSessionId(null);
+    setUsers([]);
+    setSessions([]);
+    setUi(DEFAULT_UI);
+    setTempSaveMessage("");
+    setAdminRequested(false);
   }
 
   async function handleSaveSession() {
     if (!appServices?.db || !authUser || !profile || !draftSession) return;
-    setSessionSaving(true); setGlobalError('');
+
+    setSessionSaving(true);
+    setGlobalError("");
+
     try {
       const payload = buildSessionPayload({ draftSession, profile, uid: authUser.uid });
+
       if (editingSessionId) {
-        await updateDoc(doc(appServices.db, 'sessions', editingSessionId), { sessionDate: payload.sessionDate, title: payload.title, mode: payload.mode, recordInputType: payload.recordInputType, distance: payload.distance, groupName: payload.groupName, division: payload.division, arrowsPerEnd: payload.arrowsPerEnd, arrowsPerDistance: payload.arrowsPerDistance, endCount: payload.endCount, distanceRoundCount: payload.distanceRoundCount, distanceRounds: payload.distanceRounds, ends: payload.ends, summary: payload.summary, status: payload.status, updatedAt: serverTimestamp() });
+        await updateDoc(doc(appServices.db, "sessions", editingSessionId), {
+          sessionDate: payload.sessionDate,
+          title: payload.title,
+          mode: payload.mode,
+          recordInputType: payload.recordInputType,
+          distance: payload.distance,
+          groupName: payload.groupName,
+          division: payload.division,
+          arrowsPerEnd: payload.arrowsPerEnd,
+          arrowsPerDistance: payload.arrowsPerDistance,
+          endCount: payload.endCount,
+          distanceRoundCount: payload.distanceRoundCount,
+          distanceRounds: payload.distanceRounds,
+          ends: payload.ends,
+          summary: payload.summary,
+          status: payload.status,
+          updatedAt: serverTimestamp(),
+        });
       } else {
-        const docRef = await addDoc(collection(appServices.db, 'sessions'), payload);
-        await setDoc(doc(appServices.db, 'sessions', docRef.id), { sessionId: docRef.id }, { merge: true });
+        const docRef = await addDoc(collection(appServices.db, "sessions"), payload);
+        await setDoc(doc(appServices.db, "sessions", docRef.id), { sessionId: docRef.id }, { merge: true });
       }
+
       clearDraftFromLocal(authUser.uid);
-      setTempSaveMessage('');
+      setTempSaveMessage("");
       setEditingSessionId(null);
-      await refreshData(appServices.db, authUser.uid, isAdminUser);
-      const latestOwnSessionsSnap = await getDocs(query(collection(appServices.db, 'sessions'), where('userId', '==', authUser.uid), orderBy('createdAt', 'desc')));
-      const latestOwnSessions = latestOwnSessionsSnap.docs.map((snap) => fromFirestoreSession(snap));
-      await trySyncPublicRanking(appServices.db, profile, authUser.uid, latestOwnSessions);
-      await loadPublicRankings(appServices.db);
+      await loadUsersAndSessions(appServices.db);
       setDraftSession(normalizeSessionShape(createNewSession(profile, draftSession.mode), profile));
-      setUi((prev) => ({ ...prev, activeTab: 'dashboard' }));
+      setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
     } catch (error) {
-      setGlobalError(error.message || 'X-Session 저장에 실패했다.');
+      setGlobalError(error.message || "X-Session 저장에 실패했다.");
     } finally {
       setSessionSaving(false);
     }
@@ -3809,47 +3934,108 @@ function XSessionApp() {
   async function handleDeleteSavedSession() {
     if (!appServices?.db || !editingSessionId || !authUser || !profile) return;
     try {
-      await deleteDoc(doc(appServices.db, 'sessions', editingSessionId));
+      await deleteDoc(doc(appServices.db, "sessions", editingSessionId));
       setEditingSessionId(null);
-      setDraftSession(normalizeSessionShape(createNewSession(profile, 'cumulative'), profile));
+      setDraftSession(normalizeSessionShape(createNewSession(profile, "cumulative"), profile));
       clearDraftFromLocal(authUser.uid);
-      setTempSaveMessage('');
-      await refreshData(appServices.db, authUser.uid, isAdminUser);
-      const latestOwnSessionsSnap = await getDocs(query(collection(appServices.db, 'sessions'), where('userId', '==', authUser.uid), orderBy('createdAt', 'desc')));
-      const latestOwnSessions = latestOwnSessionsSnap.docs.map((snap) => fromFirestoreSession(snap));
-      await trySyncPublicRanking(appServices.db, profile, authUser.uid, latestOwnSessions);
-      await loadPublicRankings(appServices.db);
-      setUi((prev) => ({ ...prev, activeTab: 'dashboard' }));
+      setTempSaveMessage("");
+      await loadUsersAndSessions(appServices.db);
+      setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
     } catch (error) {
-      setGlobalError(error.message || '세션 삭제에 실패했다.');
+      setGlobalError(error.message || "세션 삭제에 실패했다.");
     }
   }
 
-  function handleTempSave() { if (!authUser || !draftSession) return; saveDraftToLocal(authUser.uid, draftSession); setTempSaveMessage('임시 X-Session 저장 완료. 다음에 다시 로그인해도 이어서 입력할 수 있다.'); }
+  function handleTempSave() {
+    if (!authUser || !draftSession) return;
+    saveDraftToLocal(authUser.uid, draftSession);
+    setTempSaveMessage("임시 X-Session 저장 완료. 다음에 다시 로그인해도 이어서 입력할 수 있다.");
+  }
 
   function handleEditSession(sessionId) {
     const target = sessionsForDisplay.find((s) => s.id === sessionId);
     if (!target || !profile) return;
-    setDraftSession({ ...target, recordInputType: target.recordInputType || 'end', division: target.division || profile.division || '', distanceRounds: target.distanceRounds?.length ? target.distanceRounds.map((round, idx) => ({ ...round, id: round.id || uid('edit_round'), index: idx + 1 })) : [createEmptyDistanceRound(1, 35), createEmptyDistanceRound(2, 30), createEmptyDistanceRound(3, 25), createEmptyDistanceRound(4, 20)], ends: (target.ends || []).map((end, idx) => ({ ...end, id: end.id || uid('edit_end'), index: idx + 1, arrows: Array.from({ length: target.arrowsPerEnd || 6 }, (_, i) => end.arrows?.[i] ?? null) })) });
+    setDraftSession({
+      ...target,
+      recordInputType: target.recordInputType || "end",
+      division: target.division || profile.division || "",
+      distanceRounds:
+        target.distanceRounds?.length
+          ? target.distanceRounds.map((round, idx) => ({
+              ...round,
+              id: round.id || uid("edit_round"),
+              index: idx + 1,
+            }))
+          : [
+              createEmptyDistanceRound(1, 35),
+              createEmptyDistanceRound(2, 30),
+              createEmptyDistanceRound(3, 25),
+              createEmptyDistanceRound(4, 20),
+            ],
+      ends: (target.ends || []).map((end, idx) => ({
+        ...end,
+        id: end.id || uid("edit_end"),
+        index: idx + 1,
+        arrows: Array.from({ length: target.arrowsPerEnd || 6 }, (_, i) => end.arrows?.[i] ?? null),
+      })),
+    });
     setEditingSessionId(target.isSampleData ? null : target.id);
-    setUi((prev) => ({ ...prev, activeTab: 'record' }));
-    setTempSaveMessage(target.isSampleData ? '샘플 X-Session을 입력 화면으로 불러왔다. 저장하면 내 기록으로 새로 저장된다.' : '저장된 X-Session을 편집 중이다.');
+    setUi((prev) => ({ ...prev, activeTab: "record" }));
+    setTempSaveMessage(
+      target.isSampleData
+        ? "샘플 X-Session을 입력 화면으로 불러왔다. 저장하면 내 기록으로 새로 저장된다."
+        : "저장된 X-Session을 편집 중이다."
+    );
   }
 
   async function handleUpdateProfile(nextUser) {
     if (!appServices?.db || !authUser || !profile) return;
-    setProfileSaving(true); setGlobalError('');
+
+    setProfileSaving(true);
+    setGlobalError("");
+
     try {
-      await saveProfileDocument(authUser.uid, { email: profile.email, name: nextUser.name, groupName: nextUser.groupName, regionCity: nextUser.regionCity, regionDistrict: nextUser.regionDistrict, division: nextUser.division });
-      const refreshed = { ...profile, name: nextUser.name || profile.name || '', club: '', clubName: '', groupName: nextUser.groupName || '', regionCity: nextUser.regionCity || '', regionDistrict: nextUser.regionDistrict || '', division: nextUser.division || '전체학년' };
+      await saveProfileDocument(authUser.uid, {
+        email: profile.email,
+        name: nextUser.name,
+        groupName: nextUser.groupName,
+        regionCity: nextUser.regionCity,
+        regionDistrict: nextUser.regionDistrict,
+        division: nextUser.division,
+      });
+
+      const refreshed = {
+        ...profile,
+        name: nextUser.name || profile.name || "",
+        club: "",
+        clubName: "",
+        groupName: nextUser.groupName || "",
+        regionCity: nextUser.regionCity || "",
+        regionDistrict: nextUser.regionDistrict || "",
+        division: nextUser.division || "전체학년",
+      };
+
       setProfile(refreshed);
-      setDraftSession((prev) => prev ? { ...prev, division: refreshed.division } : createNewSession(refreshed, 'cumulative'));
-      if (authUser && draftSession) saveDraftToLocal(authUser.uid, { ...(draftSession || createNewSession(refreshed, 'cumulative')), division: refreshed.division });
-      await trySyncPublicRanking(appServices.db, refreshed, authUser.uid);
-      await refreshData(appServices.db, authUser.uid, isAdminUser);
-      return { ok: true, message: '프로필이 저장되었다. 앱 전체 표시 정보에도 반영된다.' };
+      setDraftSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              division: refreshed.division,
+            }
+          : createNewSession(refreshed, "cumulative")
+      );
+
+      if (authUser && draftSession) {
+        saveDraftToLocal(authUser.uid, {
+          ...(draftSession || createNewSession(refreshed, "cumulative")),
+          division: refreshed.division,
+        });
+      }
+
+      await loadUsersAndSessions(appServices.db);
+      return { ok: true, message: "프로필이 저장되었다. 앱 전체 표시 정보에도 반영된다." };
     } catch (error) {
-      const message = error.message || '프로필 저장에 실패했다.';
+      const message = error.message || "프로필 저장에 실패했다.";
       setGlobalError(message);
       return { ok: false, message };
     } finally {
@@ -3862,45 +4048,69 @@ function XSessionApp() {
   const permanentSampleSessions = useMemo(() => buildPermanentSampleSessions(), []);
 
   const usersForDisplay = useMemo(() => {
-    if (isAdminUser) {
-      const existingIds = new Set(users.map((u) => u.id));
-      const extra = sampleUsers.filter((u) => !existingIds.has(u.id));
-      return [...users, ...extra];
-    }
-    return currentUser ? [currentUser] : [];
-  }, [users, sampleUsers, currentUser, isAdminUser]);
+    const existingIds = new Set(users.map((u) => u.id));
+    const extra = sampleUsers.filter((u) => !existingIds.has(u.id));
+    return [...users, ...extra];
+  }, [users, sampleUsers]);
 
   const sessionsForDisplay = useMemo(() => {
-    if (isAdminUser) {
-      const existingIds = new Set(sessions.map((s) => s.id));
-      const merged = [...sessions];
-      permanentSampleSessions.forEach((s) => { if (!existingIds.has(s.id)) merged.push(s); });
-      return merged;
-    }
-    return sessions.filter((s) => s.userId === authUser?.uid);
-  }, [sessions, permanentSampleSessions, authUser, isAdminUser]);
+    const existingIds = new Set(sessions.map((s) => s.id));
+    const merged = [...sessions];
 
-  const mySessions = useMemo(() => sessions.filter((s) => s.userId === authUser?.uid), [sessions, authUser]);
+    permanentSampleSessions.forEach((s) => {
+      if (!existingIds.has(s.id)) merged.push(s);
+    });
+
+    return merged;
+  }, [sessions, permanentSampleSessions]);
+
+  const mySessions = useMemo(
+    () => sessions.filter((s) => s.userId === authUser?.uid),
+    [sessions, authUser]
+  );
+
+  const isAdminUser = useMemo(() => isAdminEmail(currentUser?.email), [currentUser]);
+  const adminEmailGuard = isAdminEmail;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6 xl:p-8">
         {currentUser ? <Hero activeTab={ui.activeTab} /> : null}
+
         {authLoading && !authUser ? (
-          <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl"><CardContent className="flex items-center gap-3 p-6 text-slate-600"><Loader2 className="h-5 w-5 animate-spin" /> 인증 상태 확인 중</CardContent></Card>
+          <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+            <CardContent className="flex items-center gap-3 p-6 text-slate-600">
+              <Loader2 className="h-5 w-5 animate-spin" /> 인증 상태 확인 중
+            </CardContent>
+          </Card>
         ) : !currentUser ? (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}><AuthPanel onRegister={handleRegister} onLogin={handleLogin} authLoading={authLoading} /></motion.div>
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+            <AuthPanel onRegister={handleRegister} onLogin={handleLogin} authLoading={authLoading} />
+          </motion.div>
         ) : (
           <>
-            <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab === 'admin' && !isAdminUser ? 'dashboard' : tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} />
+            <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} />
+
             {globalError && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
+
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-              {ui.activeTab === 'record' && draftSession && <SessionEditor session={draftSession} setSession={setDraftSession} onSave={handleSaveSession} onTempSave={handleTempSave} onDeleteSavedSession={handleDeleteSavedSession} saving={sessionSaving} tempSaveMessage={tempSaveMessage} editingSavedSession={Boolean(editingSessionId)} />}
-              {ui.activeTab === 'dashboard' && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
-              {ui.activeTab === 'ranking' && <RankingBoard rankings={publicRankings} currentUserId={currentUser.id} />}
-              {ui.activeTab === 'analysis' && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
-              {ui.activeTab === 'profile' && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
-              {ui.activeTab === 'admin' && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => refreshData(appServices.db, authUser.uid, true)} />}
+              {ui.activeTab === "record" && draftSession && (
+                <SessionEditor
+                  session={draftSession}
+                  setSession={setDraftSession}
+                  onSave={handleSaveSession}
+                  onTempSave={handleTempSave}
+                  onDeleteSavedSession={handleDeleteSavedSession}
+                  saving={sessionSaving}
+                  tempSaveMessage={tempSaveMessage}
+                  editingSavedSession={Boolean(editingSessionId)}
+                />
+              )}
+              {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
+              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
+              {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
+              {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
+              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} />}
             </motion.div>
           </>
         )}
