@@ -2664,6 +2664,9 @@ function RankingBoard({ users, sessions, currentUserId }) {
             <CardTitle className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-amber-500" /> 내 랭킹
             </CardTitle>
+            <div className="text-xs leading-relaxed text-slate-500 sm:text-sm">
+              랭킹은 평균 화살 점수 우선, 동률 시 총점, 그다음 최신 기록 순으로 계산된다.
+            </div>
           </CardHeader>
           <CardContent>
             {myRank ? (
