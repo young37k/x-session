@@ -1650,27 +1650,32 @@ function SessionEditor({
       return;
     }
 
-    if (key === "M") {
-      setOpponentDrafts((prev) => ({ ...prev, [endId]: "0" }));
-      return;
-    }
-
-    if (key === "X") {
-      setOpponentDrafts((prev) => ({ ...prev, [endId]: "10" }));
-      return;
-    }
-
     const digit = String(key);
-    setOpponentDrafts((prev) => {
-      const current = String(prev[endId] ?? "");
-      const next = `${current}${digit}`.slice(0, 2);
-      const numeric = Number(next);
-      if (Number.isNaN(numeric) || numeric > 60) return prev;
-      return {
-        ...prev,
-        [endId]: next,
-      };
-    });
+    const current = String(opponentDrafts[endId] ?? "");
+    const next = `${current}${digit}`.slice(0, 2);
+    const numeric = Number(next);
+    if (Number.isNaN(numeric) || numeric > 60) return;
+
+    setOpponentDrafts((prev) => ({
+      ...prev,
+      [endId]: next,
+    }));
+
+    if (next.length >= 2) {
+      requestAnimationFrame(() => {
+        setOpponentDrafts((prev) => ({
+          ...prev,
+          [endId]: next,
+        }));
+        patchSession((prev) => ({
+          ...prev,
+          ends: prev.ends.map((end) =>
+            end.id === endId ? { ...end, opponentTotal: numeric } : end
+          ),
+        }));
+        moveToNextEndStart(endId);
+      });
+    }
   }
 
   function updateArrow(endId, arrowIndex, value, options = {}) {
@@ -2210,24 +2215,6 @@ function SessionEditor({
                                 onClick={() => handleOpponentKeypadPress(end.id, "confirm")}
                               >
                                 확인
-                              </Button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="h-11 rounded-2xl text-base font-semibold"
-                                onClick={() => handleOpponentKeypadPress(end.id, "X")}
-                              >
-                                X
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="h-11 rounded-2xl text-base font-semibold"
-                                onClick={() => handleOpponentKeypadPress(end.id, "M")}
-                              >
-                                M
                               </Button>
                             </div>
                           </div>
