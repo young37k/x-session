@@ -1511,6 +1511,7 @@ function SessionEditor({
   const [lastQuickScore, setLastQuickScore] = useState(null);
   const [flashKey, setFlashKey] = useState("");
   const arrowRefs = useRef({});
+  const opponentInputRefs = useRef({});
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -1580,6 +1581,27 @@ function SessionEditor({
     });
   }
 
+  function focusOpponentField(endId) {
+    const target = opponentInputRefs.current[endId];
+    if (!target) return;
+    requestAnimationFrame(() => {
+      try {
+        target.focus();
+        target.select?.();
+      } catch {
+        // ignore
+      }
+    });
+  }
+
+  function focusNextEndFirstArrow(endId) {
+    const currentIndex = session.ends.findIndex((end) => end.id === endId);
+    if (currentIndex < 0) return;
+    const nextEnd = session.ends[currentIndex + 1];
+    if (!nextEnd) return;
+    focusArrowField(nextEnd.id, 0);
+  }
+
   function findFirstEmptyTarget(ends) {
     for (const end of ends) {
       for (let i = 0; i < end.arrows.length; i += 1) {
@@ -1620,6 +1642,15 @@ function SessionEditor({
     setFlashKey(`${endId}_${arrowIndex}`);
 
     if (autoFocusNext) {
+      if (session.mode === "set") {
+        const updatedEnd = nextEnds.find((end) => end.id === endId);
+        const isEndComplete = updatedEnd?.arrows?.every((arrow) => arrow !== null && arrow !== "");
+        if (isEndComplete) {
+          focusOpponentField(endId);
+          return;
+        }
+      }
+
       const nextTarget = findFirstEmptyTarget(nextEnds);
       if (nextTarget) focusArrowField(nextTarget.endId, nextTarget.arrowIndex);
     }
@@ -2060,9 +2091,15 @@ function SessionEditor({
                         <div className="grid gap-2">
                           <Label>상대 엔드 점수</Label>
                           <Input
+                            ref={(el) => {
+                              if (el) opponentInputRefs.current[end.id] = el;
+                            }}
                             type="number"
                             inputMode="numeric"
                             value={end.opponentTotal ?? ""}
+                            onFocus={(e) => {
+                              e.target.select?.();
+                            }}
                             onChange={(e) => {
                               const raw = e.target.value;
                               const value = raw === "" ? "" : Math.max(0, Number(raw) || 0);
@@ -2073,15 +2110,33 @@ function SessionEditor({
                                 ),
                               }));
                             }}
-                            onBlur={() => {
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                patchSession((prev) => ({
+                                  ...prev,
+                                  ends: prev.ends.map((item) =>
+                                    item.id === end.id
+                                      ? { ...item, opponentTotal: item.opponentTotal === "" ? 0 : item.opponentTotal }
+                                      : item
+                                  ),
+                                }));
+                                focusNextEndFirstArrow(end.id);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const normalized = e.target.value === "" ? 0 : Math.max(0, Number(e.target.value) || 0);
                               patchSession((prev) => ({
                                 ...prev,
                                 ends: prev.ends.map((item) =>
                                   item.id === end.id
-                                    ? { ...item, opponentTotal: item.opponentTotal === "" ? 0 : item.opponentTotal }
+                                    ? { ...item, opponentTotal: normalized }
                                     : item
                                 ),
                               }));
+                              if (session.mode === "set" && normalized !== "") {
+                                focusNextEndFirstArrow(end.id);
+                              }
                             }}
                           />
                         </div>
