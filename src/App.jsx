@@ -1796,6 +1796,8 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
     { key: "dashboard", label: "X-Dashboard", icon: BarChart3 },
     { key: "ranking", label: "X-Ranking", icon: Trophy },
     { key: "analysis", label: "X-Analysis", icon: CalendarRange },
+    { key: "stage", label: "X-Stage", icon: Trophy },
+    { key: "brief", label: "X-Brief", icon: Megaphone },
     { key: "profile", label: "Profile", icon: User },
     ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield }] : []),
   ];
@@ -3552,6 +3554,60 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   );
 }
 
+
+function XStagePage() {
+  return (
+    <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
+      <CardHeader>
+        <CardTitle>X-Stage</CardTitle>
+        <CardDescription>대회 일정과 양궁 뉴스를 확인하는 공간이다.</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4 md:grid-cols-2">
+        <Card className="rounded-[22px] border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-lg">대회 일정</CardTitle>
+            <CardDescription>예정된 대회 일정이 여기에 표시된다.</CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-slate-500">
+            아직 등록된 대회 일정이 없다.
+          </CardContent>
+        </Card>
+        <Card className="rounded-[22px] border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-lg">양궁 뉴스</CardTitle>
+            <CardDescription>주요 뉴스와 업데이트를 모아본다.</CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-slate-500">
+            아직 등록된 뉴스가 없다.
+          </CardContent>
+        </Card>
+      </CardContent>
+    </Card>
+  );
+}
+
+function XBriefPage() {
+  return (
+    <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
+      <CardHeader>
+        <CardTitle>X-Brief</CardTitle>
+        <CardDescription>X-Session 공지사항을 확인하는 공간이다.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Card className="rounded-[22px] border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-lg">공지사항</CardTitle>
+            <CardDescription>운영 공지와 업데이트 노트를 안내한다.</CardDescription>
+          </CardHeader>
+          <CardContent className="text-sm text-slate-500">
+            아직 등록된 공지가 없다.
+          </CardContent>
+        </Card>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ProfilePanel({ user, onUpdate, saving }) {
   const [form, setForm] = useState(user);
   const [savedMessage, setSavedMessage] = useState("");
@@ -4018,6 +4074,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh }) {
               <div><span className="font-medium">학년/부문:</span> {selectedUser.division || "미입력"}</div>
               <div><span className="font-medium">소속:</span> {selectedUser.groupName || "미입력"}</div>
               <div><span className="font-medium">지역:</span> {selectedUser.regionCity || "미입력"}</div>
+              <div><span className="font-medium">가입일:</span> {formatFullDate(selectedUser.createdAt)}</div>
               <div><span className="font-medium">UID:</span> {selectedUser.id}</div>
               <div><span className="font-medium">저장 기록 수:</span> {realSessions.filter((session) => session.userId === selectedUser.id).length}</div>
             </div>
@@ -4708,6 +4765,8 @@ function XSessionApp() {
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
+              {ui.activeTab === "stage" && <XStagePage />}
+              {ui.activeTab === "brief" && <XBriefPage />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} />}
             </motion.div>
