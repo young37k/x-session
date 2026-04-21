@@ -1527,7 +1527,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <Button
                   type="button"
                   disabled={authLoading}
-                  className="h-12 rounded-2xl bg-white/92 text-base font-semibold text-slate-900 hover:bg-white"
+                  className="h-12 rounded-2xl bg-white/92 text-base font-semibold text-slate-900 hover:bg-white/90 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-white/50"
                   onClick={handleRegisterSubmit}
                 >
                   {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
