@@ -112,6 +112,16 @@ const DIVISION_OPTIONS = [
   "일반부",
   "국가대표"
 ];
+const GENDER_OPTIONS = ["남", "여"];
+const RANKING_GROUP_OPTIONS = [
+  "저학년",
+  "고학년",
+  "중등부",
+  "고등부(남)",
+  "고등부(여)",
+  "대학/일반부(남)",
+  "대학/일반부(여)"
+];
 const DISTANCE_OPTIONS = [18, 20, 25, 30, 35, 40, 50, 60, 70, 90];
 
 const DIVISION_DISTANCE_RULES = {
@@ -130,6 +140,16 @@ const DIVISION_DISTANCE_RULES = {
   "대학부": [70, 60, 50, 30],
   "일반부": [70, 60, 50, 30],
   "국가대표": [70],
+};
+
+const RANKING_GROUP_DISTANCE_RULES = {
+  "저학년": [35, 30, 25, 20],
+  "고학년": [35, 30, 25, 20],
+  "중등부": [60, 50, 40, 30],
+  "고등부(남)": [90, 70, 50, 30],
+  "고등부(여)": [70, 60, 50, 30],
+  "대학/일반부(남)": [90, 70, 50, 30],
+  "대학/일반부(여)": [70, 60, 50, 30],
 };
 
 
@@ -298,6 +318,21 @@ function normalizeDivisionLabel(value) {
   return raw.replace(/\s+/g, "").replace(/학년$/,"");
 }
 
+function getRankingGroup(division, gender) {
+  const d = String(division || "").trim();
+  const g = String(gender || "남").trim();
+  if (/^초등[1-4]$/.test(d)) return "저학년";
+  if (/^초등[5-6]$/.test(d)) return "고학년";
+  if (/^중등[1-3]$/.test(d)) return "중등부";
+  if (/^고등[1-3]$/.test(d)) return g === "여" ? "고등부(여)" : "고등부(남)";
+  if (d === "대학부" || d === "일반부") return g === "여" ? "대학/일반부(여)" : "대학/일반부(남)";
+  return "";
+}
+
+function getRequiredDistancesForRankingGroup(rankingGroup) {
+  return RANKING_GROUP_DISTANCE_RULES[rankingGroup] || [];
+}
+
 function normalizeSessionShape(session, profile = null) {
   const safe = session || {};
   const arrowsPerEnd = safe.arrowsPerEnd || 6;
@@ -333,6 +368,7 @@ function normalizeSessionShape(session, profile = null) {
     recordInputType: safe.recordInputType || "end",
     distance: Number(safe.distance) || 70,
     division: safe.division || profile?.division || "",
+    gender: safe.gender || profile?.gender || "남",
     arrowsPerEnd,
     arrowsPerDistance: safe.arrowsPerDistance || 36,
     totalEnds: ends.length,
@@ -901,6 +937,7 @@ function buildSessionPayload({ draftSession, profile, uid }) {
     groupName: profile.groupName || "",
     regionCity: profile.regionCity || "",
     division: draftSession.division || profile.division || "",
+    gender: profile.gender || "남",
     arrowsPerEnd: draftSession.arrowsPerEnd,
     arrowsPerDistance: draftSession.arrowsPerDistance || 36,
     endCount: isDistanceInput ? 0 : draftSession.ends.length,
@@ -942,6 +979,7 @@ function fromFirestoreProfile(uidValue, data) {
     regionCity: data.regionCity || "",
     regionDistrict: data.regionDistrict || "",
     division: data.division || "",
+    gender: data.gender || "남",
     avatar: "",
     photoURL: "",
     photoPath: "",
@@ -962,6 +1000,7 @@ function fromFirestoreSession(docSnap) {
     recordInputType: data.recordInputType || "end",
     distance: data.distance,
     division: data.division || "",
+    gender: data.gender || "남",
     clubName: "",
     groupName: data.groupName || "",
     regionCity: data.regionCity || "",
@@ -1120,6 +1159,8 @@ function getQualifiedDistanceAttempts(session) {
         arrowsCount: arrowsPerDistance,
         sessionDate: session.sessionDate || session.updatedAt || "",
         division: session.division || "",
+        gender: session.gender || "",
+        rankingGroup: getRankingGroup(session.division, session.gender),
         groupName: session.groupName || "",
         regionCity: session.regionCity || "",
       }))
@@ -1142,6 +1183,8 @@ function getQualifiedDistanceAttempts(session) {
     arrowsCount: actualArrowCount,
     sessionDate: session.sessionDate || session.updatedAt || "",
     division: session.division || "",
+    gender: session.gender || "",
+    rankingGroup: getRankingGroup(session.division, session.gender),
     groupName: session.groupName || "",
     regionCity: session.regionCity || "",
   }];
@@ -1153,10 +1196,12 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
   return users
     .map((user) => {
       const userDivision = user.division || "";
+      const userGender = user.gender || "남";
+      const userRankingGroup = getRankingGroup(userDivision, userGender);
       if (
-        rankingFilters.division &&
-        rankingFilters.division !== "all" &&
-        normalizeDivisionLabel(userDivision) !== normalizeDivisionLabel(rankingFilters.division)
+        rankingFilters.rankingGroup &&
+        rankingFilters.rankingGroup !== "all" &&
+        userRankingGroup !== rankingFilters.rankingGroup
       ) {
         return null;
       }
@@ -1179,9 +1224,15 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         .filter((session) => session.userId === user.id)
         .flatMap((session) => getQualifiedDistanceAttempts(session))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
+        .filter((attempt) => attempt.rankingGroup === userRankingGroup)
         .filter((attempt) =>
           rankingFilters.distance && rankingFilters.distance !== "all"
             ? String(attempt.distance) === String(rankingFilters.distance)
+            : true
+        )
+        .filter((attempt) =>
+          rankingFilters.distance && rankingFilters.distance !== "all"
+            ? getRequiredDistancesForRankingGroup(userRankingGroup).includes(Number(attempt.distance))
             : true
         );
 
@@ -1199,6 +1250,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         groupName: user.groupName || best.groupName || "-",
         regionCity: user.regionCity || best.regionCity || "-",
         division: normalizeDivisionLabel(userDivision || best.division || "-"),
+        rankingGroup: userRankingGroup || best.rankingGroup || "-",
         distance: best.distance,
         bestScore: best.score,
         qualifiedSessions: attempts.length,
@@ -1214,10 +1266,12 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
   return users
     .map((user) => {
       const userDivision = user.division || "";
+      const userGender = user.gender || "남";
+      const userRankingGroup = getRankingGroup(userDivision, userGender);
       if (
-        rankingFilters.division &&
-        rankingFilters.division !== "all" &&
-        normalizeDivisionLabel(userDivision) !== normalizeDivisionLabel(rankingFilters.division)
+        rankingFilters.rankingGroup &&
+        rankingFilters.rankingGroup !== "all" &&
+        userRankingGroup !== rankingFilters.rankingGroup
       ) {
         return null;
       }
@@ -1236,13 +1290,14 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         return null;
       }
 
-      const requiredDistances = getRequiredDistancesForDivision(userDivision);
+      const requiredDistances = getRequiredDistancesForRankingGroup(userRankingGroup);
       if (!requiredDistances.length) return null;
 
       const attempts = sessions
         .filter((session) => session.userId === user.id)
         .flatMap((session) => getQualifiedDistanceAttempts(session))
-        .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate));
+        .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
+        .filter((attempt) => attempt.rankingGroup === userRankingGroup);
 
       const bestByDistance = {};
       requiredDistances.forEach((distance) => {
@@ -1268,6 +1323,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         groupName: user.groupName || "-",
         regionCity: user.regionCity || "-",
         division: normalizeDivisionLabel(userDivision || "-"),
+        rankingGroup: userRankingGroup || "-",
         requiredDistances,
         distanceScores: Object.fromEntries(
           requiredDistances.map((distance) => [distance, bestByDistance[distance].score])
@@ -1421,6 +1477,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     email: "",
     password: "",
     division: "전체학년",
+    gender: "남",
     groupName: "",
     regionCity: "",
     regionDistrict: "",
@@ -1644,6 +1701,18 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                     className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
                   >
                     {DIVISION_OPTIONS.map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">성별</Label>
+                  <select
+                    value={registerForm.gender}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, gender: e.target.value }))}
+                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
+                  >
+                    {GENDER_OPTIONS.map((item) => (
                       <option key={item} value={item}>{item}</option>
                     ))}
                   </select>
@@ -2936,7 +3005,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
   const [rankingType, setRankingType] = useState("distance");
   const [rankingFilters, setRankingFilters] = useState({
     distance: "all",
-    division: "all",
+    rankingGroup: "all",
     groupName: "all",
     regionCity: "all",
   });
@@ -2993,12 +3062,12 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
   const rankingGuide =
     rankingType === "distance"
-      ? "36발 경기 기준, 최고 기록 점수로 순위가 결정됩니다."
+      ? "36발 경기 기준, 랭킹 구분별 필수 거리 조건을 충족한 최고 기록 점수로 순위가 결정됩니다."
       : rankingType === "total"
-        ? "부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다."
+        ? "랭킹 구분별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다."
         : rankingType === "weeklyDistance"
-          ? "최근 7일 기준 36발 경기 최고 점수로 순위가 결정됩니다."
-          : "최근 7일 동안 부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
+          ? "최근 7일 기준, 랭킹 구분별 필수 거리 조건을 충족한 최고 점수로 순위가 결정됩니다."
+          : "최근 7일 동안 랭킹 구분별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
 
   return (
     <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
@@ -3100,14 +3169,14 @@ function RankingBoard({ users, sessions, currentUserId }) {
             )}
 
             <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">학년</Label>
+              <Label className="w-16 shrink-0 text-sm">구분</Label>
               <select
                 value={rankingFilters.division}
                 onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))}
                 className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
               >
-                <option value="all">전체 학년</option>
-                {DIVISION_OPTIONS.map((item) => (
+                <option value="all">전체 구분</option>
+                {RANKING_GROUP_OPTIONS.map((item) => (
                   <option key={item} value={item}>{item}</option>
                 ))}
               </select>
@@ -3180,7 +3249,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
                           )}
                         </div>
                         <div className="truncate text-[11px] text-slate-500">
-                          {item.groupName} · {item.regionCity} · {item.division}
+                          {item.groupName} · {item.regionCity} · {item.rankingGroup || item.division}
                         </div>
                       </div>
                       <div className="text-right text-xs font-semibold text-slate-500">
@@ -3193,7 +3262,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
                     <div className="mt-1 pl-10 text-[11px] text-slate-700">
                       {rankingType === "distance" || rankingType === "weeklyDistance" ? (
                         <>
-                          거리 {item.distance}m · 인정 세션 {item.qualifiedSessions}개 · 기준일 {formatDateOnly(item.latestDate)}
+                          거리 {item.distance}m · 구분 {item.rankingGroup || item.division} · 인정 세션 {item.qualifiedSessions}개 · 기준일 {formatDateOnly(item.latestDate)}
                         </>
                       ) : (
                         <>
@@ -3219,7 +3288,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   const [dateFilter, setDateFilter] = useState("all");
   const [requiredFilters, setRequiredFilters] = useState({
     distance: "",
-    division: "",
+    rankingGroup: "",
     regionCity: "all",
   });
 
@@ -3233,13 +3302,13 @@ function AnalysisBoard({ currentUser, users, sessions }) {
     }
   }, [selectedRival, rivalCandidates]);
 
-  const isReady = Boolean(requiredFilters.distance && requiredFilters.division);
+  const isReady = Boolean(requiredFilters.distance && requiredFilters.rankingGroup);
 
   const filteredMine = allMySessions.filter(
     (s) =>
       isReady &&
       String(s.distance) === String(requiredFilters.distance) &&
-      (s.division || currentUser.division || "") === requiredFilters.division &&
+      getRankingGroup(s.division || currentUser.division || "", s.gender || currentUser.gender || "남") === requiredFilters.rankingGroup &&
       (requiredFilters.regionCity === "all" ? true : (s.regionCity || currentUser.regionCity || "") === requiredFilters.regionCity) &&
       isWithinDateFilter(s.sessionDate, dateFilter)
   );
@@ -3252,7 +3321,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
       (s) =>
         isReady &&
         String(s.distance) === String(requiredFilters.distance) &&
-        (s.division || rivalUser?.division || "") === requiredFilters.division &&
+        getRankingGroup(s.division || rivalUser?.division || "", s.gender || rivalUser?.gender || "남") === requiredFilters.rankingGroup &&
         (requiredFilters.regionCity === "all" ? true : (s.regionCity || rivalUser?.regionCity || "") === requiredFilters.regionCity) &&
         isWithinDateFilter(s.sessionDate, dateFilter)
     );
@@ -3285,10 +3354,10 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">학년/부문</Label>
-              <select value={requiredFilters.division} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, division: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                <option value="">학년/부문 선택</option>
-                {DIVISION_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
+              <Label className="w-16 shrink-0 text-sm">랭킹 구분</Label>
+              <select value={requiredFilters.rankingGroup} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, rankingGroup: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+                <option value="">랭킹 구분 선택</option>
+                {RANKING_GROUP_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
             </div>
 
@@ -3499,6 +3568,11 @@ function ProfilePanel({ user, onUpdate, saving }) {
       setSavedMessage("");
       return;
     }
+    if (!form.gender) {
+      setErrorMessage("성별을 선택해야 한다.");
+      setSavedMessage("");
+      return;
+    }
     if (!form.groupName?.trim()) {
       setErrorMessage("소속을 입력해야 한다.");
       setSavedMessage("");
@@ -3565,6 +3639,19 @@ function ProfilePanel({ user, onUpdate, saving }) {
                 </SelectTrigger>
                 <SelectContent>
                   {DIVISION_OPTIONS.map((item) => (
+                    <SelectItem key={item} value={item}>{item}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>성별</Label>
+              <Select value={form.gender || "남"} onValueChange={(value) => setForm({ ...form, gender: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="성별 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GENDER_OPTIONS.map((item) => (
                     <SelectItem key={item} value={item}>{item}</SelectItem>
                   ))}
                 </SelectContent>
@@ -4130,6 +4217,8 @@ function XSessionApp() {
         regionCity: payload.regionCity || "",
         regionDistrict: payload.regionDistrict || "",
         division: payload.division || "",
+        gender: payload.gender || "남",
+        gender: payload.gender || "남",
         role: "player",
         status: "active",
         createdAt: existing.exists() ? existing.data().createdAt || serverTimestamp() : serverTimestamp(),
@@ -4174,6 +4263,7 @@ function XSessionApp() {
             regionCity: pendingProfileRef.current.regionCity || "",
             regionDistrict: pendingProfileRef.current.regionDistrict || "",
             division: pendingProfileRef.current.division || "전체학년",
+            gender: pendingProfileRef.current.gender || "남",
             avatar: "",
             photoURL: "",
             photoPath: "",
@@ -4185,6 +4275,7 @@ function XSessionApp() {
             regionCity: nextProfile.regionCity,
             regionDistrict: nextProfile.regionDistrict,
             division: nextProfile.division,
+            gender: nextProfile.gender,
           });
         } else {
           nextProfile = {
@@ -4198,6 +4289,7 @@ function XSessionApp() {
             regionCity: "",
             regionDistrict: "",
             division: "전체학년",
+            gender: "남",
             avatar: "",
             photoURL: "",
             photoPath: "",
