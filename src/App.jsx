@@ -799,9 +799,8 @@ function formatDateTime(value) {
 
 function paginateItems(items, page, perPage = 3) {
   const safePage = Math.max(1, Number(page || 1));
-  const safePerPage = Math.max(1, Number(perPage || 3));
-  const start = (safePage - 1) * safePerPage;
-  return items.slice(start, start + safePerPage);
+  const start = (safePage - 1) * perPage;
+  return items.slice(start, start + perPage);
 }
 
 function PaginationControls({ page, totalPages, onChange }) {
@@ -1834,11 +1833,11 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
 
   const pagedEvents = paginateItems(events, eventPage, 3);
   const pagedNewsItems = paginateItems(newsItems, newsPage, 3);
-  const totalEventPages = Math.max(1, Math.ceil(events.length / 3));
-  const totalNewsPages = Math.max(1, Math.ceil(newsItems.length / 3));
+  const totalEventPages = Math.ceil(events.length / 3);
+  const totalNewsPages = Math.ceil(newsItems.length / 3);
 
   const pagedNotices = paginateItems(notices, briefPage, 3);
-  const totalBriefPages = Math.max(1, Math.ceil(notices.length / 3));
+  const totalBriefPages = Math.ceil(notices.length / 3);
 
   return (
     <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
@@ -3627,20 +3626,24 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
             ...docSnap.data(),
           }))
           .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-
-        const loadedNews = newsSnap.docs
+        const loadedNewsItems = newsSnap.docs
           .map((docSnap) => ({
             id: docSnap.id,
             ...docSnap.data(),
           }))
           .sort((a, b) => {
-            const aTime = typeof a.createdAt?.toDate === "function" ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
-            const bTime = typeof b.createdAt?.toDate === "function" ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
+            const aTime =
+              typeof a.createdAt?.toDate === "function"
+                ? a.createdAt.toDate().getTime()
+                : new Date(a.createdAt || 0).getTime();
+            const bTime =
+              typeof b.createdAt?.toDate === "function"
+                ? b.createdAt.toDate().getTime()
+                : new Date(b.createdAt || 0).getTime();
             return bTime - aTime;
           });
-
         setEvents(loadedEvents);
-        setNewsItems(loadedNews);
+        setNewsItems(loadedNewsItems);
         setEventPage(1);
         setNewsPage(1);
       } catch (error) {
@@ -3673,14 +3676,17 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
             ) : events.length === 0 ? (
               <div className="text-sm text-slate-500">아직 등록된 대회 일정이 없다.</div>
             ) : (
-              pagedEvents.map((item) => (
-                <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div className="text-sm font-semibold text-slate-900">{item.title || "제목 없음"}</div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    {item.date || "-"} · {item.location || "장소 미정"}
+              <>
+                {pagedEvents.map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="text-sm font-semibold text-slate-900">{item.title || "제목 없음"}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {item.date || "-"} · {item.location || "장소 미정"}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+                <PaginationControls page={eventPage} totalPages={totalEventPages} onChange={setEventPage} />
+              </>
             )}
           </div>
         </div>
@@ -3759,16 +3765,13 @@ function XBriefPage({ appServices, briefRefreshKey = 0 }) {
               <div className="mt-2 text-sm text-slate-500">아직 등록된 공지가 없다.</div>
             </div>
           ) : (
-            <>
-              {pagedNotices.map((item) => (
-                <div key={item.id} className="rounded-[22px] border border-slate-200 bg-white p-5">
-                  <div className="text-lg font-semibold text-slate-900">{item.title || "제목 없음"}</div>
-                  <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content || ""}</div>
-                  <div className="mt-2 text-xs text-slate-400">{formatDateTime(item.createdAt)}</div>
-                </div>
-              ))}
-              <PaginationControls page={briefPage} totalPages={totalBriefPages} onChange={setBriefPage} />
-            </>
+            notices.map((item) => (
+              <div key={item.id} className="rounded-[22px] border border-slate-200 bg-white p-5">
+                <div className="text-lg font-semibold text-slate-900">{item.title || "제목 없음"}</div>
+                <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content || ""}</div>
+                <div className="mt-2 text-xs text-slate-400">{formatDateTime(item.createdAt)}</div>
+              </div>
+            ))
           )}
         </div>
       </CardContent>
