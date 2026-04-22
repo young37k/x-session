@@ -3055,7 +3055,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                         <span className="ml-2 text-xs text-slate-400">저장 {formatDateTime(session.updatedAt)}</span>
                       </div>
                       <div className="mt-2 text-sm leading-snug text-slate-700">
-                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} / {getInputTypeLabel(session.recordInputType)} / X{" "}
+                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} / X{" "}
                         {session.summary?.xCount ?? getXs(session)} / 평균{" "}
                         {(
                           session.summary?.averageArrow ?? getAverageArrow(session)
