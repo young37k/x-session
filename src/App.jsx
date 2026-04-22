@@ -3039,7 +3039,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 .map((session) => (
                   <div
                     key={session.id}
-                    className="grid gap-2 rounded-3xl border border-slate-200 p-3 md:grid-cols-[1fr_auto] md:items-center md:gap-3 md:p-4"
+                    className="grid gap-2 rounded-3xl border border-slate-200 p-3 md:p-4"
                   >
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -3054,27 +3054,27 @@ function Dashboard({ sessions, loading, onEditSession }) {
                         경기일 {formatCompactDate(session.sessionDate)}
                         <span className="ml-2 text-xs text-slate-400">저장 {formatDateTime(session.updatedAt)}</span>
                       </div>
-                      <div className="mt-2 text-sm leading-snug text-slate-700">
-                        총점 {session.summary?.totalScore ?? getSessionTotal(session)} / X{" "}
-                        {session.summary?.xCount ?? getXs(session)} / 평균{" "}
-                        {(
-                          session.summary?.averageArrow ?? getAverageArrow(session)
-                        ).toFixed(2)}
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm leading-snug text-slate-700">
+                        <span>
+                          총점 {session.summary?.totalScore ?? getSessionTotal(session)} / X{" "}
+                          {session.summary?.xCount ?? getXs(session)} / 평균{" "}
+                          {(
+                            session.summary?.averageArrow ?? getAverageArrow(session)
+                          ).toFixed(2)}
+                        </span>
+                        <span className="text-slate-500">
+                          {session.recordInputType === "distance"
+                            ? `거리기록 ${(session.distanceRounds || []).length}개`
+                            : `${session.distance}m, 엔드 ${session.ends.length}개`}
+                        </span>
+                        <Button
+                          variant="outline"
+                          className="h-9 rounded-2xl px-3"
+                          onClick={() => onEditSession?.(session.id)}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" /> 수정
+                        </Button>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between gap-3 text-sm text-slate-500 md:flex-col md:items-end md:text-right">
-                      <div className="truncate">
-                        {session.recordInputType === "distance"
-                          ? `거리 기록 ${(session.distanceRounds || []).length}개`
-                          : `${session.distance}m · 엔드 ${session.ends.length}개`}
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="h-10 rounded-2xl px-4"
-                        onClick={() => onEditSession?.(session.id)}
-                      >
-                        <Pencil className="mr-2 h-4 w-4" /> 수정
-                      </Button>
                     </div>
                   </div>
                 ))}
