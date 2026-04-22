@@ -3054,7 +3054,8 @@ function Dashboard({ sessions, loading, onEditSession }) {
                         </Badge>
                       </div>
                       <div className="mt-2 text-sm text-slate-500">
-                        {formatDateTime(session.updatedAt)}
+                        경기일 {formatCompactDate(session.sessionDate)}
+                        <span className="ml-2 text-xs text-slate-400">저장 {formatDateTime(session.updatedAt)}</span>
                       </div>
                       <div className="mt-2 text-sm leading-snug text-slate-700">
                         총점 {session.summary?.totalScore ?? getSessionTotal(session)} / {getInputTypeLabel(session.recordInputType)} / X{" "}
