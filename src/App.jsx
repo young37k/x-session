@@ -3338,7 +3338,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
                         </div>
                         <div className="truncate text-[11px] text-slate-500">
                           {(rankingType === "distance" || rankingType === "weeklyDistance")
-                            ? `${formatGroupDisplayName(item.groupName)} ${item.regionCity || "-"} ${formatProfileDivisionLabel(item.division)} ${item.distance}m ${item.rankingGroup} 인정세션${item.qualifiedSessions} ${formatCompactDate(item.latestDate)}`
+                            ? `${item.regionCity || "-"} ${formatGroupDisplayName(item.groupName)} ${formatProfileDivisionLabel(item.division)}`
                             : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${formatProfileDivisionLabel(item.division)}`}
                         </div>
                       </div>
@@ -3352,7 +3352,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
                     <div className="mt-1 pl-10 text-[11px] text-slate-700">
                       {rankingType === "distance" || rankingType === "weeklyDistance" ? (
                         <>
-                          {item.distance}m, {item.rankingGroup}, 인정세션 {item.qualifiedSessions}개, {formatCompactDate(item.latestDate)}
+                          {item.distance}m {item.rankingGroup} 인정세션{item.qualifiedSessions} {formatCompactDate(item.latestDate)}
                         </>
                       ) : (
                         <>
