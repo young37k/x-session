@@ -3031,7 +3031,11 @@ function Dashboard({ sessions, loading, onEditSession }) {
             <div className="grid gap-3">
               {completed
                 .slice()
-                .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+                .sort((a, b) => {
+                  const bySessionDate = new Date(b.sessionDate || 0) - new Date(a.sessionDate || 0);
+                  if (bySessionDate !== 0) return bySessionDate;
+                  return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+                })
                 .map((session) => (
                   <div
                     key={session.id}
