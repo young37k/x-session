@@ -1831,14 +1831,6 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
     ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield }] : []),
   ];
 
-  const pagedEvents = paginateItems(events, eventPage, 3);
-  const pagedNewsItems = paginateItems(newsItems, newsPage, 3);
-  const totalEventPages = Math.ceil(events.length / 3);
-  const totalNewsPages = Math.ceil(newsItems.length / 3);
-
-  const pagedNotices = paginateItems(notices, briefPage, 3);
-  const totalBriefPages = Math.ceil(notices.length / 3);
-
   return (
     <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
       <CardContent className="flex flex-col gap-4 p-4">
@@ -3662,6 +3654,11 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
     };
   }, [appServices, stageRefreshKey]);
 
+  const pagedEvents = paginateItems(events, eventPage, 3);
+  const pagedNewsItems = paginateItems(newsItems, newsPage, 3);
+  const totalEventPages = Math.ceil(events.length / 3);
+  const totalNewsPages = Math.ceil(newsItems.length / 3);
+
   return (
     <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
       <CardHeader>
@@ -3734,10 +3731,24 @@ function XBriefPage({ appServices, briefRefreshKey = 0 }) {
       try {
         const snap = await getDocs(query(collection(appServices.db, "brief_notices"), orderBy("createdAt", "desc")));
         if (cancelled) return;
-        setNotices(snap.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data(),
-        })));
+        const loadedNotices = snap.docs
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data(),
+          }))
+          .sort((a, b) => {
+            const aTime =
+              typeof a.createdAt?.toDate === "function"
+                ? a.createdAt.toDate().getTime()
+                : new Date(a.createdAt || 0).getTime();
+            const bTime =
+              typeof b.createdAt?.toDate === "function"
+                ? b.createdAt.toDate().getTime()
+                : new Date(b.createdAt || 0).getTime();
+            return bTime - aTime;
+          });
+        setNotices(loadedNotices);
+        setBriefPage(1);
       } catch (error) {
         if (!cancelled) setNotices([]);
       } finally {
@@ -3749,6 +3760,9 @@ function XBriefPage({ appServices, briefRefreshKey = 0 }) {
       cancelled = true;
     };
   }, [appServices, briefRefreshKey]);
+
+  const pagedNotices = paginateItems(notices, briefPage, 3);
+  const totalBriefPages = Math.ceil(notices.length / 3);
 
   return (
     <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
@@ -3765,13 +3779,16 @@ function XBriefPage({ appServices, briefRefreshKey = 0 }) {
               <div className="mt-2 text-sm text-slate-500">아직 등록된 공지가 없다.</div>
             </div>
           ) : (
-            notices.map((item) => (
-              <div key={item.id} className="rounded-[22px] border border-slate-200 bg-white p-5">
-                <div className="text-lg font-semibold text-slate-900">{item.title || "제목 없음"}</div>
-                <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content || ""}</div>
-                <div className="mt-2 text-xs text-slate-400">{formatDateTime(item.createdAt)}</div>
-              </div>
-            ))
+            <>
+              {pagedNotices.map((item) => (
+                <div key={item.id} className="rounded-[22px] border border-slate-200 bg-white p-5">
+                  <div className="text-lg font-semibold text-slate-900">{item.title || "제목 없음"}</div>
+                  <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content || ""}</div>
+                  <div className="mt-2 text-xs text-slate-400">{formatDateTime(item.createdAt)}</div>
+                </div>
+              ))}
+              <PaginationControls page={briefPage} totalPages={totalBriefPages} onChange={setBriefPage} />
+            </>
           )}
         </div>
       </CardContent>
