@@ -3387,6 +3387,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
   const allMySessions = sessions.filter((s) => s.userId === currentUser.id && s.isComplete);
   const rivalCandidates = users.filter((u) => u.id !== currentUser.id);
+  const [rivalSearch, setRivalSearch] = useState("");
   const [selectedRival, setSelectedRival] = useState(rivalCandidates[0]?.id || "none");
 
   useEffect(() => {
@@ -3394,6 +3395,27 @@ function AnalysisBoard({ currentUser, users, sessions }) {
       setSelectedRival(rivalCandidates[0]?.id || "none");
     }
   }, [selectedRival, rivalCandidates]);
+
+  const filteredRivalCandidates = useMemo(() => {
+    const keyword = String(rivalSearch || "").trim().toLowerCase();
+    if (!keyword) return rivalCandidates;
+    return rivalCandidates.filter((user) => {
+      return [
+        getDisplayName(user),
+        user.groupName,
+        user.regionCity,
+        user.division,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(keyword));
+    });
+  }, [rivalCandidates, rivalSearch]);
+
+  useEffect(() => {
+    if (!filteredRivalCandidates.find((u) => u.id === selectedRival)) {
+      setSelectedRival(filteredRivalCandidates[0]?.id || "none");
+    }
+  }, [selectedRival, filteredRivalCandidates]);
 
   const isReady = Boolean(requiredFilters.distance && requiredFilters.rankingGroup);
 
@@ -3591,32 +3613,44 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </div>
             )}
 
-            <div className="grid gap-2">
+            <div className="grid min-w-0 flex-1 gap-2">
               <Label>라이벌 선택</Label>
-              <select value={selectedRival} onChange={(e) => setSelectedRival(e.target.value)} className="h-11 min-w-[240px] rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none">
-                {rivalCandidates.length === 0 ? (
-                  <option value="none">비교할 선수가 없음</option>
-                ) : (
-                  rivalCandidates.map((user) => (
-                    <option key={user.id} value={user.id}>{getDisplayName(user)}</option>
-                  ))
-                )}
-              </select>
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)]">
+                <Input
+                  value={rivalSearch}
+                  onChange={(e) => setRivalSearch(e.target.value)}
+                  placeholder="이름 검색"
+                  className="h-11 rounded-2xl"
+                />
+                <select
+                  value={selectedRival}
+                  onChange={(e) => setSelectedRival(e.target.value)}
+                  className="h-11 min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                >
+                  {filteredRivalCandidates.length === 0 ? (
+                    <option value="none">검색 결과 없음</option>
+                  ) : (
+                    filteredRivalCandidates.map((user) => (
+                      <option key={user.id} value={user.id}>{getDisplayName(user)}</option>
+                    ))
+                  )}
+                </select>
+              </div>
             </div>
 
             <div className="pb-2 text-sm text-slate-500">나 vs {rivalLabel}</div>
           </div>
 
-          <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-4">
+          <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-3 sm:p-4">
             <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 비교</div>
             <div className="h-[340px] w-full">
-              <ResponsiveContainer>
-                <LineChart data={comparison}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={comparison} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" />
-                  <YAxis domain={[0, 10]} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
+                  <YAxis domain={[0, 10]} width={24} tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Legend />
+                  <Legend wrapperStyle={{ paddingTop: 12 }} />
                   <Line type="monotone" dataKey="나" stroke={CHART_COLORS.me} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.me }} />
                   <Line type="monotone" dataKey="라이벌" stroke={CHART_COLORS.rival} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.rival }} />
                 </LineChart>
