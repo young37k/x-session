@@ -3330,30 +3330,33 @@ function RankingBoard({ users, sessions, currentUserId }) {
                         {item.rank}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
                           <div className="truncate text-sm font-semibold">{item.name}</div>
                           {item.userId === currentUserId && (
                             <Badge className="h-5 rounded-full bg-blue-900 px-2 text-[10px] text-white">나</Badge>
                           )}
-                        </div>
-                        <div className="truncate text-[11px] text-slate-500">
-                          {(rankingType === "distance" || rankingType === "weeklyDistance")
-                            ? `${item.regionCity || "-"} ${formatGroupDisplayName(item.groupName)} ${formatProfileDivisionLabel(item.division)}`
-                            : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${formatProfileDivisionLabel(item.division)}`}
+                          <div className="min-w-0 truncate text-[11px] text-slate-500">
+                            {(rankingType === "distance" || rankingType === "weeklyDistance")
+                              ? `${item.regionCity || "-"} ${formatGroupDisplayName(item.groupName)} ${formatProfileDivisionLabel(item.division)}`
+                              : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${formatProfileDivisionLabel(item.division)}`}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right text-xs font-semibold text-slate-500">
+                      <div className="shrink-0 pl-2 text-right text-sm font-semibold text-slate-500">
                         {rankingType === "distance" || rankingType === "weeklyDistance"
                           ? `${item.bestScore}점`
                           : `총점 ${Number(item.totalScore || 0).toFixed(0)}`}
                       </div>
                     </div>
 
-                    <div className="mt-1 pl-10 text-[11px] text-slate-700">
+                    <div className="mt-1 pl-10 text-[11px] leading-5 text-slate-700">
                       {rankingType === "distance" || rankingType === "weeklyDistance" ? (
-                        <>
-                          {item.distance}m {item.rankingGroup} 인정세션{item.qualifiedSessions} {formatCompactDate(item.latestDate)}
-                        </>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span>{item.distance}m</span>
+                          <span>{item.rankingGroup}</span>
+                          <span>인정세션{item.qualifiedSessions}</span>
+                          <span>{formatCompactDate(item.latestDate)}</span>
+                        </div>
                       ) : (
                         <>
                           {item.requiredDistances.map((distance) => `${distance}m ${item.distanceScores[distance]}점`).join(" · ")}
