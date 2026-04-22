@@ -1834,7 +1834,7 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
   return (
     <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
       <CardContent className="flex flex-col gap-4 p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <ProfileAvatar user={user} size="md" />
             <div className="min-w-0">
@@ -1843,7 +1843,11 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
             </div>
           </div>
 
-          <Button variant="outline" className="rounded-2xl self-start" onClick={onLogout}>
+          <Button
+            variant="outline"
+            className="h-11 shrink-0 rounded-2xl px-3"
+            onClick={onLogout}
+          >
             <LogOut className="mr-2 h-4 w-4" /> 로그아웃
           </Button>
         </div>
