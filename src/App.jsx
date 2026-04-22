@@ -3046,9 +3046,6 @@ function Dashboard({ sessions, loading, onEditSession }) {
                         <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
                           {getModeLabel(session.mode)}
                         </Badge>
-                        <Badge className="rounded-full bg-slate-700 text-white">
-                          {getInputTypeLabel(session.recordInputType)}
-                        </Badge>
                         <Badge className="rounded-full bg-emerald-600 text-white">
                           완료
                         </Badge>
