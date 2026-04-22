@@ -318,6 +318,33 @@ function normalizeDivisionLabel(value) {
   return raw.replace(/\s+/g, "").replace(/학년$/,"");
 }
 
+function formatProfileDivisionLabel(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "-";
+  const elementary = raw.match(/^초등(\d)$/);
+  if (elementary) return `초${elementary[1]}`;
+  const middle = raw.match(/^중등(\d)$/);
+  if (middle) return `중${middle[1]}`;
+  const high = raw.match(/^고등(\d)$/);
+  if (high) return `고${high[1]}`;
+  if (raw === "대학부") return "대학부";
+  if (raw === "일반부") return "일반부";
+  if (raw === "국가대표") return "국가대표";
+  return raw;
+}
+
+function formatGroupDisplayName(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "-";
+  return raw
+    .replace(/초등학교$/g, "초")
+    .replace(/중학교$/g, "중")
+    .replace(/고등학교$/g, "고")
+    .replace(/초등$/g, "초")
+    .replace(/중등$/g, "중")
+    .replace(/고등$/g, "고");
+}
+
 function getRankingGroup(division, gender) {
   const d = String(division || "").trim();
   const g = String(gender || "남").trim();
@@ -3310,7 +3337,9 @@ function RankingBoard({ users, sessions, currentUserId }) {
                           )}
                         </div>
                         <div className="truncate text-[11px] text-slate-500">
-                          {item.groupName} · {item.regionCity} · {item.rankingGroup || item.division}
+                          {(rankingType === "distance" || rankingType === "weeklyDistance")
+                            ? `${formatGroupDisplayName(item.groupName)} ${item.regionCity || "-"} ${formatProfileDivisionLabel(item.division)} ${item.distance}m ${item.rankingGroup} 인정세션${item.qualifiedSessions} ${formatCompactDate(item.latestDate)}`
+                            : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${formatProfileDivisionLabel(item.division)}`}
                         </div>
                       </div>
                       <div className="text-right text-xs font-semibold text-slate-500">
