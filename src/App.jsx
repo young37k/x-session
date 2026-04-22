@@ -3286,8 +3286,8 @@ function RankingBoard({ users, sessions, currentUserId }) {
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">구분</Label>
               <select
-                value={rankingFilters.division}
-                onChange={(e) => setRankingFilters((prev) => ({ ...prev, division: e.target.value }))}
+                value={rankingFilters.rankingGroup}
+                onChange={(e) => setRankingFilters((prev) => ({ ...prev, rankingGroup: e.target.value }))}
                 className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
               >
                 <option value="all">전체 구분</option>
