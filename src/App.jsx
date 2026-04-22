@@ -3546,50 +3546,50 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </div>
 
               <div className="grid gap-4 xl:grid-cols-2">
-                <div className="rounded-3xl bg-slate-50 p-4">
+                <div className="rounded-3xl bg-slate-50 p-3 sm:p-4">
                   <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 변화</div>
                   <div className="h-[320px] w-full">
-                    <ResponsiveContainer>
-                      <LineChart data={analytics}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={analytics} margin={{ top: 8, right: 6, left: -8, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" />
-                        <YAxis domain={[0, 10]} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
+                        <YAxis domain={[0, 10]} width={28} tick={{ fontSize: 11 }} />
                         <Tooltip />
-                        <Legend />
+                        <Legend wrapperStyle={{ paddingTop: 12 }} />
                         <Line type="monotone" dataKey="avgArrow" name="평균 화살 점수" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.avg }} activeDot={{ r: 6 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                <div className="rounded-3xl bg-slate-50 p-4">
+                <div className="rounded-3xl bg-slate-50 p-3 sm:p-4">
                   <div className="mb-3 text-sm font-semibold text-slate-700">구간별 총점</div>
                   <div className="h-[320px] w-full">
-                    <ResponsiveContainer>
-                      <BarChart data={analytics}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analytics} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" />
-                        <YAxis />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
+                        <YAxis width={30} tick={{ fontSize: 11 }} />
                         <Tooltip />
-                        <Legend />
-                        <Bar dataKey="score" name="총점" fill={CHART_COLORS.score} radius={[8, 8, 0, 0]} />
+                        <Legend wrapperStyle={{ paddingTop: 12 }} />
+                        <Bar dataKey="score" name="총점" fill={CHART_COLORS.score} radius={[8, 8, 0, 0]} maxBarSize={30} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-slate-50 p-4">
+              <div className="rounded-3xl bg-slate-50 p-3 sm:p-4">
                 <div className="mb-3 text-sm font-semibold text-slate-700">거리별 성능 비교</div>
                 <div className="h-[320px] w-full">
-                  <ResponsiveContainer>
-                    <BarChart data={distancePerformance}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={distancePerformance} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" />
-                      <YAxis domain={[0, 10]} />
+                      <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
+                      <YAxis domain={[0, 10]} width={28} tick={{ fontSize: 11 }} />
                       <Tooltip />
-                      <Legend />
-                      <Bar dataKey="avgArrow" name="거리별 평균 화살 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} />
+                      <Legend wrapperStyle={{ paddingTop: 12 }} />
+                      <Bar dataKey="avgArrow" name="거리별 평균 화살 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} maxBarSize={36} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -3645,10 +3645,10 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 비교</div>
             <div className="h-[340px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={comparison} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
+                <LineChart data={comparison} margin={{ top: 8, right: 6, left: -6, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
-                  <YAxis domain={[0, 10]} width={24} tick={{ fontSize: 11 }} />
+                  <YAxis domain={[0, 10]} width={28} tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend wrapperStyle={{ paddingTop: 12 }} />
                   <Line type="monotone" dataKey="나" stroke={CHART_COLORS.me} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.me }} />
