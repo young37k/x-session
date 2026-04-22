@@ -787,6 +787,14 @@ function deriveSetPoints(session) {
   );
 }
 
+
+
+function formatCompactDate(value) {
+  if (!value) return "-";
+  const d = typeof value?.toDate === "function" ? value.toDate() : new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+}
 function formatDateTime(value) {
   if (!value) return "-";
   try {
@@ -3315,7 +3323,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
                     <div className="mt-1 pl-10 text-[11px] text-slate-700">
                       {rankingType === "distance" || rankingType === "weeklyDistance" ? (
                         <>
-                          거리 {item.distance}m · 구분 {item.rankingGroup || item.division} · 인정 세션 {item.qualifiedSessions}개 · 기준일 {formatDateOnly(item.latestDate)}
+                          {item.distance}m, {item.rankingGroup}, 인정세션 {item.qualifiedSessions}개, {formatCompactDate(item.latestDate)}
                         </>
                       ) : (
                         <>
