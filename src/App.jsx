@@ -390,7 +390,7 @@ function normalizeSessionShape(session, profile = null) {
   return {
     ...safe,
     title: safe.title || "누적제 X-Session",
-    sessionDate: safe.sessionDate || "2026-04-12",
+    sessionDate: safe.sessionDate || getCurrentLocalDateString(),
     mode: safe.mode || "cumulative",
     recordInputType: safe.recordInputType || "end",
     distance: Number(safe.distance) || 70,
@@ -745,6 +745,28 @@ function createEmptyDistanceRound(index, distance = 70) {
     distance,
     total: 0,
   };
+}
+
+function isSessionContentEmpty(session) {
+  if (!session) return true;
+
+  const hasArrowInput = (session.ends || []).some((end) =>
+    (end.arrows || []).some((arrow) => arrow !== null && arrow !== undefined && String(arrow).trim() !== "")
+  );
+
+  const hasOpponentInput = (session.ends || []).some((end) => {
+    if (end.opponentScoreEntered) return true;
+    return String(end.opponentTotal ?? "").trim() !== "";
+  });
+
+  const hasDistanceInput = (session.distanceRounds || []).some((round) => Number(round.total) > 0);
+
+  return !hasArrowInput && !hasOpponentInput && !hasDistanceInput;
+}
+
+function shouldAutoRefreshDraftSessionDate(session, editingSessionId) {
+  if (!session || editingSessionId) return false;
+  return isSessionContentEmpty(session) && session.sessionDate !== getCurrentLocalDateString();
 }
 
 function createNewSession(profile, mode = "cumulative") {
@@ -4942,6 +4964,28 @@ function XSessionApp() {
     setAdminRequested(false);
   }
 
+  useEffect(() => {
+    if (!draftSession) return;
+    if (!shouldAutoRefreshDraftSessionDate(draftSession, editingSessionId)) return;
+
+    setDraftSession((prev) => {
+      if (!shouldAutoRefreshDraftSessionDate(prev, editingSessionId)) return prev;
+      return { ...prev, sessionDate: getCurrentLocalDateString() };
+    });
+  }, [draftSession, editingSessionId]);
+
+  useEffect(() => {
+    if (editingSessionId) return;
+    const timer = window.setInterval(() => {
+      setDraftSession((prev) => {
+        if (!shouldAutoRefreshDraftSessionDate(prev, editingSessionId)) return prev;
+        return { ...prev, sessionDate: getCurrentLocalDateString() };
+      });
+    }, 60 * 1000);
+
+    return () => window.clearInterval(timer);
+  }, [editingSessionId]);
+
   async function handleSaveSession() {
     if (!appServices?.db || !authUser || !profile || !draftSession) return;
 
@@ -4950,9 +4994,7 @@ function XSessionApp() {
 
     try {
       const payload = buildSessionPayload({ draftSession, profile, uid: authUser.uid });
-      const fixedSessionDate = editingSessionId
-        ? (draftSession?.sessionDate || getCurrentLocalDateString())
-        : getCurrentLocalDateString();
+      const fixedSessionDate = draftSession?.sessionDate || getCurrentLocalDateString();
       payload.sessionDate = fixedSessionDate;
 
       if (editingSessionId) {
