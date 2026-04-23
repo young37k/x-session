@@ -2718,9 +2718,14 @@ function SessionEditor({
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <div className="text-sm font-semibold text-slate-700">빠른 점수 입력</div>
                       <Button
+                        type="button"
                         variant="outline"
                         className="h-9 rounded-2xl px-3 text-xs sm:text-sm"
-                        onClick={undoLast}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          undoLast();
+                        }}
                         disabled={!canUndoLastInput}
                       >
                         <Undo2 className="mr-2 h-4 w-4" /> 마지막 입력 취소
@@ -2729,6 +2734,7 @@ function SessionEditor({
                     <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
                       {quickPanelOptions.map((score) => (
                         <Button
+                          type="button"
                           key={String(score)}
                           variant="outline"
                           className={`${getQuickButtonClass(score)} text-sm font-semibold ${
