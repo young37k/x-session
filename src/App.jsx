@@ -2666,7 +2666,7 @@ function SessionEditor({
                         <Undo2 className="mr-2 h-4 w-4" /> 마지막 입력 취소
                       </Button>
                     </div>
-                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
                       {quickPanelOptions.map((score) => (
                         <Button
                           key={String(score)}
@@ -2679,7 +2679,7 @@ function SessionEditor({
                               : false
                           }
                         >
-                          <span>{score === "CONFIRM" ? <span className="font-bold !text-white">확인</span> : score === "EDIT" ? "점수수정" : score}</span>
+                          <span>{score === "CONFIRM" ? <span className="font-bold text-white">확인</span> : score === "EDIT" ? "점수수정" : score}</span>
                         </Button>
                       ))}
                     </div>
