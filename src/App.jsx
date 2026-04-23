@@ -23,7 +23,6 @@ import {
   Eraser,
   Archive,
   Pencil,
-  Undo2,
   TrendingUp,
   TrendingDown,
   Award,
@@ -772,7 +771,7 @@ function shouldAutoRefreshDraftSessionDate(session, editingSessionId) {
 }
 
 function createNewSession(profile, mode = "cumulative") {
-  const initialEndCount = mode === "set" ? 1 : 6;
+  const initialEndCount = 1;
 
   return {
     id: uid("draft"),
@@ -2366,10 +2365,7 @@ function SessionEditor({
   function applyMode(mode) {
     patchSession((prev) => {
       const allEndsEmpty = (prev.ends || []).every((end) => (end.arrows || []).every((arrow) => arrow === null));
-      const nextEnds =
-        mode === "set" && allEndsEmpty
-          ? [createEmptyEnd(1, prev.arrowsPerEnd)]
-          : prev.ends;
+      const nextEnds = allEndsEmpty ? [createEmptyEnd(1, prev.arrowsPerEnd)] : prev.ends;
 
       return {
         ...prev,
@@ -2717,19 +2713,6 @@ function SessionEditor({
                   <CardContent className="p-3 md:p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <div className="text-sm font-semibold text-slate-700">빠른 점수 입력</div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-9 rounded-2xl px-3 text-xs sm:text-sm"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          undoLast();
-                        }}
-                        disabled={!canUndoLastInput}
-                      >
-                        <Undo2 className="mr-2 h-4 w-4" /> 마지막 입력 취소
-                      </Button>
                     </div>
                     <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
                       {quickPanelOptions.map((score) => (
