@@ -1986,7 +1986,7 @@ function SessionEditor({
   const activeEndId = activeOpponentEndId || currentTarget?.endId || null;
   const quickPanelOptions = useMemo(() => {
     if (session.mode === "set") {
-      return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT"];
+      return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT", "CONFIRM"];
     }
     return QUICK_SCORE_OPTIONS;
   }, [session.mode]);
@@ -2064,6 +2064,54 @@ function SessionEditor({
     return null;
   }
 
+  function findLatestPendingOpponentEnd(ends) {
+    for (let endIndex = ends.length - 1; endIndex >= 0; endIndex -= 1) {
+      const end = ends[endIndex];
+      const hasArrowInput = (end.arrows || []).some((arrow) => arrow !== null);
+      const allFilled = (end.arrows || []).every((arrow) => arrow !== null);
+      if (hasArrowInput && allFilled && !end.opponentScoreEntered) {
+        return end;
+      }
+    }
+    return null;
+  }
+
+  function restoreInputFlow(nextSession) {
+    if (!nextSession || nextSession.recordInputType !== "end") return;
+
+    if (nextSession.mode === "set") {
+      const pendingOpponentEnd = findLatestPendingOpponentEnd(nextSession.ends || []);
+      if (pendingOpponentEnd) {
+        setActiveOpponentEndId(pendingOpponentEnd.id);
+        setOpponentInputBuffers((prev) => ({
+          ...prev,
+          [pendingOpponentEnd.id]: prev[pendingOpponentEnd.id] ?? "",
+        }));
+        scrollEndIntoView(pendingOpponentEnd.id);
+        return;
+      }
+    }
+
+    setActiveOpponentEndId(null);
+    const lastEmptyTarget = (() => {
+      const ends = nextSession.ends || [];
+      for (let endIndex = ends.length - 1; endIndex >= 0; endIndex -= 1) {
+        const end = ends[endIndex];
+        for (let i = end.arrows.length - 1; i >= 0; i -= 1) {
+          if (end.arrows[i] === null) {
+            return { endId: end.id, arrowIndex: i };
+          }
+        }
+      }
+      return null;
+    })();
+
+    if (lastEmptyTarget) {
+      scrollEndIntoView(lastEmptyTarget.endId);
+      focusArrowField(lastEmptyTarget.endId, lastEmptyTarget.arrowIndex);
+    }
+  }
+
   function updateArrow(endId, arrowIndex, value, options = {}) {
     const { autoFocusNext = true, haptic = false } = options;
 
@@ -2113,9 +2161,17 @@ function SessionEditor({
   function quickInputScore(score) {
     if (score === "EDIT") {
       const candidateEnd =
-        session.ends.find((end) => end.opponentScoreEntered) ||
-        session.ends.find((end) => end.arrows.some((v) => v !== null));
+        [...session.ends]
+          .reverse()
+          .find((end) => end.opponentScoreEntered || end.arrows.some((v) => v !== null));
       if (candidateEnd) activateOpponentInput(candidateEnd.id);
+      return;
+    }
+
+    if (score === "CONFIRM") {
+      if (session.mode === "set" && activeOpponentEndId) {
+        confirmOpponentScore(activeOpponentEndId);
+      }
       return;
     }
 
@@ -2140,6 +2196,9 @@ function SessionEditor({
     const previous = history[history.length - 1];
     setHistory((h) => h.slice(0, -1));
     setSession(previous);
+    requestAnimationFrame(() => {
+      restoreInputFlow(previous);
+    });
   }
 
   function resetEnd(endId) {
@@ -2303,16 +2362,20 @@ function SessionEditor({
   function moveToNextEndFromOpponent(endId) {
     const currentIndex = session.ends.findIndex((item) => item.id === endId);
     setActiveOpponentEndId(null);
+    setOpponentInputBuffers((prev) => ({ ...prev, [endId]: "" }));
     if (currentIndex === -1) return;
     const nextEnd = session.ends[currentIndex + 1];
     if (nextEnd) {
-      requestAnimationFrame(() => focusFirstArrowOfEnd(nextEnd.id));
+      requestAnimationFrame(() => {
+        scrollEndIntoView(nextEnd.id);
+        focusFirstArrowOfEnd(nextEnd.id);
+      });
     }
   }
 
   function confirmOpponentScore(endId) {
     triggerHaptic(16);
-    const raw = String(opponentInputBuffers[endId] ?? "");
+    const raw = String(opponentInputBuffers[endId] ?? "").trim();
     if (raw === "") return;
     const value = Math.max(0, Number(raw) || 0);
     patchSession((prev) => ({
@@ -2326,16 +2389,11 @@ function SessionEditor({
 
   function handleOpponentQuickScore(endId, score) {
     triggerHaptic(10);
-    const value = Math.max(0, Number(score) || 0);
-    setLastQuickScore(String(score));
-    setOpponentBuffer(endId, String(value));
-    patchSession((prev) => ({
-      ...prev,
-      ends: prev.ends.map((item) =>
-        item.id === endId ? { ...item, opponentTotal: value, opponentScoreEntered: true } : item
-      ),
-    }));
-    moveToNextEndFromOpponent(endId);
+    const digit = String(Math.max(0, Number(score) || 0));
+    const raw = String(opponentInputBuffers[endId] ?? "");
+    const nextValue = `${raw}${digit}`.slice(0, 2);
+    setLastQuickScore(digit);
+    setOpponentBuffer(endId, nextValue);
   }
 
   function handleOpponentKeypadInput(endId, digit) {
@@ -2394,6 +2452,9 @@ function SessionEditor({
     }
     if (score === "EDIT") {
       return `${base} border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100`;
+    }
+    if (score === "CONFIRM") {
+      return `${base} border-blue-300 bg-blue-900 text-white hover:bg-blue-800`;
     }
     if (Number(score) === 0) {
       return `${base} ${isActive ? "border-slate-500 bg-slate-200 text-slate-900 shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`;
@@ -2583,8 +2644,13 @@ function SessionEditor({
                           variant="outline"
                           className={getQuickButtonClass(score)}
                           onClick={() => quickInputScore(score)}
+                          disabled={
+                            score === "CONFIRM"
+                              ? !(session.mode === "set" && activeOpponentEndId && String(opponentInputBuffers[activeOpponentEndId] ?? "").trim() !== "")
+                              : false
+                          }
                         >
-                          {score === "EDIT" ? "점수수정" : score}
+                          {score === "EDIT" ? "점수수정" : score === "CONFIRM" ? "확인" : score}
                         </Button>
                       ))}
                     </div>
@@ -2690,13 +2756,13 @@ function SessionEditor({
                           >
                             {activeOpponentEndId === end.id ? (
                               <span className="inline-flex items-center gap-1.5">
-                                <span>{String(opponentInputBuffers[end.id] ?? "") || "빠른 점수 입력에서 상대 점수를 선택"}</span>
+                                <span>{String(opponentInputBuffers[end.id] ?? "") || "점수입력 후 '확인'을 누르세요."}</span>
                                 <span className="animate-pulse text-blue-500">|</span>
                               </span>
                             ) : end.opponentScoreEntered ? (
                               `${String(end.opponentTotal ?? 0)}점`
                             ) : (
-                              "빠른 점수 입력에서 상대 점수를 선택"
+                              "점수입력 후 '확인'을 누르세요."
                             )}
                           </div>
                         </div>
