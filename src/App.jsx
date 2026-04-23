@@ -1600,14 +1600,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
       if (
         rankingFilters.gender &&
         rankingFilters.gender !== "all" &&
-        userGender !== rankingFilters.gender
-      ) {
-        return null;
-      }
-      if (
-        rankingFilters.gender &&
-        rankingFilters.gender !== "all" &&
-        userGender !== rankingFilters.gender
+        (user.gender || "남") !== rankingFilters.gender
       ) {
         return null;
       }
@@ -1678,6 +1671,13 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         rankingFilters.regionCity &&
         rankingFilters.regionCity !== "all" &&
         (user.regionCity || "") !== rankingFilters.regionCity
+      ) {
+        return null;
+      }
+      if (
+        rankingFilters.gender &&
+        rankingFilters.gender !== "all" &&
+        (user.gender || "남") !== rankingFilters.gender
       ) {
         return null;
       }
