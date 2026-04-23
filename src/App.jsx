@@ -1594,6 +1594,18 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
   });
   const [rememberEmail, setRememberEmail] = useState(false);
   const [error, setError] = useState("");
+  const [registerFieldErrors, setRegisterFieldErrors] = useState({});
+  const registerFieldRefs = {
+    name: useRef(null),
+    email: useRef(null),
+    password: useRef(null),
+    division: useRef(null),
+    gender: useRef(null),
+    groupName: useRef(null),
+    regionCity: useRef(null),
+    regionDistrict: useRef(null),
+  };
+  const registerSubmitRef = useRef(null);
 
   const registerDistrictOptions = useMemo(
     () => getDistrictOptions(registerForm.regionCity),
@@ -1641,30 +1653,48 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     }
   }
 
+  function focusRegisterField(fieldKey) {
+    const target = registerFieldRefs[fieldKey]?.current || registerSubmitRef.current;
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (typeof target.focus === "function") {
+      requestAnimationFrame(() => target.focus());
+    }
+  }
+
   async function handleRegisterSubmit() {
-    if (
-      !registerForm.name.trim() ||
-      !registerForm.email.trim() ||
-      !registerForm.password.trim() ||
-      !registerForm.groupName.trim() ||
-      !registerForm.regionCity ||
-      !registerForm.regionDistrict ||
-      !registerForm.division
-    ) {
+    const nextFieldErrors = {};
+
+    if (!registerForm.name.trim()) nextFieldErrors.name = true;
+    if (!registerForm.email.trim()) nextFieldErrors.email = true;
+    if (!registerForm.password.trim()) nextFieldErrors.password = true;
+    if (!registerForm.groupName.trim()) nextFieldErrors.groupName = true;
+    if (!registerForm.regionCity) nextFieldErrors.regionCity = true;
+    if (!registerForm.regionDistrict) nextFieldErrors.regionDistrict = true;
+    if (!registerForm.division) nextFieldErrors.division = true;
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setRegisterFieldErrors(nextFieldErrors);
       setError("해당 칸을 입력 후 버튼을 눌러주세요.");
+      focusRegisterField(Object.keys(nextFieldErrors)[0]);
       return;
     }
 
     if (!registerForm.email.includes("@")) {
-      setError("해당 칸을 입력 후 버튼을 눌러주세요.");
+      setRegisterFieldErrors({ email: true });
+      setError("이메일 형식을 확인해 주세요.");
+      focusRegisterField("email");
       return;
     }
 
     if (registerForm.password.length < 6) {
+      setRegisterFieldErrors({ password: true });
       setError("비밀번호는 최소 6자 이상이어야 합니다.");
+      focusRegisterField("password");
       return;
     }
 
+    setRegisterFieldErrors({});
     setError("");
     try {
       await onRegister({
@@ -1675,6 +1705,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
       });
     } catch (error) {
       setError(error.message || "회원가입에 실패했다.");
+      registerSubmitRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }
 
@@ -1724,12 +1755,6 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
               </Button>
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
-                <AlertCircle className="h-4 w-4" /> {error}
-              </div>
-            )}
-
             {mode === "login" ? (
               <div className="grid gap-4">
                 <div className="grid gap-2">
@@ -1766,6 +1791,12 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                   />
                 </div>
 
+                {error && (
+                  <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
+                    <AlertCircle className="h-4 w-4" /> {error}
+                  </div>
+                )}
+
                 <Button
                   type="button"
                   disabled={authLoading}
@@ -1781,39 +1812,67 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">이름</Label>
                   <Input
+                    ref={registerFieldRefs.name}
                     type="text"
                     value={registerForm.name}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, name: value }));
+                      if (value.trim()) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, name: false }));
+                      }
+                    }}
                     placeholder="이름 입력"
-                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.name ? "ring-2 ring-red-400" : ""}`}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">이메일</Label>
                   <Input
+                    ref={registerFieldRefs.email}
                     type="email"
                     value={registerForm.email}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, email: value }));
+                      if (value.trim() && value.includes("@")) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, email: false }));
+                      }
+                    }}
                     placeholder="이메일 입력"
-                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.email ? "ring-2 ring-red-400" : ""}`}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">비밀번호</Label>
                   <Input
+                    ref={registerFieldRefs.password}
                     type="password"
                     value={registerForm.password}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, password: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, password: value }));
+                      if (value.trim().length >= 6) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, password: false }));
+                      }
+                    }}
                     placeholder="비밀번호 입력"
-                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.password ? "ring-2 ring-red-400" : ""}`}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">학년/부문</Label>
                   <select
+                    ref={registerFieldRefs.division}
                     value={registerForm.division}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, division: e.target.value }))}
-                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, division: value }));
+                      if (value) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, division: false }));
+                      }
+                    }}
+                    className={`h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none ${registerFieldErrors.division ? "ring-2 ring-red-400" : ""}`}
                   >
                     {DIVISION_OPTIONS.map((item) => (
                       <option key={item} value={item}>{item}</option>
@@ -1823,6 +1882,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">성별</Label>
                   <select
+                    ref={registerFieldRefs.gender}
                     value={registerForm.gender}
                     onChange={(e) => setRegisterForm((prev) => ({ ...prev, gender: e.target.value }))}
                     className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
@@ -1835,19 +1895,33 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">소속</Label>
                   <Input
+                    ref={registerFieldRefs.groupName}
                     type="text"
                     value={registerForm.groupName}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, groupName: e.target.value }))}
-                    placeholder="예: 엘보샷"
-                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, groupName: value }));
+                      if (value.trim()) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, groupName: false }));
+                      }
+                    }}
+                    placeholder="예: 학교 이름 또는 팀 이름"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.groupName ? "ring-2 ring-red-400" : ""}`}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">지역(시/도)</Label>
                   <select
+                    ref={registerFieldRefs.regionCity}
                     value={registerForm.regionCity}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, regionCity: e.target.value, regionDistrict: "" }))}
-                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, regionCity: value, regionDistrict: "" }));
+                      if (value) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, regionCity: false, regionDistrict: false }));
+                      }
+                    }}
+                    className={`h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none ${registerFieldErrors.regionCity ? "ring-2 ring-red-400" : ""}`}
                   >
                     <option value="">지역 선택</option>
                     {REGION_OPTIONS.map((item) => (
@@ -1858,10 +1932,17 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">지역(구/군)</Label>
                   <select
+                    ref={registerFieldRefs.regionDistrict}
                     value={registerForm.regionDistrict}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, regionDistrict: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, regionDistrict: value }));
+                      if (value) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, regionDistrict: false }));
+                      }
+                    }}
                     disabled={!registerForm.regionCity}
-                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none disabled:bg-white/70"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none disabled:bg-white/70 ${registerFieldErrors.regionDistrict ? "ring-2 ring-red-400" : ""}`}
                   >
                     <option value="">구/군 선택</option>
                     {registerDistrictOptions.map((item) => (
@@ -1870,7 +1951,14 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                   </select>
                 </div>
 
+                {error && (
+                  <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
+                    <AlertCircle className="h-4 w-4" /> {error}
+                  </div>
+                )}
+
                 <Button
+                  ref={registerSubmitRef}
                   type="button"
                   disabled={authLoading}
                   className="h-12 rounded-2xl bg-blue-950 text-base font-semibold text-white hover:bg-blue-900 active:bg-blue-950 disabled:bg-blue-950 disabled:text-white"
