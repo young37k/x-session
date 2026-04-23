@@ -2156,7 +2156,7 @@ function SessionEditor({
     );
 
     if (session.recordInputType === "end") {
-      nextEnds = ensureTrailingEmptyEnd(nextEnds, session.arrowsPerEnd);
+      nextEnds = 
     }
 
     patchSession((prev) => {
@@ -2169,7 +2169,7 @@ function SessionEditor({
           : end
       );
       if (prev.recordInputType === "end") {
-        updatedEnds = ensureTrailingEmptyEnd(updatedEnds, prev.arrowsPerEnd);
+        updatedEnds = 
       }
       return {
         ...prev,
@@ -2225,7 +2225,7 @@ function SessionEditor({
     let emptyTarget = findFirstEmptyTarget(workingEnds);
 
     if (!emptyTarget) {
-      workingEnds = ensureTrailingEmptyEnd(workingEnds, session.arrowsPerEnd);
+      workingEnds = 
       emptyTarget = findFirstEmptyTarget(workingEnds);
     }
     if (!emptyTarget) return;
@@ -2300,7 +2300,7 @@ function SessionEditor({
       const filtered = (prev.distanceRounds || []).filter((round) => round.id !== roundId);
       const nextRounds = filtered.length
         ? filtered.map((round, idx) => ({ ...round, index: idx + 1 }))
-        : [createEmptyDistanceRound(1, prev.distance || 70)];
+        : [createEmptyDistanceRound(1, prev.distance || 30)];
       return { ...prev, distanceRounds: nextRounds };
     });
   }
@@ -2424,7 +2424,7 @@ function SessionEditor({
       return;
     }
 
-    addEnd();
+
   }
 
   function confirmOpponentScore(endId) {
