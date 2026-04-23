@@ -421,6 +421,9 @@ function buildSampleDistanceSession({
   date,
   title,
   division,
+  gender = "남",
+  regionCity = "경기도",
+  bowType = "리커브",
   clubName,
   groupName,
   distance,
@@ -449,6 +452,9 @@ function buildSampleDistanceSession({
     recordInputType: 'distance',
     distance,
     division,
+    gender,
+    regionCity,
+    bowType,
     clubName,
     groupName,
     arrowsPerEnd: 6,
@@ -650,6 +656,10 @@ const SAMPLE_SHEETS = [
     id: "sheet_2026_03_22",
     date: "2026-03-22",
     division: "초등4",
+    divisionCycle: ["초등4"],
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
     recordInputType: "distance",
     sheetLabel: "테스트기록지 2026-03-22",
     distances: [35, 30, 25, 20],
@@ -681,6 +691,10 @@ const SAMPLE_SHEETS = [
     id: "sheet_2026_04_12",
     date: "2026-04-12",
     division: "초등4",
+    divisionCycle: ["초등4"],
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
     recordInputType: "distance",
     sheetLabel: "테스트기록지 2026-04-12",
     distances: [35, 30, 25, 20],
@@ -709,17 +723,174 @@ const SAMPLE_SHEETS = [
       { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
     ],
   },
+  },
+  {
+    id: "sheet_2026_04_12_elem_boys_lower_validation",
+    date: "2026-04-12",
+    division: "초등1",
+    divisionCycle: ["초등1", "초등2", "초등3", "초등4"],
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "랭킹검증 2026-04-12 남자초등 U-11",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "김영재", school: "연무초등학교", rounds: [337, 342, 342, 351], total: 1372 },
+      { name: "유선유", school: "연무초등학교", rounds: [313, 324, 337, 345], total: 1319 },
+      { name: "박창영", school: "원미초등학교", rounds: [276, 310, 291, 302], total: 1179 },
+      { name: "박도현", school: "성포초등학교", rounds: [269, 291, 284, 329], total: 1173 },
+      { name: "장다준", school: "하성초등학교", rounds: [261, 231, 288, 314], total: 1094 },
+      { name: "최우빈", school: "천현초등학교", rounds: [239, 253, 294, 300], total: 1086 },
+      { name: "구교준", school: "천현초등학교", rounds: [179, 222, 266, 314], total: 981 },
+      { name: "오태준", school: "성포초등학교", rounds: [56, 0, 196, 282], total: 534 },
+    ],
+  },
+  {
+    id: "sheet_2026_04_12_elem_boys_upper_validation",
+    date: "2026-04-12",
+    division: "초등5",
+    divisionCycle: ["초등5", "초등6"],
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "랭킹검증 2026-04-12 남자초등 고학년",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "장은혁", school: "연무초등학교", rounds: [333, 349, 344, 357], total: 1383 },
+      { name: "김영재", school: "연무초등학교", rounds: [337, 342, 342, 351], total: 1372 },
+      { name: "최광빈", school: "천현초등학교", rounds: [339, 331, 345, 354], total: 1369 },
+      { name: "백종주", school: "천현초등학교", rounds: [328, 329, 343, 353], total: 1353 },
+      { name: "최수혁", school: "성포초등학교", rounds: [326, 342, 337, 347], total: 1352 },
+      { name: "이유현", school: "하성초등학교", rounds: [320, 338, 341, 343], total: 1342 },
+      { name: "정선우", school: "연무초등학교", rounds: [322, 330, 344, 345], total: 1341 },
+      { name: "김준서", school: "성포초등학교", rounds: [335, 318, 336, 340], total: 1329 },
+      { name: "임태서", school: "연무초등학교", rounds: [307, 315, 347, 353], total: 1322 },
+      { name: "유선유", school: "연무초등학교", rounds: [313, 324, 337, 345], total: 1319 },
+      { name: "배재윤", school: "성포초등학교", rounds: [316, 322, 334, 345], total: 1317 },
+      { name: "김영민", school: "연무초등학교", rounds: [305, 319, 334, 339], total: 1297 },
+    ],
+  },
+  {
+    id: "sheet_2026_04_12_elem_girls_lower_validation",
+    date: "2026-04-12",
+    division: "초등1",
+    divisionCycle: ["초등1", "초등2", "초등3", "초등4"],
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "랭킹검증 2026-04-12 여자초등 U-11",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
+      { name: "김태리", school: "하성초등학교", rounds: [298, 311, 322, 345], total: 1276 },
+      { name: "조유나", school: "수진초등학교", rounds: [292, 301, 319, 339], total: 1251 },
+      { name: "장윤혜", school: "송정초등학교", rounds: [294, 286, 320, 330], total: 1230 },
+      { name: "김서연", school: "수진초등학교", rounds: [262, 304, 323, 338], total: 1227 },
+      { name: "김설", school: "안양서초등학교", rounds: [270, 301, 315, 327], total: 1213 },
+      { name: "강민서", school: "여흥초등학교", rounds: [272, 288, 317, 325], total: 1202 },
+      { name: "김소율", school: "타깃28양궁클럽", rounds: [244, 275, 307, 332], total: 1158 },
+      { name: "홍지수", school: "송정초등학교", rounds: [257, 288, 294, 314], total: 1153 },
+      { name: "원율", school: "여흥초등학교", rounds: [242, 261, 308, 327], total: 1138 },
+      { name: "송의나", school: "수진초등학교", rounds: [246, 257, 307, 325], total: 1135 },
+      { name: "김민채", school: "천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
+    ],
+  },
+  {
+    id: "sheet_2026_04_12_elem_girls_upper_validation",
+    date: "2026-04-12",
+    division: "초등5",
+    divisionCycle: ["초등5", "초등6"],
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "랭킹검증 2026-04-12 여자초등 고학년",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "원서아", school: "하성초등학교", rounds: [343, 352, 346, 352], total: 1393 },
+      { name: "조유나", school: "하성초등학교", rounds: [325, 343, 339, 354], total: 1361 },
+      { name: "이다연", school: "송정초등학교", rounds: [320, 341, 344, 353], total: 1358 },
+      { name: "조유리", school: "수진초등학교", rounds: [319, 337, 350, 347], total: 1353 },
+      { name: "최호희", school: "원미초등학교", rounds: [318, 332, 352, 351], total: 1353 },
+      { name: "김도희", school: "원미초등학교", rounds: [321, 336, 342, 349], total: 1348 },
+      { name: "강연지", school: "송정초등학교", rounds: [326, 329, 342, 350], total: 1347 },
+      { name: "김태연", school: "송정초등학교", rounds: [318, 335, 336, 351], total: 1340 },
+      { name: "전다은", school: "하성초등학교", rounds: [313, 331, 344, 349], total: 1337 },
+      { name: "한윤서", school: "하성초등학교", rounds: [331, 328, 332, 344], total: 1335 },
+      { name: "곽나영", school: "원미초등학교", rounds: [311, 326, 344, 336], total: 1317 },
+      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
+    ],
+  },
+  {
+    id: "sheet_2026_04_12_middle_boys_validation",
+    date: "2026-04-12",
+    division: "중등1",
+    divisionCycle: ["중등1", "중등2", "중등3"],
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "랭킹검증 2026-04-12 남자중등부",
+    distances: [60, 50, 40, 30],
+    rows: [
+      { name: "안은찬", school: "성포중학교", rounds: [338, 322, 347, 357], total: 1364 },
+      { name: "이한지", school: "신장중학교", rounds: [328, 313, 345, 346], total: 1332 },
+      { name: "이주환", school: "원천중학교", rounds: [318, 329, 337, 346], total: 1330 },
+      { name: "안준서", school: "원천중학교", rounds: [319, 327, 331, 348], total: 1325 },
+      { name: "황태민", school: "하성중학교", rounds: [342, 303, 334, 341], total: 1320 },
+      { name: "손우주", school: "수원시양궁협회", rounds: [324, 308, 331, 350], total: 1313 },
+      { name: "서은민", school: "성포중학교", rounds: [328, 297, 333, 348], total: 1306 },
+      { name: "권종영", school: "원천중학교", rounds: [319, 302, 337, 345], total: 1303 },
+      { name: "홍지훈", school: "성포중학교", rounds: [307, 319, 331, 341], total: 1298 },
+      { name: "강민국", school: "신장중학교", rounds: [310, 320, 320, 348], total: 1298 },
+      { name: "박민교", school: "성포중학교", rounds: [317, 304, 333, 341], total: 1295 },
+      { name: "김준혁", school: "성포중학교", rounds: [320, 295, 336, 343], total: 1294 },
+    ],
+  },
+  {
+    id: "sheet_2026_04_12_middle_girls_validation",
+    date: "2026-04-12",
+    division: "중등1",
+    divisionCycle: ["중등1", "중등2", "중등3"],
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "랭킹검증 2026-04-12 여자중등부",
+    distances: [60, 50, 40, 30],
+    rows: [
+      { name: "장예진", school: "여흥중학교", rounds: [331, 324, 339, 351], total: 1345 },
+      { name: "김주은", school: "창용중학교", rounds: [331, 326, 331, 349], total: 1337 },
+      { name: "김연아", school: "창용중학교", rounds: [324, 305, 335, 352], total: 1316 },
+      { name: "박예주", school: "창용중학교", rounds: [322, 313, 334, 344], total: 1313 },
+      { name: "문도경", school: "여흥중학교", rounds: [313, 315, 338, 347], total: 1313 },
+      { name: "안지현", school: "창용중학교", rounds: [327, 306, 331, 345], total: 1309 },
+      { name: "주혜인", school: "창용중학교", rounds: [329, 299, 335, 344], total: 1307 },
+      { name: "최세진", school: "창용중학교", rounds: [316, 306, 330, 344], total: 1296 },
+      { name: "윤소미", school: "신장중학교", rounds: [316, 290, 341, 339], total: 1286 },
+      { name: "권수민", school: "성도중학교", rounds: [328, 272, 338, 348], total: 1286 },
+      { name: "허정아", school: "하성중학교", rounds: [317, 301, 321, 341], total: 1280 },
+      { name: "김보현", school: "여흥중학교", rounds: [310, 311, 317, 341], total: 1279 },
+    ],
+  }
 ];
 
-function makeSampleUserId(name, school) {
-  return `sample_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
+function makeSampleUserId(name, school, division = "") {
+  return `sample_${school}_${name}_${division}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
 }
 
 function buildPermanentSampleUsers() {
   const map = new Map();
   SAMPLE_SHEETS.forEach((sheet) => {
-    sheet.rows.forEach((row) => {
-      const id = makeSampleUserId(row.name, row.school);
+    sheet.rows.forEach((row, rowIndex) => {
+      const assignedDivision =
+        row.division ||
+        (sheet.divisionCycle?.length ? sheet.divisionCycle[rowIndex % sheet.divisionCycle.length] : null) ||
+        sheet.division;
+      const id = makeSampleUserId(row.name, row.school, assignedDivision);
       if (!map.has(id)) {
         map.set(id, {
           id,
@@ -729,11 +900,15 @@ function buildPermanentSampleUsers() {
           club: row.school,
           clubName: row.school,
           groupName: row.school,
-          division: sheet.division,
+          division: assignedDivision,
+          gender: row.gender || sheet.gender || "남",
+          regionCity: row.regionCity || sheet.regionCity || "경기도",
+          bowType: row.bowType || sheet.bowType || "리커브",
           avatar: "",
           photoURL: "",
           photoPath: "",
           isSampleData: true,
+          sampleSourceId: sheet.id,
         });
       }
     });
@@ -743,12 +918,19 @@ function buildPermanentSampleUsers() {
 
 function buildPermanentSampleSessions() {
   return SAMPLE_SHEETS.flatMap((sheet) =>
-    sheet.rows.map((row) =>
-      buildSampleDistanceSession({
-        userId: makeSampleUserId(row.name, row.school),
+    sheet.rows.map((row, rowIndex) => {
+      const assignedDivision =
+        row.division ||
+        (sheet.divisionCycle?.length ? sheet.divisionCycle[rowIndex % sheet.divisionCycle.length] : null) ||
+        sheet.division;
+      return buildSampleDistanceSession({
+        userId: makeSampleUserId(row.name, row.school, assignedDivision),
         date: sheet.date,
         title: `${sheet.sheetLabel} · ${row.name}`,
-        division: sheet.division,
+        division: assignedDivision,
+        gender: row.gender || sheet.gender || "남",
+        regionCity: row.regionCity || sheet.regionCity || "경기도",
+        bowType: row.bowType || sheet.bowType || "리커브",
         clubName: row.school,
         groupName: row.school,
         distance: sheet.distances[0],
@@ -757,20 +939,27 @@ function buildPermanentSampleSessions() {
           distance,
           total: row.rounds[idx],
         })),
-      })
-    )
+      });
+    })
   );
 }
 
 function buildCurrentUserPermanentSamples(userId) {
   if (!userId) return [];
-  return SAMPLE_SHEETS.map((sheet) => {
+  return SAMPLE_SHEETS.slice(0, 6).map((sheet) => {
     const row = sheet.rows[0];
+    const assignedDivision =
+      row.division ||
+      (sheet.divisionCycle?.length ? sheet.divisionCycle[0] : null) ||
+      sheet.division;
     return buildSampleDistanceSession({
       userId,
       date: sheet.date,
       title: `${sheet.sheetLabel}`,
-      division: sheet.division,
+      division: assignedDivision,
+      gender: row.gender || sheet.gender || "남",
+      regionCity: row.regionCity || sheet.regionCity || "경기도",
+      bowType: row.bowType || sheet.bowType || "리커브",
       clubName: row.school,
       groupName: row.school,
       distance: sheet.distances[0],
