@@ -1761,7 +1761,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <Button
                   type="button"
                   disabled={authLoading}
-                  className="h-12 rounded-2xl bg-blue-950 text-base font-semibold hover:bg-blue-900"
+                  className="h-12 rounded-2xl bg-blue-950 text-base font-semibold text-white hover:bg-blue-900 active:bg-blue-950 disabled:bg-blue-950 disabled:text-white"
                   onClick={handleLoginSubmit}
                 >
                   {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
@@ -1957,6 +1957,8 @@ function SessionEditor({
   const arrowRefs = useRef({});
   const endCardRefs = useRef({});
   const quickPanelRef = useRef(null);
+  const endCardRefs = useRef({});
+  const quickPanelRef = useRef(null);
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -1993,6 +1995,14 @@ function SessionEditor({
     if (session.mode === "set") {
       return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT", "CONFIRM"];
     }
+    return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M"];
+  }, [session.mode]);
+
+  const activeEndId = activeOpponentEndId || currentTarget?.endId || null;
+  const quickPanelOptions = useMemo(() => {
+    if (session.mode === "set") {
+      return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT", "CONFIRM"];
+    }
     return QUICK_SCORE_OPTIONS;
   }, [session.mode]);
 
@@ -2001,6 +2011,11 @@ function SessionEditor({
     const timer = setTimeout(() => setFlashKey(""), 220);
     return () => clearTimeout(timer);
   }, [flashKey]);
+
+  useEffect(() => {
+    if (!activeEndId) return;
+    scrollEndIntoView(activeEndId);
+  }, [activeEndId]);
 
   useEffect(() => {
     if (!activeEndId) return;
@@ -2042,6 +2057,28 @@ function SessionEditor({
     });
   }
 
+  function ensureTrailingEmptyEnd(ends, arrowsPerEnd) {
+    if (!Array.isArray(ends) || !ends.length) return [createEmptyEnd(1, arrowsPerEnd)];
+    const hasEmptyArrow = ends.some((end) => (end.arrows || []).some((arrow) => arrow === null));
+    if (hasEmptyArrow) return ends;
+    return [...ends, createEmptyEnd(ends.length + 1, arrowsPerEnd)];
+  }
+
+  function scrollEndIntoView(endId) {
+    if (!endId) return;
+    const target = endCardRefs.current[endId];
+    if (!target || typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      const quickHeight = quickPanelRef.current?.offsetHeight || 0;
+      const top = target.getBoundingClientRect().top + window.scrollY;
+      const offset = quickHeight + 96;
+      window.scrollTo({
+        top: Math.max(0, top - offset),
+        behavior: "smooth",
+      });
+    });
+  }
+
   function scrollEndIntoView(endId) {
     if (!endId) return;
     const target = endCardRefs.current[endId];
@@ -2050,7 +2087,7 @@ function SessionEditor({
     requestAnimationFrame(() => {
       const quickHeight = quickPanelRef.current?.offsetHeight || 0;
       const top = target.getBoundingClientRect().top + window.scrollY;
-      const offset = quickHeight + 72;
+      const offset = quickHeight + 16;
       window.scrollTo({
         top: Math.max(0, top - offset),
         behavior: "smooth",
@@ -2092,17 +2129,35 @@ function SessionEditor({
           ...prev,
           [pendingOpponentEnd.id]: prev[pendingOpponentEnd.id] ?? "",
         }));
+        scrollEndIntoView(pendingOpponentEnd.id);
         return;
       }
     }
 
     setActiveOpponentEndId(null);
+    const lastEmptyTarget = (() => {
+      const ends = nextSession.ends || [];
+      for (let endIndex = ends.length - 1; endIndex >= 0; endIndex -= 1) {
+        const end = ends[endIndex];
+        for (let i = end.arrows.length - 1; i >= 0; i -= 1) {
+          if (end.arrows[i] === null) {
+            return { endId: end.id, arrowIndex: i };
+          }
+        }
+      }
+      return null;
+    })();
+
+    if (lastEmptyTarget) {
+      scrollEndIntoView(lastEmptyTarget.endId);
+      focusArrowField(lastEmptyTarget.endId, lastEmptyTarget.arrowIndex);
+    }
   }
 
   function updateArrow(endId, arrowIndex, value, options = {}) {
     const { autoFocusNext = true, haptic = false } = options;
 
-    const nextEnds = session.ends.map((end) =>
+    let nextEnds = session.ends.map((end) =>
       end.id === endId
         ? {
             ...end,
@@ -2111,20 +2166,29 @@ function SessionEditor({
         : end
     );
 
-    patchSession((prev) => ({
-      ...prev,
-      ends: prev.ends.map((end) =>
+    if (session.recordInputType === "end") {
+      nextEnds = ensureTrailingEmptyEnd(nextEnds, session.arrowsPerEnd);
+    }
+
+    patchSession((prev) => {
+      let updatedEnds = prev.ends.map((end) =>
         end.id === endId
           ? {
               ...end,
               arrows: end.arrows.map((arrow, idx) => (idx === arrowIndex ? value : arrow)),
             }
           : end
-      ),
-    }));
+      );
+      if (prev.recordInputType === "end") {
+        updatedEnds = ensureTrailingEmptyEnd(updatedEnds, prev.arrowsPerEnd);
+      }
+      return {
+        ...prev,
+        ends: updatedEnds,
+      };
+    });
 
     if (haptic) triggerHaptic();
-
     setFlashKey(`${endId}_${arrowIndex}`);
 
     const updatedEnd = nextEnds.find((item) => item.id === endId);
@@ -2183,7 +2247,9 @@ function SessionEditor({
     const previous = history[history.length - 1];
     setHistory((h) => h.slice(0, -1));
     setSession(previous);
-    restoreInputFlow(previous);
+    requestAnimationFrame(() => {
+      restoreInputFlow(previous);
+    });
   }
 
   function resetEnd(endId) {
@@ -2385,26 +2451,6 @@ function SessionEditor({
     triggerHaptic(10);
     const nextValue = `${String(opponentInputBuffers[endId] ?? "")}${digit}`.slice(0, 2);
     setOpponentBuffer(endId, nextValue);
-    if (nextValue.length >= 2) {
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          setOpponentInputBuffers((prev) => {
-            const latest = String(prev[endId] ?? nextValue);
-            if (latest !== "") {
-              const value = Math.max(0, Number(latest) || 0);
-              patchSession((sessionPrev) => ({
-                ...sessionPrev,
-                ends: sessionPrev.ends.map((item) =>
-                  item.id === endId ? { ...item, opponentTotal: value, opponentScoreEntered: true } : item
-                ),
-              }));
-              moveToNextEndFromOpponent(endId);
-            }
-            return prev;
-          });
-        }, 0);
-      });
-    }
   }
 
   function handleOpponentKeypadDelete(endId) {
@@ -2532,7 +2578,7 @@ function SessionEditor({
                 <div className="flex-1">
                   <Select
                     value={String(session.distance)}
-                    onValueChange={(value) => patchSession((prev) => ({ ...prev, distance: Number(value) || 30 }))}
+                    onValueChange={(value) => patchSession((prev) => ({ ...prev, distance: Number(value) }))}
                   >
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="거리 선택" />
@@ -2627,7 +2673,7 @@ function SessionEditor({
                         <Button
                           key={String(score)}
                           variant="outline"
-                          className={`${getQuickButtonClass(score)} text-sm font-semibold`}
+                          className={getQuickButtonClass(score)}
                           onClick={() => quickInputScore(score)}
                           disabled={
                             score === "CONFIRM"
@@ -2635,7 +2681,7 @@ function SessionEditor({
                               : false
                           }
                         >
-                          <span>{score === "EDIT" ? "점수수정" : score === "CONFIRM" ? "확인" : score}</span>
+                          {score === "EDIT" ? "점수수정" : score === "CONFIRM" ? "확인" : score}
                         </Button>
                       ))}
                     </div>
