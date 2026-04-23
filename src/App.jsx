@@ -113,8 +113,8 @@ const DIVISION_OPTIONS = [
 ];
 const GENDER_OPTIONS = ["남", "여"];
 const RANKING_GROUP_OPTIONS = [
-  "저학년",
-  "고학년",
+  "초등부(저학년)",
+  "초등부(고학년)",
   "중등부",
   "고등부(남)",
   "고등부(여)",
@@ -142,8 +142,8 @@ const DIVISION_DISTANCE_RULES = {
 };
 
 const RANKING_GROUP_DISTANCE_RULES = {
-  "저학년": [35, 30, 25, 20],
-  "고학년": [35, 30, 25, 20],
+  "초등부(저학년)": [35, 30, 25, 20],
+  "초등부(고학년)": [35, 30, 25, 20],
   "중등부": [60, 50, 40, 30],
   "고등부(남)": [90, 70, 50, 30],
   "고등부(여)": [70, 60, 50, 30],
@@ -348,8 +348,8 @@ function formatGroupDisplayName(value) {
 function getRankingGroup(division, gender) {
   const d = String(division || "").trim();
   const g = String(gender || "남").trim();
-  if (/^초등[1-4]$/.test(d)) return "저학년";
-  if (/^초등[5-6]$/.test(d)) return "고학년";
+  if (/^초등[1-4]$/.test(d)) return "초등부(저학년)";
+  if (/^초등[5-6]$/.test(d)) return "초등부(고학년)";
   if (/^중등[1-3]$/.test(d)) return "중등부";
   if (/^고등[1-3]$/.test(d)) return g === "여" ? "고등부(여)" : "고등부(남)";
   if (d === "대학부" || d === "일반부") return g === "여" ? "대학/일반부(여)" : "대학/일반부(남)";
@@ -3490,12 +3490,12 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
   const rankingGuide =
     rankingType === "distance"
-      ? "36발 경기 기준, 랭킹 구분별 필수 거리 조건을 충족한 최고 기록 점수로 순위가 결정됩니다."
+      ? "36발 경기 기준, 학년/부문별 필수 거리 조건을 충족한 최고 기록 점수로 순위가 결정됩니다."
       : rankingType === "total"
-        ? "랭킹 구분별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다."
+        ? "학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다."
         : rankingType === "weeklyDistance"
-          ? "최근 7일 기준, 랭킹 구분별 필수 거리 조건을 충족한 최고 점수로 순위가 결정됩니다."
-          : "최근 7일 동안 랭킹 구분별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
+          ? "최근 7일 기준, 학년/부문별 필수 거리 조건을 충족한 최고 점수로 순위가 결정됩니다."
+          : "최근 7일 동안 학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
 
   return (
     <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
@@ -3846,9 +3846,9 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">랭킹 구분</Label>
+              <Label className="w-16 shrink-0 text-sm">학년/부문</Label>
               <select value={requiredFilters.rankingGroup} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, rankingGroup: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                <option value="">랭킹 구분 선택</option>
+                <option value="">학년/부문 선택</option>
                 {RANKING_GROUP_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
             </div>
