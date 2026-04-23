@@ -124,21 +124,21 @@ const RANKING_GROUP_OPTIONS = [
 const DISTANCE_OPTIONS = [18, 20, 25, 30, 35, 40, 50, 60, 70, 90];
 
 const DIVISION_DISTANCE_RULES = {
-  "초등1": [35, 30, 25, 20],
-  "초등2": [35, 30, 25, 20],
-  "초등3": [35, 30, 25, 20],
-  "초등4": [35, 30, 25, 20],
-  "초등5": [35, 30, 25, 20],
-  "초등6": [35, 30, 25, 20],
-  "중등1": [60, 50, 40, 30],
-  "중등2": [60, 50, 40, 30],
-  "중등3": [60, 50, 40, 30],
-  "고등1": [70, 60, 50, 30],
-  "고등2": [70, 60, 50, 30],
-  "고등3": [70, 60, 50, 30],
-  "대학부": [70, 60, 50, 30],
-  "일반부": [70, 60, 50, 30],
-  "국가대표": [70],
+  "초등1": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등2": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등3": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등4": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등5": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등6": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "중등1": { 남: [60, 50, 40, 30], 여: [60, 50, 40, 30] },
+  "중등2": { 남: [60, 50, 40, 30], 여: [60, 50, 40, 30] },
+  "중등3": { 남: [60, 50, 40, 30], 여: [60, 50, 40, 30] },
+  "고등1": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "고등2": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "고등3": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "대학부": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "일반부": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "국가대표": { 남: [70], 여: [70] },
 };
 
 const RANKING_GROUP_DISTANCE_RULES = {
@@ -1237,8 +1237,12 @@ function buildRivalComparison(mySessions, rivalSessions, mode, matchType) {
 }
 
 
-function getRequiredDistancesForDivision(division) {
-  return DIVISION_DISTANCE_RULES[division] || [];
+function getRequiredDistancesForDivision(division, gender = "남") {
+  const rule = DIVISION_DISTANCE_RULES[division];
+  if (!rule) return [];
+  if (Array.isArray(rule)) return rule;
+  const normalizedGender = String(gender || "남").trim() === "여" ? "여" : "남";
+  return rule[normalizedGender] || rule.남 || rule.여 || [];
 }
 
 function isWithinRecent7Days(sessionDate) {
@@ -5083,7 +5087,6 @@ function XSessionApp() {
         regionCity: payload.regionCity || "",
         regionDistrict: payload.regionDistrict || "",
         division: payload.division || "",
-        gender: payload.gender || "남",
         gender: payload.gender || "남",
         role: "player",
         status: "active",
