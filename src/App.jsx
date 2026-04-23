@@ -119,7 +119,8 @@ const RANKING_GROUP_OPTIONS = [
   "고등부(남)",
   "고등부(여)",
   "대학/일반부(남)",
-  "대학/일반부(여)"
+  "대학/일반부(여)",
+  "국가대표"
 ];
 const DISTANCE_OPTIONS = [18, 20, 25, 30, 35, 40, 50, 60, 70, 90];
 
@@ -149,6 +150,7 @@ const RANKING_GROUP_DISTANCE_RULES = {
   "고등부(여)": [70, 60, 50, 30],
   "대학/일반부(남)": [90, 70, 50, 30],
   "대학/일반부(여)": [70, 60, 50, 30],
+  "국가대표": [70],
 };
 
 
@@ -353,6 +355,7 @@ function getRankingGroup(division, gender) {
   if (/^중등[1-3]$/.test(d)) return "중등부";
   if (/^고등[1-3]$/.test(d)) return g === "여" ? "고등부(여)" : "고등부(남)";
   if (d === "대학부" || d === "일반부") return g === "여" ? "대학/일반부(여)" : "대학/일반부(남)";
+  if (d === "국가대표") return "국가대표";
   return "";
 }
 
@@ -571,6 +574,76 @@ function buildTestRecordSheets(userId) {
     }),
   ];
 }
+
+
+const OFFICIAL_RESULT_SOURCES = [
+  {
+    id: "official_recurve_2026_04_12_elem_boys_lower_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "초등부(저학년)",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "남자초등 U-11 경기결과 사진 기반 원본 등록",
+  },
+  {
+    id: "official_recurve_2026_04_12_elem_boys_upper_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "초등부(고학년)",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "남자초등부 경기결과 사진 기반 원본 등록",
+  },
+  {
+    id: "official_recurve_2026_04_12_elem_girls_lower_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(저학년)",
+    sourceType: "structured_rows",
+    status: "rows_structured",
+    notes: "기존 앱 샘플 데이터(2026-04-12 초등4) 사용",
+  },
+  {
+    id: "official_recurve_2026_04_12_elem_girls_upper_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(고학년)",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "여자초등부 경기결과 사진 기반 원본 등록",
+  },
+  {
+    id: "official_recurve_2026_04_12_middle_boys_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "남자중등부 경기결과 사진 기반 원본 등록",
+  },
+  {
+    id: "official_recurve_2026_04_12_middle_girls_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "여자중등부 경기결과 사진 기반 원본 등록",
+  },
+];
 
 const SAMPLE_SHEETS = [
   {
