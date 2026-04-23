@@ -1993,7 +1993,7 @@ function SessionEditor({
     if (session.mode === "set") {
       return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT", "CONFIRM"];
     }
-    return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M"];
+    return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT", "CONFIRM"];
   }, [session.mode]);
 
   useEffect(() => {
