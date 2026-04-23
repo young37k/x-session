@@ -2671,7 +2671,9 @@ function SessionEditor({
                         <Button
                           key={String(score)}
                           variant="outline"
-                          className={`${getQuickButtonClass(score)} text-sm font-semibold`}
+                          className={`${getQuickButtonClass(score)} text-sm font-semibold ${
+                            score === "CONFIRM" ? "!text-white disabled:!text-slate-500 disabled:opacity-100" : ""
+                          }`}
                           onClick={() => quickInputScore(score)}
                           disabled={
                             score === "CONFIRM"
@@ -2679,7 +2681,7 @@ function SessionEditor({
                               : false
                           }
                         >
-                          <span>{score === "CONFIRM" ? <span className="font-bold text-white">확인</span> : score === "EDIT" ? "점수수정" : score}</span>
+                          {score === "CONFIRM" ? "확인" : score === "EDIT" ? "점수수정" : score}
                         </Button>
                       ))}
                     </div>
