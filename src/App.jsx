@@ -723,7 +723,6 @@ const SAMPLE_SHEETS = [
       { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
     ],
   },
-  },
   {
     id: "sheet_2026_04_12_elem_boys_lower_validation",
     date: "2026-04-12",
