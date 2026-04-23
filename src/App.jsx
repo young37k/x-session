@@ -2683,7 +2683,7 @@ function SessionEditor({
                   }}
                   className="rounded-[28px] border-0 bg-white shadow-xl"
                 >
-                  <CardContent className="p-3 sm:p-4 md:p-5">
+                  <CardContent className="px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div className="text-base font-semibold">End {end.index}</div>
