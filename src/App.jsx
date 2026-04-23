@@ -1957,8 +1957,6 @@ function SessionEditor({
   const arrowRefs = useRef({});
   const endCardRefs = useRef({});
   const quickPanelRef = useRef(null);
-  const endCardRefs = useRef({});
-  const quickPanelRef = useRef(null);
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -1998,24 +1996,11 @@ function SessionEditor({
     return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M"];
   }, [session.mode]);
 
-  const activeEndId = activeOpponentEndId || currentTarget?.endId || null;
-  const quickPanelOptions = useMemo(() => {
-    if (session.mode === "set") {
-      return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT", "CONFIRM"];
-    }
-    return QUICK_SCORE_OPTIONS;
-  }, [session.mode]);
-
   useEffect(() => {
     if (!flashKey) return;
     const timer = setTimeout(() => setFlashKey(""), 220);
     return () => clearTimeout(timer);
   }, [flashKey]);
-
-  useEffect(() => {
-    if (!activeEndId) return;
-    scrollEndIntoView(activeEndId);
-  }, [activeEndId]);
 
   useEffect(() => {
     if (!activeEndId) return;
