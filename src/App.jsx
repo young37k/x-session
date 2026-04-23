@@ -2026,6 +2026,22 @@ function SessionEditor({
     setHistory((h) => [...h.slice(-29), JSON.parse(JSON.stringify(prev))]);
   }
 
+  function getInputUndoSignature(targetSession) {
+    return JSON.stringify(
+      (targetSession?.ends || []).map((end) => ({
+        id: end.id,
+        arrows: end.arrows || [],
+        opponentTotal: end.opponentTotal ?? 0,
+        opponentScoreEntered: Boolean(end.opponentScoreEntered),
+      }))
+    );
+  }
+
+  const canUndoLastInput = useMemo(() => {
+    const currentSignature = getInputUndoSignature(session);
+    return history.some((item) => getInputUndoSignature(item) !== currentSignature);
+  }, [history, session]);
+
   function reindexEnds(ends) {
     return ends.map((end, idx) => ({ ...end, index: idx + 1 }));
   }
@@ -2254,10 +2270,22 @@ function SessionEditor({
   }
 
   function undoLast() {
-    if (!history.length) return;
+    if (!canUndoLastInput || !history.length) return;
+
+    const currentSignature = getInputUndoSignature(session);
+    let targetIndex = -1;
+    for (let i = history.length - 1; i >= 0; i -= 1) {
+      if (getInputUndoSignature(history[i]) !== currentSignature) {
+        targetIndex = i;
+        break;
+      }
+    }
+
+    if (targetIndex === -1) return;
+
     suppressAutoScrollRef.current = true;
-    const previous = history[history.length - 1];
-    setHistory((h) => h.slice(0, -1));
+    const previous = history[targetIndex];
+    setHistory((h) => h.slice(0, targetIndex));
     setSession(previous);
     requestAnimationFrame(() => {
       restoreInputFlow(previous);
@@ -2693,7 +2721,7 @@ function SessionEditor({
                         variant="outline"
                         className="h-9 rounded-2xl px-3 text-xs sm:text-sm"
                         onClick={undoLast}
-                        disabled={!history.length}
+                        disabled={!canUndoLastInput}
                       >
                         <Undo2 className="mr-2 h-4 w-4" /> 마지막 입력 취소
                       </Button>
