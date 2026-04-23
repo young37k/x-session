@@ -230,6 +230,7 @@ const DATE_FILTER_OPTIONS = [
   { value: "yesterday", label: "전일" },
   { value: "7days", label: "최근 7일" },
   { value: "30days", label: "최근 30일" },
+  { value: "custom", label: "날짜 지정" },
 ];
 const PERIOD_OPTIONS = [
   { value: "end", label: "엔드별" },
@@ -961,7 +962,7 @@ function getSessionDayKey(session) {
   return toLocalDateKey(session?.sessionDate);
 }
 
-function isWithinDateFilter(sessionDate, dateFilter) {
+function isWithinDateFilter(sessionDate, dateFilter, customDate = "") {
   if (!sessionDate || dateFilter === "all") return true;
   const target = new Date(sessionDate);
   const today = new Date();
@@ -990,6 +991,11 @@ function isWithinDateFilter(sessionDate, dateFilter) {
     const start = new Date(today);
     start.setDate(start.getDate() - 29);
     return targetOnly >= start && targetOnly <= today;
+  }
+
+  if (dateFilter === "custom") {
+    if (!customDate) return false;
+    return toLocalDateKey(sessionDate) === toLocalDateKey(customDate);
   }
 
   return true;
@@ -2683,7 +2689,7 @@ function SessionEditor({
                   }}
                   className="rounded-[28px] border-0 bg-white shadow-xl"
                 >
-                  <CardContent className="px-3 py-2 sm:px-4 sm:py-3 md:px-5 md:py-4">
+                  <CardContent className="p-3 sm:p-4 md:p-5">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div className="text-base font-semibold">End {end.index}</div>
@@ -3503,6 +3509,11 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   const [period, setPeriod] = useState("day");
   const [matchType, setMatchType] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+  const [customAnalysisDate, setCustomAnalysisDate] = useState(getCurrentLocalDateString());
+  const [isCompactChartMobile, setIsCompactChartMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 640;
+  });
   const [requiredFilters, setRequiredFilters] = useState({
     distance: "",
     rankingGroup: "",
@@ -3541,6 +3552,38 @@ function AnalysisBoard({ currentUser, users, sessions }) {
     }
   }, [selectedRival, filteredRivalCandidates]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const handleResize = () => {
+      setIsCompactChartMobile(window.innerWidth < 640);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const chartUi = useMemo(
+    () => ({
+      xTickFontSize: isCompactChartMobile ? 10 : 11,
+      yTickFontSize: isCompactChartMobile ? 10 : 11,
+      tickMargin: isCompactChartMobile ? 6 : 8,
+      yAxisWidth: isCompactChartMobile ? 40 : 30,
+      lineLeftMargin: isCompactChartMobile ? 8 : -8,
+      scoreBarLeftMargin: isCompactChartMobile ? 18 : 6,
+      distanceBarLeftMargin: isCompactChartMobile ? 16 : 4,
+      chartRightMargin: isCompactChartMobile ? 8 : 6,
+      barMaxScore: isCompactChartMobile ? 24 : 30,
+      barMaxDistance: isCompactChartMobile ? 28 : 36,
+      legendPaddingTop: isCompactChartMobile ? 8 : 12,
+      dotRadius: isCompactChartMobile ? 3 : 4,
+      activeDotRadius: isCompactChartMobile ? 5 : 6,
+      strokeWidth: isCompactChartMobile ? 2.5 : 3,
+    }),
+    [isCompactChartMobile]
+  );
+
   const isReady = Boolean(requiredFilters.distance && requiredFilters.rankingGroup);
 
   const filteredMine = allMySessions.filter(
@@ -3549,7 +3592,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
       String(s.distance) === String(requiredFilters.distance) &&
       getRankingGroup(s.division || currentUser.division || "", s.gender || currentUser.gender || "남") === requiredFilters.rankingGroup &&
       (requiredFilters.regionCity === "all" ? true : (s.regionCity || currentUser.regionCity || "") === requiredFilters.regionCity) &&
-      isWithinDateFilter(s.sessionDate, dateFilter)
+      isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)
   );
 
   const rivalUser = users.find((u) => u.id === selectedRival);
@@ -3562,14 +3605,14 @@ function AnalysisBoard({ currentUser, users, sessions }) {
         String(s.distance) === String(requiredFilters.distance) &&
         getRankingGroup(s.division || rivalUser?.division || "", s.gender || rivalUser?.gender || "남") === requiredFilters.rankingGroup &&
         (requiredFilters.regionCity === "all" ? true : (s.regionCity || rivalUser?.regionCity || "") === requiredFilters.regionCity) &&
-        isWithinDateFilter(s.sessionDate, dateFilter)
+        isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)
     );
 
   const analytics = useMemo(() => buildAnalyticsData(filteredMine, period, matchType), [filteredMine, period, matchType]);
   const comparison = useMemo(() => buildRivalComparison(filteredMine, rivalSessions, period, matchType), [filteredMine, rivalSessions, period, matchType]);
   const rivalLabel = getDisplayName(rivalUser);
   const trend = getTrendInsight(filteredMine);
-  const distancePerformance = getDistancePerformance(allMySessions.filter((s) => isWithinDateFilter(s.sessionDate, dateFilter)));
+  const distancePerformance = getDistancePerformance(allMySessions.filter((s) => isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)));
   const weakZoneInsight = getWeakZoneInsight(filteredMine);
 
   return (
@@ -3612,11 +3655,21 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">날짜</Label>
-              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                {DATE_FILTER_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
-                ))}
-              </select>
+              <div className="min-w-0 flex-1 space-y-2">
+                <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+                  {DATE_FILTER_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
+                </select>
+                {dateFilter === "custom" && (
+                  <input
+                    type="date"
+                    value={customAnalysisDate}
+                    onChange={(e) => setCustomAnalysisDate(e.target.value)}
+                    className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+                  />
+                )}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -3640,7 +3693,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
           {!isReady ? (
             <div className="rounded-3xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-              분석 결과를 보려면 거리와 학년/부문을 선택해야 한다.
+              분석을 원하는 조건을 선택하세요.
             </div>
           ) : (
             <>
@@ -3674,13 +3727,13 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                   <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 변화</div>
                   <div className="h-[320px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={analytics} margin={{ top: 8, right: 6, left: -8, bottom: 0 }}>
+                      <LineChart data={analytics} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.lineLeftMargin, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
-                        <YAxis domain={[0, 10]} width={28} tick={{ fontSize: 11 }} />
+                        <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
+                        <YAxis domain={[0, 10]} width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
                         <Tooltip />
-                        <Legend wrapperStyle={{ paddingTop: 12 }} />
-                        <Line type="monotone" dataKey="avgArrow" name="평균 화살 점수" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.avg }} activeDot={{ r: 6 }} />
+                        <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
+                        <Line type="monotone" dataKey="avgArrow" name="평균 화살 점수" stroke={CHART_COLORS.avg} strokeWidth={chartUi.strokeWidth} dot={{ r: chartUi.dotRadius, fill: CHART_COLORS.avg }} activeDot={{ r: chartUi.activeDotRadius }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -3690,13 +3743,13 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                   <div className="mb-3 text-sm font-semibold text-slate-700">구간별 총점</div>
                   <div className="h-[320px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={analytics} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
+                      <BarChart data={analytics} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.scoreBarLeftMargin, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
-                        <YAxis width={30} tick={{ fontSize: 11 }} />
+                        <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
+                        <YAxis width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
                         <Tooltip />
-                        <Legend wrapperStyle={{ paddingTop: 12 }} />
-                        <Bar dataKey="score" name="총점" fill={CHART_COLORS.score} radius={[8, 8, 0, 0]} maxBarSize={30} />
+                        <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
+                        <Bar dataKey="score" name="총점" fill={CHART_COLORS.score} radius={[8, 8, 0, 0]} maxBarSize={chartUi.barMaxScore} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -3707,13 +3760,13 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                 <div className="mb-3 text-sm font-semibold text-slate-700">거리별 성능 비교</div>
                 <div className="h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={distancePerformance} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
+                    <BarChart data={distancePerformance} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.distanceBarLeftMargin, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
-                      <YAxis domain={[0, 10]} width={28} tick={{ fontSize: 11 }} />
+                      <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
+                      <YAxis domain={[0, 10]} width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
                       <Tooltip />
-                      <Legend wrapperStyle={{ paddingTop: 12 }} />
-                      <Bar dataKey="avgArrow" name="거리별 평균 화살 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} maxBarSize={36} />
+                      <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
+                      <Bar dataKey="avgArrow" name="거리별 평균 화살 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} maxBarSize={chartUi.barMaxDistance} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -3769,14 +3822,14 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 비교</div>
             <div className="h-[340px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={comparison} margin={{ top: 8, right: 6, left: -6, bottom: 0 }}>
+                <LineChart data={comparison} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.lineLeftMargin, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
-                  <YAxis domain={[0, 10]} width={28} tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
+                  <YAxis domain={[0, 10]} width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
                   <Tooltip />
-                  <Legend wrapperStyle={{ paddingTop: 12 }} />
-                  <Line type="monotone" dataKey="나" stroke={CHART_COLORS.me} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.me }} />
-                  <Line type="monotone" dataKey="라이벌" stroke={CHART_COLORS.rival} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.rival }} />
+                  <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
+                  <Line type="monotone" dataKey="나" stroke={CHART_COLORS.me} strokeWidth={chartUi.strokeWidth} dot={{ r: chartUi.dotRadius, fill: CHART_COLORS.me }} activeDot={{ r: chartUi.activeDotRadius }} />
+                  <Line type="monotone" dataKey="라이벌" stroke={CHART_COLORS.rival} strokeWidth={chartUi.strokeWidth} dot={{ r: chartUi.dotRadius, fill: CHART_COLORS.rival }} activeDot={{ r: chartUi.activeDotRadius }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
