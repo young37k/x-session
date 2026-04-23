@@ -2483,7 +2483,7 @@ function SessionEditor({
       return `${base} border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100`;
     }
     if (score === "CONFIRM") {
-      return `${base} border-blue-300 bg-blue-900 text-white hover:bg-blue-800`;
+      return `${base} border-blue-300 bg-blue-900 !text-white hover:bg-blue-800`;
     }
     if (Number(score) === 0) {
       return `${base} ${isActive ? "border-slate-500 bg-slate-200 text-slate-900 shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`;
@@ -2679,7 +2679,7 @@ function SessionEditor({
                               : false
                           }
                         >
-                          <span>{score === "EDIT" ? "점수수정" : score === "CONFIRM" ? "확인" : score}</span>
+                          <span>{score === "CONFIRM" ? <span className="font-bold !text-white">확인</span> : score === "EDIT" ? "점수수정" : score}</span>
                         </Button>
                       ))}
                     </div>
