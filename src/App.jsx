@@ -363,6 +363,7 @@ function getRequiredDistancesForRankingGroup(rankingGroup) {
 function normalizeSessionShape(session, profile = null) {
   const safe = session || {};
   const arrowsPerEnd = safe.arrowsPerEnd || 6;
+  const defaultEndCount = safe.mode === "set" ? 1 : (safe.totalEnds || 6);
   const ends = Array.isArray(safe.ends) && safe.ends.length
     ? safe.ends.map((end, idx) => ({
         id: end.id || uid("end"),
@@ -371,7 +372,7 @@ function normalizeSessionShape(session, profile = null) {
         opponentTotal: end.opponentTotal || 0,
         opponentScoreEntered: Boolean(end.opponentScoreEntered),
       }))
-    : Array.from({ length: safe.totalEnds || 6 }, (_, i) => createEmptyEnd(i + 1, arrowsPerEnd));
+    : Array.from({ length: defaultEndCount }, (_, i) => createEmptyEnd(i + 1, arrowsPerEnd));
 
   const distanceRounds = Array.isArray(safe.distanceRounds) && safe.distanceRounds.length
     ? safe.distanceRounds.map((round, idx) => ({
@@ -450,7 +451,307 @@ function buildSampleDistanceSession({
     arrowsPerEnd: 6,
     arrowsPerDistance,
     totalEnds: 0,
-    ends: [createEmptyEnd(1, session?.arrowsPerEnd || 6)]).some((end) =>
+    ends: [],
+    distanceRounds,
+    isComplete: true,
+    isSampleData: true,
+    summary: {
+      totalScore,
+      totalArrows,
+      xCount: 0,
+      hitCount: 0,
+      averageArrow: totalArrows ? Number((totalScore / totalArrows).toFixed(2)) : 0,
+      averageEnd: distanceRounds.length ? Number((totalScore / distanceRounds.length).toFixed(2)) : 0,
+      setPointsMe: 0,
+      setPointsOpponent: 0,
+      bestEndScore: distanceRounds.length ? Math.max(...distanceRounds.map((r) => Number(r.total) || 0)) : 0,
+      worstEndScore: distanceRounds.length ? Math.min(...distanceRounds.map((r) => Number(r.total) || 0)) : 0,
+    },
+  };
+}
+
+function buildTestRecordSheets(userId) {
+  if (!userId) return [];
+  return [
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자초등 U-11',
+      division: '남자초등 U-11',
+      clubName: '연무초등학교',
+      groupName: '연무초등학교',
+      distance: 35,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 35, total: 337 },
+        { distance: 30, total: 342 },
+        { distance: 25, total: 342 },
+        { distance: 20, total: 351 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자초등 U-11',
+      division: '여자초등 U-11',
+      clubName: '천현초등학교',
+      groupName: '천현초등학교',
+      distance: 35,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 35, total: 305 },
+        { distance: 30, total: 325 },
+        { distance: 25, total: 339 },
+        { distance: 20, total: 343 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자 컴파운드',
+      division: '남자-컴파운드',
+      clubName: '팀 자이언트',
+      groupName: '팀 자이언트',
+      distance: 50,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 50, total: 354 },
+        { distance: 50, total: 347 },
+        { distance: 30, total: 356 },
+        { distance: 30, total: 358 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자 컴파운드',
+      division: '여자-컴파운드',
+      clubName: '신장중학교',
+      groupName: '신장중학교',
+      distance: 50,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 50, total: 328 },
+        { distance: 50, total: 324 },
+        { distance: 30, total: 339 },
+        { distance: 30, total: 348 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 남자중등부',
+      division: '남자중등부',
+      clubName: '성포중학교',
+      groupName: '성포중학교',
+      distance: 60,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 60, total: 338 },
+        { distance: 50, total: 322 },
+        { distance: 40, total: 347 },
+        { distance: 30, total: 357 },
+      ],
+    }),
+    buildSampleDistanceSession({
+      userId,
+      date: '2026-04-12',
+      title: '테스트기록지 · 여자중등부',
+      division: '여자중등부',
+      clubName: '여흥중학교',
+      groupName: '여흥중학교',
+      distance: 60,
+      arrowsPerDistance: 36,
+      rounds: [
+        { distance: 60, total: 331 },
+        { distance: 50, total: 324 },
+        { distance: 40, total: 339 },
+        { distance: 30, total: 351 },
+      ],
+    }),
+  ];
+}
+
+const SAMPLE_SHEETS = [
+  {
+    id: "sheet_2026_03_22",
+    date: "2026-03-22",
+    division: "초등4",
+    recordInputType: "distance",
+    sheetLabel: "테스트기록지 2026-03-22",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "황리우", school: "천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
+      { name: "김설", school: "안양서초등학교", rounds: [277, 312, 314, 332], total: 1235 },
+      { name: "김태리", school: "하성초등학교", rounds: [271, 302, 320, 334], total: 1227 },
+      { name: "조유나", school: "수진초등학교", rounds: [271, 302, 311, 326], total: 1210 },
+      { name: "장윤혜", school: "송정초등학교", rounds: [282, 288, 293, 336], total: 1199 },
+      { name: "원율", school: "여흥초등학교", rounds: [264, 291, 319, 310], total: 1184 },
+      { name: "김서우", school: "수진초등학교", rounds: [279, 276, 302, 291], total: 1148 },
+      { name: "홍지수", school: "송정초등학교", rounds: [248, 264, 294, 318], total: 1124 },
+      { name: "김소율", school: "타겟28양궁클럽", rounds: [278, 232, 272, 326], total: 1108 },
+      { name: "강민서", school: "여흥초등학교", rounds: [253, 263, 270, 303], total: 1089 },
+      { name: "조윤서", school: "안양서초등학교", rounds: [253, 242, 277, 300], total: 1072 },
+      { name: "송의나", school: "수진초등학교", rounds: [227, 270, 269, 304], total: 1070 },
+      { name: "백수연", school: "여흥초등학교", rounds: [202, 270, 275, 320], total: 1067 },
+      { name: "김윤서", school: "원미초등학교", rounds: [195, 255, 290, 301], total: 1041 },
+      { name: "백가은", school: "안양서초등학교", rounds: [165, 216, 273, 288], total: 942 },
+      { name: "김민채", school: "천현초등학교", rounds: [225, 213, 250, 243], total: 931 },
+      { name: "조예늘", school: "하성초등학교", rounds: [189, 203, 250, 278], total: 920 },
+      { name: "윤이진", school: "여흥초등학교", rounds: [145, 194, 231, 307], total: 877 },
+      { name: "고은", school: "안양서초등학교", rounds: [177, 212, 229, 255], total: 873 },
+      { name: "황리안", school: "천현초등학교", rounds: [159, 152, 209, 245], total: 765 },
+      { name: "이주아", school: "안양서초등학교", rounds: [65, 138, 117, 184], total: 504 },
+    ],
+  },
+  {
+    id: "sheet_2026_04_12",
+    date: "2026-04-12",
+    division: "초등4",
+    recordInputType: "distance",
+    sheetLabel: "테스트기록지 2026-04-12",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
+      { name: "김태리", school: "하성초등학교", rounds: [298, 311, 322, 345], total: 1276 },
+      { name: "조유나", school: "수진초등학교", rounds: [292, 301, 319, 339], total: 1251 },
+      { name: "장윤혜", school: "송정초등학교", rounds: [294, 286, 320, 330], total: 1230 },
+      { name: "김서우", school: "수진초등학교", rounds: [262, 304, 323, 338], total: 1227 },
+      { name: "김설", school: "안양서초등학교", rounds: [270, 301, 315, 327], total: 1213 },
+      { name: "강민서", school: "여흥초등학교", rounds: [272, 288, 317, 325], total: 1202 },
+      { name: "김소율", school: "타겟28양궁클럽", rounds: [244, 275, 307, 332], total: 1158 },
+      { name: "홍지수", school: "송정초등학교", rounds: [257, 288, 294, 314], total: 1153 },
+      { name: "원율", school: "여흥초등학교", rounds: [242, 261, 308, 327], total: 1138 },
+      { name: "송의나", school: "수진초등학교", rounds: [246, 257, 307, 325], total: 1135 },
+      { name: "김민채", school: "천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
+      { name: "백가은", school: "안양서초등학교", rounds: [238, 230, 272, 302], total: 1042 },
+      { name: "조예늘", school: "하성초등학교", rounds: [166, 242, 292, 304], total: 1004 },
+      { name: "백수연", school: "여흥초등학교", rounds: [179, 245, 252, 292], total: 968 },
+      { name: "김윤서", school: "원미초등학교", rounds: [165, 198, 258, 249], total: 870 },
+      { name: "조윤서", school: "안양서초등학교", rounds: [190, 230, 218, 223], total: 861 },
+      { name: "윤이진", school: "여흥초등학교", rounds: [139, 185, 252, 267], total: 843 },
+      { name: "고은", school: "안양서초등학교", rounds: [139, 185, 207, 260], total: 829 },
+      { name: "황리안", school: "천현초등학교", rounds: [157, 205, 211, 281], total: 755 },
+      { name: "김바다", school: "당정초등학교", rounds: [112, 151, 263, 312], total: 575 },
+      { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
+    ],
+  },
+];
+
+function makeSampleUserId(name, school) {
+  return `sample_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
+}
+
+function buildPermanentSampleUsers() {
+  const map = new Map();
+  SAMPLE_SHEETS.forEach((sheet) => {
+    sheet.rows.forEach((row) => {
+      const id = makeSampleUserId(row.name, row.school);
+      if (!map.has(id)) {
+        map.set(id, {
+          id,
+          uid: id,
+          name: row.name,
+          email: `${id}@sample.local`,
+          club: row.school,
+          clubName: row.school,
+          groupName: row.school,
+          division: sheet.division,
+          avatar: "",
+          photoURL: "",
+          photoPath: "",
+          isSampleData: true,
+        });
+      }
+    });
+  });
+  return Array.from(map.values());
+}
+
+function buildPermanentSampleSessions() {
+  return SAMPLE_SHEETS.flatMap((sheet) =>
+    sheet.rows.map((row) =>
+      buildSampleDistanceSession({
+        userId: makeSampleUserId(row.name, row.school),
+        date: sheet.date,
+        title: `${sheet.sheetLabel} · ${row.name}`,
+        division: sheet.division,
+        clubName: row.school,
+        groupName: row.school,
+        distance: sheet.distances[0],
+        arrowsPerDistance: 36,
+        rounds: sheet.distances.map((distance, idx) => ({
+          distance,
+          total: row.rounds[idx],
+        })),
+      })
+    )
+  );
+}
+
+function buildCurrentUserPermanentSamples(userId) {
+  if (!userId) return [];
+  return SAMPLE_SHEETS.map((sheet) => {
+    const row = sheet.rows[0];
+    return buildSampleDistanceSession({
+      userId,
+      date: sheet.date,
+      title: `${sheet.sheetLabel}`,
+      division: sheet.division,
+      clubName: row.school,
+      groupName: row.school,
+      distance: sheet.distances[0],
+      arrowsPerDistance: 36,
+      rounds: sheet.distances.map((distance, idx) => ({
+        distance,
+        total: row.rounds[idx],
+      })),
+    });
+  });
+}
+
+function scoreToNumber(v) {
+  if (v === "X") return 10;
+  if (v === "M") return 0;
+  return Number(v) || 0;
+}
+
+function uid(prefix = "id") {
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function getDisplayName(user) {
+  if (!user) return "이름없음";
+  const raw = String(user.name || "").trim();
+  if (raw) return raw;
+  const email = String(user.email || "").trim();
+  if (email.includes("@")) return email.split("@")[0];
+  return "이름없음";
+}
+
+function createEmptyEnd(index, arrowsPerEnd) {
+  return {
+    id: uid("end"),
+    index,
+    arrows: Array.from({ length: arrowsPerEnd }, () => null),
+    opponentTotal: 0,
+    opponentScoreEntered: false,
+  };
+}
+
+function createEmptyDistanceRound(index, distance = 70) {
+  return {
+    id: uid("round"),
+    index,
+    distance,
+    total: 0,
+  };
+}
+
+function isSessionContentEmpty(session) {
+  if (!session) return true;
+
+  const hasArrowInput = (session.ends || []).some((end) =>
     (end.arrows || []).some((arrow) => arrow !== null && arrow !== undefined && String(arrow).trim() !== "")
   );
 
@@ -470,6 +771,8 @@ function shouldAutoRefreshDraftSessionDate(session, editingSessionId) {
 }
 
 function createNewSession(profile, mode = "cumulative") {
+  const initialEndCount = mode === "set" ? 1 : 6;
+
   return {
     id: uid("draft"),
     title: `${mode === "set" ? "세트제" : "누적제"} X-Session`,
@@ -480,9 +783,9 @@ function createNewSession(profile, mode = "cumulative") {
     division: profile?.division || "",
     arrowsPerEnd: 6,
     arrowsPerDistance: 36,
-    totalEnds: 6,
+    totalEnds: initialEndCount,
     setPoints: { me: 0, opponent: 0 },
-    ends: [createEmptyEnd(1, session?.arrowsPerEnd || 6)] ,
+    ends: Array.from({ length: initialEndCount }, (_, i) => createEmptyEnd(i + 1, 6)),
     distanceRounds: [
       createEmptyDistanceRound(1, 35),
       createEmptyDistanceRound(2, 30),
@@ -1943,19 +2246,70 @@ function SessionEditor({
     const nextEnd = createEmptyEnd(nextIndex, session.arrowsPerEnd);
     patchSession((prev) => ({
       ...prev,
-      ends: [createEmptyEnd(1, session?.arrowsPerEnd || 6)]),
+      ends: [...prev.ends, nextEnd],
+    }));
+    requestAnimationFrame(() => {
+      scrollEndIntoView(nextEnd.id);
+      focusFirstArrowOfEnd(nextEnd.id);
+    });
+  }
+
+  function addDistanceRound() {
+    patchSession((prev) => ({
+      ...prev,
+      distanceRounds: [
+        ...(prev.distanceRounds || []),
+        createEmptyDistanceRound((prev.distanceRounds || []).length + 1, prev.distance || 30),
+      ],
+    }));
+  }
+
+  function updateDistanceRound(roundId, field, value) {
+    patchSession((prev) => ({
+      ...prev,
+      distanceRounds: (prev.distanceRounds || []).map((round) =>
+        round.id === roundId ? { ...round, [field]: value } : round
+      ),
+    }));
+  }
+
+  function removeDistanceRound(roundId) {
+    patchSession((prev) => {
+      const filtered = (prev.distanceRounds || []).filter((round) => round.id !== roundId);
+      const nextRounds = filtered.length
+        ? filtered.map((round, idx) => ({ ...round, index: idx + 1 }))
+        : [createEmptyDistanceRound(1, prev.distance || 30)];
+      return { ...prev, distanceRounds: nextRounds };
+    });
+  }
+
+  function confirmDeleteEnd() {
+    patchSession((prev) => {
+      const filtered = prev.ends.filter((end) => end.id !== deleteDialog.endId);
+      return {
+        ...prev,
+        ends: reindexEnds(filtered.length ? filtered : [createEmptyEnd(1, prev.arrowsPerEnd)]),
       };
     });
     setDeleteDialog({ open: false, endId: null });
   }
 
   function applyMode(mode) {
-    patchSession((prev) => ({
-      ...prev,
-      mode,
-    recordInputType: "end",
-      title: `${mode === "set" ? "세트제" : "누적제"} X-Session`,
-    }));
+    patchSession((prev) => {
+      const allEndsEmpty = (prev.ends || []).every((end) => (end.arrows || []).every((arrow) => arrow === null));
+      const nextEnds =
+        mode === "set" && allEndsEmpty
+          ? [createEmptyEnd(1, prev.arrowsPerEnd)]
+          : prev.ends;
+
+      return {
+        ...prev,
+        mode,
+        recordInputType: "end",
+        title: `${mode === "set" ? "세트제" : "누적제"} X-Session`,
+        ends: nextEnds,
+      };
+    });
     if (mode !== "set") {
       setActiveOpponentEndId(null);
       setOpponentInputBuffers({});
