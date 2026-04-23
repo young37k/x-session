@@ -2058,14 +2058,29 @@ function SessionEditor({
     if (!endId) return;
     const target = endCardRefs.current[endId];
     if (!target || typeof window === "undefined") return;
+
     requestAnimationFrame(() => {
+      const rect = target.getBoundingClientRect();
       const quickHeight = quickPanelRef.current?.offsetHeight || 0;
-      const top = target.getBoundingClientRect().top + window.scrollY;
-      const offset = quickHeight + 96;
-      window.scrollTo({
-        top: Math.max(0, top - offset),
-        behavior: "smooth",
-      });
+      const topSafeLine = quickHeight + 16;
+      const bottomSafeLine = window.innerHeight - 24;
+
+      if (rect.top < topSafeLine) {
+        const delta = rect.top - topSafeLine;
+        window.scrollTo({
+          top: Math.max(0, window.scrollY + delta),
+          behavior: "smooth",
+        });
+        return;
+      }
+
+      if (rect.bottom > bottomSafeLine) {
+        const delta = rect.bottom - bottomSafeLine;
+        window.scrollTo({
+          top: Math.max(0, window.scrollY + delta),
+          behavior: "smooth",
+        });
+      }
     });
   }
 
@@ -2473,7 +2488,7 @@ function SessionEditor({
       return `${base} border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100`;
     }
     if (score === "CONFIRM") {
-      return `${base} border-blue-300 bg-blue-900 !text-white hover:bg-blue-800`;
+      return `${base} border-blue-300 bg-blue-50 text-black hover:bg-blue-100`;
     }
     if (Number(score) === 0) {
       return `${base} ${isActive ? "border-slate-500 bg-slate-200 text-slate-900 shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`;
