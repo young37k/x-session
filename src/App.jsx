@@ -1957,6 +1957,7 @@ function SessionEditor({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, endId: null });
   const [deleteSessionDialog, setDeleteSessionDialog] = useState(false);
+  const [numericEditBuffers, setNumericEditBuffers] = useState({});
   const [saveError, setSaveError] = useState("");
   const [history, setHistory] = useState([]);
   const [lastQuickScore, setLastQuickScore] = useState(null);
@@ -2053,6 +2054,40 @@ function SessionEditor({
       } catch {
         // ignore
       }
+    });
+  }
+
+
+  function getNumericInputValue(bufferKey, fallbackValue) {
+    return Object.prototype.hasOwnProperty.call(numericEditBuffers, bufferKey)
+      ? numericEditBuffers[bufferKey]
+      : String(fallbackValue ?? "");
+  }
+
+  function handleNumericInputFocus(e) {
+    requestAnimationFrame(() => {
+      try {
+        e.target.select?.();
+      } catch {
+        // ignore
+      }
+    });
+  }
+
+  function handleNumericInputChange(bufferKey, rawValue, commit) {
+    setNumericEditBuffers((prev) => ({ ...prev, [bufferKey]: rawValue }));
+    if (rawValue === "") return;
+    const nextValue = Number(rawValue);
+    if (Number.isNaN(nextValue)) return;
+    commit(nextValue);
+  }
+
+  function handleNumericInputBlur(bufferKey) {
+    setNumericEditBuffers((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, bufferKey)) return prev;
+      const next = { ...prev };
+      delete next[bufferKey];
+      return next;
     });
   }
 
@@ -2618,14 +2653,19 @@ function SessionEditor({
                   <Input
                     className="h-11 flex-1"
                     type="number"
+                    inputMode="numeric"
                     min={1}
-                    value={session.arrowsPerDistance || 36}
+                    value={getNumericInputValue("arrowsPerDistance", session.arrowsPerDistance || 36)}
+                    onFocus={handleNumericInputFocus}
                     onChange={(e) =>
-                      patchSession((prev) => ({
-                        ...prev,
-                        arrowsPerDistance: Math.max(1, Number(e.target.value) || 36),
-                      }))
+                      handleNumericInputChange("arrowsPerDistance", e.target.value, (nextValue) =>
+                        patchSession((prev) => ({
+                          ...prev,
+                          arrowsPerDistance: Math.max(1, nextValue || 1),
+                        }))
+                      )
                     }
+                    onBlur={() => handleNumericInputBlur("arrowsPerDistance")}
                   />
                 </div>
               )}
@@ -2822,22 +2862,32 @@ function SessionEditor({
                           <Label>거리 (m)</Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             min={1}
-                            value={round.distance}
+                            value={getNumericInputValue(`round-${round.id}-distance`, round.distance)}
+                            onFocus={handleNumericInputFocus}
                             onChange={(e) =>
-                              updateDistanceRound(round.id, "distance", Math.max(1, Number(e.target.value) || 0))
+                              handleNumericInputChange(`round-${round.id}-distance`, e.target.value, (nextValue) =>
+                                updateDistanceRound(round.id, "distance", Math.max(1, nextValue || 1))
+                              )
                             }
+                            onBlur={() => handleNumericInputBlur(`round-${round.id}-distance`)}
                           />
                         </div>
                         <div className="grid gap-2">
                           <Label>거리 합계 점수</Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             min={0}
-                            value={round.total}
+                            value={getNumericInputValue(`round-${round.id}-total`, round.total)}
+                            onFocus={handleNumericInputFocus}
                             onChange={(e) =>
-                              updateDistanceRound(round.id, "total", Math.max(0, Number(e.target.value) || 0))
+                              handleNumericInputChange(`round-${round.id}-total`, e.target.value, (nextValue) =>
+                                updateDistanceRound(round.id, "total", Math.max(0, nextValue || 0))
+                              )
                             }
+                            onBlur={() => handleNumericInputBlur(`round-${round.id}-total`)}
                           />
                         </div>
                       </div>
