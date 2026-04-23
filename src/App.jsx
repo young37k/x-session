@@ -651,8 +651,7 @@ const OFFICIAL_RESULT_SOURCES = [
   },
 ];
 
-const SAMPLE_SHEETS = [
-  {
+const SAMPLE_SHEETS = [{
     id: "sheet_2026_03_22",
     date: "2026-03-22",
     division: "초등4",
@@ -887,9 +886,9 @@ function buildPermanentSampleUsers() {
     sheet.rows.forEach((row, rowIndex) => {
       const assignedDivision =
         row.division ||
-        (sheet.divisionCycle?.length ? sheet.divisionCycle[rowIndex % sheet.divisionCycle.length] : null) ||
+        sheet.divisionCycle?.[rowIndex % (sheet.divisionCycle?.length || 1)] ||
         sheet.division;
-      const id = makeSampleUserId(row.name, row.school, assignedDivision);
+      const id = makeSampleUserId(row.name, row.school);
       if (!map.has(id)) {
         map.set(id, {
           id,
@@ -916,16 +915,55 @@ function buildPermanentSampleUsers() {
 }
 
 function buildPermanentSampleSessions() {
+  const seen = new Set();
   return SAMPLE_SHEETS.flatMap((sheet) =>
-    sheet.rows.map((row, rowIndex) => {
-      const assignedDivision =
-        row.division ||
-        (sheet.divisionCycle?.length ? sheet.divisionCycle[rowIndex % sheet.divisionCycle.length] : null) ||
-        sheet.division;
+    sheet.rows
+      .map((row, rowIndex) => {
+        const assignedDivision =
+          row.division ||
+          sheet.divisionCycle?.[rowIndex % (sheet.divisionCycle?.length || 1)] ||
+          sheet.division;
+        const userId = makeSampleUserId(row.name, row.school);
+        const dedupeKey = `${userId}__${sheet.date}__${sheet.sheetLabel}`;
+        if (seen.has(dedupeKey)) return null;
+        seen.add(dedupeKey);
+
+        return buildSampleDistanceSession({
+          userId,
+          date: sheet.date,
+          title: `${sheet.sheetLabel} · ${row.name}`,
+          division: assignedDivision,
+          gender: row.gender || sheet.gender || "남",
+          regionCity: row.regionCity || sheet.regionCity || "경기도",
+          bowType: row.bowType || sheet.bowType || "리커브",
+          clubName: row.school,
+          groupName: row.school,
+          distance: sheet.distances[0],
+          arrowsPerDistance: 36,
+          rounds: sheet.distances.map((distance, idx) => ({
+            distance,
+            total: row.rounds[idx],
+          })),
+        });
+      })
+      .filter(Boolean)
+  );
+}
+
+function buildCurrentUserPermanentSamples(userId) {
+  if (!userId) return [];
+  const seen = new Set();
+  return SAMPLE_SHEETS.slice(0, 6)
+    .map((sheet) => {
+      const row = sheet.rows[0];
+      const assignedDivision = row.division || sheet.divisionCycle?.[0] || sheet.division;
+      const key = `${userId}__${sheet.date}__${sheet.sheetLabel}`;
+      if (seen.has(key)) return null;
+      seen.add(key);
       return buildSampleDistanceSession({
-        userId: makeSampleUserId(row.name, row.school, assignedDivision),
+        userId,
         date: sheet.date,
-        title: `${sheet.sheetLabel} · ${row.name}`,
+        title: `${sheet.sheetLabel}`,
         division: assignedDivision,
         gender: row.gender || sheet.gender || "남",
         regionCity: row.regionCity || sheet.regionCity || "경기도",
@@ -940,35 +978,7 @@ function buildPermanentSampleSessions() {
         })),
       });
     })
-  );
-}
-
-function buildCurrentUserPermanentSamples(userId) {
-  if (!userId) return [];
-  return SAMPLE_SHEETS.slice(0, 6).map((sheet) => {
-    const row = sheet.rows[0];
-    const assignedDivision =
-      row.division ||
-      (sheet.divisionCycle?.length ? sheet.divisionCycle[0] : null) ||
-      sheet.division;
-    return buildSampleDistanceSession({
-      userId,
-      date: sheet.date,
-      title: `${sheet.sheetLabel}`,
-      division: assignedDivision,
-      gender: row.gender || sheet.gender || "남",
-      regionCity: row.regionCity || sheet.regionCity || "경기도",
-      bowType: row.bowType || sheet.bowType || "리커브",
-      clubName: row.school,
-      groupName: row.school,
-      distance: sheet.distances[0],
-      arrowsPerDistance: 36,
-      rounds: sheet.distances.map((distance, idx) => ({
-        distance,
-        total: row.rounds[idx],
-      })),
-    });
-  });
+    .filter(Boolean);
 }
 
 function scoreToNumber(v) {
