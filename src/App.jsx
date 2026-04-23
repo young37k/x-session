@@ -2217,7 +2217,13 @@ function SessionEditor({
       return;
     }
 
-    const emptyTarget = findFirstEmptyTarget(session.ends);
+    let workingEnds = session.ends.map((end) => ({ ...end, arrows: [...end.arrows] }));
+    let emptyTarget = findFirstEmptyTarget(workingEnds);
+
+    if (!emptyTarget) {
+      workingEnds = ensureTrailingEmptyEnd(workingEnds, session.arrowsPerEnd);
+      emptyTarget = findFirstEmptyTarget(workingEnds);
+    }
     if (!emptyTarget) return;
 
     setLastQuickScore(String(score));
@@ -2232,9 +2238,6 @@ function SessionEditor({
     const previous = history[history.length - 1];
     setHistory((h) => h.slice(0, -1));
     setSession(previous);
-    requestAnimationFrame(() => {
-      restoreInputFlow(previous);
-    });
   }
 
   function resetEnd(endId) {
@@ -2256,10 +2259,16 @@ function SessionEditor({
   }
 
   function addEnd() {
+    const nextIndex = session.ends.length + 1;
+    const nextEnd = createEmptyEnd(nextIndex, session.arrowsPerEnd);
     patchSession((prev) => ({
       ...prev,
-      ends: [...prev.ends, createEmptyEnd(prev.ends.length + 1, prev.arrowsPerEnd)],
+      ends: [...prev.ends, nextEnd],
     }));
+    requestAnimationFrame(() => {
+      scrollEndIntoView(nextEnd.id);
+      focusFirstArrowOfEnd(nextEnd.id);
+    });
   }
 
   function addDistanceRound() {
@@ -2400,13 +2409,17 @@ function SessionEditor({
     setActiveOpponentEndId(null);
     setOpponentInputBuffers((prev) => ({ ...prev, [endId]: "" }));
     if (currentIndex === -1) return;
+
     const nextEnd = session.ends[currentIndex + 1];
     if (nextEnd) {
       requestAnimationFrame(() => {
         scrollEndIntoView(nextEnd.id);
         focusFirstArrowOfEnd(nextEnd.id);
       });
+      return;
     }
+
+    addEnd();
   }
 
   function confirmOpponentScore(endId) {
@@ -2658,7 +2671,7 @@ function SessionEditor({
                         <Button
                           key={String(score)}
                           variant="outline"
-                          className={getQuickButtonClass(score)}
+                          className={`${getQuickButtonClass(score)} text-sm font-semibold`}
                           onClick={() => quickInputScore(score)}
                           disabled={
                             score === "CONFIRM"
@@ -2666,7 +2679,7 @@ function SessionEditor({
                               : false
                           }
                         >
-                          {score === "EDIT" ? "점수수정" : score === "CONFIRM" ? "확인" : score}
+                          <span>{score === "EDIT" ? "점수수정" : score === "CONFIRM" ? "확인" : score}</span>
                         </Button>
                       ))}
                     </div>
