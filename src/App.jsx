@@ -606,9 +606,9 @@ const OFFICIAL_RESULT_SOURCES = [
     region: "경기도",
     gender: "여",
     rankingGroup: "초등부(저학년)",
-    sourceType: "structured_rows",
-    status: "rows_structured",
-    notes: "기존 앱 샘플 데이터(2026-04-12 초등4) 사용",
+    sourceType: "photo_board_and_structured_rows",
+    status: "source_registered",
+    notes: "여자초등 U-11 경기결과 사진 원본 추가 반영 + 기존 앱 샘플 데이터(2026-04-12 초등4)와 함께 정리",
   },
   {
     id: "official_recurve_2026_04_12_elem_girls_upper_source",
