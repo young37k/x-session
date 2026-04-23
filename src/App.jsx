@@ -584,6 +584,17 @@ function buildTestRecordSheets(userId) {
 
 const OFFICIAL_RESULT_SOURCES = [
   {
+    id: "official_recurve_2026_03_22_elem_girls_lower_source",
+    date: "2026-03-22",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(저학년)",
+    sourceType: "photo_board_and_structured_rows",
+    status: "source_registered",
+    notes: "여자초등 U-11 2026-03-22 경기결과 사진 기반 원본 등록",
+  },
+  {
     id: "official_recurve_2026_04_12_elem_boys_lower_source",
     date: "2026-04-12",
     bowType: "리커브",
@@ -990,7 +1001,7 @@ function buildPermanentSampleSessions() {
 function buildCurrentUserPermanentSamples(userId) {
   if (!userId) return [];
   const seen = new Set();
-  return SAMPLE_SHEETS.slice(0, 6)
+  return SAMPLE_SHEETS
     .map((sheet) => {
       const row = sheet.rows[0];
       const assignedDivision = row.division || sheet.divisionCycle?.[0] || sheet.division;
@@ -4070,7 +4081,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               <Archive className="h-4 w-4" /> 공식 결과 목록
             </div>
             <div className="mt-2 text-xs leading-relaxed text-slate-500">
-              2026-04-12 리커브 공식 결과 원본 등록 현황이다. 사용자 기록 랭킹과 분리된 참고 목록으로 관리된다.
+              리커브 공식 결과 원본 등록 현황이다. 2026-03-22와 2026-04-12 데이터를 포함하며, 사용자 기록 랭킹과 분리된 참고 목록으로 관리된다.
             </div>
 
             <div className="mt-4 grid gap-3">
