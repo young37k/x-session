@@ -2146,7 +2146,7 @@ function SessionEditor({
   function updateArrow(endId, arrowIndex, value, options = {}) {
     const { autoFocusNext = true, haptic = false } = options;
 
-    let nextEnds = session.ends.map((end) =>
+    const nextEnds = session.ends.map((end) =>
       end.id === endId
         ? {
             ...end,
@@ -2155,27 +2155,17 @@ function SessionEditor({
         : end
     );
 
-    if (session.recordInputType === "end") {
-      nextEnds = 
-    }
-
-    patchSession((prev) => {
-      let updatedEnds = prev.ends.map((end) =>
+    patchSession((prev) => ({
+      ...prev,
+      ends: prev.ends.map((end) =>
         end.id === endId
           ? {
               ...end,
               arrows: end.arrows.map((arrow, idx) => (idx === arrowIndex ? value : arrow)),
             }
           : end
-      );
-      if (prev.recordInputType === "end") {
-        updatedEnds = 
-      }
-      return {
-        ...prev,
-        ends: updatedEnds,
-      };
-    });
+      ),
+    }));
 
     if (haptic) triggerHaptic();
     setFlashKey(`${endId}_${arrowIndex}`);
@@ -2221,13 +2211,7 @@ function SessionEditor({
       return;
     }
 
-    let workingEnds = session.ends.map((end) => ({ ...end, arrows: [...end.arrows] }));
-    let emptyTarget = findFirstEmptyTarget(workingEnds);
-
-    if (!emptyTarget) {
-      workingEnds = 
-      emptyTarget = findFirstEmptyTarget(workingEnds);
-    }
+    const emptyTarget = findFirstEmptyTarget(session.ends);
     if (!emptyTarget) return;
 
     setLastQuickScore(String(score));
@@ -2421,10 +2405,7 @@ function SessionEditor({
         scrollEndIntoView(nextEnd.id);
         focusFirstArrowOfEnd(nextEnd.id);
       });
-      return;
     }
-
-
   }
 
   function confirmOpponentScore(endId) {
