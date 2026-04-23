@@ -919,11 +919,14 @@ function formatCompactDate(value) {
 }
 function formatDateTime(value) {
   if (!value) return "-";
-  try {
-    return new Date(value).toLocaleString("ko-KR");
-  } catch {
-    return String(value);
-  }
+  const date =
+    typeof value?.toDate === "function"
+      ? value.toDate()
+      : value instanceof Date
+        ? value
+        : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("ko-KR");
 }
 
 
@@ -957,11 +960,14 @@ function PaginationControls({ page, totalPages, onChange }) {
 
 function formatDateOnly(value) {
   if (!value) return "-";
-  try {
-    return new Date(value).toLocaleDateString("ko-KR");
-  } catch {
-    return String(value);
-  }
+  const date =
+    typeof value?.toDate === "function"
+      ? value.toDate()
+      : value instanceof Date
+        ? value
+        : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("ko-KR");
 }
 
 function formatFullDate(value) {
