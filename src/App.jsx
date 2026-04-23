@@ -788,9 +788,6 @@ function createNewSession(profile, mode = "cumulative") {
     ends: Array.from({ length: initialEndCount }, (_, i) => createEmptyEnd(i + 1, 6)),
     distanceRounds: [
       createEmptyDistanceRound(1, 35),
-      createEmptyDistanceRound(2, 30),
-      createEmptyDistanceRound(3, 25),
-      createEmptyDistanceRound(4, 20),
     ],
     isComplete: false,
   };
@@ -2055,6 +2052,22 @@ function SessionEditor({
   const endCardRefs = useRef({});
   const quickPanelRef = useRef(null);
   const suppressAutoScrollRef = useRef(false);
+  const [saveNotice, setSaveNotice] = useState("");
+  const [isOnline, setIsOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -2479,9 +2492,6 @@ function SessionEditor({
         recordInputType === "distance" && (!prev.distanceRounds || !prev.distanceRounds.length)
           ? [
               createEmptyDistanceRound(1, 35),
-              createEmptyDistanceRound(2, 30),
-              createEmptyDistanceRound(3, 25),
-              createEmptyDistanceRound(4, 20),
             ]
           : prev.distanceRounds,
     }));
@@ -2520,13 +2530,27 @@ function SessionEditor({
   async function confirmSave() {
     const err = validateBeforeSave();
     if (err) {
+      setSaveNotice("");
       setSaveError(err);
       return;
     }
+
     setSaveError("");
-    await onSave();
-    setSaveDialogOpen(false);
-    setHistory([]);
+    setSaveNotice("");
+
+    try {
+      const result = await onSave();
+      setSaveDialogOpen(false);
+      setHistory([]);
+      if (result?.message) {
+        setSaveNotice(result.message);
+      }
+    } catch (error) {
+      const fallbackMessage = !isOnline
+        ? "오프라인 상태입니다. 네트워크 연결 후 다시 저장해 주세요."
+        : "저장에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+      setSaveError(error?.message || fallbackMessage);
+    }
   }
 
   async function confirmDeleteSavedSession() {
@@ -2659,6 +2683,21 @@ function SessionEditor({
           </CardHeader>
 
           <CardContent className="space-y-5">
+            <div className="rounded-3xl border border-blue-100 bg-blue-50/80 px-4 py-3">
+              <div className="mb-2 text-sm font-semibold text-blue-900">처음 입력할 때 이렇게 진행하세요</div>
+              <div className="grid gap-1 text-sm text-blue-800">
+                <div>• 경기 방식을 선택하세요. (세트제 / 누적제)</div>
+                <div>• 기록은 End 1부터 시작하고, 필요하면 엔드를 추가하세요.</div>
+                <div>• 빠른 점수 입력으로 화살 점수를 빠르게 기록할 수 있습니다.</div>
+              </div>
+            </div>
+
+            {!isOnline && (
+              <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                현재 오프라인 상태입니다. 네트워크 연결 후 저장해 주세요.
+              </div>
+            )}
+
             <div className="grid gap-3">
               <div className="flex items-center gap-3">
                 <Label className="w-24 shrink-0 text-sm">날짜</Label>
@@ -2692,21 +2731,26 @@ function SessionEditor({
 
               <div className="flex items-start gap-3">
                 <Label className="w-24 shrink-0 pt-3 text-sm">기록 방식</Label>
-                <div className="grid flex-1 grid-cols-2 gap-2">
-                  <Button
-                    variant={session.mode === "cumulative" ? "default" : "outline"}
-                    className="h-11 rounded-2xl bg-blue-900 px-3 hover:bg-blue-800"
-                    onClick={() => applyMode("cumulative")}
-                  >
-                    누적제
-                  </Button>
-                  <Button
-                    variant={session.mode === "set" ? "default" : "outline"}
-                    className="h-11 rounded-2xl bg-red-700 px-3 hover:bg-red-600"
-                    onClick={() => applyMode("set")}
-                  >
-                    세트제
-                  </Button>
+                <div className="grid flex-1 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant={session.mode === "cumulative" ? "default" : "outline"}
+                      className="h-11 rounded-2xl bg-blue-900 px-3 hover:bg-blue-800"
+                      onClick={() => applyMode("cumulative")}
+                    >
+                      누적제
+                    </Button>
+                    <Button
+                      variant={session.mode === "set" ? "default" : "outline"}
+                      className="h-11 rounded-2xl bg-red-700 px-3 hover:bg-red-600"
+                      onClick={() => applyMode("set")}
+                    >
+                      세트제
+                    </Button>
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    누적제는 총점 합산 방식이고, 세트제는 엔드별 승패를 기록하는 방식입니다.
+                  </div>
                 </div>
               </div>
 
@@ -2737,9 +2781,10 @@ function SessionEditor({
               </div>
 
               {session.recordInputType === "end" ? (
-                <div className="flex items-center gap-3">
-                  <Label className="w-24 shrink-0 text-sm">엔드당 화살 수</Label>
-                  <select
+                <div className="flex items-start gap-3">
+                  <Label className="w-24 shrink-0 pt-3 text-sm">엔드당 화살 수</Label>
+                  <div className="flex-1 space-y-2">
+                    <select
                     value={String(session.arrowsPerEnd)}
                     onChange={(e) => {
                       const next = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(e.target.value) || 1));
@@ -2752,12 +2797,16 @@ function SessionEditor({
                         })),
                       }));
                     }}
-                    className="h-11 flex-1 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                    className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
                   >
                     {[1, 2, 3, 4, 5, 6].map((count) => (
                       <option key={count} value={String(count)}>{count}</option>
                     ))}
                   </select>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                      End는 한 차례에 쏜 화살 기록 단위입니다.
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
@@ -3011,6 +3060,12 @@ function SessionEditor({
                   </div>
                 )}
 
+                {saveNotice && (
+                  <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {saveNotice}
+                  </div>
+                )}
+
                 {saveError && (
                   <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
                     {saveError}
@@ -3028,7 +3083,7 @@ function SessionEditor({
                     </Button>
                   )}
 
-                  <Button variant="outline" className="rounded-2xl" onClick={onTempSave}>
+                  <Button variant="outline" className="rounded-2xl" onClick={onTempSave} disabled={saving}>
                     <Archive className="mr-2 h-4 w-4" /> 임시 세션 저장
                   </Button>
 
@@ -3038,7 +3093,7 @@ function SessionEditor({
                     disabled={saving}
                   >
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {editingSavedSession ? "세션 업데이트" : "세션 저장"}
+                    {saving ? "저장 중..." : editingSavedSession ? "세션 업데이트" : "세션 저장"}
                   </Button>
 
                   {editingSavedSession && (
@@ -3077,7 +3132,7 @@ function SessionEditor({
             </Button>
             <Button className="rounded-2xl bg-blue-900 hover:bg-blue-800" onClick={confirmSave} disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {editingSavedSession ? "업데이트 완료" : "저장 완료"}
+              {saving ? "저장 중..." : editingSavedSession ? "업데이트 완료" : "저장 완료"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -4924,6 +4979,7 @@ function XSessionApp() {
   const [sessionSaving, setSessionSaving] = useState(false);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
+  const [globalNotice, setGlobalNotice] = useState("");
   const [tempSaveMessage, setTempSaveMessage] = useState("");
   const [adminRequested, setAdminRequested] = useState(false);
   const [stageRefreshKey, setStageRefreshKey] = useState(0);
@@ -5270,6 +5326,8 @@ function XSessionApp() {
     setUsers([]);
     setSessions([]);
     setUi(DEFAULT_UI);
+    setGlobalError("");
+    setGlobalNotice("");
     setTempSaveMessage("");
     setAdminRequested(false);
   }
@@ -5297,12 +5355,19 @@ function XSessionApp() {
   }, [editingSessionId]);
 
   async function handleSaveSession() {
-    if (!appServices?.db || !authUser || !profile || !draftSession) return;
+    if (!appServices?.db || !authUser || !profile || !draftSession) {
+      throw new Error("저장에 필요한 정보가 부족합니다. 다시 로그인 후 시도해 주세요.");
+    }
 
     setSessionSaving(true);
     setGlobalError("");
+    setGlobalNotice("");
 
     try {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new Error("오프라인 상태입니다. 네트워크 연결 후 다시 저장해 주세요.");
+      }
+
       const payload = buildSessionPayload({ draftSession, profile, uid: authUser.uid });
       const fixedSessionDate = draftSession?.sessionDate || getCurrentLocalDateString();
       payload.sessionDate = fixedSessionDate;
@@ -5337,8 +5402,17 @@ function XSessionApp() {
       await loadUsersAndSessions(appServices.db);
       setDraftSession(normalizeSessionShape(createNewSession(profile, draftSession.mode), profile));
       setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
+      setGlobalNotice(editingSessionId ? "세션이 정상적으로 업데이트되었습니다." : "세션이 정상적으로 저장되었습니다.");
+      return {
+        ok: true,
+        message: editingSessionId ? "세션이 정상적으로 업데이트되었습니다." : "세션이 정상적으로 저장되었습니다.",
+      };
     } catch (error) {
-      setGlobalError(error.message || "X-Session 저장에 실패했다.");
+      const message =
+        error?.message ||
+        "저장에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.";
+      setGlobalError(message);
+      throw new Error(message);
     } finally {
       setSessionSaving(false);
     }
@@ -5361,6 +5435,8 @@ function XSessionApp() {
 
   function handleTempSave() {
     if (!authUser || !draftSession) return;
+    setGlobalError("");
+    setGlobalNotice("");
     saveDraftToLocal(authUser.uid, draftSession);
     setTempSaveMessage("임시 X-Session 저장 완료. 다음에 다시 로그인해도 이어서 입력할 수 있다.");
   }
@@ -5381,9 +5457,6 @@ function XSessionApp() {
             }))
           : [
               createEmptyDistanceRound(1, 35),
-              createEmptyDistanceRound(2, 30),
-              createEmptyDistanceRound(3, 25),
-              createEmptyDistanceRound(4, 20),
             ],
       ends: (target.ends || []).map((end, idx) => ({
         ...end,
@@ -5504,6 +5577,7 @@ function XSessionApp() {
           <>
             <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} />
 
+            {globalNotice && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{globalNotice}</div>}
             {globalError && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
 
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
