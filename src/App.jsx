@@ -393,7 +393,7 @@ function normalizeSessionShape(session, profile = null) {
     sessionDate: safe.sessionDate || getCurrentLocalDateString(),
     mode: safe.mode || "cumulative",
     recordInputType: safe.recordInputType || "end",
-    distance: Number(safe.distance) || 70,
+    distance: Number(safe.distance) || 30,
     division: safe.division || profile?.division || "",
     gender: safe.gender || profile?.gender || "남",
     arrowsPerEnd,
@@ -776,7 +776,7 @@ function createNewSession(profile, mode = "cumulative") {
     sessionDate: getCurrentLocalDateString(),
     mode,
     recordInputType: "end",
-    distance: 70,
+    distance: 30,
     division: profile?.division || "",
     arrowsPerEnd: 6,
     arrowsPerDistance: 36,
@@ -1672,24 +1672,19 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
 
   return (
     <div
-      className="relative min-h-[100svh] w-full overflow-hidden"
+      className="relative overflow-hidden rounded-[22px] sm:rounded-[28px] shadow-2xl"
       style={{
         minHeight: "100svh",
         backgroundImage: "url('/login-background.png')",
         backgroundSize: "contain",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "top center",
-        backgroundColor: "#0f2344",
+        backgroundColor: "#dfe6f3",
       }}
     >
-      <div
-        className="absolute inset-0"
-        style={{
-          background: "linear-gradient(180deg, rgba(2,6,23,0.03) 0%, rgba(2,6,23,0.08) 58%, rgba(15,35,68,0.72) 78%, #0f2344 100%)",
-        }}
-      />
-      <div className="relative flex min-h-[100svh] items-end justify-center px-0 pb-0 pt-[32svh] sm:px-0 sm:pb-0 sm:pt-[34svh] lg:pt-[38svh]">
-        <div className="w-full bg-transparent p-3 sm:p-5">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.03)_0%,rgba(2,6,23,0.18)_100%)]" />
+      <div className="relative flex min-h-[100svh] items-end justify-center px-2 pb-2 pt-[32svh] sm:px-4 sm:pb-4 sm:pt-[34svh] lg:pt-[38svh]">
+        <div className="w-full max-w-lg rounded-[24px] sm:rounded-[30px] bg-transparent p-3 sm:p-5">
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-2 rounded-2xl bg-black/20 p-1 backdrop-blur-sm">
               <Button
@@ -1955,6 +1950,8 @@ function SessionEditor({
   const [activeOpponentEndId, setActiveOpponentEndId] = useState(null);
   const [opponentInputBuffers, setOpponentInputBuffers] = useState({});
   const arrowRefs = useRef({});
+  const endCardRefs = useRef({});
+  const quickPanelRef = useRef(null);
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -1986,11 +1983,24 @@ function SessionEditor({
     return null;
   }, [session, activeOpponentEndId]);
 
+  const activeEndId = activeOpponentEndId || currentTarget?.endId || null;
+  const quickPanelOptions = useMemo(() => {
+    if (session.mode === "set") {
+      return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT"];
+    }
+    return QUICK_SCORE_OPTIONS;
+  }, [session.mode]);
+
   useEffect(() => {
     if (!flashKey) return;
     const timer = setTimeout(() => setFlashKey(""), 220);
     return () => clearTimeout(timer);
   }, [flashKey]);
+
+  useEffect(() => {
+    if (!activeEndId) return;
+    scrollEndIntoView(activeEndId);
+  }, [activeEndId]);
 
   function pushHistory(prev) {
     setHistory((h) => [...h.slice(-29), JSON.parse(JSON.stringify(prev))]);
@@ -2024,6 +2034,22 @@ function SessionEditor({
       } catch {
         // ignore
       }
+    });
+  }
+
+  function scrollEndIntoView(endId) {
+    if (!endId) return;
+    const target = endCardRefs.current[endId];
+    if (!target || typeof window === "undefined") return;
+
+    requestAnimationFrame(() => {
+      const quickHeight = quickPanelRef.current?.offsetHeight || 0;
+      const top = target.getBoundingClientRect().top + window.scrollY;
+      const offset = quickHeight + 16;
+      window.scrollTo({
+        top: Math.max(0, top - offset),
+        behavior: "smooth",
+      });
     });
   }
 
@@ -2085,7 +2111,20 @@ function SessionEditor({
   }
 
   function quickInputScore(score) {
-    if (session.mode === "set" && activeOpponentEndId) return;
+    if (score === "EDIT") {
+      const candidateEnd =
+        session.ends.find((end) => end.opponentScoreEntered) ||
+        session.ends.find((end) => end.arrows.some((v) => v !== null));
+      if (candidateEnd) activateOpponentInput(candidateEnd.id);
+      return;
+    }
+
+    if (session.mode === "set" && activeOpponentEndId) {
+      if (score === "X" || score === "M") return;
+      handleOpponentQuickScore(activeOpponentEndId, score);
+      return;
+    }
+
     const emptyTarget = findFirstEmptyTarget(session.ends);
     if (!emptyTarget) return;
 
@@ -2285,6 +2324,20 @@ function SessionEditor({
     moveToNextEndFromOpponent(endId);
   }
 
+  function handleOpponentQuickScore(endId, score) {
+    triggerHaptic(10);
+    const value = Math.max(0, Number(score) || 0);
+    setLastQuickScore(String(score));
+    setOpponentBuffer(endId, String(value));
+    patchSession((prev) => ({
+      ...prev,
+      ends: prev.ends.map((item) =>
+        item.id === endId ? { ...item, opponentTotal: value, opponentScoreEntered: true } : item
+      ),
+    }));
+    moveToNextEndFromOpponent(endId);
+  }
+
   function handleOpponentKeypadInput(endId, digit) {
     triggerHaptic(10);
     const nextValue = `${String(opponentInputBuffers[endId] ?? "")}${digit}`.slice(0, 2);
@@ -2325,6 +2378,7 @@ function SessionEditor({
       endId,
       end && end.opponentScoreEntered ? String(end.opponentTotal ?? 0) : ""
     );
+    scrollEndIntoView(endId);
   }
 
   function getQuickButtonClass(score) {
@@ -2336,6 +2390,12 @@ function SessionEditor({
       return `${base} ${isActive ? "border-amber-400 bg-amber-100 text-amber-900 shadow-sm" : "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100"}`;
     }
     if (score === "M") {
+      return `${base} ${isActive ? "border-slate-500 bg-slate-200 text-slate-900 shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`;
+    }
+    if (score === "EDIT") {
+      return `${base} border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100`;
+    }
+    if (Number(score) === 0) {
       return `${base} ${isActive ? "border-slate-500 bg-slate-200 text-slate-900 shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`;
     }
     if (Number(score) >= 9) {
@@ -2502,7 +2562,7 @@ function SessionEditor({
         <div className="grid gap-4 pb-28 md:pb-6">
           {session.recordInputType === "end" ? (
             <>
-              <div className="sticky top-2 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
+              <div ref={quickPanelRef} className="sticky top-2 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
                 <Card className="border-0 bg-transparent shadow-none">
                   <CardContent className="p-3 md:p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
@@ -2516,15 +2576,15 @@ function SessionEditor({
                         <Undo2 className="mr-2 h-4 w-4" /> 마지막 입력 취소
                       </Button>
                     </div>
-                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-                      {QUICK_SCORE_OPTIONS.map((score) => (
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                      {quickPanelOptions.map((score) => (
                         <Button
                           key={String(score)}
                           variant="outline"
                           className={getQuickButtonClass(score)}
                           onClick={() => quickInputScore(score)}
                         >
-                          {score}
+                          {score === "EDIT" ? "점수수정" : score}
                         </Button>
                       ))}
                     </div>
@@ -2533,7 +2593,13 @@ function SessionEditor({
               </div>
 
               {session.ends.map((end) => (
-                <Card key={end.id} className="rounded-[28px] border-0 bg-white shadow-xl">
+                <Card
+                  key={end.id}
+                  ref={(el) => {
+                    if (el) endCardRefs.current[end.id] = el;
+                  }}
+                  className="rounded-[28px] border-0 bg-white shadow-xl"
+                >
                   <CardContent className="p-4 md:p-5">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div>
@@ -2613,82 +2679,26 @@ function SessionEditor({
                     {session.mode === "set" && (
                       <div className="mt-4 rounded-2xl bg-slate-50 p-4">
                         <div className="grid gap-2">
-                          <div className="flex items-center justify-between gap-3">
-                            <Label>상대 엔드 점수</Label>
-                            <div
-                              className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
-                                activeOpponentEndId === end.id
-                                  ? "bg-blue-100 text-blue-900 ring-1 ring-blue-300"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              {activeOpponentEndId === end.id ? (
-                                <span className="inline-flex items-center gap-1.5">
-                                  <span>{String(opponentInputBuffers[end.id] ?? "") || "입력 대기"}</span>
-                                  <span className="animate-pulse text-blue-500">|</span>
-                                </span>
-                              ) : (
-                                String(end.opponentTotal ?? 0)
-                              )}
-                            </div>
+                          <div className="text-sm font-semibold text-slate-700">상대 엔드 점수</div>
+                          <div
+                            className={`rounded-2xl border px-4 py-3 text-sm ${
+                              activeOpponentEndId === end.id
+                                ? "border-blue-300 bg-blue-50 text-blue-900"
+                                : "border-slate-200 bg-white text-slate-600"
+                            }`}
+                            onClick={() => activateOpponentInput(end.id)}
+                          >
+                            {activeOpponentEndId === end.id ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span>{String(opponentInputBuffers[end.id] ?? "") || "빠른 점수 입력에서 상대 점수를 선택"}</span>
+                                <span className="animate-pulse text-blue-500">|</span>
+                              </span>
+                            ) : end.opponentScoreEntered ? (
+                              `${String(end.opponentTotal ?? 0)}점`
+                            ) : (
+                              "빠른 점수 입력에서 상대 점수를 선택"
+                            )}
                           </div>
-
-                          {activeOpponentEndId === end.id ? (
-                            <>
-                              <div className="grid grid-cols-3 gap-2">
-                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                                  <Button
-                                    key={`${end.id}_${num}`}
-                                    type="button"
-                                    variant="outline"
-                                    className="h-11 rounded-2xl text-base font-semibold"
-                                    onClick={() => handleOpponentKeypadInput(end.id, num)}
-                                  >
-                                    {num}
-                                  </Button>
-                                ))}
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="h-11 rounded-2xl text-base font-semibold"
-                                  onClick={() => handleOpponentKeypadDelete(end.id)}
-                                >
-                                  ←
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="h-11 rounded-2xl text-base font-semibold"
-                                  onClick={() => handleOpponentKeypadInput(end.id, 0)}
-                                >
-                                  0
-                                </Button>
-                                <Button
-                                  type="button"
-                                  className="h-11 rounded-2xl bg-blue-900 text-base font-semibold hover:bg-blue-800"
-                                  onClick={() => confirmOpponentScore(end.id)}
-                                  disabled={String(opponentInputBuffers[end.id] ?? "") === ""}
-                                >
-                                  확인
-                                </Button>
-                              </div>
-                              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                                지금은 상대 엔드 점수 입력 단계다. 0점도 0을 직접 눌러 입력해야 다음 엔드로 이동한다.
-                              </div>
-                            </>
-                          ) : (
-                            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                              <div className="text-sm text-slate-500">입력된 상대 엔드 점수로 세트 포인트를 계산한다.</div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="rounded-2xl"
-                                onClick={() => activateOpponentInput(end.id)}
-                              >
-                                점수 수정
-                              </Button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
@@ -2748,7 +2758,7 @@ function SessionEditor({
               </div>
             </>
           )}
-          <Card className="w-full max-w-full overflow-hidden border-0 bg-white shadow-xl">
+          <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
             <CardContent className="p-4 md:p-5">
               <div className="flex flex-col gap-3">
                 {tempSaveMessage && (
@@ -5185,8 +5195,8 @@ function XSessionApp() {
   const adminEmailGuard = isAdminEmail;
 
   return (
-    <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6" : "gap-0"}`}>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+      <div className={`mx-auto flex w-full flex-col ${currentUser ? "max-w-7xl gap-3 px-2 py-2 md:gap-6 md:p-6 xl:p-8" : "max-w-[min(96vw,1440px)] gap-0 px-0 py-0 md:px-4 md:py-4 xl:px-6 xl:py-6"}`}>
         {currentUser ? <Hero activeTab={ui.activeTab} /> : null}
 
         {authLoading && !authUser ? (
