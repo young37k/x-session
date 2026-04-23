@@ -874,6 +874,43 @@ const SAMPLE_SHEETS = [{
       { name: "김보현", school: "여흥중학교", rounds: [310, 311, 317, 341], total: 1279 },
     ],
   }
+  ,
+  {
+    id: "sheet_2026_03_22_elem_girls_lower_validation_v2",
+    date: "2026-03-22",
+    division: "초등1",
+    divisionCycle: ["초등1", "초등2", "초등3", "초등4"],
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "랭킹검증 2026-03-22 여자초등 U-11",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "황리우", school: "천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
+      { name: "김설", school: "안양서초등학교", rounds: [277, 312, 314, 332], total: 1235 },
+      { name: "김태리", school: "하성초등학교", rounds: [271, 302, 320, 334], total: 1227 },
+      { name: "조유나", school: "수진초등학교", rounds: [271, 302, 311, 326], total: 1210 },
+      { name: "장윤혜", school: "송정초등학교", rounds: [282, 288, 293, 336], total: 1199 },
+      { name: "원율", school: "여흥초등학교", rounds: [264, 291, 319, 310], total: 1184 },
+      { name: "김서우", school: "수진초등학교", rounds: [279, 276, 302, 291], total: 1148 },
+      { name: "홍지수", school: "송정초등학교", rounds: [248, 264, 294, 318], total: 1124 },
+      { name: "김소율", school: "타겟28양궁클럽", rounds: [278, 232, 272, 326], total: 1108 },
+      { name: "강민서", school: "여흥초등학교", rounds: [253, 263, 270, 303], total: 1089 },
+      { name: "조윤서", school: "안양서초등학교", rounds: [253, 242, 277, 300], total: 1072 },
+      { name: "송의나", school: "수진초등학교", rounds: [227, 270, 269, 304], total: 1070 },
+      { name: "백수연", school: "여흥초등학교", rounds: [202, 270, 275, 320], total: 1067 },
+      { name: "김윤서", school: "원미초등학교", rounds: [195, 255, 290, 301], total: 1041 },
+      { name: "박가은", school: "안양서초등학교", rounds: [165, 216, 273, 288], total: 942 },
+      { name: "김민채", school: "천현초등학교", rounds: [225, 213, 250, 243], total: 931 },
+      { name: "조예슬", school: "하성초등학교", rounds: [189, 203, 250, 278], total: 920 },
+      { name: "윤이진", school: "여흥초등학교", rounds: [145, 194, 231, 307], total: 877 },
+      { name: "고은", school: "안양서초등학교", rounds: [177, 212, 229, 255], total: 873 },
+      { name: "황리안", school: "천현초등학교", rounds: [159, 152, 209, 245], total: 765 },
+      { name: "이주아", school: "안양서초등학교", rounds: [65, 138, 117, 184], total: 504 }
+    ],
+  }
+
 ];
 
 function makeSampleUserId(name, school, division = "") {
