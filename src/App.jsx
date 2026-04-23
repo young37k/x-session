@@ -1957,6 +1957,7 @@ function SessionEditor({
   const arrowRefs = useRef({});
   const endCardRefs = useRef({});
   const quickPanelRef = useRef(null);
+  const suppressAutoScrollRef = useRef(false);
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -2004,6 +2005,10 @@ function SessionEditor({
 
   useEffect(() => {
     if (!activeEndId) return;
+    if (suppressAutoScrollRef.current) {
+      suppressAutoScrollRef.current = false;
+      return;
+    }
     scrollEndIntoView(activeEndId);
   }, [activeEndId]);
 
@@ -2057,22 +2062,6 @@ function SessionEditor({
       const quickHeight = quickPanelRef.current?.offsetHeight || 0;
       const top = target.getBoundingClientRect().top + window.scrollY;
       const offset = quickHeight + 96;
-      window.scrollTo({
-        top: Math.max(0, top - offset),
-        behavior: "smooth",
-      });
-    });
-  }
-
-  function scrollEndIntoView(endId) {
-    if (!endId) return;
-    const target = endCardRefs.current[endId];
-    if (!target || typeof window === "undefined") return;
-
-    requestAnimationFrame(() => {
-      const quickHeight = quickPanelRef.current?.offsetHeight || 0;
-      const top = target.getBoundingClientRect().top + window.scrollY;
-      const offset = quickHeight + 16;
       window.scrollTo({
         top: Math.max(0, top - offset),
         behavior: "smooth",
@@ -2235,6 +2224,7 @@ function SessionEditor({
 
   function undoLast() {
     if (!history.length) return;
+    suppressAutoScrollRef.current = true;
     const previous = history[history.length - 1];
     setHistory((h) => h.slice(0, -1));
     setSession(previous);
