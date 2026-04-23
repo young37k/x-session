@@ -3574,6 +3574,15 @@ function RankingBoard({ users, sessions, currentUserId }) {
           ? "최근 7일 기준, 학년/부문별 필수 거리 조건을 충족한 최고 점수로 순위가 결정됩니다."
           : "최근 7일 동안 학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
 
+  const officialResultSources = useMemo(() => {
+    return OFFICIAL_RESULT_SOURCES.filter((item) => {
+      if (rankingFilters.rankingGroup !== "all" && item.rankingGroup !== rankingFilters.rankingGroup) return false;
+      if (rankingFilters.regionCity !== "all" && item.region !== rankingFilters.regionCity) return false;
+      if (rankingFilters.groupName !== "all") return false;
+      return true;
+    }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }, [rankingFilters]);
+
   return (
     <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
       <div className="grid gap-4">
@@ -3784,6 +3793,40 @@ function RankingBoard({ users, sessions, currentUserId }) {
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
+            <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
+              <Archive className="h-4 w-4" /> 공식 결과 목록
+            </div>
+            <div className="mt-2 text-xs leading-relaxed text-slate-500">
+              2026-04-12 리커브 공식 결과 원본 등록 현황이다. 사용자 기록 랭킹과 분리된 참고 목록으로 관리된다.
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              {officialResultSources.length === 0 ? (
+                <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">
+                  현재 선택한 조건에 맞는 공식 결과 목록이 없다.
+                </div>
+              ) : (
+                officialResultSources.map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className="rounded-full bg-slate-900 text-white">{item.bowType}</Badge>
+                      <Badge variant="outline" className="rounded-full">{item.region}</Badge>
+                      <Badge variant="outline" className="rounded-full">{item.gender}</Badge>
+                      <Badge variant="outline" className="rounded-full">{item.rankingGroup}</Badge>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-700">
+                      <span className="font-medium">{formatCompactDate(item.date)}</span>
+                      <span>원본유형 {item.sourceType}</span>
+                      <span>상태 {item.status}</span>
+                    </div>
+                    <div className="mt-2 text-sm leading-relaxed text-slate-600">{item.notes}</div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
