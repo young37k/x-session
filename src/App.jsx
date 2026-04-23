@@ -2683,7 +2683,7 @@ function SessionEditor({
                   }}
                   className="rounded-[28px] border-0 bg-white shadow-xl"
                 >
-                  <CardContent className="p-4 md:p-5">
+                  <CardContent className="p-3 sm:p-4 md:p-5">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div className="text-base font-semibold">End {end.index}</div>
@@ -2794,7 +2794,7 @@ function SessionEditor({
               <div className="grid gap-3">
                 {(session.distanceRounds || []).map((round) => (
                   <Card key={round.id} className="rounded-[28px] border-0 bg-white shadow-xl">
-                    <CardContent className="p-4 md:p-5">
+                    <CardContent className="p-3 sm:p-4 md:p-5">
                       <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
                           <div className="text-base font-semibold">거리 기록 {round.index}</div>
@@ -2842,7 +2842,7 @@ function SessionEditor({
             </>
           )}
           <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
-            <CardContent className="p-4 md:p-5">
+            <CardContent className="p-3 sm:p-4 md:p-5">
               <div className="flex flex-col gap-3">
                 {tempSaveMessage && (
                   <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -3036,7 +3036,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="h-full bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 누적 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {previousDayTotal}
@@ -3046,7 +3046,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 </div>
               </div>
 
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">당일 세션 누적 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {todayTotal}
@@ -3062,7 +3062,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="h-full bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 화살 평균 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {previousDayAverage}
@@ -3072,7 +3072,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 </div>
               </div>
 
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">당일 세션 화살 평균 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {todayAverage}
@@ -3088,7 +3088,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="h-full bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
             <div className="grid grid-cols-2 divide-x divide-slate-900/10">
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 거리 최고 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {previousDayBestScore}
@@ -3098,7 +3098,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 </div>
               </div>
 
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">당일 세션 거리 최고 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {todayBestScore}
