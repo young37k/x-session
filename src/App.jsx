@@ -2672,7 +2672,7 @@ function SessionEditor({
                           key={String(score)}
                           variant="outline"
                           className={`${getQuickButtonClass(score)} text-sm font-semibold ${
-                            score === "CONFIRM" ? "!text-white disabled:!text-slate-500 disabled:opacity-100" : ""
+                            score === "CONFIRM" ? "!text-black disabled:!text-black opacity-100" : ""
                           }`}
                           onClick={() => quickInputScore(score)}
                           disabled={
