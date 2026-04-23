@@ -1672,19 +1672,24 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-[22px] sm:rounded-[28px] shadow-2xl"
+      className="relative min-h-[100svh] w-full overflow-hidden"
       style={{
         minHeight: "100svh",
         backgroundImage: "url('/login-background.png')",
         backgroundSize: "contain",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "top center",
-        backgroundColor: "#dfe6f3",
+        backgroundColor: "#0f2344",
       }}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.03)_0%,rgba(2,6,23,0.18)_100%)]" />
-      <div className="relative flex min-h-[100svh] items-end justify-center px-2 pb-2 pt-[32svh] sm:px-4 sm:pb-4 sm:pt-[34svh] lg:pt-[38svh]">
-        <div className="w-full max-w-lg rounded-[24px] sm:rounded-[30px] bg-transparent p-3 sm:p-5">
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "linear-gradient(180deg, rgba(2,6,23,0.03) 0%, rgba(2,6,23,0.08) 58%, rgba(15,35,68,0.72) 78%, #0f2344 100%)",
+        }}
+      />
+      <div className="relative flex min-h-[100svh] items-end justify-center px-0 pb-0 pt-[32svh] sm:px-0 sm:pb-0 sm:pt-[34svh] lg:pt-[38svh]">
+        <div className="w-full bg-transparent p-3 sm:p-5">
           <div className="grid gap-4">
             <div className="grid grid-cols-2 gap-2 rounded-2xl bg-black/20 p-1 backdrop-blur-sm">
               <Button
@@ -2045,7 +2050,7 @@ function SessionEditor({
     requestAnimationFrame(() => {
       const quickHeight = quickPanelRef.current?.offsetHeight || 0;
       const top = target.getBoundingClientRect().top + window.scrollY;
-      const offset = quickHeight + 16;
+      const offset = quickHeight + 72;
       window.scrollTo({
         top: Math.max(0, top - offset),
         behavior: "smooth",
@@ -2087,29 +2092,11 @@ function SessionEditor({
           ...prev,
           [pendingOpponentEnd.id]: prev[pendingOpponentEnd.id] ?? "",
         }));
-        scrollEndIntoView(pendingOpponentEnd.id);
         return;
       }
     }
 
     setActiveOpponentEndId(null);
-    const lastEmptyTarget = (() => {
-      const ends = nextSession.ends || [];
-      for (let endIndex = ends.length - 1; endIndex >= 0; endIndex -= 1) {
-        const end = ends[endIndex];
-        for (let i = end.arrows.length - 1; i >= 0; i -= 1) {
-          if (end.arrows[i] === null) {
-            return { endId: end.id, arrowIndex: i };
-          }
-        }
-      }
-      return null;
-    })();
-
-    if (lastEmptyTarget) {
-      scrollEndIntoView(lastEmptyTarget.endId);
-      focusArrowField(lastEmptyTarget.endId, lastEmptyTarget.arrowIndex);
-    }
   }
 
   function updateArrow(endId, arrowIndex, value, options = {}) {
@@ -2196,9 +2183,7 @@ function SessionEditor({
     const previous = history[history.length - 1];
     setHistory((h) => h.slice(0, -1));
     setSession(previous);
-    requestAnimationFrame(() => {
-      restoreInputFlow(previous);
-    });
+    restoreInputFlow(previous);
   }
 
   function resetEnd(endId) {
@@ -2231,7 +2216,7 @@ function SessionEditor({
       ...prev,
       distanceRounds: [
         ...(prev.distanceRounds || []),
-        createEmptyDistanceRound((prev.distanceRounds || []).length + 1, prev.distance || 70),
+        createEmptyDistanceRound((prev.distanceRounds || []).length + 1, prev.distance || 30),
       ],
     }));
   }
@@ -2547,7 +2532,7 @@ function SessionEditor({
                 <div className="flex-1">
                   <Select
                     value={String(session.distance)}
-                    onValueChange={(value) => patchSession((prev) => ({ ...prev, distance: Number(value) }))}
+                    onValueChange={(value) => patchSession((prev) => ({ ...prev, distance: Number(value) || 30 }))}
                   >
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="거리 선택" />
@@ -2642,7 +2627,7 @@ function SessionEditor({
                         <Button
                           key={String(score)}
                           variant="outline"
-                          className={getQuickButtonClass(score)}
+                          className={`${getQuickButtonClass(score)} text-sm font-semibold`}
                           onClick={() => quickInputScore(score)}
                           disabled={
                             score === "CONFIRM"
@@ -2650,7 +2635,7 @@ function SessionEditor({
                               : false
                           }
                         >
-                          {score === "EDIT" ? "점수수정" : score === "CONFIRM" ? "확인" : score}
+                          <span>{score === "EDIT" ? "점수수정" : score === "CONFIRM" ? "확인" : score}</span>
                         </Button>
                       ))}
                     </div>
@@ -5261,8 +5246,8 @@ function XSessionApp() {
   const adminEmailGuard = isAdminEmail;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      <div className={`mx-auto flex w-full flex-col ${currentUser ? "max-w-7xl gap-3 px-2 py-2 md:gap-6 md:p-6 xl:p-8" : "max-w-[min(96vw,1440px)] gap-0 px-0 py-0 md:px-4 md:py-4 xl:px-6 xl:py-6"}`}>
+    <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+      <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6" : "gap-0"}`}>
         {currentUser ? <Hero activeTab={ui.activeTab} /> : null}
 
         {authLoading && !authUser ? (
