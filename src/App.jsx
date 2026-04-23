@@ -1868,7 +1868,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <Button
                   type="button"
                   disabled={authLoading}
-                  className="h-12 rounded-2xl bg-white/92 text-base font-semibold text-slate-900 hover:bg-white"
+                  className="h-12 rounded-2xl bg-blue-950 text-base font-semibold text-white hover:bg-blue-900 active:bg-blue-950 disabled:bg-blue-950 disabled:text-white"
                   onClick={handleRegisterSubmit}
                 >
                   {authLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
@@ -1997,7 +1997,7 @@ function SessionEditor({
     if (session.mode === "set") {
       return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "CONFIRM"];
     }
-    return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "CONFIRM"];
+    return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT", "CONFIRM"];
   }, [session.mode]);
 
   useEffect(() => {
