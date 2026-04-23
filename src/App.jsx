@@ -1992,7 +1992,7 @@ function SessionEditor({
   const activeEndId = activeOpponentEndId || currentTarget?.endId || null;
   const quickPanelOptions = useMemo(() => {
     if (session.mode === "set") {
-      return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT", "CONFIRM"];
+      return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "CONFIRM"];
     }
     return ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, "M", "EDIT", "CONFIRM"];
   }, [session.mode]);
@@ -2111,35 +2111,32 @@ function SessionEditor({
     if (!nextSession || nextSession.recordInputType !== "end") return;
 
     if (nextSession.mode === "set") {
-      const pendingOpponentEnd = findLatestPendingOpponentEnd(nextSession.ends || []);
-      if (pendingOpponentEnd) {
-        setActiveOpponentEndId(pendingOpponentEnd.id);
-        setOpponentInputBuffers((prev) => ({
-          ...prev,
-          [pendingOpponentEnd.id]: prev[pendingOpponentEnd.id] ?? "",
-        }));
-        scrollEndIntoView(pendingOpponentEnd.id);
-        return;
+      for (let endIndex = nextSession.ends.length - 1; endIndex >= 0; endIndex -= 1) {
+        const end = nextSession.ends[endIndex];
+        const hasArrowInput = (end.arrows || []).some((arrow) => arrow !== null);
+        const allFilled = (end.arrows || []).every((arrow) => arrow !== null);
+
+        if (hasArrowInput && allFilled && !end.opponentScoreEntered) {
+          setActiveOpponentEndId(end.id);
+          setOpponentInputBuffers((prev) => ({
+            ...prev,
+            [end.id]: prev[end.id] ?? "",
+          }));
+          return;
+        }
       }
     }
 
     setActiveOpponentEndId(null);
-    const lastEmptyTarget = (() => {
-      const ends = nextSession.ends || [];
-      for (let endIndex = ends.length - 1; endIndex >= 0; endIndex -= 1) {
-        const end = ends[endIndex];
-        for (let i = end.arrows.length - 1; i >= 0; i -= 1) {
-          if (end.arrows[i] === null) {
-            return { endId: end.id, arrowIndex: i };
-          }
+
+    for (let endIndex = nextSession.ends.length - 1; endIndex >= 0; endIndex -= 1) {
+      const end = nextSession.ends[endIndex];
+      for (let i = end.arrows.length - 1; i >= 0; i -= 1) {
+        if (end.arrows[i] === null) {
+          focusArrowField(end.id, i);
+          return;
         }
       }
-      return null;
-    })();
-
-    if (lastEmptyTarget) {
-      scrollEndIntoView(lastEmptyTarget.endId);
-      focusArrowField(lastEmptyTarget.endId, lastEmptyTarget.arrowIndex);
     }
   }
 
@@ -2189,15 +2186,6 @@ function SessionEditor({
   }
 
   function quickInputScore(score) {
-    if (score === "EDIT") {
-      const candidateEnd =
-        [...session.ends]
-          .reverse()
-          .find((end) => end.opponentScoreEntered || end.arrows.some((v) => v !== null));
-      if (candidateEnd) activateOpponentInput(candidateEnd.id);
-      return;
-    }
-
     if (score === "CONFIRM") {
       if (session.mode === "set" && activeOpponentEndId) {
         confirmOpponentScore(activeOpponentEndId);
@@ -2227,6 +2215,9 @@ function SessionEditor({
     const previous = history[history.length - 1];
     setHistory((h) => h.slice(0, -1));
     setSession(previous);
+    requestAnimationFrame(() => {
+      restoreInputFlow(previous);
+    });
   }
 
   function resetEnd(endId) {
@@ -2465,9 +2456,6 @@ function SessionEditor({
     if (score === "M") {
       return `${base} ${isActive ? "border-slate-500 bg-slate-200 text-slate-900 shadow-sm" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`;
     }
-    if (score === "EDIT") {
-      return `${base} border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100`;
-    }
     if (score === "CONFIRM") {
       return `${base} border-blue-300 bg-blue-50 text-black hover:bg-blue-100`;
     }
@@ -2667,7 +2655,7 @@ function SessionEditor({
                               : false
                           }
                         >
-                          {score === "CONFIRM" ? "확인" : score === "EDIT" ? "점수수정" : score}
+                          {score === "CONFIRM" ? "확인" : score}
                         </Button>
                       ))}
                     </div>
