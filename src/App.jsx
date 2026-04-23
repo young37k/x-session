@@ -1597,6 +1597,20 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
       ) {
         return null;
       }
+      if (
+        rankingFilters.gender &&
+        rankingFilters.gender !== "all" &&
+        userGender !== rankingFilters.gender
+      ) {
+        return null;
+      }
+      if (
+        rankingFilters.gender &&
+        rankingFilters.gender !== "all" &&
+        userGender !== rankingFilters.gender
+      ) {
+        return null;
+      }
 
       const attempts = sessions
         .filter((session) => session.userId === user.id)
@@ -3707,6 +3721,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
     rankingGroup: "all",
     groupName: "all",
     regionCity: "all",
+    gender: "all",
   });
 
   const groupOptions = useMemo(() => Array.from(new Set(users.map((u) => u.groupName).filter(Boolean))), [users]);
@@ -3772,6 +3787,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
     return OFFICIAL_RESULT_SOURCES.filter((item) => {
       if (rankingFilters.rankingGroup !== "all" && item.rankingGroup !== rankingFilters.rankingGroup) return false;
       if (rankingFilters.regionCity !== "all" && item.region !== rankingFilters.regionCity) return false;
+      if (rankingFilters.gender !== "all" && item.gender !== rankingFilters.gender) return false;
       if (rankingFilters.groupName !== "all") return false;
       return true;
     }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -3915,6 +3931,19 @@ function RankingBoard({ users, sessions, currentUserId }) {
                 {regionOptions.map((item) => (
                   <option key={item} value={item}>{item}</option>
                 ))}
+              </select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="w-16 shrink-0 text-sm">성별</Label>
+              <select
+                value={rankingFilters.gender}
+                onChange={(e) => setRankingFilters((prev) => ({ ...prev, gender: e.target.value }))}
+                className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+              >
+                <option value="all">전체 성별</option>
+                <option value="남">남</option>
+                <option value="여">여</option>
               </select>
             </div>
           </div>
