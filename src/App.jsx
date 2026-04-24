@@ -118,7 +118,7 @@ function normalizeOfficialDivision(division) {
     return "초등부(저학년)";
   }
   if (division === "초등5" || division === "초등6") {
-    return "초등부(고학년)";
+    return "초등부(통합)";
   }
   if (division === "중등1" || division === "중등2" || division === "중등3") {
     return "중등부";
@@ -128,7 +128,7 @@ function normalizeOfficialDivision(division) {
 
 const RANKING_GROUP_OPTIONS = [
   "초등부(저학년)",
-  "초등부(고학년)",
+  "초등부(통합)",
   "중등부",
   "고등부(남)",
   "고등부(여)",
@@ -158,7 +158,7 @@ const DIVISION_DISTANCE_RULES = {
 
 const RANKING_GROUP_DISTANCE_RULES = {
   "초등부(저학년)": [35, 30, 25, 20],
-  "초등부(고학년)": [35, 30, 25, 20],
+  "초등부(통합)": [35, 30, 25, 20],
   "중등부": [60, 50, 40, 30],
   "고등부(남)": [90, 70, 50, 30],
   "고등부(여)": [70, 60, 50, 30],
@@ -411,13 +411,13 @@ function formatGroupDisplayName(value) {
 
 function getRankingGroup(division, gender) {
   if (division === "초등부(저학년)") return "초등부(저학년)";
-  if (division === "초등부(고학년)") return "초등부(고학년)";
+  if (division === "초등부(통합)") return "초등부(통합)";
   if (division === "중등부") return "중등부";
 
   const d = String(division || "").trim();
   const g = String(gender || "남").trim();
   if (/^초등[1-4]$/.test(d)) return "초등부(저학년)";
-  if (/^초등[5-6]$/.test(d)) return "초등부(고학년)";
+  if (/^초등[5-6]$/.test(d)) return "초등부(통합)";
   if (/^중등[1-3]$/.test(d)) return "중등부";
   if (/^고등[1-3]$/.test(d)) return g === "여" ? "고등부(여)" : "고등부(남)";
   if (d === "대학부" || d === "일반부") return g === "여" ? "대학/일반부(여)" : "대학/일반부(남)";
@@ -677,7 +677,7 @@ const OFFICIAL_RESULT_SOURCES = [
     bowType: "리커브",
     region: "경기도",
     gender: "남",
-    rankingGroup: "초등부(고학년)",
+    rankingGroup: "초등부(통합)",
     sourceType: "photo_board",
     status: "source_registered",
     notes: "남자초등부 경기결과 사진 기반 원본 등록",
@@ -699,7 +699,7 @@ const OFFICIAL_RESULT_SOURCES = [
     bowType: "리커브",
     region: "경기도",
     gender: "여",
-    rankingGroup: "초등부(고학년)",
+    rankingGroup: "초등부(통합)",
     sourceType: "photo_board",
     status: "source_registered",
     notes: "여자초등부 경기결과 사진 기반 원본 등록",
@@ -729,7 +729,7 @@ const OFFICIAL_RESULT_SOURCES = [
 ];
 
 // 데이터화된 공식기록 원본. 개인 기록으로 자동 주입하지 않고 공식기록으로만 사용한다.
-// 공식기록은 원본 표에 있는 사실만 보관한다. 2026-04-12 표는 선수 전원 점수까지 반영한다. 정확한 학년이 없는 경우 저학년/고학년/중등부까지만 기록한다.
+// 공식기록은 원본 표에 있는 사실만 보관한다. 2026-04-12 표는 선수 전원 점수까지 반영한다. U-11은 저학년, 일반 초등부 표는 통합으로 기록한다.
 const SAMPLE_SHEETS = [{
     id: "sheet_2026_03_22",
     date: "2026-03-22",
@@ -823,7 +823,7 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_04_12_elem_boys_upper_validation",
     date: "2026-04-12",
-    division: "초등부(고학년)",
+    division: "초등부(통합)",
     gender: "남",
     regionCity: "경기도",
     bowType: "리커브",
@@ -896,7 +896,7 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_04_12_elem_girls_upper_validation",
     date: "2026-04-12",
-    division: "초등부(고학년)",
+    division: "초등부(통합)",
     gender: "여",
     regionCity: "경기도",
     bowType: "리커브",
