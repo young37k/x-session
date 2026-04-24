@@ -425,6 +425,15 @@ function getRankingGroup(division, gender) {
   return "";
 }
 
+function rankingGroupMatchesFilter(selectedGroup, actualGroup) {
+  if (!selectedGroup || selectedGroup === "all") return true;
+  if (selectedGroup === "초등부(통합)") {
+    return actualGroup === "초등부(통합)" || actualGroup === "초등부(저학년)";
+  }
+  return actualGroup === selectedGroup;
+}
+
+
 function getRequiredDistancesForRankingGroup(rankingGroup) {
   return RANKING_GROUP_DISTANCE_RULES[rankingGroup] || [];
 }
@@ -924,7 +933,7 @@ const SAMPLE_SHEETS = [{
       { name: "안수연", school: "안양서초등학교", rounds: [309, 311, 331, 344], total: 1295 },
       { name: "차유나", school: "원미초등학교", rounds: [310, 320, 324, 337], total: 1291 },
       { name: "신서윤", school: "송정초등학교", rounds: [302, 324, 319, 344], total: 1289 },
-      { name: "박민서", school: "안양서초등학교", rounds: [296, 320, 329, 341], total: 1286 },
+      { name: "탁민서", school: "안양서초등학교", rounds: [296, 320, 329, 341], total: 1286 },
       { name: "김지후", school: "안양서초등학교", rounds: [302, 309, 326, 342], total: 1279 },
       { name: "김태리", school: "하성초등학교", rounds: [298, 311, 322, 345], total: 1276 },
       { name: "조유나", school: "수진초등학교", rounds: [292, 301, 319, 339], total: 1251 },
@@ -1772,11 +1781,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
       const userDivision = user.division || "";
       const userGender = user.gender || "남";
       const userRankingGroup = getRankingGroup(userDivision, userGender);
-      if (
-        rankingFilters.rankingGroup &&
-        rankingFilters.rankingGroup !== "all" &&
-        userRankingGroup !== rankingFilters.rankingGroup
-      ) {
+      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, userRankingGroup)) {
         return null;
       }
       if (
@@ -1903,11 +1908,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
       const userDivision = user.division || "";
       const userGender = user.gender || "남";
       const userRankingGroup = getRankingGroup(userDivision, userGender);
-      if (
-        rankingFilters.rankingGroup &&
-        rankingFilters.rankingGroup !== "all" &&
-        userRankingGroup !== rankingFilters.rankingGroup
-      ) {
+      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, userRankingGroup)) {
         return null;
       }
       if (
@@ -4063,7 +4064,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
   const officialResultSources = useMemo(() => {
     return OFFICIAL_RESULT_SOURCES.filter((item) => {
-      if (rankingFilters.rankingGroup !== "all" && item.rankingGroup !== rankingFilters.rankingGroup) return false;
+      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, item.rankingGroup)) return false;
       if (rankingFilters.regionCity !== "all" && item.region !== rankingFilters.regionCity) return false;
       if (rankingFilters.gender !== "all" && item.gender !== rankingFilters.gender) return false;
       if (rankingFilters.groupName !== "all") return false;
