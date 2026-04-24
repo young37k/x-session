@@ -2063,6 +2063,8 @@ function Hero({ activeTab = "dashboard" }) {
     dashboard: "X-DASHBOARD",
     ranking: "X-RANKING",
     analysis: "X-ANALYSIS",
+    stage: "X-STAGE",
+    brief: "X-BRIEF",
     profile: "PROFILE",
     admin: "ADMIN",
   };
@@ -5111,6 +5113,11 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
   const [newsForm, setNewsForm] = useState({ title: "", content: "" });
   const [briefForm, setBriefForm] = useState({ title: "", content: "" });
   const [publishMessage, setPublishMessage] = useState("");
+  const [adminEvents, setAdminEvents] = useState([]);
+  const [adminNewsItems, setAdminNewsItems] = useState([]);
+  const [adminBriefNotices, setAdminBriefNotices] = useState([]);
+  const [adminPublishedLoading, setAdminPublishedLoading] = useState(false);
+  const [deletingPublishedId, setDeletingPublishedId] = useState("");
 
   useEffect(() => {
     try {
@@ -5181,6 +5188,62 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       .slice(0, 10);
   }, [realUsers, userSearch]);
 
+  async function loadAdminPublishedItems() {
+    if (!appServices?.db) {
+      setAdminEvents([]);
+      setAdminNewsItems([]);
+      setAdminBriefNotices([]);
+      return;
+    }
+
+    setAdminPublishedLoading(true);
+    try {
+      const [eventSnap, newsSnap, briefSnap] = await Promise.all([
+        getDocs(query(collection(appServices.db, "stage_events"), orderBy("date", "asc"))),
+        getDocs(query(collection(appServices.db, "stage_news"), orderBy("createdAt", "desc"))),
+        getDocs(query(collection(appServices.db, "brief_notices"), orderBy("createdAt", "desc"))),
+      ]);
+
+      const loadedEvents = eventSnap.docs
+        .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+      const loadedNewsItems = newsSnap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+      const loadedBriefNotices = briefSnap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+
+      setAdminEvents(loadedEvents);
+      setAdminNewsItems(loadedNewsItems);
+      setAdminBriefNotices(loadedBriefNotices);
+    } catch (error) {
+      alert(error.message || "등록 목록을 불러오지 못했다.");
+    } finally {
+      setAdminPublishedLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadAdminPublishedItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appServices]);
+
+  async function deletePublishedItem(collectionName, itemId, label) {
+    if (!appServices?.db || !itemId) return alert("삭제할 항목 정보가 부족하다.");
+    const ok = window.confirm(`${label} 항목을 삭제할까?`);
+    if (!ok) return;
+
+    try {
+      setDeletingPublishedId(`${collectionName}_${itemId}`);
+      await deleteDoc(doc(appServices.db, collectionName, itemId));
+      setPublishMessage(`${label} 항목을 삭제했다.`);
+      await loadAdminPublishedItems();
+      if (collectionName === "stage_events" || collectionName === "stage_news") onStageRefresh?.();
+      if (collectionName === "brief_notices") onBriefRefresh?.();
+    } catch (error) {
+      alert(error.message || `${label} 삭제에 실패했다.`);
+    } finally {
+      setDeletingPublishedId("");
+    }
+  }
+
 
   async function createStageEvent() {
     if (!appServices?.db) return alert("DB 연결이 준비되지 않았다.");
@@ -5197,6 +5260,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       });
       setEventForm({ title: "", date: "", location: "" });
       setPublishMessage("대회 일정이 등록되었다.");
+      await loadAdminPublishedItems();
       onStageRefresh?.();
     } catch (error) {
       alert(error.message || "대회 일정 등록에 실패했다.");
@@ -5217,6 +5281,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       });
       setNewsForm({ title: "", content: "" });
       setPublishMessage("양궁 뉴스가 등록되었다.");
+      await loadAdminPublishedItems();
       onStageRefresh?.();
     } catch (error) {
       alert(error.message || "양궁 뉴스 등록에 실패했다.");
@@ -5237,6 +5302,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       });
       setBriefForm({ title: "", content: "" });
       setPublishMessage("공지사항이 등록되었다.");
+      await loadAdminPublishedItems();
       onBriefRefresh?.();
     } catch (error) {
       alert(error.message || "공지 등록에 실패했다.");
@@ -5522,6 +5588,92 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">X-Stage / X-Brief 등록 항목 관리</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            대회 일정, 양궁 뉴스, 공지사항을 삭제할 수 있다.
+          </div>
+
+          {adminPublishedLoading ? (
+            <div className="rounded-2xl border border-slate-200 px-4 py-6 text-sm text-slate-500">등록 항목을 불러오는 중...</div>
+          ) : (
+            <div className="grid gap-5 xl:grid-cols-3">
+              <div className="grid gap-2">
+                <div className="font-semibold">대회 일정</div>
+                {adminEvents.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 px-4 py-4 text-sm text-slate-500">등록된 대회 일정이 없다.</div>
+                ) : (
+                  adminEvents.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 px-4 py-3">
+                      <div className="font-semibold">{item.title || "제목 없음"}</div>
+                      <div className="mt-1 text-xs text-slate-500">{item.date || "-"} · {item.location || "장소 미정"}</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-3 rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                        disabled={deletingPublishedId === `stage_events_${item.id}`}
+                        onClick={() => deletePublishedItem("stage_events", item.id, "대회 일정")}
+                      >
+                        {deletingPublishedId === `stage_events_${item.id}` ? "삭제 중..." : "삭제"}
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="grid gap-2">
+                <div className="font-semibold">양궁 뉴스</div>
+                {adminNewsItems.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 px-4 py-4 text-sm text-slate-500">등록된 뉴스가 없다.</div>
+                ) : (
+                  adminNewsItems.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 px-4 py-3">
+                      <div className="font-semibold">{item.title || "제목 없음"}</div>
+                      <div className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-slate-500">{item.content || ""}</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-3 rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                        disabled={deletingPublishedId === `stage_news_${item.id}`}
+                        onClick={() => deletePublishedItem("stage_news", item.id, "양궁 뉴스")}
+                      >
+                        {deletingPublishedId === `stage_news_${item.id}` ? "삭제 중..." : "삭제"}
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="grid gap-2">
+                <div className="font-semibold">공지사항</div>
+                {adminBriefNotices.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 px-4 py-4 text-sm text-slate-500">등록된 공지가 없다.</div>
+                ) : (
+                  adminBriefNotices.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 px-4 py-3">
+                      <div className="font-semibold">{item.title || "제목 없음"}</div>
+                      <div className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-slate-500">{item.content || ""}</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-3 rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                        disabled={deletingPublishedId === `brief_notices_${item.id}`}
+                        onClick={() => deletePublishedItem("brief_notices", item.id, "공지사항")}
+                      >
+                        {deletingPublishedId === `brief_notices_${item.id}` ? "삭제 중..." : "삭제"}
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
