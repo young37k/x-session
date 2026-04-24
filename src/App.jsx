@@ -275,6 +275,54 @@ const DEFAULT_UI = { activeTab: "dashboard" };
 const ADMIN_EMAILS = ["theyoung37k@gmail.com", "5@gmail.com"];
 const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
 
+const OFFICIAL_CLAIM_STORAGE_KEY = "elbowshot_official_claim_requests";
+
+function normalizeClaimText(value) {
+  return String(value || "").replace(/\s+/g, "").trim().toLowerCase();
+}
+
+function readOfficialClaimsFromStorage() {
+  try {
+    const raw = localStorage.getItem(OFFICIAL_CLAIM_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeOfficialClaimsToStorage(claims) {
+  try {
+    localStorage.setItem(OFFICIAL_CLAIM_STORAGE_KEY, JSON.stringify(claims || []));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+function getOfficialClaimId({ sampleUserId, requesterUid }) {
+  return `claim_${sampleUserId}_${requesterUid}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
+}
+
+function isOfficialProfileMatch(officialUser, requester) {
+  if (!officialUser || !requester) return false;
+  const sameName = normalizeClaimText(officialUser.name) === normalizeClaimText(requester.name);
+  const sameGroup = normalizeClaimText(officialUser.groupName) === normalizeClaimText(requester.groupName);
+  const sameGender = String(officialUser.gender || "") === String(requester.gender || "");
+  return Boolean(sameName && sameGroup && sameGender);
+}
+
+function getApprovedClaimForSample(officialClaims, sampleUserId) {
+  return (officialClaims || []).find(
+    (claim) => claim.sampleUserId === sampleUserId && claim.status === "approved" && claim.claimedByUid
+  );
+}
+
+function isUserVerifiedByClaim(officialClaims, uid) {
+  return (officialClaims || []).some(
+    (claim) => claim.requesterUid === uid && claim.status === "approved"
+  );
+}
+
 async function deleteAllSessionsForUser(db, uid) {
   const q = query(collection(db, "sessions"), where("userId", "==", uid));
   const snap = await getDocs(q);
@@ -1698,6 +1746,10 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         bestScore: best.score,
         qualifiedSessions: attempts.length,
         latestDate: best.sessionDate || "",
+        isSampleData: Boolean(user.isSampleData),
+        sourceType: user.isSampleData ? "official" : "user",
+        claimedByUid: user.claimedByUid || "",
+        verifiedAthlete: Boolean(user.verifiedAthlete),
       };
     })
     .filter(Boolean);
@@ -1783,6 +1835,10 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
           .map((distance) => bestByDistance[distance].sessionDate || "")
           .sort()
           .slice(-1)[0],
+        isSampleData: Boolean(user.isSampleData),
+        sourceType: user.isSampleData ? "official" : "user",
+        claimedByUid: user.claimedByUid || "",
+        verifiedAthlete: Boolean(user.verifiedAthlete),
       };
     })
     .filter(Boolean);
@@ -3772,7 +3828,7 @@ function StatCard({ title, value, sub, icon: Icon, tone }) {
 }
 
 
-function RankingBoard({ users, sessions, currentUserId }) {
+function RankingBoard({ users, sessions, currentUser, currentUserId, officialClaims = [], onRequestOfficialClaim }) {
   const [rankingType, setRankingType] = useState("distance");
   const [rankingFilters, setRankingFilters] = useState({
     distance: "all",
@@ -3784,6 +3840,23 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
   const groupOptions = useMemo(() => Array.from(new Set(users.map((u) => u.groupName).filter(Boolean))), [users]);
   const regionOptions = useMemo(() => REGION_OPTIONS, []);
+  const usersById = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
+  const requestableOfficialUserIds = useMemo(() => {
+    if (!currentUser) return new Set();
+    return new Set(
+      users
+        .filter((user) => user.isSampleData && isOfficialProfileMatch(user, currentUser))
+        .filter((user) => !getApprovedClaimForSample(officialClaims, user.id))
+        .map((user) => user.id)
+    );
+  }, [users, currentUser, officialClaims]);
+  const requestedClaimBySampleUserId = useMemo(() => {
+    const map = new Map();
+    (officialClaims || []).forEach((claim) => {
+      if (claim.requesterUid === currentUserId) map.set(claim.sampleUserId, claim);
+    });
+    return map;
+  }, [officialClaims, currentUserId]);
 
   const distanceRankings = useMemo(() => {
     const items = buildDistanceRankings(users, sessions, rankingFilters, { weekly: false });
@@ -4039,6 +4112,14 @@ function RankingBoard({ users, sessions, currentUserId }) {
                       <div className="min-w-0">
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                           <div className="truncate text-sm font-semibold">{item.name}</div>
+                          {item.isSampleData ? (
+                            <Badge className="h-5 rounded-full bg-slate-900 px-2 text-[10px] text-white">공식기록</Badge>
+                          ) : (
+                            <Badge variant="outline" className="h-5 rounded-full px-2 text-[10px]">사용자계정</Badge>
+                          )}
+                          {item.verifiedAthlete && (
+                            <Badge className="h-5 rounded-full bg-emerald-600 px-2 text-[10px] text-white">인증 선수</Badge>
+                          )}
                           {item.userId === currentUserId && (
                             <Badge className="h-5 rounded-full bg-blue-900 px-2 text-[10px] text-white">나</Badge>
                           )}
@@ -4070,6 +4151,23 @@ function RankingBoard({ users, sessions, currentUserId }) {
                         </>
                       )}
                     </div>
+
+                    {item.isSampleData && requestableOfficialUserIds.has(item.userId) && (
+                      <div className="mt-2 pl-10">
+                        {requestedClaimBySampleUserId.get(item.userId)?.status === "pending" ? (
+                          <Badge variant="outline" className="rounded-full border-amber-300 bg-amber-50 text-amber-700">연결 요청 대기중</Badge>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 rounded-2xl px-3 text-xs"
+                            onClick={() => onRequestOfficialClaim?.(usersById.get(item.userId))}
+                          >
+                            공식 기록 연결 요청
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -4846,7 +4944,7 @@ function ProfilePanel({ user, onUpdate, saving }) {
 }
 
 
-function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onStageRefresh, onBriefRefresh }) {
+function AdminPanel({ currentUser, users, sessions, appServices, officialClaims = [], onApproveOfficialClaim, onRejectOfficialClaim, onRefresh, onStageRefresh, onBriefRefresh }) {
   const [emailRegion, setEmailRegion] = useState("all");
   const [emailDivision, setEmailDivision] = useState("all");
   const [emailSubject, setEmailSubject] = useState("[X-SESSION 안내]");
@@ -4882,6 +4980,8 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
 
   const realUsers = useMemo(() => users.filter((user) => !user.isSampleData), [users]);
   const realSessions = useMemo(() => sessions.filter((session) => !session.isSampleData), [sessions]);
+  const pendingOfficialClaims = useMemo(() => (officialClaims || []).filter((claim) => claim.status === "pending"), [officialClaims]);
+  const approvedOfficialClaims = useMemo(() => (officialClaims || []).filter((claim) => claim.status === "approved"), [officialClaims]);
 
   const divisionOptions = useMemo(
     () => Array.from(new Set(realUsers.map((user) => user.division).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko")),
@@ -5194,6 +5294,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
               <div><span className="font-medium">학년/부문:</span> {selectedUser.division || "미입력"}</div>
               <div><span className="font-medium">소속:</span> {selectedUser.groupName || "미입력"}</div>
               <div><span className="font-medium">지역:</span> {selectedUser.regionCity || "미입력"}</div>
+              <div><span className="font-medium">인증 선수:</span> {selectedUser.verifiedAthlete ? "인증됨" : "미인증"}</div>
               <div><span className="font-medium">가입일:</span> {formatFullDate(selectedUser.createdAt)}</div>
               <div><span className="font-medium">UID:</span> {selectedUser.id}</div>
               <div><span className="font-medium">저장 기록 수:</span> {realSessions.filter((session) => session.userId === selectedUser.id).length}</div>
@@ -5385,10 +5486,15 @@ function XSessionApp() {
   const [adminRequested, setAdminRequested] = useState(false);
   const [stageRefreshKey, setStageRefreshKey] = useState(0);
   const [briefRefreshKey, setBriefRefreshKey] = useState(0);
+  const [officialClaims, setOfficialClaims] = useState(() => readOfficialClaimsFromStorage());
   const pendingProfileRef = useRef(null);
 
 
   const authTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    writeOfficialClaimsToStorage(officialClaims);
+  }, [officialClaims]);
 
 
   useEffect(() => {
@@ -5619,6 +5725,7 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
+        gender: input.gender || "남",
       };
 
       const result = await createUserWithEmailAndPassword(appServices.auth, input.email, input.password);
@@ -5630,6 +5737,7 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
+        gender: input.gender || "남",
       });
 
       const nextProfile = {
@@ -5643,6 +5751,7 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
+        gender: input.gender || "남",
         avatar: "",
         photoURL: "",
         photoPath: "",
@@ -5888,6 +5997,7 @@ function XSessionApp() {
         regionCity: nextUser.regionCity,
         regionDistrict: nextUser.regionDistrict,
         division: nextUser.division,
+        gender: nextUser.gender || profile.gender || "남",
       });
 
       const refreshed = {
@@ -5899,6 +6009,7 @@ function XSessionApp() {
         regionCity: nextUser.regionCity || "",
         regionDistrict: nextUser.regionDistrict || "",
         division: nextUser.division || "전체학년",
+        gender: nextUser.gender || profile.gender || "남",
       };
 
       setProfile(refreshed);
@@ -5929,26 +6040,139 @@ function XSessionApp() {
     }
   }
 
+
+  function handleRequestOfficialClaim(officialUser) {
+    if (!profile || !officialUser?.isSampleData) return;
+    if (!isOfficialProfileMatch(officialUser, profile)) {
+      setGlobalError("이름, 학교/소속, 성별이 공식기록과 일치할 때만 연결 요청이 가능하다.");
+      return;
+    }
+
+    const existingApproved = getApprovedClaimForSample(officialClaims, officialUser.id);
+    if (existingApproved) {
+      setGlobalError("이미 승인된 공식기록이다.");
+      return;
+    }
+
+    const requestId = getOfficialClaimId({ sampleUserId: officialUser.id, requesterUid: profile.id });
+    setOfficialClaims((prev) => {
+      if (prev.some((claim) => claim.id === requestId)) return prev;
+      const nextClaim = {
+        id: requestId,
+        sampleUserId: officialUser.id,
+        requesterUid: profile.id,
+        requesterEmail: profile.email || "",
+        requesterName: profile.name || "",
+        requesterGroup: profile.groupName || "",
+        officialName: officialUser.name || "",
+        officialGroup: officialUser.groupName || "",
+        gender: officialUser.gender || profile.gender || "",
+        rankingGroup: getRankingGroup(officialUser.division || "", officialUser.gender || "남"),
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+      return [...prev, nextClaim];
+    });
+    setGlobalNotice("공식 기록 연결 요청을 보냈다. 관리자가 확인 후 승인하면 인증 선수로 표시된다.");
+  }
+
+  async function handleApproveOfficialClaim(claim) {
+    if (!claim?.id) return;
+    const approvedAt = new Date().toISOString();
+    setOfficialClaims((prev) =>
+      prev.map((item) =>
+        item.id === claim.id
+          ? { ...item, status: "approved", claimedByUid: item.requesterUid, approvedAt, approvedBy: currentUser?.email || "" }
+          : item
+      )
+    );
+
+    try {
+      if (appServices?.db && claim.requesterUid) {
+        await setDoc(
+          doc(appServices.db, "users", claim.requesterUid),
+          {
+            verifiedAthlete: true,
+            officialClaimApprovedAt: approvedAt,
+            officialClaimSampleUserId: claim.sampleUserId,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+        await loadUsersAndSessions(appServices.db);
+      }
+      setGlobalNotice("공식 기록 연결 요청을 승인했다.");
+    } catch (error) {
+      setGlobalError(error.message || "공식 기록 승인 정보를 저장하지 못했다. 로컬 승인 상태는 유지된다.");
+    }
+  }
+
+  function handleRejectOfficialClaim(claim) {
+    if (!claim?.id) return;
+    setOfficialClaims((prev) =>
+      prev.map((item) =>
+        item.id === claim.id
+          ? { ...item, status: "rejected", rejectedAt: new Date().toISOString(), rejectedBy: currentUser?.email || "" }
+          : item
+      )
+    );
+    setGlobalNotice("공식 기록 연결 요청을 반려했다.");
+  }
+
   const currentUser = useMemo(() => profile, [profile]);
   const sampleUsers = useMemo(() => buildPermanentSampleUsers(), []);
   const permanentSampleSessions = useMemo(() => buildPermanentSampleSessions(), []);
 
   const usersForDisplay = useMemo(() => {
-    const existingIds = new Set(users.map((u) => u.id));
-    const extra = sampleUsers.filter((u) => !existingIds.has(u.id));
-    return [...users, ...extra];
-  }, [users, sampleUsers]);
+    const approvedBySampleUserId = new Map(
+      (officialClaims || [])
+        .filter((claim) => claim.status === "approved" && claim.sampleUserId && claim.claimedByUid)
+        .map((claim) => [claim.sampleUserId, claim])
+    );
+    const verifiedUidSet = new Set(
+      (officialClaims || [])
+        .filter((claim) => claim.status === "approved" && claim.claimedByUid)
+        .map((claim) => claim.claimedByUid)
+    );
+
+    const realUsersWithVerification = users.map((user) => ({
+      ...user,
+      verifiedAthlete: Boolean(user.verifiedAthlete || verifiedUidSet.has(user.id)),
+    }));
+    const existingIds = new Set(realUsersWithVerification.map((u) => u.id));
+    const extra = sampleUsers
+      .filter((u) => !approvedBySampleUserId.has(u.id))
+      .filter((u) => !existingIds.has(u.id));
+    return [...realUsersWithVerification, ...extra];
+  }, [users, sampleUsers, officialClaims]);
 
   const sessionsForDisplay = useMemo(() => {
+    const approvedBySampleUserId = new Map(
+      (officialClaims || [])
+        .filter((claim) => claim.status === "approved" && claim.sampleUserId && claim.claimedByUid)
+        .map((claim) => [claim.sampleUserId, claim])
+    );
     const existingIds = new Set(sessions.map((s) => s.id));
     const merged = [...sessions];
 
     permanentSampleSessions.forEach((s) => {
-      if (!existingIds.has(s.id)) merged.push(s);
+      if (existingIds.has(s.id)) return;
+      const approvedClaim = approvedBySampleUserId.get(s.userId);
+      if (approvedClaim) {
+        merged.push({
+          ...s,
+          userId: approvedClaim.claimedByUid,
+          originalOfficialUserId: s.userId,
+          claimedByUid: approvedClaim.claimedByUid,
+          officialRecord: true,
+        });
+      } else {
+        merged.push(s);
+      }
     });
 
     return merged;
-  }, [sessions, permanentSampleSessions]);
+  }, [sessions, permanentSampleSessions, officialClaims]);
 
   const mySessions = useMemo(
     () => sessions.filter((s) => s.userId === authUser?.uid),
@@ -5994,12 +6218,12 @@ function XSessionApp() {
                 />
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
-              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
+              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
               {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
-              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
+              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} officialClaims={officialClaims} onApproveOfficialClaim={handleApproveOfficialClaim} onRejectOfficialClaim={handleRejectOfficialClaim} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
             </motion.div>
           </>
         )}
