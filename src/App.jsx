@@ -112,6 +112,20 @@ const DIVISION_OPTIONS = [
   "국가대표"
 ];
 const GENDER_OPTIONS = ["남", "여"];
+
+function normalizeOfficialDivision(division) {
+  if (division === "초등1" || division === "초등2" || division === "초등3" || division === "초등4") {
+    return "초등부(저학년)";
+  }
+  if (division === "초등5" || division === "초등6") {
+    return "초등부(고학년)";
+  }
+  if (division === "중등1" || division === "중등2" || division === "중등3") {
+    return "중등부";
+  }
+  return division || "";
+}
+
 const RANKING_GROUP_OPTIONS = [
   "초등부(저학년)",
   "초등부(고학년)",
@@ -396,6 +410,10 @@ function formatGroupDisplayName(value) {
 }
 
 function getRankingGroup(division, gender) {
+  if (division === "초등부(저학년)") return "초등부(저학년)";
+  if (division === "초등부(고학년)") return "초등부(고학년)";
+  if (division === "중등부") return "중등부";
+
   const d = String(division || "").trim();
   const g = String(gender || "남").trim();
   if (/^초등[1-4]$/.test(d)) return "초등부(저학년)";
@@ -710,11 +728,12 @@ const OFFICIAL_RESULT_SOURCES = [
   },
 ];
 
+// 데이터화된 공식기록 원본. 개인 기록으로 자동 주입하지 않고 공식기록으로만 사용한다.
+// 공식기록은 원본 표에 있는 사실만 보관한다. 정확한 학년이 없는 경우 저학년/고학년/중등부까지만 기록한다.
 const SAMPLE_SHEETS = [{
     id: "sheet_2026_03_22",
     date: "2026-03-22",
-    division: "초등4",
-    divisionCycle: ["초등4"],
+    division: "초등부(저학년)",
     gender: "여",
     regionCity: "경기도",
     bowType: "리커브",
@@ -748,8 +767,7 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_04_12",
     date: "2026-04-12",
-    division: "초등4",
-    divisionCycle: ["초등4"],
+    division: "초등부(저학년)",
     gender: "여",
     regionCity: "경기도",
     bowType: "리커브",
@@ -784,13 +802,12 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_04_12_elem_boys_lower_validation",
     date: "2026-04-12",
-    division: "초등1",
-    divisionCycle: ["초등1", "초등2", "초등3", "초등4"],
+    division: "초등부(저학년)",
     gender: "남",
     regionCity: "경기도",
     bowType: "리커브",
     recordInputType: "distance",
-    sheetLabel: "랭킹검증 2026-04-12 남자초등 U-11",
+    sheetLabel: "공식기록 2026-04-12 남자초등 U-11",
     distances: [35, 30, 25, 20],
     rows: [
       { name: "김영재", school: "연무초등학교", rounds: [337, 342, 342, 351], total: 1372 },
@@ -806,13 +823,12 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_04_12_elem_boys_upper_validation",
     date: "2026-04-12",
-    division: "초등5",
-    divisionCycle: ["초등5", "초등6"],
+    division: "초등부(고학년)",
     gender: "남",
     regionCity: "경기도",
     bowType: "리커브",
     recordInputType: "distance",
-    sheetLabel: "랭킹검증 2026-04-12 남자초등 고학년",
+    sheetLabel: "공식기록 2026-04-12 남자초등 고학년",
     distances: [35, 30, 25, 20],
     rows: [
       { name: "장은혁", school: "연무초등학교", rounds: [333, 349, 344, 357], total: 1383 },
@@ -832,13 +848,12 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_04_12_elem_girls_lower_validation",
     date: "2026-04-12",
-    division: "초등1",
-    divisionCycle: ["초등1", "초등2", "초등3", "초등4"],
+    division: "초등부(저학년)",
     gender: "여",
     regionCity: "경기도",
     bowType: "리커브",
     recordInputType: "distance",
-    sheetLabel: "랭킹검증 2026-04-12 여자초등 U-11",
+    sheetLabel: "공식기록 2026-04-12 여자초등 U-11",
     distances: [35, 30, 25, 20],
     rows: [
       { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
@@ -858,13 +873,12 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_04_12_elem_girls_upper_validation",
     date: "2026-04-12",
-    division: "초등5",
-    divisionCycle: ["초등5", "초등6"],
+    division: "초등부(고학년)",
     gender: "여",
     regionCity: "경기도",
     bowType: "리커브",
     recordInputType: "distance",
-    sheetLabel: "랭킹검증 2026-04-12 여자초등 고학년",
+    sheetLabel: "공식기록 2026-04-12 여자초등 고학년",
     distances: [35, 30, 25, 20],
     rows: [
       { name: "원서아", school: "하성초등학교", rounds: [343, 352, 346, 352], total: 1393 },
@@ -884,13 +898,12 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_04_12_middle_boys_validation",
     date: "2026-04-12",
-    division: "중등1",
-    divisionCycle: ["중등1", "중등2", "중등3"],
+    division: "중등부",
     gender: "남",
     regionCity: "경기도",
     bowType: "리커브",
     recordInputType: "distance",
-    sheetLabel: "랭킹검증 2026-04-12 남자중등부",
+    sheetLabel: "공식기록 2026-04-12 남자중등부",
     distances: [60, 50, 40, 30],
     rows: [
       { name: "안은찬", school: "성포중학교", rounds: [338, 322, 347, 357], total: 1364 },
@@ -910,13 +923,12 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_04_12_middle_girls_validation",
     date: "2026-04-12",
-    division: "중등1",
-    divisionCycle: ["중등1", "중등2", "중등3"],
+    division: "중등부",
     gender: "여",
     regionCity: "경기도",
     bowType: "리커브",
     recordInputType: "distance",
-    sheetLabel: "랭킹검증 2026-04-12 여자중등부",
+    sheetLabel: "공식기록 2026-04-12 여자중등부",
     distances: [60, 50, 40, 30],
     rows: [
       { name: "장예진", school: "여흥중학교", rounds: [331, 324, 339, 351], total: 1345 },
@@ -937,13 +949,12 @@ const SAMPLE_SHEETS = [{
   {
     id: "sheet_2026_03_22_elem_girls_lower_validation_v2",
     date: "2026-03-22",
-    division: "초등1",
-    divisionCycle: ["초등1", "초등2", "초등3", "초등4"],
+    division: "초등부(저학년)",
     gender: "여",
     regionCity: "경기도",
     bowType: "리커브",
     recordInputType: "distance",
-    sheetLabel: "랭킹검증 2026-03-22 여자초등 U-11",
+    sheetLabel: "공식기록 2026-03-22 여자초등 U-11",
     distances: [35, 30, 25, 20],
     rows: [
       { name: "황리우", school: "천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
@@ -973,23 +984,78 @@ const SAMPLE_SHEETS = [{
 ];
 
 function makeSampleUserId(name, school) {
-  return `sample_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
+  return `official_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
 }
 
 function buildPermanentSampleUsers() {
-  // 공식기록은 사용자 기록으로 변환하지 않는다.
-  // 실제 선수 가입 시 학년/부문 혼선을 막기 위해 변형 샘플 계정 생성을 중단한다.
-  return [];
+  const map = new Map();
+  SAMPLE_SHEETS.forEach((sheet) => {
+    sheet.rows.forEach((row) => {
+      // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
+      const assignedDivision = row.division || sheet.division;
+      const id = makeSampleUserId(row.name, row.school);
+      if (!map.has(id)) {
+        map.set(id, {
+          id,
+          uid: id,
+          name: row.name,
+          email: `${id}@official.local`,
+          club: row.school,
+          clubName: row.school,
+          groupName: row.school,
+          division: assignedDivision,
+          gender: row.gender || sheet.gender || "남",
+          regionCity: row.regionCity || sheet.regionCity || "경기도",
+          bowType: row.bowType || sheet.bowType || "리커브",
+          avatar: "",
+          photoURL: "",
+          photoPath: "",
+          isSampleData: true,
+          isOfficialRecordUser: true,
+          sampleSourceId: sheet.id,
+        });
+      }
+    });
+  });
+  return Array.from(map.values());
 }
 
 function buildPermanentSampleSessions() {
-  // 공식기록은 X-Ranking의 공식 결과 목록에서만 관리한다.
-  // 랭킹 검증용으로 변형 생성했던 기록 데이터는 1차 운영 기준에서 제외한다.
-  return [];
+  const seen = new Set();
+  return SAMPLE_SHEETS.flatMap((sheet) =>
+    sheet.rows
+      .map((row) => {
+        // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
+        const assignedDivision = row.division || sheet.division;
+        const userId = makeSampleUserId(row.name, row.school);
+        const dedupeKey = `${userId}__${sheet.date}__${sheet.id}`;
+        if (seen.has(dedupeKey)) return null;
+        seen.add(dedupeKey);
+
+        return buildSampleDistanceSession({
+          userId,
+          date: sheet.date,
+          title: `${sheet.sheetLabel} · ${row.name}`,
+          division: assignedDivision,
+          gender: row.gender || sheet.gender || "남",
+          regionCity: row.regionCity || sheet.regionCity || "경기도",
+          bowType: row.bowType || sheet.bowType || "리커브",
+          clubName: row.school,
+          groupName: row.school,
+          distance: sheet.distances[0],
+          arrowsPerDistance: 36,
+          rounds: sheet.distances.map((distance, idx) => ({
+            distance,
+            total: row.rounds[idx],
+          })),
+        });
+      })
+      .filter(Boolean)
+  );
 }
 
 function buildCurrentUserPermanentSamples(userId) {
-  // 로그인 사용자 기록에도 공식결과 기반 변형 샘플을 주입하지 않는다.
+  // 공식기록은 로그인 사용자의 개인 기록으로 자동 주입하지 않는다.
   return [];
 }
 
