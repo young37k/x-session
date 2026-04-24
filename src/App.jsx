@@ -1810,6 +1810,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         .filter((session) => session.userId === user.id)
         .flatMap((session) => getQualifiedDistanceAttempts(session))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
+        .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate))
         .filter((attempt) => attempt.rankingGroup === userRankingGroup);
 
       if (!attempts.length) return null;
@@ -1940,6 +1941,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         .filter((session) => session.userId === user.id)
         .flatMap((session) => getQualifiedDistanceAttempts(session))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
+        .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate))
         .filter((attempt) => attempt.rankingGroup === userRankingGroup);
 
       const bestByDistance = {};
@@ -3980,6 +3982,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     groupName: "all",
     regionCity: "all",
     gender: "all",
+    dateFilter: "all",
+    customDate: getCurrentLocalDateString(),
   });
 
   const groupOptions = useMemo(() => Array.from(new Set(users.map((u) => u.groupName).filter(Boolean))), [users]);
@@ -4067,6 +4071,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
       if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, item.rankingGroup)) return false;
       if (rankingFilters.regionCity !== "all" && item.region !== rankingFilters.regionCity) return false;
       if (rankingFilters.gender !== "all" && item.gender !== rankingFilters.gender) return false;
+      if (!isWithinDateFilter(item.date, rankingFilters.dateFilter || "all", rankingFilters.customDate)) return false;
       if (rankingFilters.groupName !== "all") return false;
       return true;
     }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -4211,6 +4216,29 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                   <option key={item} value={item}>{item}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="w-16 shrink-0 text-sm">날짜</Label>
+              <div className="min-w-0 flex-1 space-y-2">
+                <select
+                  value={rankingFilters.dateFilter}
+                  onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))}
+                  className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+                >
+                  {DATE_FILTER_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
+                </select>
+                {rankingFilters.dateFilter === "custom" && (
+                  <input
+                    type="date"
+                    value={rankingFilters.customDate}
+                    onChange={(e) => setRankingFilters((prev) => ({ ...prev, customDate: e.target.value }))}
+                    className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+                  />
+                )}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
