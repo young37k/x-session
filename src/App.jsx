@@ -972,109 +972,25 @@ const SAMPLE_SHEETS = [{
 
 ];
 
-function makeSampleUserId(name, school, division = "") {
-  return `sample_${school}_${name}_${division}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
+function makeSampleUserId(name, school) {
+  return `sample_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
 }
 
 function buildPermanentSampleUsers() {
-  const map = new Map();
-  SAMPLE_SHEETS.forEach((sheet) => {
-    sheet.rows.forEach((row, rowIndex) => {
-      const assignedDivision =
-        row.division ||
-        sheet.divisionCycle?.[rowIndex % (sheet.divisionCycle?.length || 1)] ||
-        sheet.division;
-      const id = makeSampleUserId(row.name, row.school);
-      if (!map.has(id)) {
-        map.set(id, {
-          id,
-          uid: id,
-          name: row.name,
-          email: `${id}@sample.local`,
-          club: row.school,
-          clubName: row.school,
-          groupName: row.school,
-          division: assignedDivision,
-          gender: row.gender || sheet.gender || "남",
-          regionCity: row.regionCity || sheet.regionCity || "경기도",
-          bowType: row.bowType || sheet.bowType || "리커브",
-          avatar: "",
-          photoURL: "",
-          photoPath: "",
-          isSampleData: true,
-          sampleSourceId: sheet.id,
-        });
-      }
-    });
-  });
-  return Array.from(map.values());
+  // 공식기록은 사용자 기록으로 변환하지 않는다.
+  // 실제 선수 가입 시 학년/부문 혼선을 막기 위해 변형 샘플 계정 생성을 중단한다.
+  return [];
 }
 
 function buildPermanentSampleSessions() {
-  const seen = new Set();
-  return SAMPLE_SHEETS.flatMap((sheet) =>
-    sheet.rows
-      .map((row, rowIndex) => {
-        const assignedDivision =
-          row.division ||
-          sheet.divisionCycle?.[rowIndex % (sheet.divisionCycle?.length || 1)] ||
-          sheet.division;
-        const userId = makeSampleUserId(row.name, row.school);
-        const dedupeKey = `${userId}__${sheet.date}__${sheet.sheetLabel}`;
-        if (seen.has(dedupeKey)) return null;
-        seen.add(dedupeKey);
-
-        return buildSampleDistanceSession({
-          userId,
-          date: sheet.date,
-          title: `${sheet.sheetLabel} · ${row.name}`,
-          division: assignedDivision,
-          gender: row.gender || sheet.gender || "남",
-          regionCity: row.regionCity || sheet.regionCity || "경기도",
-          bowType: row.bowType || sheet.bowType || "리커브",
-          clubName: row.school,
-          groupName: row.school,
-          distance: sheet.distances[0],
-          arrowsPerDistance: 36,
-          rounds: sheet.distances.map((distance, idx) => ({
-            distance,
-            total: row.rounds[idx],
-          })),
-        });
-      })
-      .filter(Boolean)
-  );
+  // 공식기록은 X-Ranking의 공식 결과 목록에서만 관리한다.
+  // 랭킹 검증용으로 변형 생성했던 기록 데이터는 1차 운영 기준에서 제외한다.
+  return [];
 }
 
 function buildCurrentUserPermanentSamples(userId) {
-  if (!userId) return [];
-  const seen = new Set();
-  return SAMPLE_SHEETS
-    .map((sheet) => {
-      const row = sheet.rows[0];
-      const assignedDivision = row.division || sheet.divisionCycle?.[0] || sheet.division;
-      const key = `${userId}__${sheet.date}__${sheet.sheetLabel}`;
-      if (seen.has(key)) return null;
-      seen.add(key);
-      return buildSampleDistanceSession({
-        userId,
-        date: sheet.date,
-        title: `${sheet.sheetLabel}`,
-        division: assignedDivision,
-        gender: row.gender || sheet.gender || "남",
-        regionCity: row.regionCity || sheet.regionCity || "경기도",
-        bowType: row.bowType || sheet.bowType || "리커브",
-        clubName: row.school,
-        groupName: row.school,
-        distance: sheet.distances[0],
-        arrowsPerDistance: 36,
-        rounds: sheet.distances.map((distance, idx) => ({
-          distance,
-          total: row.rounds[idx],
-        })),
-      });
-    })
-    .filter(Boolean);
+  // 로그인 사용자 기록에도 공식결과 기반 변형 샘플을 주입하지 않는다.
+  return [];
 }
 
 function scoreToNumber(v) {
