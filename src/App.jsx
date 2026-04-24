@@ -1840,6 +1840,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
           name: getDisplayName(user),
           groupName: user.groupName || "-",
           regionCity: user.regionCity || "-",
+          gender: userGender,
           division: normalizeDivisionLabel(userDivision || "-"),
           rankingGroup: userRankingGroup || "-",
           distance: "all",
@@ -1877,6 +1878,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         name: getDisplayName(user),
         groupName: user.groupName || best.groupName || "-",
         regionCity: user.regionCity || best.regionCity || "-",
+        gender: userGender,
         division: normalizeDivisionLabel(userDivision || best.division || "-"),
         rankingGroup: userRankingGroup || best.rankingGroup || "-",
         distance: best.distance,
@@ -1962,6 +1964,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         name: getDisplayName(user),
         groupName: user.groupName || "-",
         regionCity: user.regionCity || "-",
+        gender: userGender,
         division: normalizeDivisionLabel(userDivision || "-"),
         rankingGroup: userRankingGroup || "-",
         requiredDistances,
@@ -4267,8 +4270,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                           )}
                           <div className="min-w-0 truncate text-[11px] text-slate-500">
                             {(rankingType === "distance" || rankingType === "weeklyDistance")
-                              ? `${item.regionCity || "-"} ${formatGroupDisplayName(item.groupName)} ${formatProfileDivisionLabel(item.division)}`
-                              : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${formatProfileDivisionLabel(item.division)}`}
+                              ? `${item.regionCity || "-"} · ${item.gender || "-"} · ${formatGroupDisplayName(item.groupName)} · ${formatProfileDivisionLabel(item.division)}`
+                              : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${item.gender || "-"} · ${formatProfileDivisionLabel(item.division)}`}
                           </div>
                         </div>
                       </div>
@@ -4284,6 +4287,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span>{item.distanceLabel || `${item.distance}m`}</span>
                           <span>{item.rankingGroup}</span>
+                          <span>{item.gender || "-"}</span>
                           <span>인정세션{item.qualifiedSessions}</span>
                           <span>{formatCompactDate(item.latestDate)}</span>
                         </div>
