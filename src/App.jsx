@@ -1764,6 +1764,8 @@ function getQualifiedDistanceAttempts(session) {
 
 function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {}) {
   const { weekly = false } = options;
+  const selectedDistance = rankingFilters.distance || "all";
+  const isAllDistance = !selectedDistance || selectedDistance === "all";
 
   return users
     .map((user) => {
@@ -1803,26 +1805,73 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         .filter((session) => session.userId === user.id)
         .flatMap((session) => getQualifiedDistanceAttempts(session))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
-        .filter((attempt) => attempt.rankingGroup === userRankingGroup)
-        .filter((attempt) =>
-          rankingFilters.distance && rankingFilters.distance !== "all"
-            ? String(attempt.distance) === String(rankingFilters.distance)
-            : true
-        )
-        .filter((attempt) =>
-          rankingFilters.distance && rankingFilters.distance !== "all"
-            ? getRequiredDistancesForRankingGroup(userRankingGroup).includes(Number(attempt.distance))
-            : true
-        );
+        .filter((attempt) => attempt.rankingGroup === userRankingGroup);
 
       if (!attempts.length) return null;
 
-      attempts.sort((a, b) => {
+      if (isAllDistance) {
+        const requiredDistances = getRequiredDistancesForRankingGroup(userRankingGroup);
+        if (!requiredDistances.length) return null;
+
+        const bestByDistance = {};
+        requiredDistances.forEach((distance) => {
+          const candidates = attempts
+            .filter((attempt) => String(attempt.distance) === String(distance))
+            .sort((a, b) => {
+              if (b.score !== a.score) return b.score - a.score;
+              return String(b.sessionDate).localeCompare(String(a.sessionDate));
+            });
+          if (candidates.length) bestByDistance[distance] = candidates[0];
+        });
+
+        if (requiredDistances.some((distance) => !bestByDistance[distance])) return null;
+
+        const totalScore = requiredDistances.reduce(
+          (sum, distance) => sum + (bestByDistance[distance]?.score || 0),
+          0
+        );
+        const latestDate = requiredDistances
+          .map((distance) => bestByDistance[distance].sessionDate || "")
+          .sort()
+          .slice(-1)[0];
+
+        return {
+          userId: user.id,
+          name: getDisplayName(user),
+          groupName: user.groupName || "-",
+          regionCity: user.regionCity || "-",
+          division: normalizeDivisionLabel(userDivision || "-"),
+          rankingGroup: userRankingGroup || "-",
+          distance: "all",
+          distanceLabel: "전체 거리",
+          requiredDistances,
+          distanceScores: Object.fromEntries(
+            requiredDistances.map((distance) => [distance, bestByDistance[distance].score])
+          ),
+          bestScore: totalScore,
+          qualifiedSessions: requiredDistances.length,
+          latestDate,
+          isSampleData: Boolean(user.isSampleData),
+          sourceType: user.isSampleData ? "official" : "user",
+          claimedByUid: user.claimedByUid || "",
+          verifiedAthlete: Boolean(user.verifiedAthlete),
+        };
+      }
+
+      const filteredAttempts = attempts
+        .filter((attempt) => String(attempt.distance) === String(selectedDistance))
+        .filter((attempt) =>
+          getRequiredDistancesForRankingGroup(userRankingGroup).includes(Number(attempt.distance))
+        );
+
+      if (!filteredAttempts.length) return null;
+
+      filteredAttempts.sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return String(b.sessionDate).localeCompare(String(a.sessionDate));
       });
 
-      const best = attempts[0];
+      const best = filteredAttempts[0];
       return {
         userId: user.id,
         name: getDisplayName(user),
@@ -1831,8 +1880,9 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         division: normalizeDivisionLabel(userDivision || best.division || "-"),
         rankingGroup: userRankingGroup || best.rankingGroup || "-",
         distance: best.distance,
+        distanceLabel: `${best.distance}m`,
         bestScore: best.score,
-        qualifiedSessions: attempts.length,
+        qualifiedSessions: filteredAttempts.length,
         latestDate: best.sessionDate || "",
         isSampleData: Boolean(user.isSampleData),
         sourceType: user.isSampleData ? "official" : "user",
@@ -3995,11 +4045,15 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
   const rankingGuide =
     rankingType === "distance"
-      ? "36발 경기 기준, 학년/부문별 필수 거리 조건을 충족한 최고 기록 점수로 순위가 결정됩니다."
+      ? rankingFilters.distance === "all"
+        ? "전체 거리는 학년/부문별 필수 거리 전체 점수를 합산한 기준으로 순위가 결정됩니다."
+        : "선택한 거리의 최고 기록 점수 기준으로 순위가 결정됩니다."
       : rankingType === "total"
         ? "학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다."
         : rankingType === "weeklyDistance"
-          ? "최근 7일 기준, 학년/부문별 필수 거리 조건을 충족한 최고 점수로 순위가 결정됩니다."
+          ? rankingFilters.distance === "all"
+            ? "최근 7일 기준, 필수 거리 전체 점수를 합산한 기준으로 순위가 결정됩니다."
+            : "최근 7일 기준, 선택한 거리의 최고 점수로 순위가 결정됩니다."
           : "최근 7일 동안 학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
 
   const officialResultSources = useMemo(() => {
@@ -4033,7 +4087,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                   <div className="mt-2 text-sm opacity-90">
                     {rankingType === "distance" || rankingType === "weeklyDistance" ? (
                       <>
-                        {myRank.distance}m · 최고 {myRank.bestScore}점 · 인정 기록 {myRank.qualifiedSessions}개
+                        {myRank.distanceLabel || `${myRank.distance}m`} · 최고 {myRank.bestScore}점 · 인정 기록 {myRank.qualifiedSessions}개
                       </>
                     ) : (
                       <>
@@ -4176,7 +4230,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               <div className="grid gap-3">
                 {activeRankings.map((item) => (
                   <div
-                    key={`${rankingType}_${item.userId}_${item.distance || "total"}`}
+                    key={`${rankingType}_${item.userId}_${item.distance || item.distanceLabel || "total"}`}
                     className={`rounded-2xl border px-3 py-2 ${
                       item.userId === currentUserId
                         ? "border-blue-300 bg-blue-50"
@@ -4228,7 +4282,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                     <div className="mt-1 pl-10 text-[11px] leading-5 text-slate-700">
                       {rankingType === "distance" || rankingType === "weeklyDistance" ? (
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <span>{item.distance}m</span>
+                          <span>{item.distanceLabel || `${item.distance}m`}</span>
                           <span>{item.rankingGroup}</span>
                           <span>인정세션{item.qualifiedSessions}</span>
                           <span>{formatCompactDate(item.latestDate)}</span>
