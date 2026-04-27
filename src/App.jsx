@@ -288,6 +288,87 @@ const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
 
 const OFFICIAL_CLAIM_STORAGE_KEY = "elbowshot_official_claim_requests";
 
+const ROUTINE_TEMPLATE_ITEMS = [
+  { id: "strength", label: "체력운동", checked: false },
+  { id: "shooting", label: "활쏘기", checked: false },
+  { id: "stretching", label: "스트레칭", checked: false },
+  { id: "mental", label: "멘탈 루틴", checked: false },
+  { id: "recovery", label: "회복/휴식", checked: false },
+];
+
+function makeRoutineDocId(userId, date) {
+  return `routine_${userId}_${date}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
+}
+
+function normalizeRoutineItems(items) {
+  const source = Array.isArray(items) && items.length ? items : ROUTINE_TEMPLATE_ITEMS;
+  return source.map((item, idx) => ({
+    id: item.id || `routine_item_${idx + 1}`,
+    label: String(item.label || item.name || "").trim() || `루틴 ${idx + 1}`,
+    checked: Boolean(item.checked),
+  }));
+}
+
+function calculateRoutineStats(items) {
+  const normalized = normalizeRoutineItems(items);
+  const totalCount = normalized.length;
+  const completedCount = normalized.filter((item) => item.checked).length;
+  const completionRate = totalCount ? Math.round((completedCount / totalCount) * 100) : 0;
+  return { items: normalized, totalCount, completedCount, completionRate };
+}
+
+function fromFirestoreRoutine(snap) {
+  const data = snap.data() || {};
+  const stats = calculateRoutineStats(data.items || []);
+  return {
+    id: snap.id,
+    userId: data.userId || "",
+    date: data.date || getCurrentLocalDateString(),
+    ...stats,
+    createdAt: data.createdAt || null,
+    updatedAt: data.updatedAt || null,
+  };
+}
+
+function getRoutineForDate(routines = [], date = getCurrentLocalDateString()) {
+  return (routines || []).find((routine) => routine.date === date) || null;
+}
+
+function getTodayRoutineRate(routines = []) {
+  return getRoutineForDate(routines)?.completionRate || 0;
+}
+
+function getRoutineSessionCorrelation(routines = [], sessions = []) {
+  const routineByDate = new Map((routines || []).map((routine) => [routine.date, routine]));
+  const paired = getCompletedUserSessions(sessions)
+    .map((session) => {
+      const date = getSessionDayKey(session);
+      const routine = routineByDate.get(date);
+      if (!routine) return null;
+      return {
+        date,
+        rate: Number(routine.completionRate) || 0,
+        score: getSessionScoreForInsight(session),
+      };
+    })
+    .filter(Boolean);
+
+  const high = paired.filter((item) => item.rate >= 80);
+  const low = paired.filter((item) => item.rate <= 50);
+
+  const average = (items) =>
+    items.length ? Math.round(items.reduce((sum, item) => sum + item.score, 0) / items.length) : null;
+
+  return {
+    pairedCount: paired.length,
+    highCount: high.length,
+    lowCount: low.length,
+    highAverage: average(high),
+    lowAverage: average(low),
+  };
+}
+
+
 function normalizeClaimText(value) {
   return String(value || "").replace(/\s+/g, "").trim().toLowerCase();
 }
@@ -4590,6 +4671,7 @@ function Hero({ activeTab = "dashboard" }) {
     analysis: "X-ANALYSIS",
     stage: "X-STAGE",
     brief: "X-BRIEF",
+    routine: "X-ROUTINE",
     profile: "PROFILE",
     admin: "ADMIN",
   };
@@ -5049,6 +5131,7 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
     { key: "analysis", label: "X-Analysis", icon: CalendarRange },
     { key: "stage", label: "X-Stage", icon: Award },
     { key: "brief", label: "X-Brief", icon: Archive },
+    { key: "routine", label: "X-Routine", icon: Settings },
     { key: "profile", label: "Profile", icon: User },
     ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield }] : []),
   ];
@@ -6355,10 +6438,160 @@ function buildPostSaveInsight({ savedSession, users = [], sessions = [], current
 }
 
 
-function Dashboard({ sessions, loading, onEditSession, onStartSession }) {
+
+function RoutinePage({ appServices, currentUser, routines = [], onRoutineSaved, onStartSession }) {
+  const today = getCurrentLocalDateString();
+  const existingRoutine = getRoutineForDate(routines, today);
+  const [items, setItems] = useState(() => normalizeRoutineItems(existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS));
+  const [newItemLabel, setNewItemLabel] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    setItems(normalizeRoutineItems(existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS));
+  }, [existingRoutine?.id, today]);
+
+  const stats = useMemo(() => calculateRoutineStats(items), [items]);
+  const correlation = useMemo(() => getRoutineSessionCorrelation(routines, []), [routines]);
+
+  function updateItem(id, patch) {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  }
+
+  function deleteItem(id) {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  }
+
+  function addItem() {
+    const label = newItemLabel.trim();
+    if (!label) return;
+    setItems((prev) => [...prev, { id: uid("routine"), label, checked: false }]);
+    setNewItemLabel("");
+  }
+
+  async function saveRoutine() {
+    if (!appServices?.db || !currentUser?.id) return;
+    setSaving(true);
+    setNotice("");
+    try {
+      const normalizedStats = calculateRoutineStats(items);
+      const routineId = makeRoutineDocId(currentUser.id, today);
+      const payload = {
+        userId: currentUser.id,
+        date: today,
+        items: normalizedStats.items,
+        completionRate: normalizedStats.completionRate,
+        completedCount: normalizedStats.completedCount,
+        totalCount: normalizedStats.totalCount,
+        updatedAt: serverTimestamp(),
+        createdAt: existingRoutine?.createdAt || serverTimestamp(),
+      };
+      await setDoc(doc(appServices.db, "routines", routineId), payload, { merge: true });
+      setNotice(
+        normalizedStats.completionRate === 100
+          ? "🔥 오늘 준비 완료. 이제 기록을 남기면 루틴 효과를 확인할 수 있다."
+          : `오늘 준비 상태 ${normalizedStats.completionRate}% 저장 완료.`
+      );
+      await onRoutineSaved?.();
+    } catch (error) {
+      setNotice(error.message || "루틴 저장에 실패했다.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="grid gap-4">
+      <Card className="overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-blue-900" /> X-Routine
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="rounded-3xl bg-gradient-to-br from-blue-950 to-red-800 p-5 text-white">
+            <div className="text-sm opacity-80">오늘 준비 상태</div>
+            <div className="mt-2 text-5xl font-black">{stats.completionRate}%</div>
+            <div className="mt-3">
+              <Progress value={stats.completionRate} className="h-3 bg-white/20" />
+            </div>
+            <div className="mt-3 text-sm opacity-90">
+              {stats.completedCount}/{stats.totalCount} 완료 · 루틴은 준비 상태 데이터, 기록은 결과 데이터다.
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            {stats.items.map((item) => (
+              <div key={item.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3">
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={(e) => updateItem(item.id, { checked: e.target.checked })}
+                  className="h-5 w-5"
+                />
+                <Input
+                  value={item.label}
+                  onChange={(e) => updateItem(item.id, { label: e.target.value })}
+                  className="h-9 rounded-xl"
+                />
+                <Button type="button" variant="outline" className="h-9 rounded-xl px-2" onClick={() => deleteItem(item.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+            <Input
+              value={newItemLabel}
+              onChange={(e) => setNewItemLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addItem();
+                }
+              }}
+              placeholder="추가 루틴 입력: 예) 영어 인터뷰 2문장"
+              className="h-11 rounded-2xl"
+            />
+            <Button type="button" variant="outline" className="h-11 rounded-2xl" onClick={addItem}>
+              <Plus className="mr-2 h-4 w-4" /> 루틴 추가
+            </Button>
+          </div>
+
+          {notice ? (
+            <div className="rounded-2xl bg-emerald-50 p-3 text-sm text-emerald-700">{notice}</div>
+          ) : null}
+
+          <div className="grid gap-2 md:grid-cols-2">
+            <Button className="h-12 rounded-2xl bg-blue-950 text-white hover:bg-blue-900" onClick={saveRoutine} disabled={saving}>
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              루틴 저장
+            </Button>
+            <Button variant="outline" className="h-12 rounded-2xl" onClick={onStartSession}>
+              기록 시작하기
+            </Button>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            <div className="font-semibold text-slate-900">루틴 + 기록 상관관계</div>
+            <div className="mt-1">
+              루틴과 기록을 같은 날짜에 5일 이상 남기면, 루틴 80% 이상인 날과 50% 이하인 날의 평균 기록 차이를 보여준다.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
+function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSession }) {
   const completed = getCompletedUserSessions(sessions);
   const recordStreak = getCurrentRecordStreak(sessions);
   const allTimeBestScore = completed.reduce((best, session) => Math.max(best, getSessionScoreForInsight(session)), 0);
+  const todayRoutineRate = getTodayRoutineRate(routines);
+  const routineCorrelation = getRoutineSessionCorrelation(routines, sessions);
 
   const todayKey = getTodayKey();
   const yesterdayKey = getYesterdayKey();
@@ -6439,14 +6672,24 @@ function Dashboard({ sessions, loading, onEditSession, onStartSession }) {
             </div>
             <div className="mt-2 text-sm text-slate-600">
               {todayCount
-                ? `오늘 ${todayCount}개 기록 완료 · 개인 최고 ${allTimeBestScore}점 · 다음 기록으로 순위 변화를 확인해라.`
-                : "첫 행동은 기록 입력이다. 기록하면 내 성장, 내 순위, 라이벌 차이를 바로 확인할 수 있다."}
+                ? `오늘 ${todayCount}개 기록 완료 · 개인 최고 ${allTimeBestScore}점 · 오늘 준비 상태 ${todayRoutineRate}%`
+                : `첫 행동은 기록 입력이다. 오늘 준비 상태 ${todayRoutineRate}% · 기록하면 내 성장, 내 순위, 라이벌 차이를 바로 확인할 수 있다.`}
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
               <span className="rounded-full bg-slate-100 px-3 py-1">1. 내 기록</span>
               <span className="rounded-full bg-slate-100 px-3 py-1">2. 내 성장</span>
               <span className="rounded-full bg-slate-100 px-3 py-1">3. 내 순위</span>
               <span className="rounded-full bg-slate-100 px-3 py-1">4. 전체 랭킹</span>
+            </div>
+            <div className="mt-4 rounded-2xl bg-blue-50 p-3 text-xs text-blue-950">
+              <div className="font-semibold">오늘 준비 상태 {todayRoutineRate}%</div>
+              {routineCorrelation.pairedCount >= 5 && routineCorrelation.highAverage !== null && routineCorrelation.lowAverage !== null ? (
+                <div className="mt-1">
+                  루틴 80% 이상 평균 {routineCorrelation.highAverage}점 · 50% 이하 평균 {routineCorrelation.lowAverage}점 · 차이 {routineCorrelation.highAverage - routineCorrelation.lowAverage > 0 ? "+" : ""}{routineCorrelation.highAverage - routineCorrelation.lowAverage}점
+                </div>
+              ) : (
+                <div className="mt-1">루틴과 기록을 5일 이상 남기면 상관관계를 보여준다.</div>
+              )}
             </div>
           </div>
           <Button className="h-12 rounded-2xl bg-blue-950 text-white hover:bg-blue-900" onClick={onStartSession}>
@@ -8515,6 +8758,7 @@ function XSessionApp() {
   const [profile, setProfile] = useState(null);
   const [users, setUsers] = useState([]);
   const [sessions, setSessions] = useState([]);
+  const [routines, setRoutines] = useState([]);
   const [draftSession, setDraftSession] = useState(null);
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -8575,12 +8819,14 @@ function XSessionApp() {
   const loadUsersAndSessions = useCallback(async (db) => {
     setSessionsLoading(true);
     try {
-      const [usersSnap, sessionsSnap] = await Promise.all([
+      const [usersSnap, sessionsSnap, routinesSnap] = await Promise.all([
         getDocs(collection(db, "users")),
         getDocs(query(collection(db, "sessions"), orderBy("sessionDate", "desc"))),
+        getDocs(query(collection(db, "routines"), orderBy("date", "desc"))),
       ]);
       setUsers(usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data())));
       setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
+      setRoutines(routinesSnap.docs.map((snap) => fromFirestoreRoutine(snap)));
     } catch (error) {
       setGlobalError(error.message || "데이터 로딩에 실패했다.");
     } finally {
@@ -8656,6 +8902,7 @@ function XSessionApp() {
           setEditingSessionId(null);
           setUsers([]);
           setSessions([]);
+          setRoutines([]);
           setUi(DEFAULT_UI);
           return;
         }
@@ -9236,6 +9483,10 @@ function XSessionApp() {
     () => sessions.filter((s) => s.userId === authUser?.uid),
     [sessions, authUser]
   );
+  const myRoutines = useMemo(
+    () => routines.filter((routine) => routine.userId === authUser?.uid),
+    [routines, authUser]
+  );
 
   const isAdminUser = useMemo(() => isAdminEmail(currentUser?.email), [currentUser]);
   const adminEmailGuard = isAdminEmail;
@@ -9283,7 +9534,7 @@ function XSessionApp() {
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div className="rounded-2xl bg-blue-50 p-3 text-blue-900">🔥 {postSaveInsight.streak}일 연속 기록중</div>
                       <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-900">{postSaveInsight.personalBest ? "🎯 개인 최고 기록!" : "🎯 기록 저장 완료"}</div>
-                      <div className="rounded-2xl bg-slate-50 p-3 text-slate-700">기준 기록 {postSaveInsight.distance || "-"}m · {postSaveInsight.bestScore || postSaveInsight.score}점</div>
+                      <div className="rounded-2xl bg-slate-50 p-3 text-slate-700">오늘 루틴 {getTodayRoutineRate(myRoutines)}% · {postSaveInsight.distance || "-"}m {postSaveInsight.bestScore || postSaveInsight.score}점</div>
                     </div>
                   </div>
                 ) : null}
@@ -9314,11 +9565,12 @@ function XSessionApp() {
                   editingSavedSession={Boolean(editingSessionId)}
                 />
               )}
-              {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
+              {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} routines={myRoutines} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
               {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
+              {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} onRoutineSaved={() => loadUsersAndSessions(appServices.db)} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} officialClaims={officialClaims} onApproveOfficialClaim={handleApproveOfficialClaim} onRejectOfficialClaim={handleRejectOfficialClaim} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
             </motion.div>
