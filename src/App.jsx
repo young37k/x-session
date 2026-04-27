@@ -118,7 +118,7 @@ function normalizeOfficialDivision(division) {
     return "초등부(저학년)";
   }
   if (division === "초등5" || division === "초등6") {
-    return "초등부(통합)";
+    return "초등부(고학년)";
   }
   if (division === "중등1" || division === "중등2" || division === "중등3") {
     return "중등부";
@@ -128,6 +128,7 @@ function normalizeOfficialDivision(division) {
 
 const RANKING_GROUP_OPTIONS = [
   "초등부(저학년)",
+  "초등부(고학년)",
   "초등부(통합)",
   "중등부",
   "고등부(남)",
@@ -158,6 +159,7 @@ const DIVISION_DISTANCE_RULES = {
 
 const RANKING_GROUP_DISTANCE_RULES = {
   "초등부(저학년)": [35, 30, 25, 20],
+  "초등부(고학년)": [35, 30, 25, 20],
   "초등부(통합)": [35, 30, 25, 20],
   "중등부": [60, 50, 40, 30],
   "고등부(남)": [90, 70, 50, 30],
@@ -411,13 +413,14 @@ function formatGroupDisplayName(value) {
 
 function getRankingGroup(division, gender) {
   if (division === "초등부(저학년)") return "초등부(저학년)";
+  if (division === "초등부(고학년)") return "초등부(고학년)";
   if (division === "초등부(통합)") return "초등부(통합)";
   if (division === "중등부") return "중등부";
 
   const d = String(division || "").trim();
   const g = String(gender || "남").trim();
   if (/^초등[1-4]$/.test(d)) return "초등부(저학년)";
-  if (/^초등[5-6]$/.test(d)) return "초등부(통합)";
+  if (/^초등[5-6]$/.test(d)) return "초등부(고학년)";
   if (/^중등[1-3]$/.test(d)) return "중등부";
   if (/^고등[1-3]$/.test(d)) return g === "여" ? "고등부(여)" : "고등부(남)";
   if (d === "대학부" || d === "일반부") return g === "여" ? "대학/일반부(여)" : "대학/일반부(남)";
@@ -428,7 +431,7 @@ function getRankingGroup(division, gender) {
 function rankingGroupMatchesFilter(selectedGroup, actualGroup) {
   if (!selectedGroup || selectedGroup === "all") return true;
   if (selectedGroup === "초등부(통합)") {
-    return actualGroup === "초등부(통합)" || actualGroup === "초등부(저학년)";
+    return actualGroup === "초등부(통합)" || actualGroup === "초등부(저학년)" || actualGroup === "초등부(고학년)";
   }
   return actualGroup === selectedGroup;
 }
@@ -1326,7 +1329,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "공식기록 2026-04-12 여자초등 고학년",
     distances: [35, 30, 25, 20],
     rows: [
-      { name: "원서아", school: "하성초등학교", rounds: [343, 352, 346, 352], total: 1393 },
+      { name: "원서아", school: "하성초등학교", division: "초등5", rounds: [343, 352, 346, 352], total: 1393 },
       { name: "조유나", school: "하성초등학교", rounds: [325, 343, 339, 354], total: 1361 },
       { name: "이다연", school: "송정초등학교", rounds: [320, 341, 344, 353], total: 1358 },
       { name: "조유리", school: "수진초등학교", rounds: [319, 337, 350, 347], total: 1353 },
