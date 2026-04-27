@@ -281,7 +281,7 @@ const FIREBASE_READY = Boolean(
     import.meta.env.VITE_FIREBASE_APP_ID
 );
 
-const DEFAULT_UI = { activeTab: "dashboard" };
+const DEFAULT_UI = { activeTab: "routine" };
 
 const ADMIN_EMAILS = ["theyoung37k@gmail.com", "5@gmail.com"];
 const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
