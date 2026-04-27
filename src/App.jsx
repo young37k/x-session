@@ -7031,19 +7031,25 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                     </div>
 
                     {item.isSampleData && requestableOfficialUserIds.has(item.userId) && (
-                      <div className="mt-2 pl-10">
-                        {requestedClaimBySampleUserId.get(item.userId)?.status === "pending" ? (
-                          <Badge variant="outline" className="rounded-full border-amber-300 bg-amber-50 text-amber-700">연결 요청 대기중</Badge>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="h-8 rounded-2xl px-3 text-xs"
-                            onClick={() => onRequestOfficialClaim?.(usersById.get(item.userId))}
-                          >
-                            공식 기록 연결 요청
-                          </Button>
-                        )}
+                      <div className="mt-2 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-xs text-blue-950 md:ml-10">
+                        <div className="font-semibold">이 기록이 본인인가요?</div>
+                        <div className="mt-1 text-blue-800">
+                          공식 기록을 내 계정으로 연결할 수 있습니다. 요청 후 관리자가 확인하면 내 기록으로 표시됩니다.
+                        </div>
+                        <div className="mt-2">
+                          {requestedClaimBySampleUserId.get(item.userId)?.status === "pending" ? (
+                            <Badge variant="outline" className="rounded-full border-amber-300 bg-amber-50 text-amber-700">연결 요청 대기중</Badge>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="h-8 rounded-2xl border-blue-200 bg-white px-3 text-xs text-blue-950 hover:bg-blue-100"
+                              onClick={() => onRequestOfficialClaim?.(usersById.get(item.userId))}
+                            >
+                              내 기록으로 가져오기
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -9272,6 +9278,7 @@ function XSessionApp() {
                     <div className="rounded-2xl bg-amber-50 p-4 text-amber-900">
                       🔥 오늘 라이벌 등장<br />
                       {postSaveInsight.rivalText}
+                      <div className="mt-2 text-xs text-amber-800">다음 기록에서 3점 이내로 추격하면 앱 안에서 다시 알려준다.</div>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div className="rounded-2xl bg-blue-50 p-3 text-blue-900">🔥 {postSaveInsight.streak}일 연속 기록중</div>
@@ -9281,7 +9288,15 @@ function XSessionApp() {
                   </div>
                 ) : null}
                 <DialogFooter>
-                  <Button className="rounded-2xl" onClick={() => setPostSaveInsight(null)}>확인</Button>
+                  <Button
+                    className="rounded-2xl bg-blue-950 text-white hover:bg-blue-900"
+                    onClick={() => {
+                      setPostSaveInsight(null);
+                      setUi((prev) => ({ ...prev, activeTab: "ranking" }));
+                    }}
+                  >
+                    랭킹 확인하기
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
