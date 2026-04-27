@@ -1024,6 +1024,130 @@ const OFFICIAL_RESULT_SOURCES = [
     status: "source_registered",
     notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 광주광역시 · 여 · 중등부",
   }
+
+,
+  // 추가_선수_찾음.xlsx 점수 확인 후보 공식 결과 소스
+  {
+    id: "official_found_candidates_2025_04_13_경기도_초등부_통합__남_1",
+    date: "2025-04-13",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "초등부(통합)",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 강민국·한세빈, 교육감배 양궁 남녀 초등부 4관왕 ‘명중’",
+  },
+  {
+    id: "official_found_candidates_2025_04_13_경기도_초등부_통합__여_2",
+    date: "2025-04-13",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(통합)",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 강민국·한세빈, 교육감배 양궁 남녀 초등부 4관왕 ‘명중’",
+  },
+  {
+    id: "official_found_candidates_2025_04_13_경기도_중등부_남_3",
+    date: "2025-04-13",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 강민국·한세빈, 교육감배 양궁 남녀 초등부 4관왕 ‘명중’",
+  },
+  {
+    id: "official_found_candidates_2025_04_13_경기도_중등부_여_4",
+    date: "2025-04-13",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 강민국·한세빈, 교육감배 양궁 남녀 초등부 4관왕 ‘명중’",
+  },
+  {
+    id: "official_found_candidates_2025_07_23_경기도_중등부_여_5",
+    date: "2025-07-23",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 김은찬·김아현, 문체부장관기양궁 여중부 2·3관왕",
+  },
+  {
+    id: "official_found_candidates_2025_07_23_인천광역시_중등부_여_6",
+    date: "2025-07-23",
+    bowType: "리커브",
+    region: "인천광역시",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 김은찬·김아현, 문체부장관기양궁 여중부 2·3관왕",
+  },
+  {
+    id: "official_found_candidates_2025_07_23_부산광역시_중등부_여_7",
+    date: "2025-07-23",
+    bowType: "리커브",
+    region: "부산광역시",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 김은찬·김아현, 문체부장관기양궁 여중부 2·3관왕",
+  },
+  {
+    id: "official_found_candidates_2025_07_23_인천광역시_중등부_남_8",
+    date: "2025-07-23",
+    bowType: "리커브",
+    region: "인천광역시",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 김은찬·김아현, 문체부장관기양궁 여중부 2·3관왕",
+  },
+  {
+    id: "official_found_candidates_2025_07_23_경기도_중등부_남_9",
+    date: "2025-07-23",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 김은찬·김아현, 문체부장관기양궁 여중부 2·3관왕",
+  },
+  {
+    id: "official_found_candidates_2025_07_23_충청북도_중등부_남_10",
+    date: "2025-07-23",
+    bowType: "리커브",
+    region: "충청북도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 김은찬·김아현, 문체부장관기양궁 여중부 2·3관왕",
+  },
+  {
+    id: "official_found_candidates_2025_07_23_부산광역시_중등부_남_11",
+    date: "2025-07-23",
+    bowType: "리커브",
+    region: "부산광역시",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_candidate_rows",
+    status: "source_registered",
+    notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 김은찬·김아현, 문체부장관기양궁 여중부 2·3관왕",
+  }
 ];
 
 // 데이터화된 공식기록 원본. 개인 기록으로 자동 주입하지 않고 공식기록으로만 사용한다.
@@ -1940,6 +2064,191 @@ const SAMPLE_SHEETS = [{
     distances: [30, 40, 50, 60],
     rows: [
       { name: "강수정", school: "광주체중", rounds: [359, 349, 335, 337], total: 1380 }
+    ],
+  }
+
+,
+  // 추가_선수_찾음.xlsx 점수 확인 후보: 거리 점수 확인 13명 반영, 개인종합만 확인된 1명은 랭킹 산정 보류
+  {
+    id: "sheet_found_candidates_2025_04_13_경기도_중등부_남_30_60_1",
+    date: "2025-04-13",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-04-13 경기도 남 중등부",
+    distances: [30, 60],
+    rows: [
+      { name: "정시우", school: "안산 성포중", rounds: [345, 343], total: 688 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_04_13_경기도_중등부_여_30_60_2",
+    date: "2025-04-13",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-04-13 경기도 여 중등부",
+    distances: [30, 60],
+    rows: [
+      { name: "김혜윤", school: "여주여중", rounds: [347, 339], total: 686 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_04_13_경기도_중등부_여_40_3",
+    date: "2025-04-13",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-04-13 경기도 여 중등부",
+    distances: [40],
+    rows: [
+      { name: "한정연", school: "여주여중", rounds: [339], total: 339 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_04_13_경기도_초등부_통합__남_20_30_4",
+    date: "2025-04-13",
+    division: "초등부(통합)",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-04-13 경기도 남 초등부(통합)",
+    distances: [20, 30],
+    rows: [
+      { name: "강민국", school: "하남 천현초", rounds: [352, 345], total: 697 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_04_13_경기도_초등부_통합__남_25_35_5",
+    date: "2025-04-13",
+    division: "초등부(통합)",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-04-13 경기도 남 초등부(통합)",
+    distances: [25, 35],
+    rows: [
+      { name: "이환지", school: "하남 천현초", rounds: [341, 336], total: 677 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_04_13_경기도_초등부_통합__여_20_25_30_35_6",
+    date: "2025-04-13",
+    division: "초등부(통합)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-04-13 경기도 여 초등부(통합)",
+    distances: [20, 25, 30, 35],
+    rows: [
+      { name: "한세빈", school: "수원 송정초", rounds: [355, 338, 348, 335], total: 1376 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_07_23_경기도_중등부_남_40_7",
+    date: "2025-07-23",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-07-23 경기도 남 중등부",
+    distances: [40],
+    rows: [
+      { name: "김호균", school: "김포 하성중", rounds: [346], total: 346 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_07_23_경기도_중등부_여_30_60_8",
+    date: "2025-07-23",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-07-23 경기도 여 중등부",
+    distances: [30, 60],
+    rows: [
+      { name: "김은찬", school: "수원 창용중", rounds: [357, 343], total: 700 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_07_23_부산광역시_중등부_남_40_9",
+    date: "2025-07-23",
+    division: "중등부",
+    gender: "남",
+    regionCity: "부산광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-07-23 부산광역시 남 중등부",
+    distances: [40],
+    rows: [
+      { name: "박민혁", school: "부산 모라중", rounds: [343], total: 343 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_07_23_부산광역시_중등부_여_60_10",
+    date: "2025-07-23",
+    division: "중등부",
+    gender: "여",
+    regionCity: "부산광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-07-23 부산광역시 여 중등부",
+    distances: [60],
+    rows: [
+      { name: "김수민", school: "부산 모라중", rounds: [342], total: 342 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_07_23_인천광역시_중등부_남_30_11",
+    date: "2025-07-23",
+    division: "중등부",
+    gender: "남",
+    regionCity: "인천광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-07-23 인천광역시 남 중등부",
+    distances: [30],
+    rows: [
+      { name: "김성혁", school: "인천 만수북중", rounds: [356], total: 356 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_07_23_인천광역시_중등부_여_40_60_12",
+    date: "2025-07-23",
+    division: "중등부",
+    gender: "여",
+    regionCity: "인천광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-07-23 인천광역시 여 중등부",
+    distances: [40, 60],
+    rows: [
+      { name: "김아현", school: "인천 신흥여중", rounds: [350, 342], total: 692 }
+    ],
+  },
+  {
+    id: "sheet_found_candidates_2025_07_23_충청북도_중등부_남_40_13",
+    date: "2025-07-23",
+    division: "중등부",
+    gender: "남",
+    regionCity: "충청북도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가 선수 찾음 2025-07-23 충청북도 남 중등부",
+    distances: [40],
+    rows: [
+      { name: "주영진", school: "옥천 이원중", rounds: [345], total: 345 }
     ],
   }
 ];
