@@ -23,7 +23,6 @@ import {
   Eraser,
   Archive,
   Pencil,
-  Undo2,
   TrendingUp,
   TrendingDown,
   Award,
@@ -113,43 +112,59 @@ const DIVISION_OPTIONS = [
   "국가대표"
 ];
 const GENDER_OPTIONS = ["남", "여"];
+
+function normalizeOfficialDivision(division) {
+  if (division === "초등1" || division === "초등2" || division === "초등3" || division === "초등4") {
+    return "초등부(저학년)";
+  }
+  if (division === "초등5" || division === "초등6") {
+    return "초등부(통합)";
+  }
+  if (division === "중등1" || division === "중등2" || division === "중등3") {
+    return "중등부";
+  }
+  return division || "";
+}
+
 const RANKING_GROUP_OPTIONS = [
-  "저학년",
-  "고학년",
+  "초등부(저학년)",
+  "초등부(통합)",
   "중등부",
   "고등부(남)",
   "고등부(여)",
   "대학/일반부(남)",
-  "대학/일반부(여)"
+  "대학/일반부(여)",
+  "국가대표"
 ];
 const DISTANCE_OPTIONS = [18, 20, 25, 30, 35, 40, 50, 60, 70, 90];
 
 const DIVISION_DISTANCE_RULES = {
-  "초등1": [35, 30, 25, 20],
-  "초등2": [35, 30, 25, 20],
-  "초등3": [35, 30, 25, 20],
-  "초등4": [35, 30, 25, 20],
-  "초등5": [35, 30, 25, 20],
-  "초등6": [35, 30, 25, 20],
-  "중등1": [60, 50, 40, 30],
-  "중등2": [60, 50, 40, 30],
-  "중등3": [60, 50, 40, 30],
-  "고등1": [70, 60, 50, 30],
-  "고등2": [70, 60, 50, 30],
-  "고등3": [70, 60, 50, 30],
-  "대학부": [70, 60, 50, 30],
-  "일반부": [70, 60, 50, 30],
-  "국가대표": [70],
+  "초등1": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등2": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등3": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등4": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등5": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "초등6": { 남: [35, 30, 25, 20], 여: [35, 30, 25, 20] },
+  "중등1": { 남: [60, 50, 40, 30], 여: [60, 50, 40, 30] },
+  "중등2": { 남: [60, 50, 40, 30], 여: [60, 50, 40, 30] },
+  "중등3": { 남: [60, 50, 40, 30], 여: [60, 50, 40, 30] },
+  "고등1": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "고등2": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "고등3": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "대학부": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "일반부": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
+  "국가대표": { 남: [70], 여: [70] },
 };
 
 const RANKING_GROUP_DISTANCE_RULES = {
-  "저학년": [35, 30, 25, 20],
-  "고학년": [35, 30, 25, 20],
+  "초등부(저학년)": [35, 30, 25, 20],
+  "초등부(통합)": [35, 30, 25, 20],
   "중등부": [60, 50, 40, 30],
   "고등부(남)": [90, 70, 50, 30],
   "고등부(여)": [70, 60, 50, 30],
   "대학/일반부(남)": [90, 70, 50, 30],
   "대학/일반부(여)": [70, 60, 50, 30],
+  "국가대표": [70],
 };
 
 
@@ -230,6 +245,7 @@ const DATE_FILTER_OPTIONS = [
   { value: "yesterday", label: "전일" },
   { value: "7days", label: "최근 7일" },
   { value: "30days", label: "최근 30일" },
+  { value: "custom", label: "날짜 지정" },
 ];
 const PERIOD_OPTIONS = [
   { value: "end", label: "엔드별" },
@@ -272,6 +288,54 @@ const DEFAULT_UI = { activeTab: "dashboard" };
 
 const ADMIN_EMAILS = ["theyoung37k@gmail.com", "5@gmail.com"];
 const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
+
+const OFFICIAL_CLAIM_STORAGE_KEY = "elbowshot_official_claim_requests";
+
+function normalizeClaimText(value) {
+  return String(value || "").replace(/\s+/g, "").trim().toLowerCase();
+}
+
+function readOfficialClaimsFromStorage() {
+  try {
+    const raw = localStorage.getItem(OFFICIAL_CLAIM_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeOfficialClaimsToStorage(claims) {
+  try {
+    localStorage.setItem(OFFICIAL_CLAIM_STORAGE_KEY, JSON.stringify(claims || []));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+function getOfficialClaimId({ sampleUserId, requesterUid }) {
+  return `claim_${sampleUserId}_${requesterUid}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
+}
+
+function isOfficialProfileMatch(officialUser, requester) {
+  if (!officialUser || !requester) return false;
+  const sameName = normalizeClaimText(officialUser.name) === normalizeClaimText(requester.name);
+  const sameGroup = normalizeClaimText(officialUser.groupName) === normalizeClaimText(requester.groupName);
+  const sameGender = String(officialUser.gender || "") === String(requester.gender || "");
+  return Boolean(sameName && sameGroup && sameGender);
+}
+
+function getApprovedClaimForSample(officialClaims, sampleUserId) {
+  return (officialClaims || []).find(
+    (claim) => claim.sampleUserId === sampleUserId && claim.status === "approved" && claim.claimedByUid
+  );
+}
+
+function isUserVerifiedByClaim(officialClaims, uid) {
+  return (officialClaims || []).some(
+    (claim) => claim.requesterUid === uid && claim.status === "approved"
+  );
+}
 
 async function deleteAllSessionsForUser(db, uid) {
   const q = query(collection(db, "sessions"), where("userId", "==", uid));
@@ -346,15 +410,29 @@ function formatGroupDisplayName(value) {
 }
 
 function getRankingGroup(division, gender) {
+  if (division === "초등부(저학년)") return "초등부(저학년)";
+  if (division === "초등부(통합)") return "초등부(통합)";
+  if (division === "중등부") return "중등부";
+
   const d = String(division || "").trim();
   const g = String(gender || "남").trim();
-  if (/^초등[1-4]$/.test(d)) return "저학년";
-  if (/^초등[5-6]$/.test(d)) return "고학년";
+  if (/^초등[1-4]$/.test(d)) return "초등부(저학년)";
+  if (/^초등[5-6]$/.test(d)) return "초등부(통합)";
   if (/^중등[1-3]$/.test(d)) return "중등부";
   if (/^고등[1-3]$/.test(d)) return g === "여" ? "고등부(여)" : "고등부(남)";
   if (d === "대학부" || d === "일반부") return g === "여" ? "대학/일반부(여)" : "대학/일반부(남)";
+  if (d === "국가대표") return "국가대표";
   return "";
 }
+
+function rankingGroupMatchesFilter(selectedGroup, actualGroup) {
+  if (!selectedGroup || selectedGroup === "all") return true;
+  if (selectedGroup === "초등부(통합)") {
+    return actualGroup === "초등부(통합)" || actualGroup === "초등부(저학년)";
+  }
+  return actualGroup === selectedGroup;
+}
+
 
 function getRequiredDistancesForRankingGroup(rankingGroup) {
   return RANKING_GROUP_DISTANCE_RULES[rankingGroup] || [];
@@ -418,9 +496,11 @@ function buildSampleDistanceSession({
   date,
   title,
   division,
+  gender = "남",
+  regionCity = "경기도",
+  bowType = "리커브",
   clubName,
   groupName,
-  gender = "남",
   distance,
   arrowsPerDistance,
   rounds,
@@ -448,6 +528,8 @@ function buildSampleDistanceSession({
     distance,
     division,
     gender,
+    regionCity,
+    bowType,
     clubName,
     groupName,
     arrowsPerEnd: 6,
@@ -574,11 +656,385 @@ function buildTestRecordSheets(userId) {
   ];
 }
 
-const SAMPLE_SHEETS = [
+
+const OFFICIAL_RESULT_SOURCES = [
   {
+    id: "official_recurve_2026_03_22_elem_girls_lower_source",
+    date: "2026-03-22",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(저학년)",
+    sourceType: "photo_board_and_structured_rows",
+    status: "source_registered",
+    notes: "여자초등 U-11 2026-03-22 경기결과 사진 기반 원본 등록",
+  },
+  {
+    id: "official_recurve_2026_04_12_elem_boys_lower_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "초등부(저학년)",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "남자초등 U-11 경기결과 사진 기반 원본 등록",
+  },
+  {
+    id: "official_recurve_2026_04_12_elem_boys_upper_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "초등부(통합)",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "남자초등부 경기결과 사진 기반 원본 등록",
+  },
+  {
+    id: "official_recurve_2026_04_12_elem_girls_lower_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(저학년)",
+    sourceType: "photo_board_and_structured_rows",
+    status: "source_registered",
+    notes: "여자초등 U-11 경기결과 사진 원본 추가 반영 + 기존 앱 샘플 데이터(2026-04-12 초등4)와 함께 정리",
+  },
+  {
+    id: "official_recurve_2026_04_12_elem_girls_upper_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(통합)",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "여자초등부 경기결과 사진 기반 원본 등록",
+  },
+  {
+    id: "official_recurve_2026_04_12_middle_boys_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "남자중등부 경기결과 사진 기반 원본 등록",
+  },
+  {
+    id: "official_recurve_2026_04_12_middle_girls_source",
+    date: "2026-04-12",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "photo_board",
+    status: "source_registered",
+    notes: "여자중등부 경기결과 사진 기반 원본 등록",
+  },
+
+,
+  // 추가기록.xlsx 기반 공식 결과 소스
+  {
+    id: "official_additional_2025_03_23_경기도_중등부_남",
+    date: "2025-03-23",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 남 · 중등부",
+  },
+  {
+    id: "official_additional_2025_03_23_경기도_중등부_여",
+    date: "2025-03-23",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 여 · 중등부",
+  },
+  {
+    id: "official_additional_2025_03_23_경기도_초등부_통합__남",
+    date: "2025-03-23",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "초등부(통합)",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 남 · 초등부(통합)",
+  },
+  {
+    id: "official_additional_2025_03_23_경기도_초등부_통합__여",
+    date: "2025-03-23",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(통합)",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 여 · 초등부(통합)",
+  },
+  {
+    id: "official_additional_2025_04_13_경기도_중등부_남",
+    date: "2025-04-13",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 남 · 중등부",
+  },
+  {
+    id: "official_additional_2025_04_13_경기도_중등부_여",
+    date: "2025-04-13",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 여 · 중등부",
+  },
+  {
+    id: "official_additional_2025_04_13_경기도_초등부_통합__남",
+    date: "2025-04-13",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "초등부(통합)",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 남 · 초등부(통합)",
+  },
+  {
+    id: "official_additional_2025_04_13_경기도_초등부_통합__여",
+    date: "2025-04-13",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(통합)",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 여 · 초등부(통합)",
+  },
+  {
+    id: "official_additional_2025_05_27_부산광역시_중등부_남",
+    date: "2025-05-27",
+    bowType: "리커브",
+    region: "부산광역시",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 부산광역시 · 남 · 중등부",
+  },
+  {
+    id: "official_additional_2025_05_27_경기도_중등부_여",
+    date: "2025-05-27",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 여 · 중등부",
+  },
+  {
+    id: "official_additional_2025_05_27_대구광역시_초등부_통합__남",
+    date: "2025-05-27",
+    bowType: "리커브",
+    region: "대구광역시",
+    gender: "남",
+    rankingGroup: "초등부(통합)",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 대구광역시 · 남 · 초등부(통합)",
+  },
+  {
+    id: "official_additional_2025_05_27_충청북도_초등부_통합__남",
+    date: "2025-05-27",
+    bowType: "리커브",
+    region: "충청북도",
+    gender: "남",
+    rankingGroup: "초등부(통합)",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 충청북도 · 남 · 초등부(통합)",
+  },
+  {
+    id: "official_additional_2025_06_15_경기도_중등부_남",
+    date: "2025-06-15",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 남 · 중등부",
+  },
+  {
+    id: "official_additional_2025_06_15_경기도_중등부_여",
+    date: "2025-06-15",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 여 · 중등부",
+  },
+  {
+    id: "official_additional_2025_06_15_경기도_초등부_통합__남",
+    date: "2025-06-15",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "초등부(통합)",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 남 · 초등부(통합)",
+  },
+  {
+    id: "official_additional_2025_06_15_경기도_초등부_통합__여",
+    date: "2025-06-15",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "초등부(통합)",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 여 · 초등부(통합)",
+  },
+  {
+    id: "official_additional_2025_07_21_경기도_중등부_남",
+    date: "2025-07-21",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 남 · 중등부",
+  },
+  {
+    id: "official_additional_2025_07_21_인천광역시_중등부_남",
+    date: "2025-07-21",
+    bowType: "리커브",
+    region: "인천광역시",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 인천광역시 · 남 · 중등부",
+  },
+  {
+    id: "official_additional_2025_07_21_충청북도_중등부_남",
+    date: "2025-07-21",
+    bowType: "리커브",
+    region: "충청북도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 충청북도 · 남 · 중등부",
+  },
+  {
+    id: "official_additional_2025_07_21_경기도_중등부_여",
+    date: "2025-07-21",
+    bowType: "리커브",
+    region: "경기도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경기도 · 여 · 중등부",
+  },
+  {
+    id: "official_additional_2025_07_21_경상북도_중등부_여",
+    date: "2025-07-21",
+    bowType: "리커브",
+    region: "경상북도",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 경상북도 · 여 · 중등부",
+  },
+  {
+    id: "official_additional_2025_07_21_광주광역시_중등부_여",
+    date: "2025-07-21",
+    bowType: "리커브",
+    region: "광주광역시",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 광주광역시 · 여 · 중등부",
+  },
+  {
+    id: "official_additional_2025_07_21_대전광역시_중등부_여",
+    date: "2025-07-21",
+    bowType: "리커브",
+    region: "대전광역시",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 대전광역시 · 여 · 중등부",
+  },
+  {
+    id: "official_additional_2025_07_21_인천광역시_중등부_여",
+    date: "2025-07-21",
+    bowType: "리커브",
+    region: "인천광역시",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 인천광역시 · 여 · 중등부",
+  },
+  {
+    id: "official_additional_2025_09_28_광주광역시_중등부_남",
+    date: "2025-09-28",
+    bowType: "리커브",
+    region: "광주광역시",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 광주광역시 · 남 · 중등부",
+  },
+  {
+    id: "official_additional_2025_09_28_광주광역시_중등부_여",
+    date: "2025-09-28",
+    bowType: "리커브",
+    region: "광주광역시",
+    gender: "여",
+    rankingGroup: "중등부",
+    sourceType: "xlsx_structured_rows",
+    status: "source_registered",
+    notes: "추가기록.xlsx 기반 공식 기록 추가 등록 · 광주광역시 · 여 · 중등부",
+  }
+];
+
+// 데이터화된 공식기록 원본. 개인 기록으로 자동 주입하지 않고 공식기록으로만 사용한다.
+// 공식기록은 원본 표에 있는 사실만 보관한다. 2026-04-12 표는 선수 전원 점수까지 반영한다. U-11은 저학년, 일반 초등부 표는 통합으로 기록한다.
+const SAMPLE_SHEETS = [{
     id: "sheet_2026_03_22",
     date: "2026-03-22",
-    division: "초등4",
+    division: "초등부(저학년)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
     recordInputType: "distance",
     sheetLabel: "테스트기록지 2026-03-22",
     distances: [35, 30, 25, 20],
@@ -609,7 +1065,10 @@ const SAMPLE_SHEETS = [
   {
     id: "sheet_2026_04_12",
     date: "2026-04-12",
-    division: "초등4",
+    division: "초등부(저학년)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
     recordInputType: "distance",
     sheetLabel: "테스트기록지 2026-04-12",
     distances: [35, 30, 25, 20],
@@ -637,820 +1096,884 @@ const SAMPLE_SHEETS = [
       { name: "김바다", school: "당정초등학교", rounds: [112, 151, 263, 312], total: 575 },
       { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
     ],
-  },,
-
-  {
-    "id": "csv_enriched_001",
-    "date": "2025-03-23",
-    "division": "중등3",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도교육감배 초·중양궁대회 · 중등3 남",
-    "distances": [
-      60,
-      40,
-      30
-    ],
-    "rows": [
-      {
-        "name": "정시우",
-        "school": "안산 성포중",
-        "gender": "남",
-        "rounds": [
-          340,
-          348,
-          353
-        ],
-        "total": 1360,
-        "medal": "금"
-      }
-    ]
   },
   {
-    "id": "csv_enriched_002",
-    "date": "2025-03-23",
-    "division": "중등3",
-    "gender": "여",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도교육감배 초·중양궁대회 · 중등3 여",
-    "distances": [
-      50
+    id: "sheet_2026_04_12_elem_boys_lower_validation",
+    date: "2026-04-12",
+    division: "초등부(저학년)",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "공식기록 2026-04-12 남자초등 U-11",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "김영재", school: "연무초등학교", rounds: [337, 342, 342, 351], total: 1372 },
+      { name: "유선유", school: "연무초등학교", rounds: [313, 324, 337, 345], total: 1319 },
+      { name: "박찬영", school: "원미초등학교", rounds: [276, 310, 291, 302], total: 1179 },
+      { name: "박도현", school: "성포초등학교", rounds: [269, 291, 284, 329], total: 1173 },
+      { name: "장다준", school: "하성초등학교", rounds: [261, 231, 288, 314], total: 1094 },
+      { name: "최우빈", school: "천현초등학교", rounds: [239, 253, 294, 300], total: 1086 },
+      { name: "구교준", school: "천현초등학교", rounds: [179, 222, 266, 314], total: 981 },
+      { name: "오태준", school: "성포초등학교", rounds: [56, 0, 196, 282], total: 534 },
     ],
-    "rows": [
-      {
-        "name": "김혜윤",
-        "school": "여주여중",
-        "gender": "여",
-        "rounds": [
-          330
-        ],
-        "total": 1359,
-        "medal": "금"
-      }
-    ]
   },
   {
-    "id": "csv_enriched_003",
-    "date": "2025-03-23",
-    "division": "초등6",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도교육감배 초·중양궁대회 · 초등6 남",
-    "distances": [
-      35,
-      30,
-      25,
-      20
+    id: "sheet_2026_04_12_elem_boys_upper_validation",
+    date: "2026-04-12",
+    division: "초등부(통합)",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "공식기록 2026-04-12 남자초등 고학년",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "장은혁", school: "연무초등학교", rounds: [333, 349, 344, 357], total: 1383 },
+      { name: "김영재", school: "연무초등학교", rounds: [337, 342, 342, 351], total: 1372 },
+      { name: "최광빈", school: "천현초등학교", rounds: [339, 331, 345, 354], total: 1369 },
+      { name: "백종준", school: "천현초등학교", rounds: [328, 329, 343, 353], total: 1353 },
+      { name: "최수혁", school: "성포초등학교", rounds: [326, 342, 337, 347], total: 1352 },
+      { name: "이우현", school: "하성초등학교", rounds: [320, 338, 341, 343], total: 1342 },
+      { name: "정선우", school: "연무초등학교", rounds: [322, 330, 344, 345], total: 1341 },
+      { name: "김준서", school: "성포초등학교", rounds: [335, 318, 336, 340], total: 1329 },
+      { name: "임태서", school: "연무초등학교", rounds: [307, 315, 347, 353], total: 1322 },
+      { name: "유선유", school: "연무초등학교", rounds: [313, 324, 337, 345], total: 1319 },
+      { name: "배재윤", school: "성포초등학교", rounds: [316, 322, 334, 345], total: 1317 },
+      { name: "김영민", school: "연무초등학교", rounds: [305, 319, 334, 339], total: 1297 },
+      { name: "김태원", school: "수진초등학교", rounds: [286, 312, 323, 322], total: 1243 },
+      { name: "진준호", school: "천현초등학교", rounds: [279, 310, 305, 319], total: 1213 },
+      { name: "방도율", school: "당정초등학교", rounds: [286, 282, 312, 314], total: 1194 },
+      { name: "김민준", school: "원미초등학교", rounds: [291, 264, 310, 326], total: 1191 },
+      { name: "박찬영", school: "원미초등학교", rounds: [276, 310, 291, 302], total: 1179 },
+      { name: "박도현", school: "성포초등학교", rounds: [269, 291, 284, 329], total: 1173 },
+      { name: "김선율", school: "당정초등학교", rounds: [240, 268, 299, 307], total: 1114 },
+      { name: "권순용", school: "연무초등학교", rounds: [254, 271, 281, 304], total: 1110 },
+      { name: "장다준", school: "하성초등학교", rounds: [261, 231, 288, 314], total: 1094 },
+      { name: "최우빈", school: "천현초등학교", rounds: [239, 253, 294, 300], total: 1086 },
+      { name: "구교준", school: "천현초등학교", rounds: [179, 222, 266, 314], total: 981 },
+      { name: "오태준", school: "성포초등학교", rounds: [56, 0, 196, 282], total: 534 },
+      { name: "윤주안", school: "성포초등학교", rounds: [0, 0, 207, 277], total: 484 },
     ],
-    "rows": [
-      {
-        "name": "이환지",
-        "school": "하남 천현초",
-        "gender": "남",
-        "rounds": [
-          337,
-          350,
-          354,
-          355
-        ],
-        "total": 1396,
-        "medal": "금"
-      }
-    ]
   },
   {
-    "id": "csv_enriched_004",
-    "date": "2025-03-23",
-    "division": "초등6",
-    "gender": "여",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도교육감배 초·중양궁대회 · 초등6 여",
-    "distances": [
-      35,
-      30,
-      25
+    id: "sheet_2026_04_12_elem_girls_lower_validation",
+    date: "2026-04-12",
+    division: "초등부(저학년)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "공식기록 2026-04-12 여자초등 U-11",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
+      { name: "김태리", school: "하성초등학교", rounds: [298, 311, 322, 345], total: 1276 },
+      { name: "조유나", school: "수진초등학교", rounds: [292, 301, 319, 339], total: 1251 },
+      { name: "장윤혜", school: "송정초등학교", rounds: [294, 286, 320, 330], total: 1230 },
+      { name: "김서우", school: "수진초등학교", rounds: [262, 304, 323, 338], total: 1227 },
+      { name: "김설", school: "안양서초등학교", rounds: [270, 301, 315, 327], total: 1213 },
+      { name: "강민서", school: "여흥초등학교", rounds: [272, 288, 317, 325], total: 1202 },
+      { name: "김소율", school: "타겟28양궁클럽", rounds: [244, 275, 307, 332], total: 1158 },
+      { name: "홍지수", school: "송정초등학교", rounds: [257, 288, 294, 314], total: 1153 },
+      { name: "원율", school: "여흥초등학교", rounds: [242, 261, 308, 327], total: 1138 },
+      { name: "송의나", school: "수진초등학교", rounds: [246, 257, 307, 325], total: 1135 },
+      { name: "김민채", school: "천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
+      { name: "백가은", school: "안양서초등학교", rounds: [238, 230, 272, 302], total: 1042 },
+      { name: "조예늘", school: "하성초등학교", rounds: [166, 242, 292, 304], total: 1004 },
+      { name: "백수연", school: "여흥초등학교", rounds: [179, 245, 252, 292], total: 968 },
+      { name: "김윤서", school: "원미초등학교", rounds: [165, 198, 258, 249], total: 870 },
+      { name: "조윤서", school: "안양서초등학교", rounds: [190, 230, 218, 223], total: 861 },
+      { name: "윤이진", school: "여흥초등학교", rounds: [139, 185, 252, 267], total: 843 },
+      { name: "고은", school: "안양서초등학교", rounds: [157, 205, 207, 260], total: 829 },
+      { name: "황리안", school: "천현초등학교", rounds: [112, 151, 211, 281], total: 755 },
+      { name: "김바다", school: "당정초등학교", rounds: [0, 0, 263, 312], total: 575 },
+      { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
     ],
-    "rows": [
-      {
-        "name": "한세빈",
-        "school": "수원 송정초",
-        "gender": "여",
-        "rounds": [
-          327,
-          337,
-          352
-        ],
-        "total": 1366,
-        "medal": "금"
-      }
-    ]
   },
   {
-    "id": "csv_enriched_005",
-    "date": "2025-04-13",
-    "division": "중등3",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도교육감배 초·중양궁대회 겸 제20회 수원시양궁협회장기대회 · 중등3 남",
-    "distances": [
-      60,
-      30
+    id: "sheet_2026_04_12_elem_girls_upper_validation",
+    date: "2026-04-12",
+    division: "초등부(통합)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "공식기록 2026-04-12 여자초등 고학년",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "원서아", school: "하성초등학교", rounds: [343, 352, 346, 352], total: 1393 },
+      { name: "조유나", school: "하성초등학교", rounds: [325, 343, 339, 354], total: 1361 },
+      { name: "이다연", school: "송정초등학교", rounds: [320, 341, 344, 353], total: 1358 },
+      { name: "조유리", school: "수진초등학교", rounds: [319, 337, 350, 347], total: 1353 },
+      { name: "최호희", school: "원미초등학교", rounds: [318, 332, 352, 351], total: 1353 },
+      { name: "김도희", school: "원미초등학교", rounds: [321, 336, 342, 349], total: 1348 },
+      { name: "강연지", school: "송정초등학교", rounds: [326, 329, 342, 350], total: 1347 },
+      { name: "김태연", school: "송정초등학교", rounds: [318, 335, 336, 351], total: 1340 },
+      { name: "전다은", school: "하성초등학교", rounds: [313, 331, 344, 349], total: 1337 },
+      { name: "한윤서", school: "하성초등학교", rounds: [331, 328, 332, 344], total: 1335 },
+      { name: "곽나영", school: "원미초등학교", rounds: [311, 326, 344, 336], total: 1317 },
+      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
+      { name: "손하음", school: "타겟28양궁클럽", rounds: [306, 329, 336, 339], total: 1310 },
+      { name: "최승연", school: "부천시양궁협회", rounds: [307, 316, 339, 343], total: 1305 },
+      { name: "강라율", school: "송정초등학교", rounds: [301, 319, 340, 342], total: 1302 },
+      { name: "김서윤", school: "송정초등학교", rounds: [305, 314, 337, 341], total: 1297 },
+      { name: "김민채", school: "타겟28양궁클럽", rounds: [290, 327, 334, 345], total: 1296 },
+      { name: "안수연", school: "안양서초등학교", rounds: [309, 311, 331, 344], total: 1295 },
+      { name: "차유나", school: "원미초등학교", rounds: [310, 320, 324, 337], total: 1291 },
+      { name: "신서윤", school: "송정초등학교", rounds: [302, 324, 319, 344], total: 1289 },
+      { name: "탁민서", school: "안양서초등학교", rounds: [296, 320, 329, 341], total: 1286 },
+      { name: "김지후", school: "안양서초등학교", rounds: [302, 309, 326, 342], total: 1279 },
+      { name: "김태리", school: "하성초등학교", rounds: [298, 311, 322, 345], total: 1276 },
+      { name: "조유나", school: "수진초등학교", rounds: [292, 301, 319, 339], total: 1251 },
+      { name: "박수연", school: "송정초등학교", rounds: [297, 301, 316, 327], total: 1241 },
+      { name: "오연희", school: "하성초등학교", rounds: [280, 302, 311, 337], total: 1230 },
+      { name: "장윤혜", school: "송정초등학교", rounds: [294, 286, 320, 330], total: 1230 },
+      { name: "장서하", school: "안양서초등학교", rounds: [286, 293, 326, 324], total: 1229 },
+      { name: "김서우", school: "수진초등학교", rounds: [262, 304, 323, 338], total: 1227 },
+      { name: "김윤하", school: "송정초등학교", rounds: [293, 290, 311, 325], total: 1219 },
+      { name: "양서인", school: "하성초등학교", rounds: [281, 299, 314, 324], total: 1218 },
+      { name: "김설", school: "안양서초등학교", rounds: [270, 301, 315, 327], total: 1213 },
+      { name: "강민서", school: "여흥초등학교", rounds: [272, 288, 317, 325], total: 1202 },
+      { name: "유혜인", school: "타겟28양궁클럽", rounds: [284, 295, 297, 314], total: 1190 },
+      { name: "박채원", school: "부천시양궁협회", rounds: [271, 285, 308, 318], total: 1182 },
+      { name: "박선우", school: "송정초등학교", rounds: [263, 284, 313, 317], total: 1177 },
+      { name: "김태은", school: "타겟28양궁클럽", rounds: [239, 279, 333, 326], total: 1177 },
+      { name: "김소율", school: "타겟28양궁클럽", rounds: [244, 275, 307, 332], total: 1158 },
+      { name: "홍지수", school: "송정초등학교", rounds: [257, 288, 294, 314], total: 1153 },
+      { name: "강하린", school: "타겟28양궁클럽", rounds: [270, 280, 278, 317], total: 1145 },
+      { name: "원율", school: "여흥초등학교", rounds: [242, 261, 308, 327], total: 1138 },
+      { name: "송의나", school: "수진초등학교", rounds: [246, 257, 307, 325], total: 1135 },
+      { name: "김라윤", school: "하성초등학교", rounds: [238, 286, 293, 311], total: 1128 },
+      { name: "송하영", school: "수진초등학교", rounds: [243, 248, 300, 331], total: 1122 },
+      { name: "한지안", school: "원미초등학교", rounds: [234, 249, 300, 307], total: 1090 },
+      { name: "김민채", school: "천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
+      { name: "백가은", school: "안양서초등학교", rounds: [238, 230, 272, 302], total: 1042 },
+      { name: "최선", school: "안양서초등학교", rounds: [231, 240, 252, 293], total: 1016 },
+      { name: "조예늘", school: "하성초등학교", rounds: [166, 242, 292, 304], total: 1004 },
+      { name: "백수연", school: "여흥초등학교", rounds: [179, 245, 252, 292], total: 968 },
+      { name: "김윤서", school: "원미초등학교", rounds: [165, 198, 258, 249], total: 870 },
+      { name: "조윤서", school: "안양서초등학교", rounds: [190, 230, 218, 223], total: 861 },
+      { name: "윤이진", school: "여흥초등학교", rounds: [139, 185, 252, 267], total: 843 },
+      { name: "고은", school: "안양서초등학교", rounds: [157, 205, 207, 260], total: 829 },
+      { name: "황리안", school: "천현초등학교", rounds: [112, 151, 211, 281], total: 755 },
+      { name: "김바다", school: "당정초등학교", rounds: [0, 0, 263, 312], total: 575 },
+      { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
     ],
-    "rows": [
-      {
-        "name": "정시우",
-        "school": "안산 성포중",
-        "gender": "남",
-        "rounds": [
-          343,
-          345
-        ],
-        "total": 1326,
-        "medal": "금"
-      }
-    ]
   },
   {
-    "id": "csv_enriched_006",
-    "date": "2025-04-13",
-    "division": "중등3",
-    "gender": "여",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도교육감배 초·중양궁대회 겸 제20회 수원시양궁협회장기대회 · 중등3 여",
-    "distances": [
-      60,
-      40,
-      30
+    id: "sheet_2026_04_12_middle_boys_validation",
+    date: "2026-04-12",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "공식기록 2026-04-12 남자중등부",
+    distances: [60, 50, 40, 30],
+    rows: [
+      { name: "안은찬", school: "성포중학교", rounds: [338, 322, 347, 357], total: 1364 },
+      { name: "이한지", school: "신장중학교", rounds: [328, 313, 345, 346], total: 1332 },
+      { name: "이주환", school: "원천중학교", rounds: [318, 329, 337, 346], total: 1330 },
+      { name: "안준서", school: "원천중학교", rounds: [319, 327, 331, 348], total: 1325 },
+      { name: "황태민", school: "하성중학교", rounds: [342, 303, 334, 341], total: 1320 },
+      { name: "손우주", school: "수원시양궁협회", rounds: [324, 308, 331, 350], total: 1313 },
+      { name: "서은민", school: "성포중학교", rounds: [328, 297, 333, 348], total: 1306 },
+      { name: "권종영", school: "원천중학교", rounds: [319, 302, 337, 345], total: 1303 },
+      { name: "홍지훈", school: "성포중학교", rounds: [307, 319, 331, 341], total: 1298 },
+      { name: "강민국", school: "신장중학교", rounds: [310, 320, 320, 348], total: 1298 },
+      { name: "박민교", school: "성포중학교", rounds: [317, 304, 333, 341], total: 1295 },
+      { name: "김준혁", school: "성포중학교", rounds: [320, 295, 336, 343], total: 1294 },
+      { name: "최준혁", school: "부천남중학교", rounds: [316, 299, 322, 340], total: 1277 },
+      { name: "진민오", school: "원천중학교", rounds: [318, 297, 317, 335], total: 1267 },
+      { name: "정태준", school: "원천중학교", rounds: [312, 298, 314, 334], total: 1258 },
+      { name: "김보형", school: "수원시양궁협회", rounds: [310, 264, 312, 328], total: 1214 },
+      { name: "명지훈", school: "성포중학교", rounds: [305, 260, 302, 333], total: 1200 },
+      { name: "황시윤", school: "성포중학교", rounds: [295, 272, 299, 323], total: 1189 },
+      { name: "강지석", school: "부천남중학교", rounds: [295, 263, 307, 311], total: 1176 },
+      { name: "원동우", school: "하성중학교", rounds: [275, 256, 306, 324], total: 1161 },
+      { name: "오태윤", school: "성포중학교", rounds: [281, 250, 299, 321], total: 1151 },
+      { name: "양희종", school: "플랜비스포츠", rounds: [298, 236, 275, 308], total: 1117 },
+      { name: "이찬희", school: "신장중학교", rounds: [296, 224, 284, 308], total: 1112 },
+      { name: "차준", school: "부천남중학교", rounds: [224, 205, 287, 304], total: 1020 },
     ],
-    "rows": [
-      {
-        "name": "한정연",
-        "school": "여주여중",
-        "gender": "여",
-        "rounds": [
-          0,
-          339,
-          0
-        ],
-        "total": 1035,
-        "medal": "금"
-      },
-      {
-        "name": "김혜윤",
-        "school": "여주여중",
-        "gender": "여",
-        "rounds": [
-          339,
-          0,
-          347
-        ],
-        "total": 686,
-        "medal": "금"
-      }
-    ]
   },
   {
-    "id": "csv_enriched_007",
-    "date": "2025-04-13",
-    "division": "초등6",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도교육감배 초·중양궁대회 겸 제20회 수원시양궁협회장기대회 · 초등6 남",
-    "distances": [
-      30,
-      20
+    id: "sheet_2026_04_12_middle_girls_validation",
+    date: "2026-04-12",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "공식기록 2026-04-12 여자중등부",
+    distances: [60, 50, 40, 30],
+    rows: [
+      { name: "장예진", school: "여흥중학교", rounds: [331, 324, 339, 351], total: 1345 },
+      { name: "김주은", school: "창용중학교", rounds: [331, 326, 331, 349], total: 1337 },
+      { name: "김연아", school: "창용중학교", rounds: [324, 305, 335, 352], total: 1316 },
+      { name: "박예주", school: "창용중학교", rounds: [322, 313, 334, 344], total: 1313 },
+      { name: "윤도경", school: "여흥중학교", rounds: [313, 315, 338, 347], total: 1313 },
+      { name: "안지현", school: "창용중학교", rounds: [327, 306, 331, 345], total: 1309 },
+      { name: "주혜인", school: "창용중학교", rounds: [329, 299, 335, 344], total: 1307 },
+      { name: "최세진", school: "창용중학교", rounds: [316, 306, 330, 344], total: 1296 },
+      { name: "윤소미", school: "신장중학교", rounds: [316, 290, 341, 339], total: 1286 },
+      { name: "권수연", school: "상도중학교", rounds: [328, 272, 338, 348], total: 1286 },
+      { name: "허정아", school: "하성중학교", rounds: [317, 301, 321, 341], total: 1280 },
+      { name: "김보현", school: "여흥중학교", rounds: [310, 311, 317, 341], total: 1279 },
+      { name: "이민솔", school: "신장중학교", rounds: [317, 290, 328, 342], total: 1277 },
+      { name: "이가은", school: "수원시양궁협회", rounds: [315, 296, 322, 335], total: 1268 },
+      { name: "한세빈", school: "창용중학교", rounds: [312, 296, 323, 337], total: 1268 },
+      { name: "김수연", school: "창용중학교", rounds: [307, 298, 324, 337], total: 1266 },
+      { name: "한새론", school: "창용중학교", rounds: [296, 308, 323, 334], total: 1261 },
+      { name: "이송희", school: "안양서중학교", rounds: [302, 288, 328, 337], total: 1255 },
+      { name: "김정용", school: "창용중학교", rounds: [300, 292, 315, 346], total: 1253 },
+      { name: "유수진", school: "여흥중학교", rounds: [304, 285, 312, 339], total: 1240 },
+      { name: "유하은", school: "하성중학교", rounds: [308, 284, 317, 328], total: 1237 },
+      { name: "유하원", school: "상도중학교", rounds: [291, 289, 318, 334], total: 1232 },
+      { name: "이소연", school: "창용중학교", rounds: [292, 272, 312, 345], total: 1221 },
+      { name: "김하늘", school: "상도중학교", rounds: [274, 265, 316, 330], total: 1185 },
+      { name: "소리아", school: "상도중학교", rounds: [287, 289, 272, 325], total: 1173 },
+      { name: "권우솔", school: "상도중학교", rounds: [279, 260, 306, 319], total: 1164 },
+      { name: "석지우", school: "하성중학교", rounds: [289, 256, 296, 320], total: 1161 },
+      { name: "윤이나", school: "창용중학교", rounds: [289, 255, 288, 322], total: 1154 },
+      { name: "함소이", school: "여흥중학교", rounds: [292, 215, 291, 322], total: 1120 },
+      { name: "고나연", school: "여흥중학교", rounds: [268, 227, 305, 301], total: 1101 },
+      { name: "김지윤", school: "여흥중학교", rounds: [282, 243, 229, 318], total: 1072 },
+      { name: "김혜림", school: "안양서중학교", rounds: [254, 222, 283, 300], total: 1059 },
+      { name: "김세아", school: "안양서중학교", rounds: [265, 223, 271, 300], total: 1059 },
+      { name: "김하은", school: "여흥중학교", rounds: [120, 58, 234, 249], total: 661 },
+      { name: "최아영", school: "창성중학교", rounds: [0, 0, 212, 293], total: 505 },
+      { name: "전서연", school: "창성중학교", rounds: [0, 0, 203, 255], total: 458 },
     ],
-    "rows": [
-      {
-        "name": "강민국",
-        "school": "하남 천현초",
-        "gender": "남",
-        "rounds": [
-          345,
-          352
-        ],
-        "total": 1367,
-        "medal": "금"
-      }
-    ]
-  },
+  }
+  ,
   {
-    "id": "csv_enriched_008",
-    "date": "2025-04-13",
-    "division": "초등6",
-    "gender": "여",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도교육감배 초·중양궁대회 겸 제20회 수원시양궁협회장기대회 · 초등6 여",
-    "distances": [
-      35,
-      30,
-      20
+    id: "sheet_2026_03_22_elem_girls_lower_validation_v2",
+    date: "2026-03-22",
+    division: "초등부(저학년)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "공식기록 2026-03-22 여자초등 U-11",
+    distances: [35, 30, 25, 20],
+    rows: [
+      { name: "황리우", school: "천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
+      { name: "김설", school: "안양서초등학교", rounds: [277, 312, 314, 332], total: 1235 },
+      { name: "김태리", school: "하성초등학교", rounds: [271, 302, 320, 334], total: 1227 },
+      { name: "조유나", school: "수진초등학교", rounds: [271, 302, 311, 326], total: 1210 },
+      { name: "장윤혜", school: "송정초등학교", rounds: [282, 288, 293, 336], total: 1199 },
+      { name: "원율", school: "여흥초등학교", rounds: [264, 291, 319, 310], total: 1184 },
+      { name: "김서우", school: "수진초등학교", rounds: [279, 276, 302, 291], total: 1148 },
+      { name: "홍지수", school: "송정초등학교", rounds: [248, 264, 294, 318], total: 1124 },
+      { name: "김소율", school: "타겟28양궁클럽", rounds: [278, 232, 272, 326], total: 1108 },
+      { name: "강민서", school: "여흥초등학교", rounds: [253, 263, 270, 303], total: 1089 },
+      { name: "조윤서", school: "안양서초등학교", rounds: [253, 242, 277, 300], total: 1072 },
+      { name: "송의나", school: "수진초등학교", rounds: [227, 270, 269, 304], total: 1070 },
+      { name: "백수연", school: "여흥초등학교", rounds: [202, 270, 275, 320], total: 1067 },
+      { name: "김윤서", school: "원미초등학교", rounds: [195, 255, 290, 301], total: 1041 },
+      { name: "박가은", school: "안양서초등학교", rounds: [165, 216, 273, 288], total: 942 },
+      { name: "김민채", school: "천현초등학교", rounds: [225, 213, 250, 243], total: 931 },
+      { name: "조예슬", school: "하성초등학교", rounds: [189, 203, 250, 278], total: 920 },
+      { name: "윤이진", school: "여흥초등학교", rounds: [145, 194, 231, 307], total: 877 },
+      { name: "고은", school: "안양서초등학교", rounds: [177, 212, 229, 255], total: 873 },
+      { name: "황리안", school: "천현초등학교", rounds: [159, 152, 209, 245], total: 765 },
+      { name: "이주아", school: "안양서초등학교", rounds: [65, 138, 117, 184], total: 504 }
     ],
-    "rows": [
-      {
-        "name": "한세빈",
-        "school": "수원 송정초",
-        "gender": "여",
-        "rounds": [
-          335,
-          348,
-          355
-        ],
-        "total": 1376,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_009",
-    "date": "2025-06-13",
-    "division": "중등3",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도의장배 초·중학교양궁대회 · 중등3 남",
-    "distances": [
-      60,
-      50,
-      40,
-      30
-    ],
-    "rows": [
-      {
-        "name": "정시우",
-        "school": "안산 성포중",
-        "gender": "남",
-        "rounds": [
-          0,
-          336,
-          0,
-          352
-        ],
-        "total": 1371,
-        "medal": "금"
-      },
-      {
-        "name": "강민우",
-        "school": "부천남중",
-        "gender": "남",
-        "rounds": [
-          0,
-          0,
-          350,
-          0
-        ],
-        "total": 350,
-        "medal": "금"
-      },
-      {
-        "name": "김호균",
-        "school": "김포 하성중",
-        "gender": "남",
-        "rounds": [
-          338,
-          0,
-          0,
-          0
-        ],
-        "total": 338,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_010",
-    "date": "2025-06-13",
-    "division": "중등3",
-    "gender": "여",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도의장배 초·중학교양궁대회 · 중등3 여",
-    "distances": [
-      60,
-      50,
-      40,
-      30
-    ],
-    "rows": [
-      {
-        "name": "김은찬",
-        "school": "수원 창용중",
-        "gender": "여",
-        "rounds": [
-          340,
-          332,
-          346,
-          0
-        ],
-        "total": 1367,
-        "medal": "금"
-      },
-      {
-        "name": "김연아",
-        "school": "수원 창용중",
-        "gender": "여",
-        "rounds": [
-          0,
-          0,
-          0,
-          352
-        ],
-        "total": 352,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_011",
-    "date": "2025-06-13",
-    "division": "초등6",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도의장배 초·중학교양궁대회 · 초등6 남",
-    "distances": [
-      35,
-      30,
-      25,
-      20
-    ],
-    "rows": [
-      {
-        "name": "이환지",
-        "school": "하남 천현초",
-        "gender": "남",
-        "rounds": [
-          344,
-          356,
-          355,
-          355
-        ],
-        "total": 1410,
-        "medal": "금"
-      },
-      {
-        "name": "석지우",
-        "school": "김포 하성초",
-        "gender": "남",
-        "rounds": [
-          0,
-          0,
-          0,
-          356
-        ],
-        "total": 356,
-        "medal": "금"
-      },
-      {
-        "name": "서은민",
-        "school": "성포초",
-        "gender": "남",
-        "rounds": [
-          0,
-          0,
-          0,
-          356
-        ],
-        "total": 356,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_012",
-    "date": "2025-06-13",
-    "division": "초등6",
-    "gender": "여",
-    "recordInputType": "distance",
-    "sheetLabel": "2025 경기도의장배 초·중학교양궁대회 · 초등6 여",
-    "distances": [
-      35,
-      30,
-      25
-    ],
-    "rows": [
-      {
-        "name": "허정아",
-        "school": "김포 하성초",
-        "gender": "여",
-        "rounds": [
-          340,
-          0,
-          352
-        ],
-        "total": 1391,
-        "medal": "금"
-      },
-      {
-        "name": "한세빈",
-        "school": "수원 송정초",
-        "gender": "여",
-        "rounds": [
-          0,
-          350,
-          352
-        ],
-        "total": 702,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_013",
-    "date": "2025-09-28",
-    "division": "중등3",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "제22회 경북도지사기 전국 남·여 초·중등학교 양궁대회 · 중등3 남",
-    "distances": [
-      50
-    ],
-    "rows": [
-      {
-        "name": "김준서",
-        "school": "광주체중",
-        "gender": "남",
-        "rounds": [
-          341
-        ],
-        "total": 341,
-        "medal": "동"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_014",
-    "date": "2025-09-28",
-    "division": "중등3",
-    "gender": "여",
-    "recordInputType": "distance",
-    "sheetLabel": "제22회 경북도지사기 전국 남·여 초·중등학교 양궁대회 · 중등3 여",
-    "distances": [
-      50,
-      40,
-      30
-    ],
-    "rows": [
-      {
-        "name": "강수정",
-        "school": "광주체중",
-        "gender": "여",
-        "rounds": [
-          335,
-          349,
-          359
-        ],
-        "total": 1380,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_015",
-    "date": "2025-07-19",
-    "division": "중등3",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "제52회 한국중·고연맹회장기 양궁대회 · 중등3 남",
-    "distances": [
-      60,
-      50,
-      40,
-      30
-    ],
-    "rows": [
-      {
-        "name": "박세현",
-        "school": "북인천중",
-        "gender": "남",
-        "rounds": [
-          336,
-          329,
-          0,
-          0
-        ],
-        "total": 665,
-        "medal": "은"
-      },
-      {
-        "name": "최준혁",
-        "school": "부천남중",
-        "gender": "남",
-        "rounds": [
-          0,
-          0,
-          0,
-          353
-        ],
-        "total": 353,
-        "medal": "금"
-      },
-      {
-        "name": "안은찬",
-        "school": "안산 성포중",
-        "gender": "남",
-        "rounds": [
-          0,
-          0,
-          0,
-          353
-        ],
-        "total": 353,
-        "medal": "금"
-      },
-      {
-        "name": "주영진",
-        "school": "옥천 이원중",
-        "gender": "남",
-        "rounds": [
-          0,
-          0,
-          0,
-          352
-        ],
-        "total": 352,
-        "medal": "동"
-      },
-      {
-        "name": "김성혁",
-        "school": "인천 만수북중",
-        "gender": "남",
-        "rounds": [
-          0,
-          0,
-          347,
-          0
-        ],
-        "total": 347,
-        "medal": "금"
-      },
-      {
-        "name": "석주원",
-        "school": "인천 선인중",
-        "gender": "남",
-        "rounds": [
-          0,
-          0,
-          346,
-          0
-        ],
-        "total": 346,
-        "medal": "은"
-      },
-      {
-        "name": "김호균",
-        "school": "김포 하성중",
-        "gender": "남",
-        "rounds": [
-          0,
-          337,
-          0,
-          0
-        ],
-        "total": 337,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_016",
-    "date": "2025-07-19",
-    "division": "중등3",
-    "gender": "여",
-    "recordInputType": "distance",
-    "sheetLabel": "제52회 한국중·고연맹회장기 양궁대회 · 중등3 여",
-    "distances": [
-      60,
-      50,
-      40,
-      30
-    ],
-    "rows": [
-      {
-        "name": "김아현",
-        "school": "인천 신흥여중",
-        "gender": "여",
-        "rounds": [
-          342,
-          0,
-          351,
-          358
-        ],
-        "total": 1051,
-        "medal": "은"
-      },
-      {
-        "name": "강수정",
-        "school": "광주체중",
-        "gender": "여",
-        "rounds": [
-          0,
-          335,
-          346,
-          355
-        ],
-        "total": 1036,
-        "medal": "동"
-      },
-      {
-        "name": "김은찬",
-        "school": "수원 창용중",
-        "gender": "여",
-        "rounds": [
-          0,
-          335,
-          353,
-          0
-        ],
-        "total": 688,
-        "medal": "금"
-      },
-      {
-        "name": "김혜윤",
-        "school": "여주여중",
-        "gender": "여",
-        "rounds": [
-          342,
-          336,
-          0,
-          0
-        ],
-        "total": 678,
-        "medal": "은"
-      },
-      {
-        "name": "김지율",
-        "school": "예천여중",
-        "gender": "여",
-        "rounds": [
-          0,
-          0,
-          0,
-          357
-        ],
-        "total": 357,
-        "medal": "은"
-      },
-      {
-        "name": "오선영",
-        "school": "인천 강화여중",
-        "gender": "여",
-        "rounds": [
-          0,
-          0,
-          0,
-          355
-        ],
-        "total": 355,
-        "medal": "동"
-      },
-      {
-        "name": "김현서",
-        "school": "대전체중",
-        "gender": "여",
-        "rounds": [
-          0,
-          0,
-          346,
-          0
-        ],
-        "total": 346,
-        "medal": "동"
-      },
-      {
-        "name": "한정연",
-        "school": "여주여중",
-        "gender": "여",
-        "rounds": [
-          0,
-          0,
-          346,
-          0
-        ],
-        "total": 346,
-        "medal": "동"
-      },
-      {
-        "name": "김혜린",
-        "school": "인천 신흥여중",
-        "gender": "여",
-        "rounds": [
-          0,
-          337,
-          0,
-          0
-        ],
-        "total": 337,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_017",
-    "date": "2025-05-24",
-    "division": "중등2",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "제54회 전국소년체육대회 · 중등2 남",
-    "distances": [
-      60
-    ],
-    "rows": [
-      {
-        "name": "박규필",
-        "school": "부산체육중학교",
-        "gender": "남",
-        "rounds": [
-          350
-        ],
-        "total": 350,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_018",
-    "date": "2025-05-24",
-    "division": "중등3",
-    "gender": "여",
-    "recordInputType": "distance",
-    "sheetLabel": "제54회 전국소년체육대회 · 중등3 여",
-    "distances": [
-      40
-    ],
-    "rows": [
-      {
-        "name": "한정연",
-        "school": "여주여자중학교",
-        "gender": "여",
-        "rounds": [
-          353
-        ],
-        "total": 353,
-        "medal": "금"
-      }
-    ]
-  },
-  {
-    "id": "csv_enriched_019",
-    "date": "2025-05-24",
-    "division": "초등6",
-    "gender": "남",
-    "recordInputType": "distance",
-    "sheetLabel": "제54회 전국소년체육대회 · 초등6 남",
-    "distances": [
-      35,
-      20
-    ],
-    "rows": [
-      {
-        "name": "신동주",
-        "school": "이원초등학교",
-        "gender": "남",
-        "rounds": [
-          0,
-          360
-        ],
-        "total": 1411,
-        "medal": "금"
-      },
-      {
-        "name": "양가온",
-        "school": "대구송현초",
-        "gender": "남",
-        "rounds": [
-          348,
-          0
-        ],
-        "total": 348,
-        "medal": ""
-      }
-    ]
   }
 
+
+,
+  // 추가기록.xlsx 기반 공식 샘플 데이터: 단체종합/대표선발/컴파운드/성별 불명확 행은 랭킹 왜곡 방지를 위해 제외
+  {
+    id: "sheet_additional_2025_03_23_경기도_중등부_남_30_40_50_60_1",
+    date: "2025-03-23",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-03-23 경기도 남 중등부",
+    distances: [30, 40, 50, 60],
+    rows: [
+      { name: "정시우", school: "안산 성포중", rounds: [353, 348, 319, 340], total: 1360 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_03_23_경기도_중등부_여_50_2",
+    date: "2025-03-23",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-03-23 경기도 여 중등부",
+    distances: [50],
+    rows: [
+      { name: "김혜윤", school: "여주여중", rounds: [330], total: 330 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_03_23_경기도_초등부_통합__남_20_25_30_35_3",
+    date: "2025-03-23",
+    division: "초등부(통합)",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-03-23 경기도 남 초등부(통합)",
+    distances: [20, 25, 30, 35],
+    rows: [
+      { name: "이환지", school: "하남 천현초", rounds: [355, 354, 350, 337], total: 1396 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_03_23_경기도_초등부_통합__여_20_25_30_35_4",
+    date: "2025-03-23",
+    division: "초등부(통합)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-03-23 경기도 여 초등부(통합)",
+    distances: [20, 25, 30, 35],
+    rows: [
+      { name: "한세빈", school: "수원 송정초", rounds: [350, 352, 337, 327], total: 1366 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_04_13_경기도_중등부_남_30_60_5",
+    date: "2025-04-13",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-04-13 경기도 남 중등부",
+    distances: [30, 60],
+    rows: [
+      { name: "정시우", school: "안산 성포중", rounds: [345, 343], total: 688 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_04_13_경기도_중등부_여_30_60_6",
+    date: "2025-04-13",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-04-13 경기도 여 중등부",
+    distances: [30, 60],
+    rows: [
+      { name: "김혜윤", school: "여주여중", rounds: [347, 339], total: 686 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_04_13_경기도_중등부_여_40_7",
+    date: "2025-04-13",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-04-13 경기도 여 중등부",
+    distances: [40],
+    rows: [
+      { name: "한정연", school: "여주여중", rounds: [339], total: 339 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_04_13_경기도_초등부_통합__남_20_30_8",
+    date: "2025-04-13",
+    division: "초등부(통합)",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-04-13 경기도 남 초등부(통합)",
+    distances: [20, 30],
+    rows: [
+      { name: "강민국", school: "하남 천현초", rounds: [352, 345], total: 697 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_04_13_경기도_초등부_통합__여_20_25_30_35_9",
+    date: "2025-04-13",
+    division: "초등부(통합)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-04-13 경기도 여 초등부(통합)",
+    distances: [20, 25, 30, 35],
+    rows: [
+      { name: "한세빈", school: "수원 송정초", rounds: [355, 338, 348, 335], total: 1376 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_05_27_부산광역시_중등부_남_60_10",
+    date: "2025-05-27",
+    division: "중등부",
+    gender: "남",
+    regionCity: "부산광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-05-27 부산광역시 남 중등부",
+    distances: [60],
+    rows: [
+      { name: "박규필", school: "부산체육중학교", rounds: [350], total: 350 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_05_27_경기도_중등부_여_40_11",
+    date: "2025-05-27",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-05-27 경기도 여 중등부",
+    distances: [40],
+    rows: [
+      { name: "한정연", school: "여주여자중학교", rounds: [353], total: 353 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_05_27_대구광역시_초등부_통합__남_35_12",
+    date: "2025-05-27",
+    division: "초등부(통합)",
+    gender: "남",
+    regionCity: "대구광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-05-27 대구광역시 남 초등부(통합)",
+    distances: [35],
+    rows: [
+      { name: "양가온", school: "대구송현초", rounds: [348], total: 348 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_05_27_충청북도_초등부_통합__남_20_13",
+    date: "2025-05-27",
+    division: "초등부(통합)",
+    gender: "남",
+    regionCity: "충청북도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-05-27 충청북도 남 초등부(통합)",
+    distances: [20],
+    rows: [
+      { name: "신동주", school: "이원초등학교", rounds: [360], total: 360 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_06_15_경기도_중등부_남_30_50_14",
+    date: "2025-06-15",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-06-15 경기도 남 중등부",
+    distances: [30, 50],
+    rows: [
+      { name: "정시우", school: "안산 성포중", rounds: [352, 336], total: 688 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_06_15_경기도_중등부_남_40_15",
+    date: "2025-06-15",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-06-15 경기도 남 중등부",
+    distances: [40],
+    rows: [
+      { name: "강민우", school: "부천남중", rounds: [350], total: 350 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_06_15_경기도_중등부_남_60_16",
+    date: "2025-06-15",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-06-15 경기도 남 중등부",
+    distances: [60],
+    rows: [
+      { name: "김호균", school: "김포 하성중", rounds: [338], total: 338 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_06_15_경기도_중등부_여_30_17",
+    date: "2025-06-15",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-06-15 경기도 여 중등부",
+    distances: [30],
+    rows: [
+      { name: "김연아", school: "수원 창용중", rounds: [352], total: 352 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_06_15_경기도_중등부_여_30_40_50_60_18",
+    date: "2025-06-15",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-06-15 경기도 여 중등부",
+    distances: [30, 40, 50, 60],
+    rows: [
+      { name: "김은찬", school: "수원 창용중", rounds: [349, 346, 332, 340], total: 1367 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_06_15_경기도_초등부_통합__남_20_25_30_35_19",
+    date: "2025-06-15",
+    division: "초등부(통합)",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-06-15 경기도 남 초등부(통합)",
+    distances: [20, 25, 30, 35],
+    rows: [
+      { name: "이환지", school: "하남 천현초", rounds: [355, 355, 356, 344], total: 1410 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_06_15_경기도_초등부_통합__여_25_30_20",
+    date: "2025-06-15",
+    division: "초등부(통합)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-06-15 경기도 여 초등부(통합)",
+    distances: [25, 30],
+    rows: [
+      { name: "한세빈", school: "수원 송정초", rounds: [352, 350], total: 702 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_06_15_경기도_초등부_통합__여_25_35_21",
+    date: "2025-06-15",
+    division: "초등부(통합)",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-06-15 경기도 여 초등부(통합)",
+    distances: [25, 35],
+    rows: [
+      { name: "허정아", school: "김포 하성초", rounds: [352, 340], total: 692 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_경기도_중등부_남_30_22",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 경기도 남 중등부",
+    distances: [30],
+    rows: [
+      { name: "최준혁", school: "부천남중", rounds: [353], total: 353 },
+      { name: "안은찬", school: "안산 성포중", rounds: [353], total: 353 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_경기도_중등부_남_50_23",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "남",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 경기도 남 중등부",
+    distances: [50],
+    rows: [
+      { name: "김호균", school: "김포 하성중", rounds: [337], total: 337 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_인천광역시_중등부_남_40_24",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "남",
+    regionCity: "인천광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 인천광역시 남 중등부",
+    distances: [40],
+    rows: [
+      { name: "김성혁", school: "인천 만수북중", rounds: [347], total: 347 },
+      { name: "석주원", school: "인천 선인중", rounds: [346], total: 346 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_인천광역시_중등부_남_50_60_25",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "남",
+    regionCity: "인천광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 인천광역시 남 중등부",
+    distances: [50, 60],
+    rows: [
+      { name: "박세현", school: "북인천중", rounds: [329, 336], total: 665 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_충청북도_중등부_남_30_26",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "남",
+    regionCity: "충청북도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 충청북도 남 중등부",
+    distances: [30],
+    rows: [
+      { name: "주영진", school: "옥천 이원중", rounds: [352], total: 352 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_경기도_중등부_여_40_27",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 경기도 여 중등부",
+    distances: [40],
+    rows: [
+      { name: "한정연", school: "여주여중", rounds: [346], total: 346 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_경기도_중등부_여_40_50_28",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 경기도 여 중등부",
+    distances: [40, 50],
+    rows: [
+      { name: "김은찬", school: "수원 창용중", rounds: [353, 335], total: 688 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_경기도_중등부_여_50_60_29",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경기도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 경기도 여 중등부",
+    distances: [50, 60],
+    rows: [
+      { name: "김혜윤", school: "여주여중", rounds: [336, 342], total: 678 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_경상북도_중등부_여_30_30",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "여",
+    regionCity: "경상북도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 경상북도 여 중등부",
+    distances: [30],
+    rows: [
+      { name: "김지율", school: "예천여중", rounds: [357], total: 357 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_광주광역시_중등부_여_30_40_50_31",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "여",
+    regionCity: "광주광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 광주광역시 여 중등부",
+    distances: [30, 40, 50],
+    rows: [
+      { name: "강수정", school: "광주체중", rounds: [355, 346, 335], total: 1036 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_대전광역시_중등부_여_40_32",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "여",
+    regionCity: "대전광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 대전광역시 여 중등부",
+    distances: [40],
+    rows: [
+      { name: "김현서", school: "대전체중", rounds: [346], total: 346 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_인천광역시_중등부_여_30_33",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "여",
+    regionCity: "인천광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 인천광역시 여 중등부",
+    distances: [30],
+    rows: [
+      { name: "오선영", school: "인천 강화여중", rounds: [355], total: 355 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_인천광역시_중등부_여_30_40_60_34",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "여",
+    regionCity: "인천광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 인천광역시 여 중등부",
+    distances: [30, 40, 60],
+    rows: [
+      { name: "김아현", school: "인천 신흥여중", rounds: [358, 351, 342], total: 1051 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_07_21_인천광역시_중등부_여_50_35",
+    date: "2025-07-21",
+    division: "중등부",
+    gender: "여",
+    regionCity: "인천광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-07-21 인천광역시 여 중등부",
+    distances: [50],
+    rows: [
+      { name: "김혜린", school: "인천 신흥여중", rounds: [337], total: 337 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_09_28_광주광역시_중등부_남_50_36",
+    date: "2025-09-28",
+    division: "중등부",
+    gender: "남",
+    regionCity: "광주광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-09-28 광주광역시 남 중등부",
+    distances: [50],
+    rows: [
+      { name: "김준서", school: "광주체중", rounds: [341], total: 341 }
+    ],
+  }
+,
+  {
+    id: "sheet_additional_2025_09_28_광주광역시_중등부_여_30_40_50_60_37",
+    date: "2025-09-28",
+    division: "중등부",
+    gender: "여",
+    regionCity: "광주광역시",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "추가기록 2025-09-28 광주광역시 여 중등부",
+    distances: [30, 40, 50, 60],
+    rows: [
+      { name: "강수정", school: "광주체중", rounds: [359, 349, 335, 337], total: 1380 }
+    ],
+  }
 ];
 
 function makeSampleUserId(name, school) {
-  return `sample_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
+  return `official_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
 }
 
 function buildPermanentSampleUsers() {
   const map = new Map();
   SAMPLE_SHEETS.forEach((sheet) => {
     sheet.rows.forEach((row) => {
+      // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
+      const assignedDivision = row.division || sheet.division;
       const id = makeSampleUserId(row.name, row.school);
       if (!map.has(id)) {
         map.set(id, {
           id,
           uid: id,
           name: row.name,
-          email: `${id}@sample.local`,
+          email: `${id}@official.local`,
           club: row.school,
           clubName: row.school,
           groupName: row.school,
-          division: sheet.division,
+          division: assignedDivision,
           gender: row.gender || sheet.gender || "남",
+          regionCity: row.regionCity || sheet.regionCity || "경기도",
+          bowType: row.bowType || sheet.bowType || "리커브",
           avatar: "",
           photoURL: "",
           photoPath: "",
           isSampleData: true,
+          isOfficialRecordUser: true,
+          sampleSourceId: sheet.id,
         });
       }
     });
@@ -1459,47 +1982,44 @@ function buildPermanentSampleUsers() {
 }
 
 function buildPermanentSampleSessions() {
+  const seen = new Set();
   return SAMPLE_SHEETS.flatMap((sheet) =>
-    sheet.rows.map((row) =>
-      buildSampleDistanceSession({
-        userId: makeSampleUserId(row.name, row.school),
-        date: sheet.date,
-        title: `${sheet.sheetLabel} · ${row.name}`,
-        division: sheet.division,
-        gender: row.gender || sheet.gender || "남",
-        clubName: row.school,
-        groupName: row.school,
-        distance: sheet.distances[0],
-        arrowsPerDistance: 36,
-        rounds: sheet.distances.map((distance, idx) => ({
-          distance,
-          total: row.rounds[idx],
-        })),
+    sheet.rows
+      .map((row) => {
+        // 이름/소속만 확인된 선수명단 행은 공식 선수 데이터로만 보관하고 랭킹 점수 산정에는 넣지 않는다.
+        if (row.rosterOnly) return null;
+        // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
+        const assignedDivision = row.division || sheet.division;
+        const userId = makeSampleUserId(row.name, row.school);
+        const dedupeKey = `${userId}__${sheet.date}__${sheet.id}`;
+        if (seen.has(dedupeKey)) return null;
+        seen.add(dedupeKey);
+
+        return buildSampleDistanceSession({
+          userId,
+          date: sheet.date,
+          title: `${sheet.sheetLabel} · ${row.name}`,
+          division: assignedDivision,
+          gender: row.gender || sheet.gender || "남",
+          regionCity: row.regionCity || sheet.regionCity || "경기도",
+          bowType: row.bowType || sheet.bowType || "리커브",
+          clubName: row.school,
+          groupName: row.school,
+          distance: sheet.distances[0],
+          arrowsPerDistance: 36,
+          rounds: sheet.distances.map((distance, idx) => ({
+            distance,
+            total: row.rounds[idx],
+          })),
+        });
       })
-    )
+      .filter(Boolean)
   );
 }
 
 function buildCurrentUserPermanentSamples(userId) {
-  if (!userId) return [];
-  return SAMPLE_SHEETS.map((sheet) => {
-    const row = sheet.rows[0];
-    return buildSampleDistanceSession({
-      userId,
-      date: sheet.date,
-      title: `${sheet.sheetLabel}`,
-      division: sheet.division,
-      gender: row.gender || sheet.gender || "남",
-      clubName: row.school,
-      groupName: row.school,
-      distance: sheet.distances[0],
-      arrowsPerDistance: 36,
-      rounds: sheet.distances.map((distance, idx) => ({
-        distance,
-        total: row.rounds[idx],
-      })),
-    });
-  });
+  // 공식기록은 로그인 사용자의 개인 기록으로 자동 주입하지 않는다.
+  return [];
 }
 
 function scoreToNumber(v) {
@@ -1563,7 +2083,7 @@ function shouldAutoRefreshDraftSessionDate(session, editingSessionId) {
 }
 
 function createNewSession(profile, mode = "cumulative") {
-  const initialEndCount = mode === "set" ? 1 : 6;
+  const initialEndCount = 1;
 
   return {
     id: uid("draft"),
@@ -1580,9 +2100,6 @@ function createNewSession(profile, mode = "cumulative") {
     ends: Array.from({ length: initialEndCount }, (_, i) => createEmptyEnd(i + 1, 6)),
     distanceRounds: [
       createEmptyDistanceRound(1, 35),
-      createEmptyDistanceRound(2, 30),
-      createEmptyDistanceRound(3, 25),
-      createEmptyDistanceRound(4, 20),
     ],
     isComplete: false,
   };
@@ -1641,11 +2158,14 @@ function formatCompactDate(value) {
 }
 function formatDateTime(value) {
   if (!value) return "-";
-  try {
-    return new Date(value).toLocaleString("ko-KR");
-  } catch {
-    return String(value);
-  }
+  const date =
+    typeof value?.toDate === "function"
+      ? value.toDate()
+      : value instanceof Date
+        ? value
+        : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("ko-KR");
 }
 
 
@@ -1679,11 +2199,14 @@ function PaginationControls({ page, totalPages, onChange }) {
 
 function formatDateOnly(value) {
   if (!value) return "-";
-  try {
-    return new Date(value).toLocaleDateString("ko-KR");
-  } catch {
-    return String(value);
-  }
+  const date =
+    typeof value?.toDate === "function"
+      ? value.toDate()
+      : value instanceof Date
+        ? value
+        : new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("ko-KR");
 }
 
 function formatFullDate(value) {
@@ -1753,7 +2276,7 @@ function getSessionDayKey(session) {
   return toLocalDateKey(session?.sessionDate);
 }
 
-function isWithinDateFilter(sessionDate, dateFilter) {
+function isWithinDateFilter(sessionDate, dateFilter, customDate = "") {
   if (!sessionDate || dateFilter === "all") return true;
   const target = new Date(sessionDate);
   const today = new Date();
@@ -1782,6 +2305,11 @@ function isWithinDateFilter(sessionDate, dateFilter) {
     const start = new Date(today);
     start.setDate(start.getDate() - 29);
     return targetOnly >= start && targetOnly <= today;
+  }
+
+  if (dateFilter === "custom") {
+    if (!customDate) return false;
+    return toLocalDateKey(sessionDate) === toLocalDateKey(customDate);
   }
 
   return true;
@@ -2027,8 +2555,12 @@ function buildRivalComparison(mySessions, rivalSessions, mode, matchType) {
 }
 
 
-function getRequiredDistancesForDivision(division) {
-  return DIVISION_DISTANCE_RULES[division] || [];
+function getRequiredDistancesForDivision(division, gender = "남") {
+  const rule = DIVISION_DISTANCE_RULES[division];
+  if (!rule) return [];
+  if (Array.isArray(rule)) return rule;
+  const normalizedGender = String(gender || "남").trim() === "여" ? "여" : "남";
+  return rule[normalizedGender] || rule.남 || rule.여 || [];
 }
 
 function isWithinRecent7Days(sessionDate) {
@@ -2089,17 +2621,15 @@ function getQualifiedDistanceAttempts(session) {
 
 function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {}) {
   const { weekly = false } = options;
+  const selectedDistance = rankingFilters.distance || "all";
+  const isAllDistance = !selectedDistance || selectedDistance === "all";
 
   return users
     .map((user) => {
       const userDivision = user.division || "";
       const userGender = user.gender || "남";
       const userRankingGroup = getRankingGroup(userDivision, userGender);
-      if (
-        rankingFilters.rankingGroup &&
-        rankingFilters.rankingGroup !== "all" &&
-        userRankingGroup !== rankingFilters.rankingGroup
-      ) {
+      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, userRankingGroup)) {
         return null;
       }
       if (
@@ -2116,42 +2646,104 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
       ) {
         return null;
       }
+      if (
+        rankingFilters.gender &&
+        rankingFilters.gender !== "all" &&
+        (user.gender || "남") !== rankingFilters.gender
+      ) {
+        return null;
+      }
 
       const attempts = sessions
         .filter((session) => session.userId === user.id)
         .flatMap((session) => getQualifiedDistanceAttempts(session))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
-        .filter((attempt) => attempt.rankingGroup === userRankingGroup)
-        .filter((attempt) =>
-          rankingFilters.distance && rankingFilters.distance !== "all"
-            ? String(attempt.distance) === String(rankingFilters.distance)
-            : true
-        )
-        .filter((attempt) =>
-          rankingFilters.distance && rankingFilters.distance !== "all"
-            ? getRequiredDistancesForRankingGroup(userRankingGroup).includes(Number(attempt.distance))
-            : true
-        );
+        .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate))
+        .filter((attempt) => attempt.rankingGroup === userRankingGroup);
 
       if (!attempts.length) return null;
 
-      attempts.sort((a, b) => {
+      if (isAllDistance) {
+        const requiredDistances = getRequiredDistancesForRankingGroup(userRankingGroup);
+        if (!requiredDistances.length) return null;
+
+        const bestByDistance = {};
+        requiredDistances.forEach((distance) => {
+          const candidates = attempts
+            .filter((attempt) => String(attempt.distance) === String(distance))
+            .sort((a, b) => {
+              if (b.score !== a.score) return b.score - a.score;
+              return String(b.sessionDate).localeCompare(String(a.sessionDate));
+            });
+          if (candidates.length) bestByDistance[distance] = candidates[0];
+        });
+
+        if (requiredDistances.some((distance) => !bestByDistance[distance])) return null;
+
+        const totalScore = requiredDistances.reduce(
+          (sum, distance) => sum + (bestByDistance[distance]?.score || 0),
+          0
+        );
+        const latestDate = requiredDistances
+          .map((distance) => bestByDistance[distance].sessionDate || "")
+          .sort()
+          .slice(-1)[0];
+
+        return {
+          userId: user.id,
+          name: getDisplayName(user),
+          groupName: user.groupName || "-",
+          regionCity: user.regionCity || "-",
+          gender: userGender,
+          division: normalizeDivisionLabel(userDivision || "-"),
+          rankingGroup: userRankingGroup || "-",
+          distance: "all",
+          distanceLabel: "전체 거리",
+          requiredDistances,
+          distanceScores: Object.fromEntries(
+            requiredDistances.map((distance) => [distance, bestByDistance[distance].score])
+          ),
+          bestScore: totalScore,
+          qualifiedSessions: requiredDistances.length,
+          latestDate,
+          isSampleData: Boolean(user.isSampleData),
+          sourceType: user.isSampleData ? "official" : "user",
+          claimedByUid: user.claimedByUid || "",
+          verifiedAthlete: Boolean(user.verifiedAthlete),
+        };
+      }
+
+      const filteredAttempts = attempts
+        .filter((attempt) => String(attempt.distance) === String(selectedDistance))
+        .filter((attempt) =>
+          getRequiredDistancesForRankingGroup(userRankingGroup).includes(Number(attempt.distance))
+        );
+
+      if (!filteredAttempts.length) return null;
+
+      filteredAttempts.sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return String(b.sessionDate).localeCompare(String(a.sessionDate));
       });
 
-      const best = attempts[0];
+      const best = filteredAttempts[0];
       return {
         userId: user.id,
         name: getDisplayName(user),
         groupName: user.groupName || best.groupName || "-",
         regionCity: user.regionCity || best.regionCity || "-",
+        gender: userGender,
         division: normalizeDivisionLabel(userDivision || best.division || "-"),
         rankingGroup: userRankingGroup || best.rankingGroup || "-",
         distance: best.distance,
+        distanceLabel: `${best.distance}m`,
         bestScore: best.score,
-        qualifiedSessions: attempts.length,
+        qualifiedSessions: filteredAttempts.length,
         latestDate: best.sessionDate || "",
+        isSampleData: Boolean(user.isSampleData),
+        sourceType: user.isSampleData ? "official" : "user",
+        claimedByUid: user.claimedByUid || "",
+        verifiedAthlete: Boolean(user.verifiedAthlete),
       };
     })
     .filter(Boolean);
@@ -2165,11 +2757,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
       const userDivision = user.division || "";
       const userGender = user.gender || "남";
       const userRankingGroup = getRankingGroup(userDivision, userGender);
-      if (
-        rankingFilters.rankingGroup &&
-        rankingFilters.rankingGroup !== "all" &&
-        userRankingGroup !== rankingFilters.rankingGroup
-      ) {
+      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, userRankingGroup)) {
         return null;
       }
       if (
@@ -2186,6 +2774,13 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
       ) {
         return null;
       }
+      if (
+        rankingFilters.gender &&
+        rankingFilters.gender !== "all" &&
+        (user.gender || "남") !== rankingFilters.gender
+      ) {
+        return null;
+      }
 
       const requiredDistances = getRequiredDistancesForRankingGroup(userRankingGroup);
       if (!requiredDistances.length) return null;
@@ -2194,6 +2789,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         .filter((session) => session.userId === user.id)
         .flatMap((session) => getQualifiedDistanceAttempts(session))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
+        .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate))
         .filter((attempt) => attempt.rankingGroup === userRankingGroup);
 
       const bestByDistance = {};
@@ -2219,6 +2815,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         name: getDisplayName(user),
         groupName: user.groupName || "-",
         regionCity: user.regionCity || "-",
+        gender: userGender,
         division: normalizeDivisionLabel(userDivision || "-"),
         rankingGroup: userRankingGroup || "-",
         requiredDistances,
@@ -2230,6 +2827,10 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
           .map((distance) => bestByDistance[distance].sessionDate || "")
           .sort()
           .slice(-1)[0],
+        isSampleData: Boolean(user.isSampleData),
+        sourceType: user.isSampleData ? "official" : "user",
+        claimedByUid: user.claimedByUid || "",
+        verifiedAthlete: Boolean(user.verifiedAthlete),
       };
     })
     .filter(Boolean);
@@ -2313,6 +2914,8 @@ function Hero({ activeTab = "dashboard" }) {
     dashboard: "X-DASHBOARD",
     ranking: "X-RANKING",
     analysis: "X-ANALYSIS",
+    stage: "X-STAGE",
+    brief: "X-BRIEF",
     profile: "PROFILE",
     admin: "ADMIN",
   };
@@ -2381,6 +2984,18 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
   });
   const [rememberEmail, setRememberEmail] = useState(false);
   const [error, setError] = useState("");
+  const [registerFieldErrors, setRegisterFieldErrors] = useState({});
+  const registerFieldRefs = {
+    name: useRef(null),
+    email: useRef(null),
+    password: useRef(null),
+    division: useRef(null),
+    gender: useRef(null),
+    groupName: useRef(null),
+    regionCity: useRef(null),
+    regionDistrict: useRef(null),
+  };
+  const registerSubmitRef = useRef(null);
 
   const registerDistrictOptions = useMemo(
     () => getDistrictOptions(registerForm.regionCity),
@@ -2428,30 +3043,48 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     }
   }
 
+  function focusRegisterField(fieldKey) {
+    const target = registerFieldRefs[fieldKey]?.current || registerSubmitRef.current;
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (typeof target.focus === "function") {
+      requestAnimationFrame(() => target.focus());
+    }
+  }
+
   async function handleRegisterSubmit() {
-    if (
-      !registerForm.name.trim() ||
-      !registerForm.email.trim() ||
-      !registerForm.password.trim() ||
-      !registerForm.groupName.trim() ||
-      !registerForm.regionCity ||
-      !registerForm.regionDistrict ||
-      !registerForm.division
-    ) {
+    const nextFieldErrors = {};
+
+    if (!registerForm.name.trim()) nextFieldErrors.name = true;
+    if (!registerForm.email.trim()) nextFieldErrors.email = true;
+    if (!registerForm.password.trim()) nextFieldErrors.password = true;
+    if (!registerForm.groupName.trim()) nextFieldErrors.groupName = true;
+    if (!registerForm.regionCity) nextFieldErrors.regionCity = true;
+    if (!registerForm.regionDistrict) nextFieldErrors.regionDistrict = true;
+    if (!registerForm.division) nextFieldErrors.division = true;
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setRegisterFieldErrors(nextFieldErrors);
       setError("해당 칸을 입력 후 버튼을 눌러주세요.");
+      focusRegisterField(Object.keys(nextFieldErrors)[0]);
       return;
     }
 
     if (!registerForm.email.includes("@")) {
-      setError("해당 칸을 입력 후 버튼을 눌러주세요.");
+      setRegisterFieldErrors({ email: true });
+      setError("이메일 형식을 확인해 주세요.");
+      focusRegisterField("email");
       return;
     }
 
     if (registerForm.password.length < 6) {
+      setRegisterFieldErrors({ password: true });
       setError("비밀번호는 최소 6자 이상이어야 합니다.");
+      focusRegisterField("password");
       return;
     }
 
+    setRegisterFieldErrors({});
     setError("");
     try {
       await onRegister({
@@ -2462,6 +3095,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
       });
     } catch (error) {
       setError(error.message || "회원가입에 실패했다.");
+      registerSubmitRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }
 
@@ -2511,12 +3145,6 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
               </Button>
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
-                <AlertCircle className="h-4 w-4" /> {error}
-              </div>
-            )}
-
             {mode === "login" ? (
               <div className="grid gap-4">
                 <div className="grid gap-2">
@@ -2553,6 +3181,12 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                   />
                 </div>
 
+                {error && (
+                  <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
+                    <AlertCircle className="h-4 w-4" /> {error}
+                  </div>
+                )}
+
                 <Button
                   type="button"
                   disabled={authLoading}
@@ -2568,39 +3202,67 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">이름</Label>
                   <Input
+                    ref={registerFieldRefs.name}
                     type="text"
                     value={registerForm.name}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, name: value }));
+                      if (value.trim()) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, name: false }));
+                      }
+                    }}
                     placeholder="이름 입력"
-                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.name ? "ring-2 ring-red-400" : ""}`}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">이메일</Label>
                   <Input
+                    ref={registerFieldRefs.email}
                     type="email"
                     value={registerForm.email}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, email: value }));
+                      if (value.trim() && value.includes("@")) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, email: false }));
+                      }
+                    }}
                     placeholder="이메일 입력"
-                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.email ? "ring-2 ring-red-400" : ""}`}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">비밀번호</Label>
                   <Input
+                    ref={registerFieldRefs.password}
                     type="password"
                     value={registerForm.password}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, password: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, password: value }));
+                      if (value.trim().length >= 6) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, password: false }));
+                      }
+                    }}
                     placeholder="비밀번호 입력"
-                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.password ? "ring-2 ring-red-400" : ""}`}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">학년/부문</Label>
                   <select
+                    ref={registerFieldRefs.division}
                     value={registerForm.division}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, division: e.target.value }))}
-                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, division: value }));
+                      if (value) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, division: false }));
+                      }
+                    }}
+                    className={`h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none ${registerFieldErrors.division ? "ring-2 ring-red-400" : ""}`}
                   >
                     {DIVISION_OPTIONS.map((item) => (
                       <option key={item} value={item}>{item}</option>
@@ -2610,6 +3272,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">성별</Label>
                   <select
+                    ref={registerFieldRefs.gender}
                     value={registerForm.gender}
                     onChange={(e) => setRegisterForm((prev) => ({ ...prev, gender: e.target.value }))}
                     className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
@@ -2622,19 +3285,33 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">소속</Label>
                   <Input
+                    ref={registerFieldRefs.groupName}
                     type="text"
                     value={registerForm.groupName}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, groupName: e.target.value }))}
-                    placeholder="예: 엘보샷"
-                    className="h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, groupName: value }));
+                      if (value.trim()) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, groupName: false }));
+                      }
+                    }}
+                    placeholder="예: 학교 이름 또는 팀 이름"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.groupName ? "ring-2 ring-red-400" : ""}`}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">지역(시/도)</Label>
                   <select
+                    ref={registerFieldRefs.regionCity}
                     value={registerForm.regionCity}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, regionCity: e.target.value, regionDistrict: "" }))}
-                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, regionCity: value, regionDistrict: "" }));
+                      if (value) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, regionCity: false, regionDistrict: false }));
+                      }
+                    }}
+                    className={`h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none ${registerFieldErrors.regionCity ? "ring-2 ring-red-400" : ""}`}
                   >
                     <option value="">지역 선택</option>
                     {REGION_OPTIONS.map((item) => (
@@ -2645,10 +3322,17 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">지역(구/군)</Label>
                   <select
+                    ref={registerFieldRefs.regionDistrict}
                     value={registerForm.regionDistrict}
-                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, regionDistrict: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRegisterForm((prev) => ({ ...prev, regionDistrict: value }));
+                      if (value) {
+                        setRegisterFieldErrors((prev) => ({ ...prev, regionDistrict: false }));
+                      }
+                    }}
                     disabled={!registerForm.regionCity}
-                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none disabled:bg-white/70"
+                    className={`h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 outline-none disabled:bg-white/70 ${registerFieldErrors.regionDistrict ? "ring-2 ring-red-400" : ""}`}
                   >
                     <option value="">구/군 선택</option>
                     {registerDistrictOptions.map((item) => (
@@ -2657,7 +3341,14 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                   </select>
                 </div>
 
+                {error && (
+                  <div className="flex items-center gap-2 rounded-2xl border border-red-300/40 bg-red-500/15 px-4 py-3 text-sm text-red-50 backdrop-blur-sm">
+                    <AlertCircle className="h-4 w-4" /> {error}
+                  </div>
+                )}
+
                 <Button
+                  ref={registerSubmitRef}
                   type="button"
                   disabled={authLoading}
                   className="h-12 rounded-2xl bg-blue-950 text-base font-semibold text-white hover:bg-blue-900 active:bg-blue-950 disabled:bg-blue-950 disabled:text-white"
@@ -2743,6 +3434,7 @@ function SessionEditor({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, endId: null });
   const [deleteSessionDialog, setDeleteSessionDialog] = useState(false);
+  const [numericEditBuffers, setNumericEditBuffers] = useState({});
   const [saveError, setSaveError] = useState("");
   const [history, setHistory] = useState([]);
   const [lastQuickScore, setLastQuickScore] = useState(null);
@@ -2753,6 +3445,22 @@ function SessionEditor({
   const endCardRefs = useRef({});
   const quickPanelRef = useRef(null);
   const suppressAutoScrollRef = useRef(false);
+  const [saveNotice, setSaveNotice] = useState("");
+  const [isOnline, setIsOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
 
   const totalArrows = useMemo(
     () => session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length,
@@ -2811,6 +3519,22 @@ function SessionEditor({
     setHistory((h) => [...h.slice(-29), JSON.parse(JSON.stringify(prev))]);
   }
 
+  function getInputUndoSignature(targetSession) {
+    return JSON.stringify(
+      (targetSession?.ends || []).map((end) => ({
+        id: end.id,
+        arrows: end.arrows || [],
+        opponentTotal: end.opponentTotal ?? 0,
+        opponentScoreEntered: Boolean(end.opponentScoreEntered),
+      }))
+    );
+  }
+
+  const canUndoLastInput = useMemo(() => {
+    const currentSignature = getInputUndoSignature(session);
+    return history.some((item) => getInputUndoSignature(item) !== currentSignature);
+  }, [history, session]);
+
   function reindexEnds(ends) {
     return ends.map((end, idx) => ({ ...end, index: idx + 1 }));
   }
@@ -2839,6 +3563,40 @@ function SessionEditor({
       } catch {
         // ignore
       }
+    });
+  }
+
+
+  function getNumericInputValue(bufferKey, fallbackValue) {
+    return Object.prototype.hasOwnProperty.call(numericEditBuffers, bufferKey)
+      ? numericEditBuffers[bufferKey]
+      : String(fallbackValue ?? "");
+  }
+
+  function handleNumericInputFocus(e) {
+    requestAnimationFrame(() => {
+      try {
+        e.target.select?.();
+      } catch {
+        // ignore
+      }
+    });
+  }
+
+  function handleNumericInputChange(bufferKey, rawValue, commit) {
+    setNumericEditBuffers((prev) => ({ ...prev, [bufferKey]: rawValue }));
+    if (rawValue === "") return;
+    const nextValue = Number(rawValue);
+    if (Number.isNaN(nextValue)) return;
+    commit(nextValue);
+  }
+
+  function handleNumericInputBlur(bufferKey) {
+    setNumericEditBuffers((prev) => {
+      if (!Object.prototype.hasOwnProperty.call(prev, bufferKey)) return prev;
+      const next = { ...prev };
+      delete next[bufferKey];
+      return next;
     });
   }
 
@@ -3005,10 +3763,22 @@ function SessionEditor({
   }
 
   function undoLast() {
-    if (!history.length) return;
+    if (!canUndoLastInput || !history.length) return;
+
+    const currentSignature = getInputUndoSignature(session);
+    let targetIndex = -1;
+    for (let i = history.length - 1; i >= 0; i -= 1) {
+      if (getInputUndoSignature(history[i]) !== currentSignature) {
+        targetIndex = i;
+        break;
+      }
+    }
+
+    if (targetIndex === -1) return;
+
     suppressAutoScrollRef.current = true;
-    const previous = history[history.length - 1];
-    setHistory((h) => h.slice(0, -1));
+    const previous = history[targetIndex];
+    setHistory((h) => h.slice(0, targetIndex));
     setSession(previous);
     requestAnimationFrame(() => {
       restoreInputFlow(previous);
@@ -3089,10 +3859,7 @@ function SessionEditor({
   function applyMode(mode) {
     patchSession((prev) => {
       const allEndsEmpty = (prev.ends || []).every((end) => (end.arrows || []).every((arrow) => arrow === null));
-      const nextEnds =
-        mode === "set" && allEndsEmpty
-          ? [createEmptyEnd(1, prev.arrowsPerEnd)]
-          : prev.ends;
+      const nextEnds = allEndsEmpty ? [createEmptyEnd(1, prev.arrowsPerEnd)] : prev.ends;
 
       return {
         ...prev,
@@ -3118,9 +3885,6 @@ function SessionEditor({
         recordInputType === "distance" && (!prev.distanceRounds || !prev.distanceRounds.length)
           ? [
               createEmptyDistanceRound(1, 35),
-              createEmptyDistanceRound(2, 30),
-              createEmptyDistanceRound(3, 25),
-              createEmptyDistanceRound(4, 20),
             ]
           : prev.distanceRounds,
     }));
@@ -3159,13 +3923,27 @@ function SessionEditor({
   async function confirmSave() {
     const err = validateBeforeSave();
     if (err) {
+      setSaveNotice("");
       setSaveError(err);
       return;
     }
+
     setSaveError("");
-    await onSave();
-    setSaveDialogOpen(false);
-    setHistory([]);
+    setSaveNotice("");
+
+    try {
+      const result = await onSave();
+      setSaveDialogOpen(false);
+      setHistory([]);
+      if (result?.message) {
+        setSaveNotice(result.message);
+      }
+    } catch (error) {
+      const fallbackMessage = !isOnline
+        ? "오프라인 상태입니다. 네트워크 연결 후 다시 저장해 주세요."
+        : "저장에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+      setSaveError(error?.message || fallbackMessage);
+    }
   }
 
   async function confirmDeleteSavedSession() {
@@ -3298,6 +4076,21 @@ function SessionEditor({
           </CardHeader>
 
           <CardContent className="space-y-5">
+            <div className="rounded-3xl border border-blue-100 bg-blue-50/80 px-4 py-3">
+              <div className="mb-2 text-sm font-semibold text-blue-900">처음 입력할 때 이렇게 진행하세요</div>
+              <div className="grid gap-1 text-sm text-blue-800">
+                <div>• 경기 방식을 선택하세요. (세트제 / 누적제)</div>
+                <div>• 기록은 End 1부터 시작하고, 필요하면 엔드를 추가하세요.</div>
+                <div>• 빠른 점수 입력으로 화살 점수를 빠르게 기록할 수 있습니다.</div>
+              </div>
+            </div>
+
+            {!isOnline && (
+              <div className="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                현재 오프라인 상태입니다. 네트워크 연결 후 저장해 주세요.
+              </div>
+            )}
+
             <div className="grid gap-3">
               <div className="flex items-center gap-3">
                 <Label className="w-24 shrink-0 text-sm">날짜</Label>
@@ -3331,21 +4124,26 @@ function SessionEditor({
 
               <div className="flex items-start gap-3">
                 <Label className="w-24 shrink-0 pt-3 text-sm">기록 방식</Label>
-                <div className="grid flex-1 grid-cols-2 gap-2">
-                  <Button
-                    variant={session.mode === "cumulative" ? "default" : "outline"}
-                    className="h-11 rounded-2xl bg-blue-900 px-3 hover:bg-blue-800"
-                    onClick={() => applyMode("cumulative")}
-                  >
-                    누적제
-                  </Button>
-                  <Button
-                    variant={session.mode === "set" ? "default" : "outline"}
-                    className="h-11 rounded-2xl bg-red-700 px-3 hover:bg-red-600"
-                    onClick={() => applyMode("set")}
-                  >
-                    세트제
-                  </Button>
+                <div className="grid flex-1 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant={session.mode === "cumulative" ? "default" : "outline"}
+                      className="h-11 rounded-2xl bg-blue-900 px-3 hover:bg-blue-800"
+                      onClick={() => applyMode("cumulative")}
+                    >
+                      누적제
+                    </Button>
+                    <Button
+                      variant={session.mode === "set" ? "default" : "outline"}
+                      className="h-11 rounded-2xl bg-red-700 px-3 hover:bg-red-600"
+                      onClick={() => applyMode("set")}
+                    >
+                      세트제
+                    </Button>
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    누적제는 총점 합산 방식이고, 세트제는 엔드별 승패를 기록하는 방식입니다.
+                  </div>
                 </div>
               </div>
 
@@ -3376,9 +4174,10 @@ function SessionEditor({
               </div>
 
               {session.recordInputType === "end" ? (
-                <div className="flex items-center gap-3">
-                  <Label className="w-24 shrink-0 text-sm">엔드당 화살 수</Label>
-                  <select
+                <div className="flex items-start gap-3">
+                  <Label className="w-24 shrink-0 pt-3 text-sm">엔드당 화살 수</Label>
+                  <div className="flex-1 space-y-2">
+                    <select
                     value={String(session.arrowsPerEnd)}
                     onChange={(e) => {
                       const next = Math.min(MAX_ARROWS_PER_END, Math.max(1, Number(e.target.value) || 1));
@@ -3391,12 +4190,16 @@ function SessionEditor({
                         })),
                       }));
                     }}
-                    className="h-11 flex-1 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
+                    className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
                   >
                     {[1, 2, 3, 4, 5, 6].map((count) => (
                       <option key={count} value={String(count)}>{count}</option>
                     ))}
                   </select>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                      End는 한 차례에 쏜 화살 기록 단위입니다.
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
@@ -3404,14 +4207,19 @@ function SessionEditor({
                   <Input
                     className="h-11 flex-1"
                     type="number"
+                    inputMode="numeric"
                     min={1}
-                    value={session.arrowsPerDistance || 36}
+                    value={getNumericInputValue("arrowsPerDistance", session.arrowsPerDistance || 36)}
+                    onFocus={handleNumericInputFocus}
                     onChange={(e) =>
-                      patchSession((prev) => ({
-                        ...prev,
-                        arrowsPerDistance: Math.max(1, Number(e.target.value) || 36),
-                      }))
+                      handleNumericInputChange("arrowsPerDistance", e.target.value, (nextValue) =>
+                        patchSession((prev) => ({
+                          ...prev,
+                          arrowsPerDistance: Math.max(1, nextValue || 1),
+                        }))
+                      )
                     }
+                    onBlur={() => handleNumericInputBlur("arrowsPerDistance")}
                   />
                 </div>
               )}
@@ -3435,18 +4243,11 @@ function SessionEditor({
                   <CardContent className="p-3 md:p-4">
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <div className="text-sm font-semibold text-slate-700">빠른 점수 입력</div>
-                      <Button
-                        variant="outline"
-                        className="h-9 rounded-2xl px-3 text-xs sm:text-sm"
-                        onClick={undoLast}
-                        disabled={!history.length}
-                      >
-                        <Undo2 className="mr-2 h-4 w-4" /> 마지막 입력 취소
-                      </Button>
                     </div>
                     <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
                       {quickPanelOptions.map((score) => (
                         <Button
+                          type="button"
                           key={String(score)}
                           variant="outline"
                           className={`${getQuickButtonClass(score)} text-sm font-semibold ${
@@ -3475,7 +4276,7 @@ function SessionEditor({
                   }}
                   className="rounded-[28px] border-0 bg-white shadow-xl"
                 >
-                  <CardContent className="p-4 md:p-5">
+                  <CardContent className="p-3 sm:p-4 md:p-5">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div className="text-base font-semibold">End {end.index}</div>
@@ -3586,7 +4387,7 @@ function SessionEditor({
               <div className="grid gap-3">
                 {(session.distanceRounds || []).map((round) => (
                   <Card key={round.id} className="rounded-[28px] border-0 bg-white shadow-xl">
-                    <CardContent className="p-4 md:p-5">
+                    <CardContent className="p-3 sm:p-4 md:p-5">
                       <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
                           <div className="text-base font-semibold">거리 기록 {round.index}</div>
@@ -3608,22 +4409,32 @@ function SessionEditor({
                           <Label>거리 (m)</Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             min={1}
-                            value={round.distance}
+                            value={getNumericInputValue(`round-${round.id}-distance`, round.distance)}
+                            onFocus={handleNumericInputFocus}
                             onChange={(e) =>
-                              updateDistanceRound(round.id, "distance", Math.max(1, Number(e.target.value) || 0))
+                              handleNumericInputChange(`round-${round.id}-distance`, e.target.value, (nextValue) =>
+                                updateDistanceRound(round.id, "distance", Math.max(1, nextValue || 1))
+                              )
                             }
+                            onBlur={() => handleNumericInputBlur(`round-${round.id}-distance`)}
                           />
                         </div>
                         <div className="grid gap-2">
                           <Label>거리 합계 점수</Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             min={0}
-                            value={round.total}
+                            value={getNumericInputValue(`round-${round.id}-total`, round.total)}
+                            onFocus={handleNumericInputFocus}
                             onChange={(e) =>
-                              updateDistanceRound(round.id, "total", Math.max(0, Number(e.target.value) || 0))
+                              handleNumericInputChange(`round-${round.id}-total`, e.target.value, (nextValue) =>
+                                updateDistanceRound(round.id, "total", Math.max(0, nextValue || 0))
+                              )
                             }
+                            onBlur={() => handleNumericInputBlur(`round-${round.id}-total`)}
                           />
                         </div>
                       </div>
@@ -3634,11 +4445,17 @@ function SessionEditor({
             </>
           )}
           <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
-            <CardContent className="p-4 md:p-5">
+            <CardContent className="p-3 sm:p-4 md:p-5">
               <div className="flex flex-col gap-3">
                 {tempSaveMessage && (
                   <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                     {tempSaveMessage}
+                  </div>
+                )}
+
+                {saveNotice && (
+                  <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {saveNotice}
                   </div>
                 )}
 
@@ -3659,7 +4476,7 @@ function SessionEditor({
                     </Button>
                   )}
 
-                  <Button variant="outline" className="rounded-2xl" onClick={onTempSave}>
+                  <Button variant="outline" className="rounded-2xl" onClick={onTempSave} disabled={saving}>
                     <Archive className="mr-2 h-4 w-4" /> 임시 세션 저장
                   </Button>
 
@@ -3669,7 +4486,7 @@ function SessionEditor({
                     disabled={saving}
                   >
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {editingSavedSession ? "세션 업데이트" : "세션 저장"}
+                    {saving ? "저장 중..." : editingSavedSession ? "세션 업데이트" : "세션 저장"}
                   </Button>
 
                   {editingSavedSession && (
@@ -3708,7 +4525,7 @@ function SessionEditor({
             </Button>
             <Button className="rounded-2xl bg-blue-900 hover:bg-blue-800" onClick={confirmSave} disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {editingSavedSession ? "업데이트 완료" : "저장 완료"}
+              {saving ? "저장 중..." : editingSavedSession ? "업데이트 완료" : "저장 완료"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3828,7 +4645,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="h-full bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 누적 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {previousDayTotal}
@@ -3838,7 +4655,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 </div>
               </div>
 
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">당일 세션 누적 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {todayTotal}
@@ -3854,7 +4671,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="h-full bg-gradient-to-br from-slate-900 to-slate-700 p-0 text-white">
             <div className="grid grid-cols-2 divide-x divide-white/20">
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 화살 평균 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {previousDayAverage}
@@ -3864,7 +4681,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 </div>
               </div>
 
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">당일 세션 화살 평균 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {todayAverage}
@@ -3880,7 +4697,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="h-full bg-gradient-to-br from-amber-500 to-yellow-400 p-0 text-slate-900">
             <div className="grid grid-cols-2 divide-x divide-slate-900/10">
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">전일 세션 거리 최고 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {previousDayBestScore}
@@ -3890,7 +4707,7 @@ function Dashboard({ sessions, loading, onEditSession }) {
                 </div>
               </div>
 
-              <div className="p-4 md:p-5">
+              <div className="p-3 sm:p-4 md:p-5">
                 <div className="text-[13px] leading-snug opacity-80 md:text-sm">당일 세션 거리 최고 점수</div>
                 <div className="mt-2 text-[2.4rem] font-bold tracking-tight md:text-3xl">
                   {todayBestScore}
@@ -4005,17 +4822,37 @@ function StatCard({ title, value, sub, icon: Icon, tone }) {
 }
 
 
-function RankingBoard({ users, sessions, currentUserId }) {
+function RankingBoard({ users, sessions, currentUser, currentUserId, officialClaims = [], onRequestOfficialClaim }) {
   const [rankingType, setRankingType] = useState("distance");
   const [rankingFilters, setRankingFilters] = useState({
     distance: "all",
     rankingGroup: "all",
     groupName: "all",
     regionCity: "all",
+    gender: "all",
+    dateFilter: "all",
+    customDate: getCurrentLocalDateString(),
   });
 
   const groupOptions = useMemo(() => Array.from(new Set(users.map((u) => u.groupName).filter(Boolean))), [users]);
   const regionOptions = useMemo(() => REGION_OPTIONS, []);
+  const usersById = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
+  const requestableOfficialUserIds = useMemo(() => {
+    if (!currentUser) return new Set();
+    return new Set(
+      users
+        .filter((user) => user.isSampleData && isOfficialProfileMatch(user, currentUser))
+        .filter((user) => !getApprovedClaimForSample(officialClaims, user.id))
+        .map((user) => user.id)
+    );
+  }, [users, currentUser, officialClaims]);
+  const requestedClaimBySampleUserId = useMemo(() => {
+    const map = new Map();
+    (officialClaims || []).forEach((claim) => {
+      if (claim.requesterUid === currentUserId) map.set(claim.sampleUserId, claim);
+    });
+    return map;
+  }, [officialClaims, currentUserId]);
 
   const distanceRankings = useMemo(() => {
     const items = buildDistanceRankings(users, sessions, rankingFilters, { weekly: false });
@@ -4066,12 +4903,27 @@ function RankingBoard({ users, sessions, currentUserId }) {
 
   const rankingGuide =
     rankingType === "distance"
-      ? "36발 경기 기준, 랭킹 구분별 필수 거리 조건을 충족한 최고 기록 점수로 순위가 결정됩니다."
+      ? rankingFilters.distance === "all"
+        ? "전체 거리는 학년/부문별 필수 거리 전체 점수를 합산한 기준으로 순위가 결정됩니다."
+        : "선택한 거리의 최고 기록 점수 기준으로 순위가 결정됩니다."
       : rankingType === "total"
-        ? "랭킹 구분별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다."
+        ? "학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다."
         : rankingType === "weeklyDistance"
-          ? "최근 7일 기준, 랭킹 구분별 필수 거리 조건을 충족한 최고 점수로 순위가 결정됩니다."
-          : "최근 7일 동안 랭킹 구분별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
+          ? rankingFilters.distance === "all"
+            ? "최근 7일 기준, 필수 거리 전체 점수를 합산한 기준으로 순위가 결정됩니다."
+            : "최근 7일 기준, 선택한 거리의 최고 점수로 순위가 결정됩니다."
+          : "최근 7일 동안 학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
+
+  const officialResultSources = useMemo(() => {
+    return OFFICIAL_RESULT_SOURCES.filter((item) => {
+      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, item.rankingGroup)) return false;
+      if (rankingFilters.regionCity !== "all" && item.region !== rankingFilters.regionCity) return false;
+      if (rankingFilters.gender !== "all" && item.gender !== rankingFilters.gender) return false;
+      if (!isWithinDateFilter(item.date, rankingFilters.dateFilter || "all", rankingFilters.customDate)) return false;
+      if (rankingFilters.groupName !== "all") return false;
+      return true;
+    }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }, [rankingFilters]);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
@@ -4094,7 +4946,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
                   <div className="mt-2 text-sm opacity-90">
                     {rankingType === "distance" || rankingType === "weeklyDistance" ? (
                       <>
-                        {myRank.distance}m · 최고 {myRank.bestScore}점 · 인정 기록 {myRank.qualifiedSessions}개
+                        {myRank.distanceLabel || `${myRank.distance}m`} · 최고 {myRank.bestScore}점 · 인정 기록 {myRank.qualifiedSessions}개
                       </>
                     ) : (
                       <>
@@ -4213,6 +5065,42 @@ function RankingBoard({ users, sessions, currentUserId }) {
                 ))}
               </select>
             </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="w-16 shrink-0 text-sm">날짜</Label>
+              <div className="min-w-0 flex-1 space-y-2">
+                <select
+                  value={rankingFilters.dateFilter}
+                  onChange={(e) => setRankingFilters((prev) => ({ ...prev, dateFilter: e.target.value }))}
+                  className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+                >
+                  {DATE_FILTER_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
+                </select>
+                {rankingFilters.dateFilter === "custom" && (
+                  <input
+                    type="date"
+                    value={rankingFilters.customDate}
+                    onChange={(e) => setRankingFilters((prev) => ({ ...prev, customDate: e.target.value }))}
+                    className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="w-16 shrink-0 text-sm">성별</Label>
+              <select
+                value={rankingFilters.gender}
+                onChange={(e) => setRankingFilters((prev) => ({ ...prev, gender: e.target.value }))}
+                className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+              >
+                <option value="all">전체 성별</option>
+                <option value="남">남</option>
+                <option value="여">여</option>
+              </select>
+            </div>
           </div>
 
           <div className="mt-4">
@@ -4224,7 +5112,7 @@ function RankingBoard({ users, sessions, currentUserId }) {
               <div className="grid gap-3">
                 {activeRankings.map((item) => (
                   <div
-                    key={`${rankingType}_${item.userId}_${item.distance || "total"}`}
+                    key={`${rankingType}_${item.userId}_${item.distance || item.distanceLabel || "total"}`}
                     className={`rounded-2xl border px-3 py-2 ${
                       item.userId === currentUserId
                         ? "border-blue-300 bg-blue-50"
@@ -4248,13 +5136,21 @@ function RankingBoard({ users, sessions, currentUserId }) {
                       <div className="min-w-0">
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                           <div className="truncate text-sm font-semibold">{item.name}</div>
+                          {item.isSampleData ? (
+                            <Badge className="h-5 rounded-full bg-slate-900 px-2 text-[10px] text-white">공식기록</Badge>
+                          ) : (
+                            <Badge variant="outline" className="h-5 rounded-full px-2 text-[10px]">사용자계정</Badge>
+                          )}
+                          {item.verifiedAthlete && (
+                            <Badge className="h-5 rounded-full bg-emerald-600 px-2 text-[10px] text-white">인증 선수</Badge>
+                          )}
                           {item.userId === currentUserId && (
                             <Badge className="h-5 rounded-full bg-blue-900 px-2 text-[10px] text-white">나</Badge>
                           )}
                           <div className="min-w-0 truncate text-[11px] text-slate-500">
                             {(rankingType === "distance" || rankingType === "weeklyDistance")
-                              ? `${item.regionCity || "-"} ${formatGroupDisplayName(item.groupName)} ${formatProfileDivisionLabel(item.division)}`
-                              : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${formatProfileDivisionLabel(item.division)}`}
+                              ? `${item.regionCity || "-"} · ${item.gender || "-"} · ${formatGroupDisplayName(item.groupName)} · ${formatProfileDivisionLabel(item.division)}`
+                              : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${item.gender || "-"} · ${formatProfileDivisionLabel(item.division)}`}
                           </div>
                         </div>
                       </div>
@@ -4268,8 +5164,9 @@ function RankingBoard({ users, sessions, currentUserId }) {
                     <div className="mt-1 pl-10 text-[11px] leading-5 text-slate-700">
                       {rankingType === "distance" || rankingType === "weeklyDistance" ? (
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <span>{item.distance}m</span>
+                          <span>{item.distanceLabel || `${item.distance}m`}</span>
                           <span>{item.rankingGroup}</span>
+                          <span>{item.gender || "-"}</span>
                           <span>인정세션{item.qualifiedSessions}</span>
                           <span>{formatCompactDate(item.latestDate)}</span>
                         </div>
@@ -4279,10 +5176,61 @@ function RankingBoard({ users, sessions, currentUserId }) {
                         </>
                       )}
                     </div>
+
+                    {item.isSampleData && requestableOfficialUserIds.has(item.userId) && (
+                      <div className="mt-2 pl-10">
+                        {requestedClaimBySampleUserId.get(item.userId)?.status === "pending" ? (
+                          <Badge variant="outline" className="rounded-full border-amber-300 bg-amber-50 text-amber-700">연결 요청 대기중</Badge>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 rounded-2xl px-3 text-xs"
+                            onClick={() => onRequestOfficialClaim?.(usersById.get(item.userId))}
+                          >
+                            공식 기록 연결 요청
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
+            <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
+              <Archive className="h-4 w-4" /> 공식 결과 목록
+            </div>
+            <div className="mt-2 text-xs leading-relaxed text-slate-500">
+              리커브 공식 결과 원본 등록 현황이다. 2026-03-22와 2026-04-12 데이터를 포함하며, 사용자 기록 랭킹과 분리된 참고 목록으로 관리된다.
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              {officialResultSources.length === 0 ? (
+                <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">
+                  현재 선택한 조건에 맞는 공식 결과 목록이 없다.
+                </div>
+              ) : (
+                officialResultSources.map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className="rounded-full bg-slate-900 text-white">{item.bowType}</Badge>
+                      <Badge variant="outline" className="rounded-full">{item.region}</Badge>
+                      <Badge variant="outline" className="rounded-full">{item.gender}</Badge>
+                      <Badge variant="outline" className="rounded-full">{item.rankingGroup}</Badge>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-700">
+                      <span className="font-medium">{formatCompactDate(item.date)}</span>
+                      <span>원본유형 {item.sourceType}</span>
+                      <span>상태 {item.status}</span>
+                    </div>
+                    <div className="mt-2 text-sm leading-relaxed text-slate-600">{item.notes}</div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -4295,6 +5243,11 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   const [period, setPeriod] = useState("day");
   const [matchType, setMatchType] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+  const [customAnalysisDate, setCustomAnalysisDate] = useState(getCurrentLocalDateString());
+  const [isCompactChartMobile, setIsCompactChartMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 640;
+  });
   const [requiredFilters, setRequiredFilters] = useState({
     distance: "",
     rankingGroup: "",
@@ -4333,6 +5286,38 @@ function AnalysisBoard({ currentUser, users, sessions }) {
     }
   }, [selectedRival, filteredRivalCandidates]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const handleResize = () => {
+      setIsCompactChartMobile(window.innerWidth < 640);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const chartUi = useMemo(
+    () => ({
+      xTickFontSize: isCompactChartMobile ? 10 : 11,
+      yTickFontSize: isCompactChartMobile ? 10 : 11,
+      tickMargin: isCompactChartMobile ? 6 : 8,
+      yAxisWidth: isCompactChartMobile ? 40 : 30,
+      lineLeftMargin: isCompactChartMobile ? 8 : -8,
+      scoreBarLeftMargin: isCompactChartMobile ? 18 : 6,
+      distanceBarLeftMargin: isCompactChartMobile ? 16 : 4,
+      chartRightMargin: isCompactChartMobile ? 8 : 6,
+      barMaxScore: isCompactChartMobile ? 24 : 30,
+      barMaxDistance: isCompactChartMobile ? 28 : 36,
+      legendPaddingTop: isCompactChartMobile ? 8 : 12,
+      dotRadius: isCompactChartMobile ? 3 : 4,
+      activeDotRadius: isCompactChartMobile ? 5 : 6,
+      strokeWidth: isCompactChartMobile ? 2.5 : 3,
+    }),
+    [isCompactChartMobile]
+  );
+
   const isReady = Boolean(requiredFilters.distance && requiredFilters.rankingGroup);
 
   const filteredMine = allMySessions.filter(
@@ -4341,7 +5326,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
       String(s.distance) === String(requiredFilters.distance) &&
       getRankingGroup(s.division || currentUser.division || "", s.gender || currentUser.gender || "남") === requiredFilters.rankingGroup &&
       (requiredFilters.regionCity === "all" ? true : (s.regionCity || currentUser.regionCity || "") === requiredFilters.regionCity) &&
-      isWithinDateFilter(s.sessionDate, dateFilter)
+      isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)
   );
 
   const rivalUser = users.find((u) => u.id === selectedRival);
@@ -4354,14 +5339,14 @@ function AnalysisBoard({ currentUser, users, sessions }) {
         String(s.distance) === String(requiredFilters.distance) &&
         getRankingGroup(s.division || rivalUser?.division || "", s.gender || rivalUser?.gender || "남") === requiredFilters.rankingGroup &&
         (requiredFilters.regionCity === "all" ? true : (s.regionCity || rivalUser?.regionCity || "") === requiredFilters.regionCity) &&
-        isWithinDateFilter(s.sessionDate, dateFilter)
+        isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)
     );
 
   const analytics = useMemo(() => buildAnalyticsData(filteredMine, period, matchType), [filteredMine, period, matchType]);
   const comparison = useMemo(() => buildRivalComparison(filteredMine, rivalSessions, period, matchType), [filteredMine, rivalSessions, period, matchType]);
   const rivalLabel = getDisplayName(rivalUser);
   const trend = getTrendInsight(filteredMine);
-  const distancePerformance = getDistancePerformance(allMySessions.filter((s) => isWithinDateFilter(s.sessionDate, dateFilter)));
+  const distancePerformance = getDistancePerformance(allMySessions.filter((s) => isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)));
   const weakZoneInsight = getWeakZoneInsight(filteredMine);
 
   return (
@@ -4385,9 +5370,9 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">랭킹 구분</Label>
+              <Label className="w-16 shrink-0 text-sm">학년/부문</Label>
               <select value={requiredFilters.rankingGroup} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, rankingGroup: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                <option value="">랭킹 구분 선택</option>
+                <option value="">학년/부문 선택</option>
                 {RANKING_GROUP_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
             </div>
@@ -4404,11 +5389,21 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">날짜</Label>
-              <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                {DATE_FILTER_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
-                ))}
-              </select>
+              <div className="min-w-0 flex-1 space-y-2">
+                <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
+                  {DATE_FILTER_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
+                </select>
+                {dateFilter === "custom" && (
+                  <input
+                    type="date"
+                    value={customAnalysisDate}
+                    onChange={(e) => setCustomAnalysisDate(e.target.value)}
+                    className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+                  />
+                )}
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -4432,7 +5427,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
           {!isReady ? (
             <div className="rounded-3xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-              분석 결과를 보려면 거리와 학년/부문을 선택해야 한다.
+              분석을 원하는 조건을 선택하세요.
             </div>
           ) : (
             <>
@@ -4466,13 +5461,13 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                   <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 변화</div>
                   <div className="h-[320px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={analytics} margin={{ top: 8, right: 6, left: -8, bottom: 0 }}>
+                      <LineChart data={analytics} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.lineLeftMargin, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
-                        <YAxis domain={[0, 10]} width={28} tick={{ fontSize: 11 }} />
+                        <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
+                        <YAxis domain={[0, 10]} width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
                         <Tooltip />
-                        <Legend wrapperStyle={{ paddingTop: 12 }} />
-                        <Line type="monotone" dataKey="avgArrow" name="평균 화살 점수" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.avg }} activeDot={{ r: 6 }} />
+                        <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
+                        <Line type="monotone" dataKey="avgArrow" name="평균 화살 점수" stroke={CHART_COLORS.avg} strokeWidth={chartUi.strokeWidth} dot={{ r: chartUi.dotRadius, fill: CHART_COLORS.avg }} activeDot={{ r: chartUi.activeDotRadius }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -4482,13 +5477,13 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                   <div className="mb-3 text-sm font-semibold text-slate-700">구간별 총점</div>
                   <div className="h-[320px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={analytics} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
+                      <BarChart data={analytics} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.scoreBarLeftMargin, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
-                        <YAxis width={30} tick={{ fontSize: 11 }} />
+                        <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
+                        <YAxis width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
                         <Tooltip />
-                        <Legend wrapperStyle={{ paddingTop: 12 }} />
-                        <Bar dataKey="score" name="총점" fill={CHART_COLORS.score} radius={[8, 8, 0, 0]} maxBarSize={30} />
+                        <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
+                        <Bar dataKey="score" name="총점" fill={CHART_COLORS.score} radius={[8, 8, 0, 0]} maxBarSize={chartUi.barMaxScore} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -4499,13 +5494,13 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                 <div className="mb-3 text-sm font-semibold text-slate-700">거리별 성능 비교</div>
                 <div className="h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={distancePerformance} margin={{ top: 8, right: 4, left: -12, bottom: 0 }}>
+                    <BarChart data={distancePerformance} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.distanceBarLeftMargin, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
-                      <YAxis domain={[0, 10]} width={28} tick={{ fontSize: 11 }} />
+                      <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
+                      <YAxis domain={[0, 10]} width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
                       <Tooltip />
-                      <Legend wrapperStyle={{ paddingTop: 12 }} />
-                      <Bar dataKey="avgArrow" name="거리별 평균 화살 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} maxBarSize={36} />
+                      <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
+                      <Bar dataKey="avgArrow" name="거리별 평균 화살 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} maxBarSize={chartUi.barMaxDistance} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -4561,14 +5556,14 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 비교</div>
             <div className="h-[340px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={comparison} margin={{ top: 8, right: 6, left: -6, bottom: 0 }}>
+                <LineChart data={comparison} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.lineLeftMargin, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} tickMargin={8} />
-                  <YAxis domain={[0, 10]} width={28} tick={{ fontSize: 11 }} />
+                  <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
+                  <YAxis domain={[0, 10]} width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
                   <Tooltip />
-                  <Legend wrapperStyle={{ paddingTop: 12 }} />
-                  <Line type="monotone" dataKey="나" stroke={CHART_COLORS.me} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.me }} />
-                  <Line type="monotone" dataKey="라이벌" stroke={CHART_COLORS.rival} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.rival }} />
+                  <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
+                  <Line type="monotone" dataKey="나" stroke={CHART_COLORS.me} strokeWidth={chartUi.strokeWidth} dot={{ r: chartUi.dotRadius, fill: CHART_COLORS.me }} activeDot={{ r: chartUi.activeDotRadius }} />
+                  <Line type="monotone" dataKey="라이벌" stroke={CHART_COLORS.rival} strokeWidth={chartUi.strokeWidth} dot={{ r: chartUi.dotRadius, fill: CHART_COLORS.rival }} activeDot={{ r: chartUi.activeDotRadius }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -4974,7 +5969,7 @@ function ProfilePanel({ user, onUpdate, saving }) {
 }
 
 
-function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onStageRefresh, onBriefRefresh }) {
+function AdminPanel({ currentUser, users, sessions, appServices, officialClaims = [], onApproveOfficialClaim, onRejectOfficialClaim, onRefresh, onStageRefresh, onBriefRefresh }) {
   const [emailRegion, setEmailRegion] = useState("all");
   const [emailDivision, setEmailDivision] = useState("all");
   const [emailSubject, setEmailSubject] = useState("[X-SESSION 안내]");
@@ -4995,6 +5990,11 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
   const [newsForm, setNewsForm] = useState({ title: "", content: "" });
   const [briefForm, setBriefForm] = useState({ title: "", content: "" });
   const [publishMessage, setPublishMessage] = useState("");
+  const [adminEvents, setAdminEvents] = useState([]);
+  const [adminNewsItems, setAdminNewsItems] = useState([]);
+  const [adminBriefNotices, setAdminBriefNotices] = useState([]);
+  const [adminPublishedLoading, setAdminPublishedLoading] = useState(false);
+  const [deletingPublishedId, setDeletingPublishedId] = useState("");
 
   useEffect(() => {
     try {
@@ -5010,6 +6010,8 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
 
   const realUsers = useMemo(() => users.filter((user) => !user.isSampleData), [users]);
   const realSessions = useMemo(() => sessions.filter((session) => !session.isSampleData), [sessions]);
+  const pendingOfficialClaims = useMemo(() => (officialClaims || []).filter((claim) => claim.status === "pending"), [officialClaims]);
+  const approvedOfficialClaims = useMemo(() => (officialClaims || []).filter((claim) => claim.status === "approved"), [officialClaims]);
 
   const divisionOptions = useMemo(
     () => Array.from(new Set(realUsers.map((user) => user.division).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko")),
@@ -5063,6 +6065,72 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
       .slice(0, 10);
   }, [realUsers, userSearch]);
 
+  async function loadAdminPublishedItems() {
+    if (!appServices?.db) {
+      setAdminEvents([]);
+      setAdminNewsItems([]);
+      setAdminBriefNotices([]);
+      return;
+    }
+
+    setAdminPublishedLoading(true);
+    try {
+      const [eventSnap, newsSnap, briefSnap] = await Promise.all([
+        getDocs(collection(appServices.db, "stage_events")),
+        getDocs(collection(appServices.db, "stage_news")),
+        getDocs(collection(appServices.db, "brief_notices")),
+      ]);
+
+      const toTime = (value) => {
+        if (typeof value?.toDate === "function") return value.toDate().getTime();
+        const parsed = new Date(value || 0).getTime();
+        return Number.isNaN(parsed) ? 0 : parsed;
+      };
+
+      const loadedEvents = eventSnap.docs
+        .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+      const loadedNewsItems = newsSnap.docs
+        .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+        .sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt));
+      const loadedBriefNotices = briefSnap.docs
+        .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+        .sort((a, b) => toTime(b.createdAt) - toTime(a.createdAt));
+
+      setAdminEvents(loadedEvents);
+      setAdminNewsItems(loadedNewsItems);
+      setAdminBriefNotices(loadedBriefNotices);
+    } catch (error) {
+      alert(error.message || "등록 목록을 불러오지 못했다.");
+    } finally {
+      setAdminPublishedLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadAdminPublishedItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appServices]);
+
+  async function deletePublishedItem(collectionName, itemId, label) {
+    if (!appServices?.db || !itemId) return alert("삭제할 항목 정보가 부족하다.");
+    const ok = window.confirm(`${label} 항목을 삭제할까?`);
+    if (!ok) return;
+
+    try {
+      setDeletingPublishedId(`${collectionName}_${itemId}`);
+      await deleteDoc(doc(appServices.db, collectionName, itemId));
+      setPublishMessage(`${label} 항목을 삭제했다.`);
+      await loadAdminPublishedItems();
+      if (collectionName === "stage_events" || collectionName === "stage_news") onStageRefresh?.();
+      if (collectionName === "brief_notices") onBriefRefresh?.();
+    } catch (error) {
+      alert(error.message || `${label} 삭제에 실패했다.`);
+    } finally {
+      setDeletingPublishedId("");
+    }
+  }
+
 
   async function createStageEvent() {
     if (!appServices?.db) return alert("DB 연결이 준비되지 않았다.");
@@ -5079,6 +6147,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
       });
       setEventForm({ title: "", date: "", location: "" });
       setPublishMessage("대회 일정이 등록되었다.");
+      await loadAdminPublishedItems();
       onStageRefresh?.();
     } catch (error) {
       alert(error.message || "대회 일정 등록에 실패했다.");
@@ -5099,6 +6168,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
       });
       setNewsForm({ title: "", content: "" });
       setPublishMessage("양궁 뉴스가 등록되었다.");
+      await loadAdminPublishedItems();
       onStageRefresh?.();
     } catch (error) {
       alert(error.message || "양궁 뉴스 등록에 실패했다.");
@@ -5119,6 +6189,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
       });
       setBriefForm({ title: "", content: "" });
       setPublishMessage("공지사항이 등록되었다.");
+      await loadAdminPublishedItems();
       onBriefRefresh?.();
     } catch (error) {
       alert(error.message || "공지 등록에 실패했다.");
@@ -5322,6 +6393,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
               <div><span className="font-medium">학년/부문:</span> {selectedUser.division || "미입력"}</div>
               <div><span className="font-medium">소속:</span> {selectedUser.groupName || "미입력"}</div>
               <div><span className="font-medium">지역:</span> {selectedUser.regionCity || "미입력"}</div>
+              <div><span className="font-medium">인증 선수:</span> {selectedUser.verifiedAthlete ? "인증됨" : "미인증"}</div>
               <div><span className="font-medium">가입일:</span> {formatFullDate(selectedUser.createdAt)}</div>
               <div><span className="font-medium">UID:</span> {selectedUser.id}</div>
               <div><span className="font-medium">저장 기록 수:</span> {realSessions.filter((session) => session.userId === selectedUser.id).length}</div>
@@ -5346,6 +6418,89 @@ function AdminPanel({ currentUser, users, sessions, appServices, onRefresh, onSt
               {publishMessage}
             </div>
           ) : null}
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="text-base font-semibold text-slate-900">등록 항목 삭제 관리</div>
+                <div className="mt-1 text-sm text-slate-500">대회 일정, 양궁 뉴스, 공지사항을 바로 삭제할 수 있다.</div>
+              </div>
+              <Button type="button" variant="outline" className="rounded-2xl" onClick={loadAdminPublishedItems} disabled={adminPublishedLoading}>
+                {adminPublishedLoading ? "불러오는 중..." : "목록 새로고침"}
+              </Button>
+            </div>
+
+            <div className="mt-4 grid gap-4 xl:grid-cols-3">
+              <div className="grid gap-2">
+                <div className="font-semibold">대회 일정</div>
+                {adminEvents.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">등록된 대회 일정이 없다.</div>
+                ) : (
+                  adminEvents.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                      <div className="font-semibold">{item.title || "제목 없음"}</div>
+                      <div className="mt-1 text-xs text-slate-500">{item.date || "-"} · {item.location || "장소 미정"}</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-3 rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                        disabled={deletingPublishedId === `stage_events_${item.id}`}
+                        onClick={() => deletePublishedItem("stage_events", item.id, "대회 일정")}
+                      >
+                        {deletingPublishedId === `stage_events_${item.id}` ? "삭제 중..." : "삭제"}
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="grid gap-2">
+                <div className="font-semibold">양궁 뉴스</div>
+                {adminNewsItems.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">등록된 뉴스가 없다.</div>
+                ) : (
+                  adminNewsItems.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                      <div className="font-semibold">{item.title || "제목 없음"}</div>
+                      <div className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-slate-500">{item.content || ""}</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-3 rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                        disabled={deletingPublishedId === `stage_news_${item.id}`}
+                        onClick={() => deletePublishedItem("stage_news", item.id, "양궁 뉴스")}
+                      >
+                        {deletingPublishedId === `stage_news_${item.id}` ? "삭제 중..." : "삭제"}
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="grid gap-2">
+                <div className="font-semibold">공지사항</div>
+                {adminBriefNotices.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">등록된 공지가 없다.</div>
+                ) : (
+                  adminBriefNotices.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                      <div className="font-semibold">{item.title || "제목 없음"}</div>
+                      <div className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-slate-500">{item.content || ""}</div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-3 rounded-2xl border-red-200 text-red-700 hover:bg-red-50"
+                        disabled={deletingPublishedId === `brief_notices_${item.id}`}
+                        onClick={() => deletePublishedItem("brief_notices", item.id, "공지사항")}
+                      >
+                        {deletingPublishedId === `brief_notices_${item.id}` ? "삭제 중..." : "삭제"}
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 p-4">
@@ -5508,14 +6663,20 @@ function XSessionApp() {
   const [sessionSaving, setSessionSaving] = useState(false);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [globalError, setGlobalError] = useState("");
+  const [globalNotice, setGlobalNotice] = useState("");
   const [tempSaveMessage, setTempSaveMessage] = useState("");
   const [adminRequested, setAdminRequested] = useState(false);
   const [stageRefreshKey, setStageRefreshKey] = useState(0);
   const [briefRefreshKey, setBriefRefreshKey] = useState(0);
+  const [officialClaims, setOfficialClaims] = useState(() => readOfficialClaimsFromStorage());
   const pendingProfileRef = useRef(null);
 
 
   const authTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    writeOfficialClaimsToStorage(officialClaims);
+  }, [officialClaims]);
 
 
   useEffect(() => {
@@ -5611,7 +6772,6 @@ function XSessionApp() {
         regionCity: payload.regionCity || "",
         regionDistrict: payload.regionDistrict || "",
         division: payload.division || "",
-        gender: payload.gender || "남",
         gender: payload.gender || "남",
         role: "player",
         status: "active",
@@ -5747,6 +6907,7 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
+        gender: input.gender || "남",
       };
 
       const result = await createUserWithEmailAndPassword(appServices.auth, input.email, input.password);
@@ -5758,6 +6919,7 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
+        gender: input.gender || "남",
       });
 
       const nextProfile = {
@@ -5771,6 +6933,7 @@ function XSessionApp() {
         regionCity: input.regionCity || "",
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
+        gender: input.gender || "남",
         avatar: "",
         photoURL: "",
         photoPath: "",
@@ -5854,6 +7017,8 @@ function XSessionApp() {
     setUsers([]);
     setSessions([]);
     setUi(DEFAULT_UI);
+    setGlobalError("");
+    setGlobalNotice("");
     setTempSaveMessage("");
     setAdminRequested(false);
   }
@@ -5881,12 +7046,19 @@ function XSessionApp() {
   }, [editingSessionId]);
 
   async function handleSaveSession() {
-    if (!appServices?.db || !authUser || !profile || !draftSession) return;
+    if (!appServices?.db || !authUser || !profile || !draftSession) {
+      throw new Error("저장에 필요한 정보가 부족합니다. 다시 로그인 후 시도해 주세요.");
+    }
 
     setSessionSaving(true);
     setGlobalError("");
+    setGlobalNotice("");
 
     try {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new Error("오프라인 상태입니다. 네트워크 연결 후 다시 저장해 주세요.");
+      }
+
       const payload = buildSessionPayload({ draftSession, profile, uid: authUser.uid });
       const fixedSessionDate = draftSession?.sessionDate || getCurrentLocalDateString();
       payload.sessionDate = fixedSessionDate;
@@ -5921,8 +7093,17 @@ function XSessionApp() {
       await loadUsersAndSessions(appServices.db);
       setDraftSession(normalizeSessionShape(createNewSession(profile, draftSession.mode), profile));
       setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
+      setGlobalNotice(editingSessionId ? "세션이 정상적으로 업데이트되었습니다." : "세션이 정상적으로 저장되었습니다.");
+      return {
+        ok: true,
+        message: editingSessionId ? "세션이 정상적으로 업데이트되었습니다." : "세션이 정상적으로 저장되었습니다.",
+      };
     } catch (error) {
-      setGlobalError(error.message || "X-Session 저장에 실패했다.");
+      const message =
+        error?.message ||
+        "저장에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.";
+      setGlobalError(message);
+      throw new Error(message);
     } finally {
       setSessionSaving(false);
     }
@@ -5945,6 +7126,8 @@ function XSessionApp() {
 
   function handleTempSave() {
     if (!authUser || !draftSession) return;
+    setGlobalError("");
+    setGlobalNotice("");
     saveDraftToLocal(authUser.uid, draftSession);
     setTempSaveMessage("임시 X-Session 저장 완료. 다음에 다시 로그인해도 이어서 입력할 수 있다.");
   }
@@ -5965,9 +7148,6 @@ function XSessionApp() {
             }))
           : [
               createEmptyDistanceRound(1, 35),
-              createEmptyDistanceRound(2, 30),
-              createEmptyDistanceRound(3, 25),
-              createEmptyDistanceRound(4, 20),
             ],
       ends: (target.ends || []).map((end, idx) => ({
         ...end,
@@ -5999,6 +7179,7 @@ function XSessionApp() {
         regionCity: nextUser.regionCity,
         regionDistrict: nextUser.regionDistrict,
         division: nextUser.division,
+        gender: nextUser.gender || profile.gender || "남",
       });
 
       const refreshed = {
@@ -6010,6 +7191,7 @@ function XSessionApp() {
         regionCity: nextUser.regionCity || "",
         regionDistrict: nextUser.regionDistrict || "",
         division: nextUser.division || "전체학년",
+        gender: nextUser.gender || profile.gender || "남",
       };
 
       setProfile(refreshed);
@@ -6040,26 +7222,139 @@ function XSessionApp() {
     }
   }
 
+
+  function handleRequestOfficialClaim(officialUser) {
+    if (!profile || !officialUser?.isSampleData) return;
+    if (!isOfficialProfileMatch(officialUser, profile)) {
+      setGlobalError("이름, 학교/소속, 성별이 공식기록과 일치할 때만 연결 요청이 가능하다.");
+      return;
+    }
+
+    const existingApproved = getApprovedClaimForSample(officialClaims, officialUser.id);
+    if (existingApproved) {
+      setGlobalError("이미 승인된 공식기록이다.");
+      return;
+    }
+
+    const requestId = getOfficialClaimId({ sampleUserId: officialUser.id, requesterUid: profile.id });
+    setOfficialClaims((prev) => {
+      if (prev.some((claim) => claim.id === requestId)) return prev;
+      const nextClaim = {
+        id: requestId,
+        sampleUserId: officialUser.id,
+        requesterUid: profile.id,
+        requesterEmail: profile.email || "",
+        requesterName: profile.name || "",
+        requesterGroup: profile.groupName || "",
+        officialName: officialUser.name || "",
+        officialGroup: officialUser.groupName || "",
+        gender: officialUser.gender || profile.gender || "",
+        rankingGroup: getRankingGroup(officialUser.division || "", officialUser.gender || "남"),
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+      return [...prev, nextClaim];
+    });
+    setGlobalNotice("공식 기록 연결 요청을 보냈다. 관리자가 확인 후 승인하면 인증 선수로 표시된다.");
+  }
+
+  async function handleApproveOfficialClaim(claim) {
+    if (!claim?.id) return;
+    const approvedAt = new Date().toISOString();
+    setOfficialClaims((prev) =>
+      prev.map((item) =>
+        item.id === claim.id
+          ? { ...item, status: "approved", claimedByUid: item.requesterUid, approvedAt, approvedBy: currentUser?.email || "" }
+          : item
+      )
+    );
+
+    try {
+      if (appServices?.db && claim.requesterUid) {
+        await setDoc(
+          doc(appServices.db, "users", claim.requesterUid),
+          {
+            verifiedAthlete: true,
+            officialClaimApprovedAt: approvedAt,
+            officialClaimSampleUserId: claim.sampleUserId,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+        await loadUsersAndSessions(appServices.db);
+      }
+      setGlobalNotice("공식 기록 연결 요청을 승인했다.");
+    } catch (error) {
+      setGlobalError(error.message || "공식 기록 승인 정보를 저장하지 못했다. 로컬 승인 상태는 유지된다.");
+    }
+  }
+
+  function handleRejectOfficialClaim(claim) {
+    if (!claim?.id) return;
+    setOfficialClaims((prev) =>
+      prev.map((item) =>
+        item.id === claim.id
+          ? { ...item, status: "rejected", rejectedAt: new Date().toISOString(), rejectedBy: currentUser?.email || "" }
+          : item
+      )
+    );
+    setGlobalNotice("공식 기록 연결 요청을 반려했다.");
+  }
+
   const currentUser = useMemo(() => profile, [profile]);
   const sampleUsers = useMemo(() => buildPermanentSampleUsers(), []);
   const permanentSampleSessions = useMemo(() => buildPermanentSampleSessions(), []);
 
   const usersForDisplay = useMemo(() => {
-    const existingIds = new Set(users.map((u) => u.id));
-    const extra = sampleUsers.filter((u) => !existingIds.has(u.id));
-    return [...users, ...extra];
-  }, [users, sampleUsers]);
+    const approvedBySampleUserId = new Map(
+      (officialClaims || [])
+        .filter((claim) => claim.status === "approved" && claim.sampleUserId && claim.claimedByUid)
+        .map((claim) => [claim.sampleUserId, claim])
+    );
+    const verifiedUidSet = new Set(
+      (officialClaims || [])
+        .filter((claim) => claim.status === "approved" && claim.claimedByUid)
+        .map((claim) => claim.claimedByUid)
+    );
+
+    const realUsersWithVerification = users.map((user) => ({
+      ...user,
+      verifiedAthlete: Boolean(user.verifiedAthlete || verifiedUidSet.has(user.id)),
+    }));
+    const existingIds = new Set(realUsersWithVerification.map((u) => u.id));
+    const extra = sampleUsers
+      .filter((u) => !approvedBySampleUserId.has(u.id))
+      .filter((u) => !existingIds.has(u.id));
+    return [...realUsersWithVerification, ...extra];
+  }, [users, sampleUsers, officialClaims]);
 
   const sessionsForDisplay = useMemo(() => {
+    const approvedBySampleUserId = new Map(
+      (officialClaims || [])
+        .filter((claim) => claim.status === "approved" && claim.sampleUserId && claim.claimedByUid)
+        .map((claim) => [claim.sampleUserId, claim])
+    );
     const existingIds = new Set(sessions.map((s) => s.id));
     const merged = [...sessions];
 
     permanentSampleSessions.forEach((s) => {
-      if (!existingIds.has(s.id)) merged.push(s);
+      if (existingIds.has(s.id)) return;
+      const approvedClaim = approvedBySampleUserId.get(s.userId);
+      if (approvedClaim) {
+        merged.push({
+          ...s,
+          userId: approvedClaim.claimedByUid,
+          originalOfficialUserId: s.userId,
+          claimedByUid: approvedClaim.claimedByUid,
+          officialRecord: true,
+        });
+      } else {
+        merged.push(s);
+      }
     });
 
     return merged;
-  }, [sessions, permanentSampleSessions]);
+  }, [sessions, permanentSampleSessions, officialClaims]);
 
   const mySessions = useMemo(
     () => sessions.filter((s) => s.userId === authUser?.uid),
@@ -6088,6 +7383,7 @@ function XSessionApp() {
           <>
             <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} />
 
+            {globalNotice && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{globalNotice}</div>}
             {globalError && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
 
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
@@ -6104,12 +7400,12 @@ function XSessionApp() {
                 />
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
-              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUserId={currentUser.id} />}
+              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
               {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
-              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
+              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} officialClaims={officialClaims} onApproveOfficialClaim={handleApproveOfficialClaim} onRejectOfficialClaim={handleRejectOfficialClaim} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
             </motion.div>
           </>
         )}
