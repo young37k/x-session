@@ -2256,6 +2256,23 @@ const SAMPLE_SHEETS = [{
   }
 ];
 
+
+,
+  // 2026 비경기권 공식기록 추가 - 주영진
+  {
+    id: "sheet_2026_non_gyeonggi_juyeongjin",
+    date: "2026-04-04",
+    division: "중등부",
+    gender: "남",
+    regionCity: "충청북도",
+    bowType: "리커브",
+    recordInputType: "distance",
+    sheetLabel: "2026 충북 공식기록",
+    distances: [60, 40],
+    rows: [
+      { name: "주영진", school: "옥천 이원중", rounds: [346, 345], total: 691 }
+    ],
+  }
 function makeSampleUserId(name, school) {
   return `official_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
 }
