@@ -1538,7 +1538,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-03-23 경기도 남 중등부",
     distances: [30, 40, 50, 60],
     rows: [
-      { name: "정시우", school: "안산 성포중", rounds: [353, 348, 319, 340], total: 1360 }
+      { name: "정시우", school: "성포중", rounds: [353, 348, 319, 340], total: 1360 }
     ],
   }
 ,
@@ -1568,7 +1568,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-03-23 경기도 남 초등부(통합)",
     distances: [20, 25, 30, 35],
     rows: [
-      { name: "이환지", school: "하남 천현초", rounds: [355, 354, 350, 337], total: 1396 }
+      { name: "이환지", school: "천현초", rounds: [355, 354, 350, 337], total: 1396 }
     ],
   }
 ,
@@ -1583,7 +1583,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-03-23 경기도 여 초등부(통합)",
     distances: [20, 25, 30, 35],
     rows: [
-      { name: "한세빈", school: "수원 송정초", rounds: [350, 352, 337, 327], total: 1366 }
+      { name: "한세빈", school: "송정초", rounds: [350, 352, 337, 327], total: 1366 }
     ],
   }
 ,
@@ -1598,7 +1598,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-04-13 경기도 남 중등부",
     distances: [30, 60],
     rows: [
-      { name: "정시우", school: "안산 성포중", rounds: [345, 343], total: 688 }
+      { name: "정시우", school: "성포중", rounds: [345, 343], total: 688 }
     ],
   }
 ,
@@ -1643,7 +1643,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-04-13 경기도 남 초등부(통합)",
     distances: [20, 30],
     rows: [
-      { name: "강민국", school: "하남 천현초", rounds: [352, 345], total: 697 }
+      { name: "강민국", school: "천현초", rounds: [352, 345], total: 697 }
     ],
   }
 ,
@@ -1658,7 +1658,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-04-13 경기도 여 초등부(통합)",
     distances: [20, 25, 30, 35],
     rows: [
-      { name: "한세빈", school: "수원 송정초", rounds: [355, 338, 348, 335], total: 1376 }
+      { name: "한세빈", school: "송정초", rounds: [355, 338, 348, 335], total: 1376 }
     ],
   }
 ,
@@ -1733,7 +1733,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-06-15 경기도 남 중등부",
     distances: [30, 50],
     rows: [
-      { name: "정시우", school: "안산 성포중", rounds: [352, 336], total: 688 }
+      { name: "정시우", school: "성포중", rounds: [352, 336], total: 688 }
     ],
   }
 ,
@@ -1763,7 +1763,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-06-15 경기도 남 중등부",
     distances: [60],
     rows: [
-      { name: "김호균", school: "김포 하성중", rounds: [338], total: 338 }
+      { name: "김호균", school: "하성중", rounds: [338], total: 338 }
     ],
   }
 ,
@@ -1778,7 +1778,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-06-15 경기도 여 중등부",
     distances: [30],
     rows: [
-      { name: "김연아", school: "수원 창용중", rounds: [352], total: 352 }
+      { name: "김연아", school: "창용중", rounds: [352], total: 352 }
     ],
   }
 ,
@@ -1793,7 +1793,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-06-15 경기도 여 중등부",
     distances: [30, 40, 50, 60],
     rows: [
-      { name: "김은찬", school: "수원 창용중", rounds: [349, 346, 332, 340], total: 1367 }
+      { name: "김은찬", school: "창용중", rounds: [349, 346, 332, 340], total: 1367 }
     ],
   }
 ,
@@ -1808,7 +1808,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-06-15 경기도 남 초등부(통합)",
     distances: [20, 25, 30, 35],
     rows: [
-      { name: "이환지", school: "하남 천현초", rounds: [355, 355, 356, 344], total: 1410 }
+      { name: "이환지", school: "천현초", rounds: [355, 355, 356, 344], total: 1410 }
     ],
   }
 ,
@@ -1823,7 +1823,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-06-15 경기도 여 초등부(통합)",
     distances: [25, 30],
     rows: [
-      { name: "한세빈", school: "수원 송정초", rounds: [352, 350], total: 702 }
+      { name: "한세빈", school: "송정초", rounds: [352, 350], total: 702 }
     ],
   }
 ,
@@ -1838,7 +1838,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-06-15 경기도 여 초등부(통합)",
     distances: [25, 35],
     rows: [
-      { name: "허정아", school: "김포 하성초", rounds: [352, 340], total: 692 }
+      { name: "허정아", school: "하성초", rounds: [352, 340], total: 692 }
     ],
   }
 ,
@@ -1854,7 +1854,7 @@ const SAMPLE_SHEETS = [{
     distances: [30],
     rows: [
       { name: "최준혁", school: "부천남중", rounds: [353], total: 353 },
-      { name: "안은찬", school: "안산 성포중", rounds: [353], total: 353 }
+      { name: "안은찬", school: "성포중", rounds: [353], total: 353 }
     ],
   }
 ,
@@ -1869,7 +1869,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-07-21 경기도 남 중등부",
     distances: [50],
     rows: [
-      { name: "김호균", school: "김포 하성중", rounds: [337], total: 337 }
+      { name: "김호균", school: "하성중", rounds: [337], total: 337 }
     ],
   }
 ,
@@ -1884,8 +1884,8 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-07-21 인천광역시 남 중등부",
     distances: [40],
     rows: [
-      { name: "김성혁", school: "인천 만수북중", rounds: [347], total: 347 },
-      { name: "석주원", school: "인천 선인중", rounds: [346], total: 346 }
+      { name: "김성혁", school: "만수북중", rounds: [347], total: 347 },
+      { name: "석주원", school: "선인중", rounds: [346], total: 346 }
     ],
   }
 ,
@@ -1915,7 +1915,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-07-21 충청북도 남 중등부",
     distances: [30],
     rows: [
-      { name: "주영진", school: "옥천 이원중", rounds: [352], total: 352 }
+      { name: "주영진", school: "이원중", rounds: [352], total: 352 }
     ],
   }
 ,
@@ -1945,7 +1945,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-07-21 경기도 여 중등부",
     distances: [40, 50],
     rows: [
-      { name: "김은찬", school: "수원 창용중", rounds: [353, 335], total: 688 }
+      { name: "김은찬", school: "창용중", rounds: [353, 335], total: 688 }
     ],
   }
 ,
@@ -2020,7 +2020,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-07-21 인천광역시 여 중등부",
     distances: [30],
     rows: [
-      { name: "오선영", school: "인천 강화여중", rounds: [355], total: 355 }
+      { name: "오선영", school: "강화여중", rounds: [355], total: 355 }
     ],
   }
 ,
@@ -2035,7 +2035,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-07-21 인천광역시 여 중등부",
     distances: [30, 40, 60],
     rows: [
-      { name: "김아현", school: "인천 신흥여중", rounds: [358, 351, 342], total: 1051 }
+      { name: "김아현", school: "신흥여중", rounds: [358, 351, 342], total: 1051 }
     ],
   }
 ,
@@ -2050,7 +2050,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가기록 2025-07-21 인천광역시 여 중등부",
     distances: [50],
     rows: [
-      { name: "김혜린", school: "인천 신흥여중", rounds: [337], total: 337 }
+      { name: "김혜린", school: "신흥여중", rounds: [337], total: 337 }
     ],
   }
 ,
@@ -2097,7 +2097,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-04-13 경기도 남 중등부",
     distances: [30, 60],
     rows: [
-      { name: "정시우", school: "안산 성포중", rounds: [345, 343], total: 688 }
+      { name: "정시우", school: "성포중", rounds: [345, 343], total: 688 }
     ],
   },
   {
@@ -2139,7 +2139,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-04-13 경기도 남 초등부(통합)",
     distances: [20, 30],
     rows: [
-      { name: "강민국", school: "하남 천현초", rounds: [352, 345], total: 697 }
+      { name: "강민국", school: "천현초", rounds: [352, 345], total: 697 }
     ],
   },
   {
@@ -2153,7 +2153,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-04-13 경기도 남 초등부(통합)",
     distances: [25, 35],
     rows: [
-      { name: "이환지", school: "하남 천현초", rounds: [341, 336], total: 677 }
+      { name: "이환지", school: "천현초", rounds: [341, 336], total: 677 }
     ],
   },
   {
@@ -2167,7 +2167,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-04-13 경기도 여 초등부(통합)",
     distances: [20, 25, 30, 35],
     rows: [
-      { name: "한세빈", school: "수원 송정초", rounds: [355, 338, 348, 335], total: 1376 }
+      { name: "한세빈", school: "송정초", rounds: [355, 338, 348, 335], total: 1376 }
     ],
   },
   {
@@ -2181,7 +2181,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-07-23 경기도 남 중등부",
     distances: [40],
     rows: [
-      { name: "김호균", school: "김포 하성중", rounds: [346], total: 346 }
+      { name: "김호균", school: "하성중", rounds: [346], total: 346 }
     ],
   },
   {
@@ -2195,7 +2195,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-07-23 경기도 여 중등부",
     distances: [30, 60],
     rows: [
-      { name: "김은찬", school: "수원 창용중", rounds: [357, 343], total: 700 }
+      { name: "김은찬", school: "창용중", rounds: [357, 343], total: 700 }
     ],
   },
   {
@@ -2209,7 +2209,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-07-23 부산광역시 남 중등부",
     distances: [40],
     rows: [
-      { name: "박민혁", school: "부산 모라중", rounds: [343], total: 343 }
+      { name: "박민혁", school: "모라중", rounds: [343], total: 343 }
     ],
   },
   {
@@ -2223,7 +2223,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-07-23 부산광역시 여 중등부",
     distances: [60],
     rows: [
-      { name: "김수민", school: "부산 모라중", rounds: [342], total: 342 }
+      { name: "김수민", school: "모라중", rounds: [342], total: 342 }
     ],
   },
   {
@@ -2237,7 +2237,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-07-23 인천광역시 남 중등부",
     distances: [30],
     rows: [
-      { name: "김성혁", school: "인천 만수북중", rounds: [356], total: 356 }
+      { name: "김성혁", school: "만수북중", rounds: [356], total: 356 }
     ],
   },
   {
@@ -2251,7 +2251,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-07-23 인천광역시 여 중등부",
     distances: [40, 60],
     rows: [
-      { name: "김아현", school: "인천 신흥여중", rounds: [350, 342], total: 692 }
+      { name: "김아현", school: "신흥여중", rounds: [350, 342], total: 692 }
     ],
   },
   {
@@ -2265,7 +2265,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "추가 선수 찾음 2025-07-23 충청북도 남 중등부",
     distances: [40],
     rows: [
-      { name: "주영진", school: "옥천 이원중", rounds: [345], total: 345 }
+      { name: "주영진", school: "이원중", rounds: [345], total: 345 }
     ],
   }
 
@@ -2282,7 +2282,7 @@ const SAMPLE_SHEETS = [{
     sheetLabel: "2026 충북 공식기록",
     distances: [60, 40],
     rows: [
-      { name: "주영진", school: "옥천 이원중", rounds: [346, 345], total: 691 }
+      { name: "주영진", school: "이원중", rounds: [346, 345], total: 691 }
     ],
   }
 ];
