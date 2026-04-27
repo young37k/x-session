@@ -6507,11 +6507,27 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     dateFilter: "all",
     customDate: getCurrentLocalDateString(),
   });
+  const [schoolSearchInput, setSchoolSearchInput] = useState("");
 
   const sortKoreanOptions = useCallback((items) => [...items].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "ko-KR")), []);
   const groupOptions = useMemo(() => sortKoreanOptions(Array.from(new Set(users.map((u) => u.groupName).filter(Boolean)))), [users, sortKoreanOptions]);
   const regionOptions = useMemo(() => sortKoreanOptions(REGION_OPTIONS), [sortKoreanOptions]);
   const rankingGroupOptions = useMemo(() => RANKING_GROUP_OPTIONS, []);
+  const registeredUserCount = useMemo(() => {
+    const ids = new Set();
+    sessions.forEach((session) => {
+      if (getQualifiedDistanceAttempts(session).length) ids.add(session.userId);
+    });
+    return ids.size;
+  }, [sessions]);
+  const commitSchoolFilter = useCallback((value) => {
+    const trimmed = String(value || "").trim();
+    setRankingFilters((prev) => ({ ...prev, groupName: trimmed || "all" }));
+    setSchoolSearchInput(trimmed);
+  }, []);
+  useEffect(() => {
+    setSchoolSearchInput(rankingFilters.groupName === "all" ? "" : rankingFilters.groupName);
+  }, [rankingFilters.groupName]);
   const usersById = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
   const requestableOfficialUserIds = useMemo(() => {
     if (!currentUser) return new Set();
@@ -6643,8 +6659,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
       <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Medal className="h-5 w-5 text-red-600" /> X-Ranking
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              등록 인원 {registeredUserCount.toLocaleString()}명
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -6719,8 +6738,20 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               <div className="min-w-0 flex-1">
                 <input
                   list="ranking-school-options"
-                  value={rankingFilters.groupName === "all" ? "" : rankingFilters.groupName}
-                  onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value.trim() || "all" }))}
+                  value={schoolSearchInput}
+                  onChange={(e) => {
+                    const nextValue = e.target.value;
+                    setSchoolSearchInput(nextValue);
+                    if (groupOptions.includes(nextValue) && e.nativeEvent?.inputType === "insertReplacementText") {
+                      commitSchoolFilter(nextValue);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      commitSchoolFilter(e.currentTarget.value);
+                    }
+                  }}
                   placeholder="학교명을 입력하거나 선택"
                   className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
                 />
@@ -6729,6 +6760,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                     <option key={item} value={item} />
                   ))}
                 </datalist>
+                <div className="mt-1 text-[11px] text-slate-400">입력 중에는 기존 랭킹을 유지하고, Enter 또는 추천 학교 선택 시 적용된다.</div>
               </div>
             </div>
 
