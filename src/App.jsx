@@ -6242,8 +6242,123 @@ function SessionEditor({
   );
 }
 
-function Dashboard({ sessions, loading, onEditSession }) {
-  const completed = sessions.filter((s) => s.isComplete);
+
+function getCompletedUserSessions(sessions = []) {
+  return (sessions || []).filter((session) => session?.isComplete || session?.status === "completed");
+}
+
+function getSessionScoreForInsight(session) {
+  if (!session) return 0;
+  return Number(session.summary?.totalScore ?? getSessionTotal(session) ?? 0) || 0;
+}
+
+function getCurrentRecordStreak(sessions = []) {
+  const completed = getCompletedUserSessions(sessions);
+  const daySet = new Set(completed.map((session) => getSessionDayKey(session)).filter(Boolean));
+  let streak = 0;
+  const cursor = new Date(getCurrentLocalDateString());
+  while (true) {
+    const key = cursor.toISOString().slice(0, 10);
+    if (!daySet.has(key)) break;
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function buildPostSaveInsight({ savedSession, users = [], sessions = [], currentUser }) {
+  const completedSavedSession = {
+    ...savedSession,
+    id: savedSession?.id || "latest_saved_preview",
+    sessionId: savedSession?.sessionId || "latest_saved_preview",
+    isComplete: true,
+    status: "completed",
+  };
+  const attempts = getQualifiedDistanceAttempts(completedSavedSession);
+  const bestAttempt = attempts
+    .slice()
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return Number(b.distance) - Number(a.distance);
+    })[0];
+
+  const score = getSessionScoreForInsight(completedSavedSession);
+  const previousBest = getCompletedUserSessions(sessions)
+    .filter((session) => session.userId === currentUser?.id)
+    .reduce((best, session) => Math.max(best, getSessionScoreForInsight(session)), 0);
+  const isPersonalBest = score > previousBest;
+
+  const displayUsers = users.some((user) => user.id === currentUser?.id)
+    ? users
+    : currentUser
+      ? [...users, currentUser]
+      : users;
+  const comparisonSessions = [...sessions, completedSavedSession];
+
+  if (!bestAttempt || !currentUser) {
+    return {
+      score,
+      currentRank: "-",
+      schoolRank: "-",
+      rankDelta: 0,
+      rivalText: "랭킹 비교를 위해서는 36발 거리 기록이 필요하다.",
+      personalBest: isPersonalBest,
+      streak: getCurrentRecordStreak(comparisonSessions.filter((session) => session.userId === currentUser?.id)),
+    };
+  }
+
+  const rankingGroup = getRankingGroup(currentUser.division || completedSavedSession.division, currentUser.gender || completedSavedSession.gender);
+  const baseFilters = {
+    distance: String(bestAttempt.distance),
+    rankingGroup,
+    groupName: "all",
+    regionCity: "all",
+    gender: currentUser.gender || "all",
+    dateFilter: "all",
+    customDate: getCurrentLocalDateString(),
+  };
+
+  const sortDistance = (items) =>
+    items
+      .slice()
+      .sort((a, b) => {
+        if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
+        return String(b.latestDate).localeCompare(String(a.latestDate));
+      })
+      .map((item, idx) => ({ ...item, rank: idx + 1 }));
+
+  const beforeRanking = sortDistance(buildDistanceRankings(displayUsers, sessions, baseFilters));
+  const afterRanking = sortDistance(buildDistanceRankings(displayUsers, comparisonSessions, baseFilters));
+  const beforeMe = beforeRanking.find((item) => item.userId === currentUser.id);
+  const afterMe = afterRanking.find((item) => item.userId === currentUser.id);
+
+  const schoolFilters = { ...baseFilters, groupName: currentUser.groupName || "all" };
+  const schoolRanking = sortDistance(buildDistanceRankings(displayUsers, comparisonSessions, schoolFilters));
+  const schoolMe = schoolRanking.find((item) => item.userId === currentUser.id);
+  const schoolIndex = schoolRanking.findIndex((item) => item.userId === currentUser.id);
+  const rival = schoolIndex > 0 ? schoolRanking[schoolIndex - 1] : schoolRanking[schoolIndex + 1];
+  const rivalGap = rival && schoolMe ? Math.abs(Number(rival.bestScore || 0) - Number(schoolMe.bestScore || 0)) : null;
+
+  return {
+    score,
+    distance: bestAttempt.distance,
+    bestScore: bestAttempt.score,
+    currentRank: afterMe?.rank || "-",
+    schoolRank: schoolMe?.rank || "-",
+    rankDelta: beforeMe && afterMe ? beforeMe.rank - afterMe.rank : 0,
+    rivalText: rival
+      ? `${rival.name} (${rival.groupName || "같은 학교"}) · ${rivalGap}점 차이`
+      : "같은 조건의 라이벌 데이터가 더 쌓이면 자동으로 표시된다.",
+    personalBest: isPersonalBest,
+    streak: getCurrentRecordStreak(comparisonSessions.filter((session) => session.userId === currentUser.id)),
+  };
+}
+
+
+function Dashboard({ sessions, loading, onEditSession, onStartSession }) {
+  const completed = getCompletedUserSessions(sessions);
+  const recordStreak = getCurrentRecordStreak(sessions);
+  const allTimeBestScore = completed.reduce((best, session) => Math.max(best, getSessionScoreForInsight(session)), 0);
 
   const todayKey = getTodayKey();
   const yesterdayKey = getYesterdayKey();
@@ -6315,6 +6430,31 @@ function Dashboard({ sessions, loading, onEditSession }) {
 
   return (
     <div className="grid gap-4">
+      <Card className="overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+        <CardContent className="grid gap-4 p-5 md:grid-cols-[1.15fr_0.85fr] md:items-center">
+          <div>
+            <div className="text-xs font-semibold text-slate-500">입력 → 결과 → 비교 → 반복</div>
+            <div className="mt-2 text-2xl font-bold text-slate-950">
+              {todayCount ? `🔥 ${recordStreak}일 연속 기록중` : "⚠ 오늘 기록 없음"}
+            </div>
+            <div className="mt-2 text-sm text-slate-600">
+              {todayCount
+                ? `오늘 ${todayCount}개 기록 완료 · 개인 최고 ${allTimeBestScore}점 · 다음 기록으로 순위 변화를 확인해라.`
+                : "첫 행동은 기록 입력이다. 기록하면 내 성장, 내 순위, 라이벌 차이를 바로 확인할 수 있다."}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+              <span className="rounded-full bg-slate-100 px-3 py-1">1. 내 기록</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1">2. 내 성장</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1">3. 내 순위</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1">4. 전체 랭킹</span>
+            </div>
+          </div>
+          <Button className="h-12 rounded-2xl bg-blue-950 text-white hover:bg-blue-900" onClick={onStartSession}>
+            X-Session 기록 시작
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-3 md:grid-cols-3">
         <Card className="overflow-hidden rounded-[28px] border-0 shadow-xl">
           <CardContent className="h-full bg-gradient-to-br from-red-700 to-red-500 p-0 text-white">
@@ -6700,6 +6840,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
           <div className="mb-4 rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">
             {rankingGuide}
+            <div className="mt-2 font-semibold text-blue-950">👉 기록하면 순위에 반영됩니다.</div>
           </div>
 
           <div className="grid gap-2">
@@ -8377,6 +8518,7 @@ function XSessionApp() {
   const [globalError, setGlobalError] = useState("");
   const [globalNotice, setGlobalNotice] = useState("");
   const [tempSaveMessage, setTempSaveMessage] = useState("");
+  const [postSaveInsight, setPostSaveInsight] = useState(null);
   const [adminRequested, setAdminRequested] = useState(false);
   const [stageRefreshKey, setStageRefreshKey] = useState(0);
   const [briefRefreshKey, setBriefRefreshKey] = useState(0);
@@ -8799,13 +8941,29 @@ function XSessionApp() {
         await setDoc(doc(appServices.db, "sessions", docRef.id), { sessionId: docRef.id }, { merge: true });
       }
 
+      const savedPreviewSession = {
+        ...payload,
+        id: editingSessionId || "latest_saved_preview",
+        sessionId: editingSessionId || "latest_saved_preview",
+        isComplete: true,
+        status: "completed",
+        updatedAt: new Date().toISOString(),
+      };
+      const nextInsight = buildPostSaveInsight({
+        savedSession: savedPreviewSession,
+        users: usersForDisplay,
+        sessions: sessionsForDisplay,
+        currentUser,
+      });
+
       clearDraftFromLocal(authUser.uid);
       setTempSaveMessage("");
       setEditingSessionId(null);
       await loadUsersAndSessions(appServices.db);
       setDraftSession(normalizeSessionShape(createNewSession(profile, draftSession.mode), profile));
       setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
-      setGlobalNotice(editingSessionId ? "세션이 정상적으로 업데이트되었습니다." : "세션이 정상적으로 저장되었습니다.");
+      setPostSaveInsight(nextInsight);
+      setGlobalNotice("랭킹 반영 완료. 현재 순위와 라이벌 차이를 확인해라.");
       return {
         ok: true,
         message: editingSessionId ? "세션이 정상적으로 업데이트되었습니다." : "세션이 정상적으로 저장되었습니다.",
@@ -9098,6 +9256,36 @@ function XSessionApp() {
             {globalNotice && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{globalNotice}</div>}
             {globalError && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
 
+            <Dialog open={Boolean(postSaveInsight)} onOpenChange={(open) => !open && setPostSaveInsight(null)}>
+              <DialogContent className="rounded-3xl">
+                <DialogHeader>
+                  <DialogTitle>랭킹 반영 완료</DialogTitle>
+                  <DialogDescription>기록 → 결과 → 비교 → 반복 구조로 내 실력을 확인한다.</DialogDescription>
+                </DialogHeader>
+                {postSaveInsight ? (
+                  <div className="grid gap-3 text-sm">
+                    <div className="rounded-2xl bg-slate-50 p-4">
+                      <div className="font-semibold text-slate-950">현재 순위: {postSaveInsight.currentRank}위</div>
+                      <div className="mt-1 text-slate-600">같은 학교 순위: {postSaveInsight.schoolRank}위</div>
+                      <div className="mt-1 text-slate-600">오늘 상승: {postSaveInsight.rankDelta > 0 ? `+${postSaveInsight.rankDelta}` : postSaveInsight.rankDelta}위</div>
+                    </div>
+                    <div className="rounded-2xl bg-amber-50 p-4 text-amber-900">
+                      🔥 오늘 라이벌 등장<br />
+                      {postSaveInsight.rivalText}
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-blue-50 p-3 text-blue-900">🔥 {postSaveInsight.streak}일 연속 기록중</div>
+                      <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-900">{postSaveInsight.personalBest ? "🎯 개인 최고 기록!" : "🎯 기록 저장 완료"}</div>
+                      <div className="rounded-2xl bg-slate-50 p-3 text-slate-700">기준 기록 {postSaveInsight.distance || "-"}m · {postSaveInsight.bestScore || postSaveInsight.score}점</div>
+                    </div>
+                  </div>
+                ) : null}
+                <DialogFooter>
+                  <Button className="rounded-2xl" onClick={() => setPostSaveInsight(null)}>확인</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
               {ui.activeTab === "record" && draftSession && (
                 <SessionEditor
@@ -9111,7 +9299,7 @@ function XSessionApp() {
                   editingSavedSession={Boolean(editingSessionId)}
                 />
               )}
-              {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} />}
+              {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
