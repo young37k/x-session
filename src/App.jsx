@@ -9086,7 +9086,7 @@ function XSessionApp() {
         setEditingSessionId(null);
         setUi((prev) => ({
           ...prev,
-          activeTab: adminRequested && isAdminEmail(nextProfile.email) ? "admin" : "dashboard",
+          activeTab: adminRequested && isAdminEmail(nextProfile.email) ? "admin" : "routine",
         }));
 
         await loadUsersAndSessions(appServices.db);
@@ -9158,7 +9158,7 @@ function XSessionApp() {
       setDraftSession(
         normalizeSessionShape(createNewSession(nextProfile, "cumulative"), nextProfile)
       );
-      setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
+      setUi((prev) => ({ ...prev, activeTab: "routine" }));
       await loadUsersAndSessions(appServices.db);
       return { ok: true };
     } catch (error) {
