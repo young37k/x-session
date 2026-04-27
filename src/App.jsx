@@ -1151,6 +1151,20 @@ const OFFICIAL_RESULT_SOURCES = [
     status: "source_registered",
     notes: "추가_선수_찾음.xlsx 기반 점수 확인 후보 반영 · 김은찬·김아현, 문체부장관기양궁 여중부 2·3관왕",
   }
+
+,
+  // 2026 비경기권 공식기록 추가 - 주영진
+  {
+    id: "official_2026_non_gyeonggi_juyeongjin",
+    date: "2026-04-04",
+    bowType: "리커브",
+    region: "충청북도",
+    gender: "남",
+    rankingGroup: "중등부",
+    sourceType: "web_confirmed_official_record",
+    status: "source_registered",
+    notes: "2026 충북 공식기록 · 주영진 · 옥천 이원중 · 60m 346점 / 40m 345점",
+  }
 ];
 
 // 데이터화된 공식기록 원본. 개인 기록으로 자동 주입하지 않고 공식기록으로만 사용한다.
@@ -2254,8 +2268,6 @@ const SAMPLE_SHEETS = [{
       { name: "주영진", school: "옥천 이원중", rounds: [345], total: 345 }
     ],
   }
-];
-
 
 ,
   // 2026 비경기권 공식기록 추가 - 주영진
@@ -2273,6 +2285,8 @@ const SAMPLE_SHEETS = [{
       { name: "주영진", school: "옥천 이원중", rounds: [346, 345], total: 691 }
     ],
   }
+];
+
 function makeSampleUserId(name, school) {
   return `official_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
 }
