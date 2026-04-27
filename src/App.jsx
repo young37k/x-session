@@ -94,7 +94,6 @@ const SCORE_OPTIONS = ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, "M"];
 const QUICK_SCORE_OPTIONS = ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, "M"];
 const MAX_ARROWS_PER_END = 6;
 const DIVISION_OPTIONS = [
-  "전체학년",
   "초등1",
   "초등2",
   "초등3",
@@ -108,8 +107,7 @@ const DIVISION_OPTIONS = [
   "고등2",
   "고등3",
   "대학부",
-  "일반부",
-  "대학/일반부(여)"
+  "일반부"
 ];
 const GENDER_OPTIONS = ["남", "여"];
 
@@ -134,7 +132,6 @@ const RANKING_GROUP_OPTIONS = [
   "고등부(남)",
   "고등부(여)",
   "대학/일반부(남)",
-  "대학/일반부(여)",
   "대학/일반부(여)"
 ];
 const DISTANCE_OPTIONS = [18, 20, 25, 30, 35, 40, 50, 60, 70, 90];
@@ -153,7 +150,7 @@ const DIVISION_DISTANCE_RULES = {
   "고등2": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
   "고등3": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
   "대학부": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },
-  "일반부": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] },: { 남: [70], 여: [70] },
+  "일반부": { 남: [90, 70, 50, 30], 여: [70, 60, 50, 30] }
 };
 
 const RANKING_GROUP_DISTANCE_RULES = {
@@ -164,7 +161,7 @@ const RANKING_GROUP_DISTANCE_RULES = {
   "고등부(남)": [90, 70, 50, 30],
   "고등부(여)": [70, 60, 50, 30],
   "대학/일반부(남)": [90, 70, 50, 30],
-  "대학/일반부(여)": [70, 60, 50, 30],
+  "대학/일반부(여)": [70, 60, 50, 30]
 };
 
 
@@ -393,7 +390,6 @@ function formatProfileDivisionLabel(value) {
   if (high) return `고${high[1]}`;
   if (raw === "대학부") return "대학부";
   if (raw === "일반부") return "일반부";
-  if (raw === "국가대표") return "국가대표";
   return raw;
 }
 
@@ -2398,7 +2394,7 @@ const SAMPLE_SHEETS = [{
   }
 
 ,
-  // 고등부 / 대학부 / 일반부 공식기록 추가: 국가대표 구분 제외, 대회별 거리 통합
+  // 고등부 / 대학부 / 일반부 공식기록 추가: 대회별 거리 통합
   {
     id: "sheet_high_uni_general_event_001",
     date: "2025-08-29",
