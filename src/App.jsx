@@ -349,23 +349,75 @@ function getRoutineSessionCorrelation(routines = [], sessions = []) {
         date,
         rate: Number(routine.completionRate) || 0,
         score: getSessionScoreForInsight(session),
+        session,
+        routine,
       };
     })
     .filter(Boolean);
 
   const high = paired.filter((item) => item.rate >= 80);
   const low = paired.filter((item) => item.rate <= 50);
+  const mid = paired.filter((item) => item.rate > 50 && item.rate < 80);
 
   const average = (items) =>
     items.length ? Math.round(items.reduce((sum, item) => sum + item.score, 0) / items.length) : null;
 
+  const highAverage = average(high);
+  const lowAverage = average(low);
+  const allAverage = average(paired);
+  const delta = highAverage !== null && lowAverage !== null ? highAverage - lowAverage : null;
+  const latest = paired.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || null;
+
+  const routineItemImpact = new Map();
+  paired.forEach((item) => {
+    (item.routine.items || []).forEach((routineItem) => {
+      const key = routineItem.label;
+      if (!routineItemImpact.has(key)) {
+        routineItemImpact.set(key, { label: key, checkedScores: [], uncheckedScores: [] });
+      }
+      const bucket = routineItem.checked ? "checkedScores" : "uncheckedScores";
+      routineItemImpact.get(key)[bucket].push(item.score);
+    });
+  });
+
+  const itemInsights = Array.from(routineItemImpact.values())
+    .map((entry) => {
+      const checkedAverage = average(entry.checkedScores);
+      const uncheckedAverage = average(entry.uncheckedScores);
+      return {
+        label: entry.label,
+        checkedCount: entry.checkedScores.length,
+        uncheckedCount: entry.uncheckedScores.length,
+        checkedAverage,
+        uncheckedAverage,
+        delta: checkedAverage !== null && uncheckedAverage !== null ? checkedAverage - uncheckedAverage : null,
+      };
+    })
+    .filter((entry) => entry.checkedCount >= 2 && entry.uncheckedCount >= 2 && entry.delta !== null)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 5);
+
   return {
+    paired,
     pairedCount: paired.length,
     highCount: high.length,
+    midCount: mid.length,
     lowCount: low.length,
-    highAverage: average(high),
-    lowAverage: average(low),
+    highAverage,
+    lowAverage,
+    allAverage,
+    delta,
+    latest,
+    itemInsights,
+    ready: paired.length >= 5,
   };
+}
+
+function getRoutineReadinessMessage(rate) {
+  if (rate >= 100) return "풀버프 상태. 기록 입력으로 오늘 컨디션을 검증해라.";
+  if (rate >= 80) return "상위 준비 상태. 오늘 기록과 연결할 가치가 높다.";
+  if (rate >= 50) return "중간 준비 상태. 기록은 남기되 루틴 누락 원인을 확인해라.";
+  return "준비 상태가 낮다. 짧은 스트레칭이나 멘탈 루틴부터 채워라.";
 }
 
 
@@ -6439,7 +6491,7 @@ function buildPostSaveInsight({ savedSession, users = [], sessions = [], current
 
 
 
-function RoutinePage({ appServices, currentUser, routines = [], onRoutineSaved, onStartSession }) {
+function RoutinePage({ appServices, currentUser, routines = [], sessions = [], onRoutineSaved, onStartSession }) {
   const today = getCurrentLocalDateString();
   const existingRoutine = getRoutineForDate(routines, today);
   const [items, setItems] = useState(() => normalizeRoutineItems(existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS));
@@ -6452,7 +6504,7 @@ function RoutinePage({ appServices, currentUser, routines = [], onRoutineSaved, 
   }, [existingRoutine?.id, today]);
 
   const stats = useMemo(() => calculateRoutineStats(items), [items]);
-  const correlation = useMemo(() => getRoutineSessionCorrelation(routines, []), [routines]);
+  const correlation = useMemo(() => getRoutineSessionCorrelation(routines, sessions), [routines, sessions]);
 
   function updateItem(id, patch) {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
@@ -6519,7 +6571,7 @@ function RoutinePage({ appServices, currentUser, routines = [], onRoutineSaved, 
               <Progress value={stats.completionRate} className="h-3 bg-white/20" />
             </div>
             <div className="mt-3 text-sm opacity-90">
-              {stats.completedCount}/{stats.totalCount} 완료 · 루틴은 준비 상태 데이터, 기록은 결과 데이터다.
+              {stats.completedCount}/{stats.totalCount} 완료 · {getRoutineReadinessMessage(stats.completionRate)}
             </div>
           </div>
 
@@ -6578,9 +6630,56 @@ function RoutinePage({ appServices, currentUser, routines = [], onRoutineSaved, 
 
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             <div className="font-semibold text-slate-900">루틴 + 기록 상관관계</div>
-            <div className="mt-1">
-              루틴과 기록을 같은 날짜에 5일 이상 남기면, 루틴 80% 이상인 날과 50% 이하인 날의 평균 기록 차이를 보여준다.
-            </div>
+            {correlation.ready ? (
+              <div className="mt-3 grid gap-3">
+                <div className="grid gap-2 md:grid-cols-3">
+                  <div className="rounded-2xl bg-white p-3">
+                    <div className="text-xs text-slate-500">루틴 80% 이상 평균</div>
+                    <div className="mt-1 text-2xl font-bold text-blue-950">{correlation.highAverage ?? "-"}점</div>
+                    <div className="mt-1 text-xs text-slate-500">{correlation.highCount}일 기준</div>
+                  </div>
+                  <div className="rounded-2xl bg-white p-3">
+                    <div className="text-xs text-slate-500">루틴 50% 이하 평균</div>
+                    <div className="mt-1 text-2xl font-bold text-red-800">{correlation.lowAverage ?? "-"}점</div>
+                    <div className="mt-1 text-xs text-slate-500">{correlation.lowCount}일 기준</div>
+                  </div>
+                  <div className="rounded-2xl bg-white p-3">
+                    <div className="text-xs text-slate-500">루틴 효과</div>
+                    <div className="mt-1 text-2xl font-bold text-emerald-700">
+                      {correlation.delta !== null ? `${correlation.delta > 0 ? "+" : ""}${correlation.delta}점` : "분석중"}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">동일 날짜 루틴+기록 {correlation.pairedCount}일</div>
+                  </div>
+                </div>
+
+                {correlation.itemInsights.length ? (
+                  <div className="rounded-2xl bg-white p-3">
+                    <div className="font-semibold text-slate-900">영향이 큰 루틴</div>
+                    <div className="mt-2 grid gap-2">
+                      {correlation.itemInsights.map((item) => (
+                        <div key={item.label} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                          <span className="truncate">{item.label}</span>
+                          <span className={`font-semibold ${item.delta >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                            {item.delta > 0 ? "+" : ""}{item.delta}점
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl bg-white p-3 text-xs text-slate-500">
+                    항목별 영향도는 체크/미체크 데이터가 각각 2일 이상 쌓이면 표시된다.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-1">
+                루틴과 기록을 같은 날짜에 5일 이상 남기면, 루틴 80% 이상인 날과 50% 이하인 날의 평균 기록 차이를 보여준다.
+                <div className="mt-2 rounded-2xl bg-white p-3 text-xs text-slate-500">
+                  현재 매칭 데이터 {correlation.pairedCount}/5일
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -6686,12 +6785,12 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
             </div>
             <div className="mt-4 rounded-2xl bg-blue-50 p-3 text-xs text-blue-950">
               <div className="font-semibold">오늘 준비 상태 {todayRoutineRate}%</div>
-              {routineCorrelation.pairedCount >= 5 && routineCorrelation.highAverage !== null && routineCorrelation.lowAverage !== null ? (
+              {routineCorrelation.ready && routineCorrelation.highAverage !== null && routineCorrelation.lowAverage !== null ? (
                 <div className="mt-1">
-                  루틴 80% 이상 평균 {routineCorrelation.highAverage}점 · 50% 이하 평균 {routineCorrelation.lowAverage}점 · 차이 {routineCorrelation.highAverage - routineCorrelation.lowAverage > 0 ? "+" : ""}{routineCorrelation.highAverage - routineCorrelation.lowAverage}점
+                  루틴 80% 이상 평균 {routineCorrelation.highAverage}점 · 50% 이하 평균 {routineCorrelation.lowAverage}점 · 차이 {routineCorrelation.delta > 0 ? "+" : ""}{routineCorrelation.delta}점
                 </div>
               ) : (
-                <div className="mt-1">루틴과 기록을 5일 이상 남기면 상관관계를 보여준다.</div>
+                <div className="mt-1">루틴과 기록을 5일 이상 남기면 상관관계를 보여준다. 현재 {routineCorrelation.pairedCount}/5일</div>
               )}
             </div>
           </div>
@@ -9543,7 +9642,7 @@ function XSessionApp() {
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div className="rounded-2xl bg-blue-50 p-3 text-blue-900">🔥 {postSaveInsight.streak}일 연속 기록중</div>
                       <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-900">{postSaveInsight.personalBest ? "🎯 개인 최고 기록!" : "🎯 기록 저장 완료"}</div>
-                      <div className="rounded-2xl bg-slate-50 p-3 text-slate-700">오늘 루틴 {getTodayRoutineRate(myRoutines)}% · {postSaveInsight.distance || "-"}m {postSaveInsight.bestScore || postSaveInsight.score}점</div>
+                      <div className="rounded-2xl bg-slate-50 p-3 text-slate-700">오늘 루틴 {getTodayRoutineRate(myRoutines)}% · {getRoutineReadinessMessage(getTodayRoutineRate(myRoutines))} · {postSaveInsight.distance || "-"}m {postSaveInsight.bestScore || postSaveInsight.score}점</div>
                     </div>
                   </div>
                 ) : null}
@@ -9579,7 +9678,7 @@ function XSessionApp() {
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
               {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
-              {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} onRoutineSaved={() => loadUsersAndSessions(appServices.db)} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
+              {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} sessions={mySessions} onRoutineSaved={() => loadUsersAndSessions(appServices.db)} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} officialClaims={officialClaims} onApproveOfficialClaim={handleApproveOfficialClaim} onRejectOfficialClaim={handleRejectOfficialClaim} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
             </motion.div>
