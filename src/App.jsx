@@ -2974,47 +2974,32 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
 
       if (isAllDistance) {
         const requiredDistances = getRequiredDistancesForRankingGroup(userRankingGroup);
-        if (!requiredDistances.length) return null;
+        const validAttempts = attempts.filter((attempt) =>
+          requiredDistances.includes(Number(attempt.distance))
+        );
 
-        const bestByDistance = {};
-        requiredDistances.forEach((distance) => {
-          const candidates = attempts
-            .filter((attempt) => String(attempt.distance) === String(distance))
-            .sort((a, b) => {
-              if (b.score !== a.score) return b.score - a.score;
-              return String(b.sessionDate).localeCompare(String(a.sessionDate));
-            });
-          if (candidates.length) bestByDistance[distance] = candidates[0];
+        if (!validAttempts.length) return null;
+
+        validAttempts.sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return String(b.sessionDate).localeCompare(String(a.sessionDate));
         });
 
-        if (requiredDistances.some((distance) => !bestByDistance[distance])) return null;
-
-        const totalScore = requiredDistances.reduce(
-          (sum, distance) => sum + (bestByDistance[distance]?.score || 0),
-          0
-        );
-        const latestDate = requiredDistances
-          .map((distance) => bestByDistance[distance].sessionDate || "")
-          .sort()
-          .slice(-1)[0];
+        const best = validAttempts[0];
 
         return {
           userId: user.id,
           name: getDisplayName(user),
-          groupName: user.groupName || "-",
-          regionCity: user.regionCity || "-",
+          groupName: user.groupName || best.groupName || "-",
+          regionCity: user.regionCity || best.regionCity || "-",
           gender: userGender,
-          division: normalizeDivisionLabel(userDivision || "-"),
-          rankingGroup: userRankingGroup || "-",
-          distance: "all",
-          distanceLabel: "전체 거리",
-          requiredDistances,
-          distanceScores: Object.fromEntries(
-            requiredDistances.map((distance) => [distance, bestByDistance[distance].score])
-          ),
-          bestScore: totalScore,
-          qualifiedSessions: requiredDistances.length,
-          latestDate,
+          division: normalizeDivisionLabel(userDivision || best.division || "-"),
+          rankingGroup: userRankingGroup || best.rankingGroup || "-",
+          distance: best.distance,
+          distanceLabel: `전체 거리 · ${best.distance}m`,
+          bestScore: best.score,
+          qualifiedSessions: validAttempts.length,
+          latestDate: best.sessionDate || "",
           isSampleData: Boolean(user.isSampleData),
           sourceType: user.isSampleData ? "official" : "user",
           claimedByUid: user.claimedByUid || "",
@@ -5213,13 +5198,13 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const rankingGuide =
     rankingType === "distance"
       ? rankingFilters.distance === "all"
-        ? "전체 거리는 학년/부문별 필수 거리 전체 점수를 합산한 기준으로 순위가 결정됩니다."
+        ? "전체 거리는 등록된 필수 거리 중 개인 최고 거리 기록 기준으로 순위가 결정됩니다. 한 거리만 있어도 거리 랭킹에는 반영됩니다."
         : "선택한 거리의 최고 기록 점수 기준으로 순위가 결정됩니다."
       : rankingType === "total"
         ? "학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다."
         : rankingType === "weeklyDistance"
           ? rankingFilters.distance === "all"
-            ? "최근 7일 기준, 필수 거리 전체 점수를 합산한 기준으로 순위가 결정됩니다."
+            ? "최근 7일 기준, 등록된 필수 거리 중 개인 최고 거리 기록으로 순위가 결정됩니다."
             : "최근 7일 기준, 선택한 거리의 최고 점수로 순위가 결정됩니다."
           : "최근 7일 동안 학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
 
