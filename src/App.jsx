@@ -574,7 +574,7 @@ function schoolFilterMatches(selectedGroupName, actualGroupName) {
   const selected = String(selectedGroupName).trim();
   if (!selected) return true;
   const actual = String(actualGroupName || "").trim();
-  return actual === selected || actual.includes(selected);
+  return actual === selected;
 }
 
 
@@ -6992,8 +6992,6 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     dateFilter: "all",
     customDate: getCurrentLocalDateString(),
   });
-  const [schoolSearchInput, setSchoolSearchInput] = useState("");
-
   const sortKoreanOptions = useCallback((items) => [...items].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "ko-KR")), []);
   const groupOptions = useMemo(() => sortKoreanOptions(Array.from(new Set(users.map((u) => u.groupName).filter(Boolean)))), [users, sortKoreanOptions]);
   const regionOptions = useMemo(() => sortKoreanOptions(REGION_OPTIONS), [sortKoreanOptions]);
@@ -7005,14 +7003,6 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     });
     return ids.size;
   }, [sessions]);
-  const commitSchoolFilter = useCallback((value) => {
-    const trimmed = String(value || "").trim();
-    setRankingFilters((prev) => ({ ...prev, groupName: trimmed || "all" }));
-    setSchoolSearchInput(trimmed);
-  }, []);
-  useEffect(() => {
-    setSchoolSearchInput(rankingFilters.groupName === "all" ? "" : rankingFilters.groupName);
-  }, [rankingFilters.groupName]);
   const usersById = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
   const requestableOfficialUserIds = useMemo(() => {
     if (!currentUser) return new Set();
@@ -7221,33 +7211,16 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학교/소속</Label>
-              <div className="min-w-0 flex-1">
-                <input
-                  list="ranking-school-options"
-                  value={schoolSearchInput}
-                  onChange={(e) => {
-                    const nextValue = e.target.value;
-                    setSchoolSearchInput(nextValue);
-                    if (groupOptions.includes(nextValue) && e.nativeEvent?.inputType === "insertReplacementText") {
-                      commitSchoolFilter(nextValue);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      commitSchoolFilter(e.currentTarget.value);
-                    }
-                  }}
-                  placeholder="학교명을 입력하거나 선택"
-                  className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
-                />
-                <datalist id="ranking-school-options">
-                  {groupOptions.map((item) => (
-                    <option key={item} value={item} />
-                  ))}
-                </datalist>
-                <div className="mt-1 text-[11px] text-slate-400">입력 중에는 기존 랭킹을 유지하고, Enter 또는 추천 학교 선택 시 적용된다.</div>
-              </div>
+              <select
+                value={rankingFilters.groupName}
+                onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))}
+                className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+              >
+                <option value="all">전체 학교/소속팀</option>
+                {groupOptions.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
