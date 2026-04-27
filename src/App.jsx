@@ -6494,7 +6494,10 @@ function RoutinePage({ appServices, currentUser, routines = [], onRoutineSaved, 
       );
       await onRoutineSaved?.();
     } catch (error) {
-      setNotice(error.message || "루틴 저장에 실패했다.");
+      const permissionMessage = String(error?.message || "").includes("permission")
+        ? "루틴 저장 권한이 없습니다. Firestore Rules에 routines 권한을 추가해야 합니다."
+        : error.message || "루틴 저장에 실패했다.";
+      setNotice(permissionMessage);
     } finally {
       setSaving(false);
     }
@@ -8819,14 +8822,20 @@ function XSessionApp() {
   const loadUsersAndSessions = useCallback(async (db) => {
     setSessionsLoading(true);
     try {
-      const [usersSnap, sessionsSnap, routinesSnap] = await Promise.all([
+      const [usersSnap, sessionsSnap] = await Promise.all([
         getDocs(collection(db, "users")),
         getDocs(query(collection(db, "sessions"), orderBy("sessionDate", "desc"))),
-        getDocs(query(collection(db, "routines"), orderBy("date", "desc"))),
       ]);
       setUsers(usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data())));
       setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
-      setRoutines(routinesSnap.docs.map((snap) => fromFirestoreRoutine(snap)));
+
+      try {
+        const routinesSnap = await getDocs(query(collection(db, "routines"), orderBy("date", "desc")));
+        setRoutines(routinesSnap.docs.map((snap) => fromFirestoreRoutine(snap)));
+      } catch (routineError) {
+        setRoutines([]);
+        console.warn("X-Routine data could not be loaded. Check Firestore rules for routines.", routineError);
+      }
     } catch (error) {
       setGlobalError(error.message || "데이터 로딩에 실패했다.");
     } finally {
