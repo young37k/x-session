@@ -4507,6 +4507,7 @@ function fromFirestoreProfile(uidValue, data) {
     regionDistrict: data.regionDistrict || "",
     division: data.division || "",
     gender: data.gender || "남",
+    role: data.role || "선수",
     avatar: "",
     photoURL: "",
     photoPath: "",
@@ -5321,7 +5322,17 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                         setRegisterFieldErrors((prev) => ({ ...prev, name: false }));
                       }
                     }}
-                    placeholder="이름 입력"
+                    placeholder="이름 입력" />
+            <select
+              value={form.role || "선수"}
+              onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none"
+            >
+              <option value="선수">선수</option>
+              <option value="감독/코치/스탭">감독/코치/스탭</option>
+              <option value="학부모">학부모</option>
+            </select>
+            <input
                     className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.name ? "ring-2 ring-red-400" : ""}`}
                   />
                 </div>
