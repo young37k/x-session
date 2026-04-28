@@ -7304,17 +7304,27 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     dateFilter: "all",
     customDate: getCurrentLocalDateString(),
   });
+  const [hideOfficialRecords, setHideOfficialRecords] = useState(false);
+  const rankingUsers = useMemo(
+    () => (hideOfficialRecords ? users.filter((user) => !user.isSampleData && !user.isOfficialRecordUser) : users),
+    [users, hideOfficialRecords]
+  );
+  const rankingSessions = useMemo(() => {
+    if (!hideOfficialRecords) return sessions;
+    const allowedUserIds = new Set(rankingUsers.map((user) => user.id));
+    return sessions.filter((session) => allowedUserIds.has(session.userId));
+  }, [sessions, rankingUsers, hideOfficialRecords]);
   const sortKoreanOptions = useCallback((items) => [...items].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "ko-KR")), []);
-  const groupOptions = useMemo(() => sortKoreanOptions(Array.from(new Set(users.map((u) => u.groupName).filter(Boolean)))), [users, sortKoreanOptions]);
+  const groupOptions = useMemo(() => sortKoreanOptions(Array.from(new Set(rankingUsers.map((u) => u.groupName).filter(Boolean)))), [rankingUsers, sortKoreanOptions]);
   const regionOptions = useMemo(() => sortKoreanOptions(REGION_OPTIONS), [sortKoreanOptions]);
   const rankingGroupOptions = useMemo(() => RANKING_GROUP_OPTIONS, []);
   const registeredUserCount = useMemo(() => {
     const ids = new Set();
-    sessions.forEach((session) => {
+    rankingSessions.forEach((session) => {
       if (getQualifiedDistanceAttempts(session).length) ids.add(session.userId);
     });
     return ids.size;
-  }, [sessions]);
+  }, [rankingSessions]);
   const usersById = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
   const requestableOfficialUserIds = useMemo(() => {
     if (!currentUser) return new Set();
@@ -7334,40 +7344,40 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [officialClaims, currentUserId]);
 
   const distanceRankings = useMemo(() => {
-    const items = buildDistanceRankings(users, sessions, rankingFilters, { weekly: false });
+    const items = buildDistanceRankings(rankingUsers, rankingSessions, rankingFilters, { weekly: false });
     items.sort((a, b) => {
       if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [users, sessions, rankingFilters]);
+  }, [rankingUsers, rankingSessions, rankingFilters]);
 
   const totalRankings = useMemo(() => {
-    const items = buildTotalRankings(users, sessions, rankingFilters, { weekly: false });
+    const items = buildTotalRankings(rankingUsers, rankingSessions, rankingFilters, { weekly: false });
     items.sort((a, b) => {
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [users, sessions, rankingFilters]);
+  }, [rankingUsers, rankingSessions, rankingFilters]);
 
   const weeklyDistanceRankings = useMemo(() => {
-    const items = buildDistanceRankings(users, sessions, rankingFilters, { weekly: true });
+    const items = buildDistanceRankings(rankingUsers, rankingSessions, rankingFilters, { weekly: true });
     items.sort((a, b) => {
       if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [users, sessions, rankingFilters]);
+  }, [rankingUsers, rankingSessions, rankingFilters]);
 
   const weeklyTotalRankings = useMemo(() => {
-    const items = buildTotalRankings(users, sessions, rankingFilters, { weekly: true });
+    const items = buildTotalRankings(rankingUsers, rankingSessions, rankingFilters, { weekly: true });
     items.sort((a, b) => {
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [users, sessions, rankingFilters]);
+  }, [rankingUsers, rankingSessions, rankingFilters]);
 
   const activeRankings =
     rankingType === "distance"
@@ -7394,6 +7404,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
           : "최근 7일 동안 학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
 
   const officialResultSources = useMemo(() => {
+    if (hideOfficialRecords) return [];
     return OFFICIAL_RESULT_SOURCES.filter((item) => {
       if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, item.rankingGroup)) return false;
       if (rankingFilters.regionCity !== "all" && item.region !== rankingFilters.regionCity) return false;
@@ -7402,7 +7413,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
       if (rankingFilters.groupName && rankingFilters.groupName !== "all") return false;
       return true;
     }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
-  }, [rankingFilters]);
+  }, [rankingFilters, hideOfficialRecords]);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
@@ -7451,6 +7462,15 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
               공식/사용자 기록 {registeredUserCount.toLocaleString()}명
             </span>
+            <label className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-900">
+              <input
+                type="checkbox"
+                checked={hideOfficialRecords}
+                onChange={(e) => setHideOfficialRecords(e.target.checked)}
+                className="h-3.5 w-3.5"
+              />
+              공식기록 제거 후 보기
+            </label>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -7487,6 +7507,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
           <div className="mb-4 rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">
             {rankingGuide}
+            {hideOfficialRecords ? (
+              <div className="mt-2 font-semibold text-blue-950">공식기록을 제외하고 사용자 기록만 보고 있습니다.</div>
+            ) : null}
             <div className="mt-2 font-semibold text-blue-950">👉 기록하면 순위에 반영됩니다.</div>
           </div>
 
