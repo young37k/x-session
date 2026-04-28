@@ -4695,10 +4695,8 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
     .map((user) => {
       const userDivision = user.division || "";
       const userGender = user.gender || "남";
-      const userRankingGroup = getRankingGroup(userDivision, userGender);
-      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, userRankingGroup)) {
-        return null;
-      }
+      const profileRankingGroup = getRankingGroup(userDivision, userGender);
+
       if (!schoolFilterMatches(rankingFilters.groupName, user.groupName)) {
         return null;
       }
@@ -4717,20 +4715,26 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         return null;
       }
 
-      const attempts = sessions
+      const allAttempts = sessions
         .filter((session) => session.userId === user.id)
         .flatMap((session) => getQualifiedDistanceAttempts(session))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
-        .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate))
-        .filter((attempt) => attempt.rankingGroup === userRankingGroup);
+        .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
+
+      const attempts = allAttempts.filter((attempt) => {
+        const attemptRankingGroup = attempt.rankingGroup || profileRankingGroup;
+        if (profileRankingGroup && attemptRankingGroup !== profileRankingGroup) return false;
+        return rankingGroupMatchesFilter(rankingFilters.rankingGroup, attemptRankingGroup);
+      });
 
       if (!attempts.length) return null;
 
       if (isAllDistance) {
-        const requiredDistances = getRequiredDistancesForRankingGroup(userRankingGroup);
-        const validAttempts = attempts.filter((attempt) =>
-          requiredDistances.includes(Number(attempt.distance))
-        );
+        const validAttempts = attempts.filter((attempt) => {
+          const group = attempt.rankingGroup || profileRankingGroup;
+          const requiredDistances = getRequiredDistancesForRankingGroup(group);
+          return requiredDistances.includes(Number(attempt.distance));
+        });
 
         if (!validAttempts.length) return null;
 
@@ -4740,6 +4744,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         });
 
         const best = validAttempts[0];
+        const displayRankingGroup = profileRankingGroup || best.rankingGroup || "-";
 
         return {
           userId: user.id,
@@ -4748,7 +4753,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
           regionCity: user.regionCity || best.regionCity || "-",
           gender: userGender,
           division: normalizeDivisionLabel(userDivision || best.division || "-"),
-          rankingGroup: userRankingGroup || best.rankingGroup || "-",
+          rankingGroup: displayRankingGroup,
           distance: best.distance,
           distanceLabel: `전체 거리 · ${best.distance}m`,
           bestScore: best.score,
@@ -4763,9 +4768,10 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
 
       const filteredAttempts = attempts
         .filter((attempt) => String(attempt.distance) === String(selectedDistance))
-        .filter((attempt) =>
-          getRequiredDistancesForRankingGroup(userRankingGroup).includes(Number(attempt.distance))
-        );
+        .filter((attempt) => {
+          const group = attempt.rankingGroup || profileRankingGroup;
+          return getRequiredDistancesForRankingGroup(group).includes(Number(attempt.distance));
+        });
 
       if (!filteredAttempts.length) return null;
 
@@ -4775,6 +4781,8 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
       });
 
       const best = filteredAttempts[0];
+      const displayRankingGroup = profileRankingGroup || best.rankingGroup || "-";
+
       return {
         userId: user.id,
         name: getDisplayName(user),
@@ -4782,7 +4790,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         regionCity: user.regionCity || best.regionCity || "-",
         gender: userGender,
         division: normalizeDivisionLabel(userDivision || best.division || "-"),
-        rankingGroup: userRankingGroup || best.rankingGroup || "-",
+        rankingGroup: displayRankingGroup,
         distance: best.distance,
         distanceLabel: `${best.distance}m`,
         bestScore: best.score,
@@ -4804,10 +4812,8 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
     .map((user) => {
       const userDivision = user.division || "";
       const userGender = user.gender || "남";
-      const userRankingGroup = getRankingGroup(userDivision, userGender);
-      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, userRankingGroup)) {
-        return null;
-      }
+      const profileRankingGroup = getRankingGroup(userDivision, userGender);
+
       if (!schoolFilterMatches(rankingFilters.groupName, user.groupName)) {
         return null;
       }
@@ -4826,56 +4832,70 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         return null;
       }
 
-      const requiredDistances = getRequiredDistancesForRankingGroup(userRankingGroup);
-      if (!requiredDistances.length) return null;
-
-      const attempts = sessions
+      const allAttempts = sessions
         .filter((session) => session.userId === user.id)
         .flatMap((session) => getQualifiedDistanceAttempts(session))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
-        .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate))
-        .filter((attempt) => attempt.rankingGroup === userRankingGroup);
+        .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
 
-      const bestByDistance = {};
-      requiredDistances.forEach((distance) => {
-        const candidates = attempts
-          .filter((attempt) => String(attempt.distance) === String(distance))
-          .sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return String(b.sessionDate).localeCompare(String(a.sessionDate));
-          });
-        if (candidates.length) bestByDistance[distance] = candidates[0];
-      });
-
-      if (requiredDistances.some((distance) => !bestByDistance[distance])) return null;
-
-      const totalScore = requiredDistances.reduce(
-        (sum, distance) => sum + (bestByDistance[distance]?.score || 0),
-        0
+      const candidateGroups = Array.from(
+        new Set(
+          [
+            profileRankingGroup,
+            ...allAttempts.map((attempt) => attempt.rankingGroup).filter(Boolean),
+          ].filter((group) => rankingGroupMatchesFilter(rankingFilters.rankingGroup, group))
+        )
       );
 
-      return {
-        userId: user.id,
-        name: getDisplayName(user),
-        groupName: user.groupName || "-",
-        regionCity: user.regionCity || "-",
-        gender: userGender,
-        division: normalizeDivisionLabel(userDivision || "-"),
-        rankingGroup: userRankingGroup || "-",
-        requiredDistances,
-        distanceScores: Object.fromEntries(
-          requiredDistances.map((distance) => [distance, bestByDistance[distance].score])
-        ),
-        totalScore,
-        latestDate: requiredDistances
-          .map((distance) => bestByDistance[distance].sessionDate || "")
-          .sort()
-          .slice(-1)[0],
-        isSampleData: Boolean(user.isSampleData),
-        sourceType: user.isSampleData ? "official" : "user",
-        claimedByUid: user.claimedByUid || "",
-        verifiedAthlete: Boolean(user.verifiedAthlete),
-      };
+      for (const candidateGroup of candidateGroups) {
+        const requiredDistances = getRequiredDistancesForRankingGroup(candidateGroup);
+        if (!requiredDistances.length) continue;
+
+        const attempts = allAttempts.filter((attempt) => (attempt.rankingGroup || candidateGroup) === candidateGroup);
+
+        const bestByDistance = {};
+        requiredDistances.forEach((distance) => {
+          const candidates = attempts
+            .filter((attempt) => String(attempt.distance) === String(distance))
+            .sort((a, b) => {
+              if (b.score !== a.score) return b.score - a.score;
+              return String(b.sessionDate).localeCompare(String(a.sessionDate));
+            });
+          if (candidates.length) bestByDistance[distance] = candidates[0];
+        });
+
+        if (requiredDistances.some((distance) => !bestByDistance[distance])) continue;
+
+        const totalScore = requiredDistances.reduce(
+          (sum, distance) => sum + (bestByDistance[distance]?.score || 0),
+          0
+        );
+
+        return {
+          userId: user.id,
+          name: getDisplayName(user),
+          groupName: user.groupName || "-",
+          regionCity: user.regionCity || "-",
+          gender: userGender,
+          division: normalizeDivisionLabel(userDivision || Object.values(bestByDistance)[0]?.division || "-"),
+          rankingGroup: candidateGroup || "-",
+          requiredDistances,
+          distanceScores: Object.fromEntries(
+            requiredDistances.map((distance) => [distance, bestByDistance[distance].score])
+          ),
+          totalScore,
+          latestDate: requiredDistances
+            .map((distance) => bestByDistance[distance].sessionDate || "")
+            .sort()
+            .slice(-1)[0],
+          isSampleData: Boolean(user.isSampleData),
+          sourceType: user.isSampleData ? "official" : "user",
+          claimedByUid: user.claimedByUid || "",
+          verifiedAthlete: Boolean(user.verifiedAthlete),
+        };
+      }
+
+      return null;
     })
     .filter(Boolean);
 }
@@ -7449,6 +7469,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             ) : (
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
                 현재 선택한 조건에서 랭킹에 반영된 기록이 없다.
+                {hideOfficialRecords && (rankingType === "total" || rankingType === "weeklyTotal") ? (
+                  <div className="mt-2 text-xs text-slate-500">
+                    종합 랭킹은 부문별 필수 4거리 기록이 모두 있어야 표시됩니다. 사용자 기록을 거리별로 보려면 거리 랭킹을 선택하세요.
+                  </div>
+                ) : null}
               </div>
             )}
           </CardContent>
