@@ -7130,22 +7130,20 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
           <div>
             <div className="text-xs font-semibold text-slate-500">입력 → 결과 → 비교 → 반복</div>
             <div className="mt-2 text-2xl font-bold text-slate-950">
-              {todayCount
-                ? hasTodayRoutine
+              { !hasTodayRoutine
+                ? "⚠ 오늘 루틴 기록 없음"
+                : todayCount
                   ? `🔥 ${recordStreak}일 연속 기록중`
-                  : "⚠ 오늘 루틴 기록 없음"
-                : hasTodayRoutine
-                  ? "⚠ 오늘 세션 기록 없음"
-                  : "⚠ 오늘 루틴/세션 기록 없음"}
+                  : "⚠ 오늘 세션 기록 없음"
+              }
             </div>
             <div className="mt-2 text-sm text-slate-600">
-              {todayCount
-                ? hasTodayRoutine
-                  ? `오늘 ${todayCount}개 기록 완료 · 개인 최고 ${allTimeBestScore}점 · 오늘 준비 상태 ${todayRoutineRate}%`
-                  : `오늘 ${todayCount}개 기록은 등록됐다. 아직 루틴 기록이 없어 준비 상태는 ${todayRoutineRate}%로 표시된다.`
-                : hasTodayRoutine
-                  ? `오늘 루틴은 기록됐다. 세션 기록을 입력하면 내 성장, 내 순위, 라이벌 차이를 확인할 수 있다.`
-                  : `오늘 루틴과 세션 기록이 없다. 루틴 체크 후 기록을 남기면 내 성장, 내 순위, 라이벌 차이를 바로 확인할 수 있다.`}
+              { !hasTodayRoutine
+                ? "오늘 루틴을 먼저 체크하면 준비 상태와 성장 흐름을 확인할 수 있다."
+                : todayCount
+                  ? `오늘 ${todayCount}개 기록 완료 · 개인 최고 ${allTimeBestScore}점 · 준비 상태 ${todayRoutineRate}%`
+                  : "오늘 세션 기록이 없다. 기록을 남기면 내 성장과 순위를 확인할 수 있다."
+              }
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
               <span className="rounded-full bg-slate-100 px-3 py-1">1. 내 기록</span>
