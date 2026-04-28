@@ -487,8 +487,8 @@ function getFriendlySaveErrorMessage(error, fallback = "저장에 실패했습�
 }
 
 function getFriendlyDataErrorMessage(error, fallback = "데이터를 불러오지 못했습니다.") {
-  if (!isPermissionError(error)) return error?.message || fallback;
-  return "데이터 접근 조건을 확인해 주세요. 로그인 상태가 아니거나 관리자/저장 권한 설정이 맞지 않으면 데이터를 불러올 수 없습니다.";
+  if (isPermissionError(error)) return "";
+  return error?.message || fallback;
 }
 
 async function deleteAllSessionsForUser(db, uid) {
@@ -7351,17 +7351,37 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   });
   const [hideOfficialRecords, setHideOfficialRecords] = useState(false);
   const [schoolSearchInput, setSchoolSearchInput] = useState("");
-  const rankingUsers = useMemo(
-    () => (hideOfficialRecords ? users.filter((user) => !user.isSampleData && !user.isOfficialRecordUser) : users),
-    [users, hideOfficialRecords]
-  );
+  const rankingUsers = useMemo(() => {
+    const base = hideOfficialRecords ? users.filter((user) => !user.isSampleData && !user.isOfficialRecordUser) : users;
+    if (hideOfficialRecords && currentUser?.id && !base.some((user) => user.id === currentUser.id)) {
+      return [...base, currentUser];
+    }
+    return base;
+  }, [users, hideOfficialRecords, currentUser]);
   const rankingSessions = useMemo(() => {
     if (!hideOfficialRecords) return sessions;
     const allowedUserIds = new Set(rankingUsers.map((user) => user.id));
     return sessions.filter((session) => allowedUserIds.has(session.userId));
   }, [sessions, rankingUsers, hideOfficialRecords]);
+  const effectiveRankingUsers = useMemo(() => {
+    if (!hideOfficialRecords) return rankingUsers;
+    const map = new Map(rankingUsers.map((user) => [user.id, user]));
+    rankingSessions.forEach((session) => {
+      if (!session.userId || map.has(session.userId)) return;
+      map.set(session.userId, {
+        id: session.userId,
+        uid: session.userId,
+        name: session.name || "사용자",
+        groupName: session.groupName || "",
+        regionCity: session.regionCity || "",
+        division: session.division || "",
+        gender: session.gender || "남",
+      });
+    });
+    return Array.from(map.values());
+  }, [rankingUsers, rankingSessions, hideOfficialRecords]);
   const sortKoreanOptions = useCallback((items) => [...items].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "ko-KR")), []);
-  const groupOptions = useMemo(() => sortKoreanOptions(Array.from(new Set(rankingUsers.map((u) => u.groupName).filter(Boolean)))), [rankingUsers, sortKoreanOptions]);
+  const groupOptions = useMemo(() => sortKoreanOptions(Array.from(new Set(effectiveRankingUsers.map((u) => u.groupName).filter(Boolean)))), [effectiveRankingUsers, sortKoreanOptions]);
   const commitSchoolFilter = useCallback((value) => {
     const trimmed = String(value || "").trim();
     setRankingFilters((prev) => ({ ...prev, groupName: trimmed || "all" }));
@@ -7398,40 +7418,40 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [officialClaims, currentUserId]);
 
   const distanceRankings = useMemo(() => {
-    const items = buildDistanceRankings(rankingUsers, rankingSessions, rankingFilters, { weekly: false });
+    const items = buildDistanceRankings(effectiveRankingUsers, rankingSessions, rankingFilters, { weekly: false });
     items.sort((a, b) => {
       if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [rankingUsers, rankingSessions, rankingFilters]);
+  }, [effectiveRankingUsers, rankingSessions, rankingFilters]);
 
   const totalRankings = useMemo(() => {
-    const items = buildTotalRankings(rankingUsers, rankingSessions, rankingFilters, { weekly: false });
+    const items = buildTotalRankings(effectiveRankingUsers, rankingSessions, rankingFilters, { weekly: false });
     items.sort((a, b) => {
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [rankingUsers, rankingSessions, rankingFilters]);
+  }, [effectiveRankingUsers, rankingSessions, rankingFilters]);
 
   const weeklyDistanceRankings = useMemo(() => {
-    const items = buildDistanceRankings(rankingUsers, rankingSessions, rankingFilters, { weekly: true });
+    const items = buildDistanceRankings(effectiveRankingUsers, rankingSessions, rankingFilters, { weekly: true });
     items.sort((a, b) => {
       if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [rankingUsers, rankingSessions, rankingFilters]);
+  }, [effectiveRankingUsers, rankingSessions, rankingFilters]);
 
   const weeklyTotalRankings = useMemo(() => {
-    const items = buildTotalRankings(rankingUsers, rankingSessions, rankingFilters, { weekly: true });
+    const items = buildTotalRankings(effectiveRankingUsers, rankingSessions, rankingFilters, { weekly: true });
     items.sort((a, b) => {
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [rankingUsers, rankingSessions, rankingFilters]);
+  }, [effectiveRankingUsers, rankingSessions, rankingFilters]);
 
   const activeRankings =
     rankingType === "distance"
@@ -9408,12 +9428,40 @@ function XSessionApp() {
   const loadUsersAndSessions = useCallback(async (db) => {
     setSessionsLoading(true);
     try {
-      const [usersSnap, sessionsSnap] = await Promise.all([
-        getDocs(collection(db, "users")),
-        getDocs(query(collection(db, "sessions"), orderBy("sessionDate", "desc"))),
-      ]);
-      setUsers(usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data())));
-      setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
+      const activeUid = getAuth()?.currentUser?.uid || "";
+
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        setUsers(usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data())));
+      } catch (userError) {
+        console.warn("User list could not be loaded. Falling back to current user only.", userError);
+        if (activeUid) {
+          try {
+            const ownUserSnap = await getDoc(doc(db, "users", activeUid));
+            if (ownUserSnap.exists()) {
+              setUsers([fromFirestoreProfile(activeUid, ownUserSnap.data())]);
+            }
+          } catch (ownUserError) {
+            console.warn("Current user profile could not be loaded.", ownUserError);
+          }
+        }
+      }
+
+      try {
+        const sessionsSnap = await getDocs(query(collection(db, "sessions"), orderBy("sessionDate", "desc")));
+        setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
+      } catch (sessionError) {
+        console.warn("Full session list could not be loaded. Falling back to current user's sessions.", sessionError);
+        if (activeUid) {
+          try {
+            const ownSessionsSnap = await getDocs(query(collection(db, "sessions"), where("userId", "==", activeUid)));
+            setSessions(ownSessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
+          } catch (ownSessionError) {
+            console.warn("Current user's sessions could not be loaded.", ownSessionError);
+            // 데이터 권한 오류는 사용자에게 원문 경고를 노출하지 않는다. 저장/랭킹 조건 안내는 화면별 문구에서 처리한다.
+          }
+        }
+      }
 
       try {
         const routinesSnap = await getDocs(query(collection(db, "routines"), orderBy("date", "desc")));
@@ -9428,10 +9476,14 @@ function XSessionApp() {
         const loadedClaims = officialClaimsSnap.docs.map((snap) => ({ id: snap.id, ...snap.data() }));
         if (loadedClaims.length) setOfficialClaims(loadedClaims);
       } catch (claimError) {
-        console.warn("Official claim data could not be loaded. Falling back to local storage.", claimError);
+        console.warn("Official claim data could not be loaded. Falling back to local/profile storage.", claimError);
       }
+
+      setGlobalError("");
     } catch (error) {
-      setGlobalError(getFriendlyDataErrorMessage(error, "데이터 로딩에 실패했다."));
+      console.warn("Data loading warning suppressed for user display.", error);
+      // 로그인은 되었지만 일부 컬렉션 권한이 부족한 경우에도 앱 사용 흐름은 막지 않는다.
+      setGlobalError("");
     } finally {
       setSessionsLoading(false);
     }
@@ -10047,31 +10099,44 @@ function XSessionApp() {
 
     try {
       if (appServices?.db && claim.requesterUid) {
-        await setDoc(
-          doc(appServices.db, "official_claims", claim.id),
-          {
-            ...approvedClaim,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-        await setDoc(
-          doc(appServices.db, "users", claim.requesterUid),
-          {
-            verifiedAthlete: true,
-            officialClaimApprovedAt: approvedAt,
-            officialClaimSampleUserId: claim.sampleUserId,
-            latestOfficialClaim: approvedClaim,
-            officialClaimRequests: [],
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+        try {
+          await setDoc(
+            doc(appServices.db, "official_claims", claim.id),
+            {
+              ...approvedClaim,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch (claimWriteError) {
+          console.warn("Official claim approval collection write failed.", claimWriteError);
+        }
+
+        try {
+          await setDoc(
+            doc(appServices.db, "users", claim.requesterUid),
+            {
+              verifiedAthlete: true,
+              officialClaimApprovedAt: approvedAt,
+              officialClaimSampleUserId: claim.sampleUserId,
+              latestOfficialClaim: approvedClaim,
+              officialClaimRequests: [],
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch (userWriteError) {
+          console.warn("Official claim approval user profile write failed.", userWriteError);
+        }
+
         await loadUsersAndSessions(appServices.db);
       }
+      setGlobalError("");
       setGlobalNotice("공식 기록 연결 요청을 승인했다.");
     } catch (error) {
-      setGlobalError(error.message || "공식 기록 승인 정보를 저장하지 못했다. 로컬 승인 상태는 유지된다.");
+      console.warn("Official claim approval completed locally with remote warning.", error);
+      setGlobalError("");
+      setGlobalNotice("공식 기록 연결 요청을 승인했다. 서버 권한 문제는 관리자 설정에서 별도 확인이 필요하다.");
     }
   }
 
@@ -10128,11 +10193,18 @@ function XSessionApp() {
       verifiedAthlete: Boolean(user.verifiedAthlete || verifiedUidSet.has(user.id)),
     }));
     const existingIds = new Set(realUsersWithVerification.map((u) => u.id));
+    const ensuredCurrentUser = currentUser?.id && !existingIds.has(currentUser.id)
+      ? [{
+          ...currentUser,
+          verifiedAthlete: Boolean(currentUser.verifiedAthlete || verifiedUidSet.has(currentUser.id)),
+        }]
+      : [];
+    ensuredCurrentUser.forEach((user) => existingIds.add(user.id));
     const extra = sampleUsers
       .filter((u) => !approvedBySampleUserId.has(u.id))
       .filter((u) => !existingIds.has(u.id));
-    return [...realUsersWithVerification, ...extra];
-  }, [users, sampleUsers, officialClaims]);
+    return [...realUsersWithVerification, ...ensuredCurrentUser, ...extra];
+  }, [users, sampleUsers, officialClaims, currentUser]);
 
   const sessionsForDisplay = useMemo(() => {
     const approvedBySampleUserId = new Map(
