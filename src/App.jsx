@@ -9945,7 +9945,7 @@ function XSessionApp() {
   }
 
 
-  async async function handleRequestOfficialClaim(officialUser) {
+  async function handleRequestOfficialClaim(officialUser) {
     if (!profile || !officialUser?.isSampleData) return;
     if (!isOfficialProfileMatch(officialUser, profile)) {
       setGlobalError("이름, 학교/소속, 성별이 공식기록과 일치할 때만 연결 요청이 가능하다.");
