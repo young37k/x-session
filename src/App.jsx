@@ -8679,6 +8679,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
   const [adminBriefNotices, setAdminBriefNotices] = useState([]);
   const [adminPublishedLoading, setAdminPublishedLoading] = useState(false);
   const [deletingPublishedId, setDeletingPublishedId] = useState("");
+  const [selectedApprovedClaim, setSelectedApprovedClaim] = useState(null);
 
   useEffect(() => {
     try {
@@ -9034,12 +9035,57 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
           )}
 
           {approvedOfficialClaims.length ? (
-            <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
-              승인 완료 {approvedOfficialClaims.length}건 · 승인된 공식 기록은 요청자 계정의 기록으로 연결되어 표시된다.
+            <div className="grid gap-2 rounded-2xl bg-emerald-50 p-3 text-xs text-emerald-900">
+              <div className="font-semibold">승인 완료 {approvedOfficialClaims.length}건</div>
+              {approvedOfficialClaims.map((claim) => (
+                <button
+                  key={claim.id}
+                  type="button"
+                  className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-xl bg-white px-3 py-2 text-left"
+                  onDoubleClick={() => setSelectedApprovedClaim(claim)}
+                  title="더블 클릭하면 승인 상세 내용을 확인한다."
+                >
+                  <span className="truncate font-semibold">
+                    {claim.requesterName || "요청자"} → {claim.officialName || "공식기록"}
+                  </span>
+                  <span className="hidden text-[11px] text-slate-500 sm:inline">
+                    요청 {formatDateOnly(claim.createdAt)}
+                  </span>
+                  <span className="text-[11px] text-emerald-700">
+                    승인 {formatDateOnly(claim.approvedAt)}
+                  </span>
+                </button>
+              ))}
             </div>
           ) : null}
         </CardContent>
       </Card>
+
+      <Dialog open={Boolean(selectedApprovedClaim)} onOpenChange={(open) => !open && setSelectedApprovedClaim(null)}>
+        <DialogContent className="rounded-[28px]">
+          <DialogHeader>
+            <DialogTitle>승인 완료 기록 상세</DialogTitle>
+            <DialogDescription>공식 기록 연결 승인 내역이다.</DialogDescription>
+          </DialogHeader>
+          {selectedApprovedClaim ? (
+            <div className="grid gap-2 rounded-2xl bg-slate-50 p-4 text-sm">
+              <div><b>요청자:</b> {selectedApprovedClaim.requesterName || "-"} / {selectedApprovedClaim.requesterEmail || "-"}</div>
+              <div><b>요청자 소속:</b> {selectedApprovedClaim.requesterGroup || "-"}</div>
+              <div><b>공식기록:</b> {selectedApprovedClaim.officialName || "-"} / {selectedApprovedClaim.officialGroup || "-"}</div>
+              <div><b>성별/구분:</b> {selectedApprovedClaim.gender || "-"} / {selectedApprovedClaim.rankingGroup || "-"}</div>
+              <div><b>요청일:</b> {formatDateOnly(selectedApprovedClaim.createdAt)}</div>
+              <div><b>승인일:</b> {formatDateOnly(selectedApprovedClaim.approvedAt)}</div>
+              <div><b>승인자:</b> {selectedApprovedClaim.approvedBy || "-"}</div>
+              <div><b>상태:</b> 승인 완료</div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" className="rounded-2xl bg-blue-900 hover:bg-blue-800" onClick={() => setSelectedApprovedClaim(null)}>
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
