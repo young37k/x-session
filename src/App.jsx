@@ -285,6 +285,7 @@ const DEFAULT_UI = { activeTab: "routine" };
 
 const ADMIN_EMAILS = ["theyoung37k@gmail.com", "5@gmail.com"];
 const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
+const ADMIN_REVIEWED_USERS_KEY = "elbowshot_admin_reviewed_users";
 
 const OFFICIAL_CLAIM_STORAGE_KEY = "elbowshot_official_claim_requests";
 
@@ -511,6 +512,24 @@ function getStoredAdminEmails() {
     return [];
   }
 }
+function getStoredReviewedUserIds() {
+  try {
+    const raw = localStorage.getItem(ADMIN_REVIEWED_USERS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map((item) => String(item || "")).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredReviewedUserIds(ids = []) {
+  try {
+    localStorage.setItem(ADMIN_REVIEWED_USERS_KEY, JSON.stringify(Array.from(new Set(ids))));
+  } catch {
+    // ignore
+  }
+}
+
 
 function getAllAdminEmails() {
   return Array.from(new Set([...ADMIN_EMAILS, ...getStoredAdminEmails()]));
@@ -5457,7 +5476,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
 }
 
 
-function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
+function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAlertCount = 0 }) {
   const navs = [
     { key: "record", label: "X-Session", icon: Target },
     { key: "dashboard", label: "X-Dashboard", icon: BarChart3 },
@@ -5467,7 +5486,7 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
     { key: "brief", label: "X-Brief", icon: Archive },
     { key: "routine", label: "X-Routine", icon: Settings },
     { key: "profile", label: "Profile", icon: User },
-    ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield }] : []),
+    ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield, alertCount: adminAlertCount }] : []),
   ];
 
   return (
@@ -5502,6 +5521,11 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser }) {
                   className="gap-2 rounded-2xl px-3 data-[state=active]:bg-white data-[state=active]:shadow-sm"
                 >
                   <Icon className="h-4 w-4" /> {item.label}
+                  {item.alertCount > 0 ? (
+                    <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">
+                      {item.alertCount > 99 ? "99+" : item.alertCount}
+                    </span>
+                  ) : null}
                 </TabsTrigger>
               );
             })}
@@ -8629,7 +8653,7 @@ function ProfilePanel({ user, onUpdate, saving }) {
 }
 
 
-function AdminPanel({ currentUser, users, sessions, appServices, officialClaims = [], onApproveOfficialClaim, onRejectOfficialClaim, onRefresh, onStageRefresh, onBriefRefresh }) {
+function AdminPanel({ currentUser, users, sessions, appServices, officialClaims = [], reviewedUserIds = [], onMarkUserReviewed, onMarkAllUsersReviewed, onApproveOfficialClaim, onRejectOfficialClaim, onRefresh, onStageRefresh, onBriefRefresh }) {
   const [emailRegion, setEmailRegion] = useState("all");
   const [emailDivision, setEmailDivision] = useState("all");
   const [emailSubject, setEmailSubject] = useState("[X-SESSION 안내]");
@@ -8669,6 +8693,8 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
   }, [extraAdmins]);
 
   const realUsers = useMemo(() => users.filter((user) => !user.isSampleData), [users]);
+  const reviewedUserIdSet = useMemo(() => new Set(reviewedUserIds || []), [reviewedUserIds]);
+  const unreviewedUsers = useMemo(() => realUsers.filter((user) => !reviewedUserIdSet.has(user.id)), [realUsers, reviewedUserIdSet]);
   const realSessions = useMemo(() => sessions.filter((session) => !session.isSampleData), [sessions]);
   const profileOfficialClaims = useMemo(() => {
     const claims = [];
@@ -8965,6 +8991,10 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
             <div className="text-sm text-slate-500">실기록 수</div>
             <div className="mt-2 text-3xl font-bold">{realSessions.length}</div>
           </div>
+          <div className="min-w-0 rounded-2xl bg-red-50 p-4">
+            <div className="text-sm text-red-600">미확인 가입자</div>
+            <div className="mt-2 text-3xl font-bold text-red-700">{unreviewedUsers.length}</div>
+          </div>
         </CardContent>
       </Card>
 
@@ -9068,6 +9098,12 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
               placeholder="이름, 이메일, 소속, 지역 검색"
             />
           </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-600">
+            <span>미확인 가입자 {unreviewedUsers.length}명</span>
+            <Button type="button" variant="outline" className="h-8 rounded-xl px-3 text-xs" onClick={() => onMarkAllUsersReviewed?.(realUsers.map((user) => user.id))}>
+              가입자 전체 확인
+            </Button>
+          </div>
           <div className="grid gap-2">
             {visibleUsers.length === 0 ? (
               <div className="rounded-2xl border border-slate-200 px-4 py-6 text-sm text-slate-500">
@@ -9077,27 +9113,33 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
               visibleUsers.map((user) => {
                 const userSessions = realSessions.filter((session) => session.userId === user.id);
                 return (
-                  <div key={user.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div
-                      className="min-w-0 cursor-pointer"
-                      onDoubleClick={() => setSelectedUser(user)}
+                  <div key={user.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-2 rounded-2xl border border-slate-200 px-3 py-2 text-sm">
+                    <button
+                      type="button"
+                      className="min-w-0 cursor-pointer text-left"
+                      onDoubleClick={() => {
+                        setSelectedUser(user);
+                        onMarkUserReviewed?.(user.id);
+                      }}
                       title="더블 클릭하면 자세한 정보 보기"
                     >
-                      <div className="truncate font-semibold">{getDisplayName(user)}</div>
-                      <div className="truncate text-sm text-slate-500">{user.email || "이메일 없음"}</div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge className="rounded-full bg-slate-700 text-white">기록 {userSessions.length}</Badge>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-2xl"
-                        disabled={deletingUserId === user.id}
-                        onClick={() => deleteUserData(user)}
-                      >
-                        {deletingUserId === user.id ? "삭제 중..." : "가입자 삭제"}
-                      </Button>
-                    </div>
+                      <span className="truncate font-semibold">{getDisplayName(user)}</span>
+                      <span className="ml-2 hidden truncate text-xs text-slate-500 sm:inline">{user.groupName || user.email || "소속 없음"}</span>
+                    </button>
+                    {!reviewedUserIdSet.has(user.id) ? (
+                      <Badge className="rounded-full bg-red-600 text-white">신규</Badge>
+                    ) : (
+                      <Badge className="rounded-full bg-slate-200 text-slate-700">확인</Badge>
+                    )}
+                    <Badge className="rounded-full bg-slate-700 text-white">기록 {userSessions.length}</Badge>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-8 rounded-xl px-2 text-xs"
+                      onClick={() => onMarkUserReviewed?.(user.id)}
+                    >
+                      확인
+                    </Button>
                   </div>
                 );
               })
@@ -9397,6 +9439,7 @@ function XSessionApp() {
   const [stageRefreshKey, setStageRefreshKey] = useState(0);
   const [briefRefreshKey, setBriefRefreshKey] = useState(0);
   const [officialClaims, setOfficialClaims] = useState(() => readOfficialClaimsFromStorage());
+  const [reviewedUserIds, setReviewedUserIds] = useState(() => getStoredReviewedUserIds());
   const pendingProfileRef = useRef(null);
 
 
@@ -9405,6 +9448,19 @@ function XSessionApp() {
   useEffect(() => {
     writeOfficialClaimsToStorage(officialClaims);
   }, [officialClaims]);
+
+  useEffect(() => {
+    writeStoredReviewedUserIds(reviewedUserIds);
+  }, [reviewedUserIds]);
+
+  const markUserReviewed = useCallback((userId) => {
+    if (!userId) return;
+    setReviewedUserIds((prev) => Array.from(new Set([...prev, userId])));
+  }, []);
+
+  const markAllUsersReviewed = useCallback((userIds = []) => {
+    setReviewedUserIds((prev) => Array.from(new Set([...prev, ...userIds.filter(Boolean)])));
+  }, []);
 
 
   useEffect(() => {
@@ -10274,6 +10330,12 @@ function XSessionApp() {
   );
 
   const isAdminUser = useMemo(() => isAdminEmail(currentUser?.email), [currentUser]);
+  const pendingOfficialClaimCount = useMemo(() => (officialClaims || []).filter((claim) => claim.status === "pending").length, [officialClaims]);
+  const unreviewedUserCount = useMemo(() => {
+    const reviewed = new Set(reviewedUserIds || []);
+    return users.filter((user) => !user.isSampleData && !reviewed.has(user.id)).length;
+  }, [users, reviewedUserIds]);
+  const adminAlertCount = pendingOfficialClaimCount + unreviewedUserCount;
   const adminEmailGuard = isAdminEmail;
 
   return (
@@ -10293,7 +10355,7 @@ function XSessionApp() {
           </motion.div>
         ) : (
           <>
-            <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} />
+            <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} />
 
             {globalNotice && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{globalNotice}</div>}
             {globalError && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
@@ -10363,7 +10425,7 @@ function XSessionApp() {
               {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
               {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} sessions={mySessions} onRoutineSaved={() => loadUsersAndSessions(appServices.db)} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
-              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} officialClaims={officialClaims} onApproveOfficialClaim={handleApproveOfficialClaim} onRejectOfficialClaim={handleRejectOfficialClaim} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
+              {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} officialClaims={officialClaims} reviewedUserIds={reviewedUserIds} onMarkUserReviewed={markUserReviewed} onMarkAllUsersReviewed={markAllUsersReviewed} onApproveOfficialClaim={handleApproveOfficialClaim} onRejectOfficialClaim={handleRejectOfficialClaim} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
             </motion.div>
           </>
         )}
