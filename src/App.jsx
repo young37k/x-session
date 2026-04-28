@@ -4475,6 +4475,10 @@ function fromFirestoreProfile(uidValue, data) {
     avatar: "",
     photoURL: "",
     photoPath: "",
+    officialClaimRequests: Array.isArray(data.officialClaimRequests) ? data.officialClaimRequests : [],
+    latestOfficialClaim: data.latestOfficialClaim || null,
+    verifiedAthlete: Boolean(data.verifiedAthlete),
+    officialClaimSampleUserId: data.officialClaimSampleUserId || "",
   };
 }
 
@@ -8615,8 +8619,31 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
 
   const realUsers = useMemo(() => users.filter((user) => !user.isSampleData), [users]);
   const realSessions = useMemo(() => sessions.filter((session) => !session.isSampleData), [sessions]);
-  const pendingOfficialClaims = useMemo(() => (officialClaims || []).filter((claim) => claim.status === "pending"), [officialClaims]);
-  const approvedOfficialClaims = useMemo(() => (officialClaims || []).filter((claim) => claim.status === "approved"), [officialClaims]);
+  const profileOfficialClaims = useMemo(() => {
+    const claims = [];
+    realUsers.forEach((user) => {
+      const requests = Array.isArray(user.officialClaimRequests) ? user.officialClaimRequests : [];
+      requests.forEach((claim) => {
+        if (claim?.id) claims.push({ ...claim, requesterUid: claim.requesterUid || user.id, requesterEmail: claim.requesterEmail || user.email || "" });
+      });
+      if (user.latestOfficialClaim?.id) {
+        claims.push({ ...user.latestOfficialClaim, requesterUid: user.latestOfficialClaim.requesterUid || user.id, requesterEmail: user.latestOfficialClaim.requesterEmail || user.email || "" });
+      }
+    });
+    return claims;
+  }, [realUsers]);
+
+  const mergedOfficialClaims = useMemo(() => {
+    const map = new Map();
+    [...(officialClaims || []), ...profileOfficialClaims].forEach((claim) => {
+      if (!claim?.id) return;
+      map.set(claim.id, { ...map.get(claim.id), ...claim });
+    });
+    return Array.from(map.values());
+  }, [officialClaims, profileOfficialClaims]);
+
+  const pendingOfficialClaims = useMemo(() => mergedOfficialClaims.filter((claim) => claim.status === "pending"), [mergedOfficialClaims]);
+  const approvedOfficialClaims = useMemo(() => mergedOfficialClaims.filter((claim) => claim.status === "approved"), [mergedOfficialClaims]);
 
   const divisionOptions = useMemo(
     () => Array.from(new Set(realUsers.map((user) => user.division).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko")),
@@ -9918,7 +9945,7 @@ function XSessionApp() {
   }
 
 
-  async function handleRequestOfficialClaim(officialUser) {
+  async async function handleRequestOfficialClaim(officialUser) {
     if (!profile || !officialUser?.isSampleData) return;
     if (!isOfficialProfileMatch(officialUser, profile)) {
       setGlobalError("이름, 학교/소속, 성별이 공식기록과 일치할 때만 연결 요청이 가능하다.");
@@ -9952,15 +9979,35 @@ function XSessionApp() {
       return [...prev, nextClaim];
     });
 
+    let savedToFirestore = false;
     try {
       if (appServices?.db) {
         await setDoc(doc(appServices.db, "official_claims", requestId), {
           ...nextClaim,
           updatedAt: serverTimestamp(),
         }, { merge: true });
+        savedToFirestore = true;
       }
     } catch (error) {
-      console.warn("Official claim request saved locally only.", error);
+      console.warn("Official claim collection write failed. Trying user profile fallback.", error);
+    }
+
+    try {
+      if (appServices?.db && profile.id) {
+        await setDoc(doc(appServices.db, "users", profile.id), {
+          latestOfficialClaim: nextClaim,
+          officialClaimRequests: [nextClaim],
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        savedToFirestore = true;
+      }
+    } catch (error) {
+      console.warn("Official claim profile fallback write failed.", error);
+    }
+
+    if (!savedToFirestore) {
+      setGlobalError("공식 기록 연결 요청을 서버에 저장하지 못했다. Firestore Rules를 확인해야 관리자에게 보인다.");
+      return;
     }
 
     setGlobalNotice("공식 기록 연결 요청을 보냈다. 관리자가 확인 후 승인하면 인증 선수로 표시된다.");
@@ -9997,6 +10044,8 @@ function XSessionApp() {
             verifiedAthlete: true,
             officialClaimApprovedAt: approvedAt,
             officialClaimSampleUserId: claim.sampleUserId,
+            latestOfficialClaim: approvedClaim,
+            officialClaimRequests: [],
             updatedAt: serverTimestamp(),
           },
           { merge: true }
@@ -10027,6 +10076,13 @@ function XSessionApp() {
           ...rejectedClaim,
           updatedAt: serverTimestamp(),
         }, { merge: true });
+        if (claim.requesterUid) {
+          await setDoc(doc(appServices.db, "users", claim.requesterUid), {
+            latestOfficialClaim: rejectedClaim,
+            officialClaimRequests: [],
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+        }
       }
     } catch (error) {
       console.warn("Official claim rejection saved locally only.", error);
