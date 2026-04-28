@@ -415,7 +415,7 @@ function getRoutineSessionCorrelation(routines = [], sessions = []) {
 }
 
 function getDynamicMotivation(rate) {
-  if (rate >= 100) return "완벽한 준비. 오늘 기록으로 증명해라.";
+  if (rate >= 100) return "최적 준비 상태. 오늘 기록으로 확인해보자.";
   if (rate >= 80) return "좋은 흐름이다. 이 리듬 유지하자.";
   if (rate >= 60) return "나쁘지 않다. 한두 개만 더 채워보자.";
   if (rate >= 40) return "시작은 했다. 조금만 더 밀어붙이자.";
@@ -423,7 +423,7 @@ function getDynamicMotivation(rate) {
 }
 
 function getRoutineReadinessMessage(rate) {
-  if (rate >= 100) return "풀버프 상태. 기록 입력으로 오늘 컨디션을 검증해라.";
+  if (rate >= 100) return "최적 준비 상태. 이제 기록으로 오늘의 흐름을 확인해보자.";
   if (rate >= 80) return "상위 준비 상태. 오늘 기록과 연결할 가치가 높다.";
   if (rate >= 50) return "중간 준비 상태. 기록은 남기되 루틴 누락 원인을 확인해라.";
   return "준비 상태가 낮다. 짧은 스트레칭이나 멘탈 루틴부터 채워라.";
@@ -6885,6 +6885,33 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
 
   const stats = useMemo(() => calculateRoutineStats(items), [items]);
   const correlation = useMemo(() => getRoutineSessionCorrelation(routines, sessions), [routines, sessions]);
+  const [routineCompleteDialogOpen, setRoutineCompleteDialogOpen] = useState(false);
+
+  function playRoutineCompleteSound() {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      const notes = [523.25, 659.25, 783.99];
+      notes.forEach((frequency, index) => {
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.value = frequency;
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+        const start = ctx.currentTime + index * 0.11;
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.08, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+        oscillator.start(start);
+        oscillator.stop(start + 0.18);
+      });
+      window.setTimeout(() => ctx.close?.(), 700);
+    } catch {
+      // sound effect unavailable
+    }
+  }
 
   function updateItem(id, patch) {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
@@ -6921,9 +6948,13 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
       await setDoc(doc(appServices.db, "routines", routineId), payload, { merge: true });
       setNotice(
         normalizedStats.completionRate === 100
-          ? "🔥 훈련 전 준비 완료. 오늘의 성실함이 실력을 만든다."
+          ? "🔥 최적 준비 상태. 오늘의 성실함이 실력을 만든다."
           : `훈련 전 준비 상태 ${normalizedStats.completionRate}% 저장 완료.`
       );
+      if (normalizedStats.completionRate === 100) {
+        playRoutineCompleteSound();
+        setRoutineCompleteDialogOpen(true);
+      }
       await onRoutineSaved?.();
     } catch (error) {
       const permissionMessage = String(error?.message || "").includes("permission")
@@ -7063,7 +7094,45 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
             )}
           </div>
         </CardContent>
-      </Card>
+      <Dialog open={routineCompleteDialogOpen} onOpenChange={setRoutineCompleteDialogOpen}>
+        <DialogContent className="overflow-hidden rounded-[32px] border-0 bg-white p-0 shadow-2xl">
+          <div className="relative bg-gradient-to-br from-blue-950 via-slate-900 to-red-800 p-6 text-white">
+            <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10 blur-xl" />
+            <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-yellow-300/20 blur-2xl" />
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black">🎯 최적 준비 상태</DialogTitle>
+              <DialogDescription className="text-white/80">
+                훈련 전 루틴 100% 완료. 이제 기록으로 오늘의 흐름을 확인해보자.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 grid gap-2 rounded-3xl bg-white/10 p-4 text-sm">
+              <div>✅ 준비 루틴 완료</div>
+              <div>🔥 오늘의 성실함이 실력을 만든다</div>
+              <div>📈 기록을 남기면 성장 흐름에 반영된다</div>
+            </div>
+            <DialogFooter className="mt-5 gap-2 sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl border-white/40 bg-white/10 text-white hover:bg-white/20"
+                onClick={() => setRoutineCompleteDialogOpen(false)}
+              >
+                닫기
+              </Button>
+              <Button
+                type="button"
+                className="rounded-2xl bg-white text-blue-950 hover:bg-slate-100"
+                onClick={() => {
+                  setRoutineCompleteDialogOpen(false);
+                  onStartSession?.();
+                }}
+              >
+                X-Session 기록 시작
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
