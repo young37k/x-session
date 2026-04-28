@@ -7470,19 +7470,36 @@ function StatCard({ title, value, sub, icon: Icon, tone }) {
 
 
 function RankingBoard({ users, sessions, currentUser, currentUserId, officialClaims = [], onRequestOfficialClaim }) {
-  const [rankingType, setRankingType] = useState("distance");
+  const initialRankingGroup = getRankingGroup(currentUser?.division || "", currentUser?.gender || "남") || "all";
+  const initialGender = currentUser?.gender || "all";
+  const [rankingType, setRankingType] = useState("total");
   const [rankingFilters, setRankingFilters] = useState({
     distance: "all",
-    rankingGroup: "all",
+    rankingGroup: initialRankingGroup,
     groupName: "all",
     regionCity: "all",
-    gender: "all",
+    gender: initialGender,
     dateFilter: "all",
     customDate: getCurrentLocalDateString(),
   });
   const [hideOfficialRecords, setHideOfficialRecords] = useState(false);
   const [schoolSearchInput, setSchoolSearchInput] = useState("");
   const [showAllRankings, setShowAllRankings] = useState(false);
+  const initialRankingAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (initialRankingAppliedRef.current || !currentUser?.id) return;
+    initialRankingAppliedRef.current = true;
+    const nextRankingGroup = getRankingGroup(currentUser.division || "", currentUser.gender || "남") || "all";
+    setRankingType("total");
+    setRankingFilters((prev) => ({
+      ...prev,
+      distance: "all",
+      rankingGroup: nextRankingGroup,
+      gender: currentUser.gender || "all",
+    }));
+  }, [currentUser?.id, currentUser?.division, currentUser?.gender]);
+
   const rankingUsers = useMemo(() => {
     const base = hideOfficialRecords ? users.filter((user) => !user.isSampleData && !user.isOfficialRecordUser) : users;
     if (hideOfficialRecords && currentUser?.id && !base.some((user) => user.id === currentUser.id)) {
@@ -7735,7 +7752,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             ) : null}
             <div className="mt-2 font-semibold text-blue-950">👉 기록하면 순위에 반영됩니다.</div>
             <div className="mt-2 text-[11px] text-slate-500">
-              평소에는 상위 50명만 가볍게 표시하고, 필요할 때만 전체 보기를 불러옵니다.
+              첫 화면은 내 구분/성별 기준 종합랭킹 상위 50명만 가볍게 표시하고, 필요할 때만 전체 보기를 불러옵니다.
             </div>
           </div>
 
