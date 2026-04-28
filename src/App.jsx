@@ -6401,6 +6401,70 @@ function getCurrentRecordStreak(sessions = []) {
   return streak;
 }
 
+
+function buildAutoGoalInsight(sessions = []) {
+  const completed = getCompletedUserSessions(sessions)
+    .slice()
+    .sort((a, b) => {
+      const byDate = String(b.sessionDate || b.updatedAt || "").localeCompare(String(a.sessionDate || a.updatedAt || ""));
+      if (byDate !== 0) return byDate;
+      return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+    });
+
+  const recent = completed.slice(0, 7);
+  const scores = recent
+    .map((session) => getSessionScoreForInsight(session))
+    .filter((score) => Number.isFinite(score) && score > 0);
+
+  if (scores.length < 3) {
+    return {
+      ready: false,
+      count: scores.length,
+      currentAverage: 0,
+      recentBest: 0,
+      nextTarget: null,
+      targetStep: 0,
+      latestScore: scores[0] || 0,
+      achievedPreviousTarget: false,
+      previousTarget: null,
+      message: "목표 생성은 최근 기록 3회 이상부터 시작됩니다.",
+    };
+  }
+
+  const currentAverage = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
+  const recentBest = Math.max(...scores);
+  const growthGap = Math.max(0, recentBest - currentAverage);
+  const targetStep = Math.max(3, Math.min(10, Math.round(growthGap * 0.5) || 3));
+  const nextTarget = Math.min(1440, currentAverage + targetStep);
+
+  const previousScores = scores.slice(1);
+  let previousTarget = null;
+  if (previousScores.length >= 3) {
+    const previousAverage = Math.round(previousScores.reduce((sum, score) => sum + score, 0) / previousScores.length);
+    const previousBest = Math.max(...previousScores);
+    const previousGap = Math.max(0, previousBest - previousAverage);
+    const previousStep = Math.max(3, Math.min(10, Math.round(previousGap * 0.5) || 3));
+    previousTarget = Math.min(1440, previousAverage + previousStep);
+  }
+
+  const latestScore = scores[0] || 0;
+  const achievedPreviousTarget = previousTarget !== null && latestScore >= previousTarget;
+
+  return {
+    ready: true,
+    count: scores.length,
+    currentAverage,
+    recentBest,
+    nextTarget,
+    targetStep,
+    latestScore,
+    achievedPreviousTarget,
+    previousTarget,
+    message: `현재 평균 ${currentAverage}점 · 최근 최고 ${recentBest}점 · 다음 목표 ${nextTarget}점`,
+  };
+}
+
+
 function buildPostSaveInsight({ savedSession, users = [], sessions = [], currentUser }) {
   const completedSavedSession = {
     ...savedSession,
@@ -6418,10 +6482,12 @@ function buildPostSaveInsight({ savedSession, users = [], sessions = [], current
     })[0];
 
   const score = getSessionScoreForInsight(completedSavedSession);
-  const previousBest = getCompletedUserSessions(sessions)
-    .filter((session) => session.userId === currentUser?.id)
-    .reduce((best, session) => Math.max(best, getSessionScoreForInsight(session)), 0);
+  const myPreviousSessions = getCompletedUserSessions(sessions).filter((session) => session.userId === currentUser?.id);
+  const goalBefore = buildAutoGoalInsight(myPreviousSessions);
+  const goalAfter = buildAutoGoalInsight([...myPreviousSessions, completedSavedSession]);
+  const previousBest = myPreviousSessions.reduce((best, session) => Math.max(best, getSessionScoreForInsight(session)), 0);
   const isPersonalBest = score > previousBest;
+  const goalAchieved = goalBefore.ready && goalBefore.nextTarget !== null && score >= goalBefore.nextTarget;
 
   const displayUsers = users.some((user) => user.id === currentUser?.id)
     ? users
@@ -6438,6 +6504,10 @@ function buildPostSaveInsight({ savedSession, users = [], sessions = [], current
       rankDelta: 0,
       rivalText: "랭킹 비교를 위해서는 36발 거리 기록이 필요하다.",
       personalBest: isPersonalBest,
+      goalAchieved,
+      previousTarget: goalBefore.nextTarget,
+      nextTarget: goalAfter.nextTarget,
+      goalMessage: goalAfter.message,
       streak: getCurrentRecordStreak(comparisonSessions.filter((session) => session.userId === currentUser?.id)),
     };
   }
@@ -6485,6 +6555,10 @@ function buildPostSaveInsight({ savedSession, users = [], sessions = [], current
       ? `${rival.name} (${rival.groupName || "같은 학교"}) · ${rivalGap}점 차이`
       : "같은 조건의 라이벌 데이터가 더 쌓이면 자동으로 표시된다.",
     personalBest: isPersonalBest,
+    goalAchieved,
+    previousTarget: goalBefore.nextTarget,
+    nextTarget: goalAfter.nextTarget,
+    goalMessage: goalAfter.message,
     streak: getCurrentRecordStreak(comparisonSessions.filter((session) => session.userId === currentUser.id)),
   };
 }
@@ -7525,6 +7599,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   const trend = getTrendInsight(filteredMine);
   const distancePerformance = getDistancePerformance(allMySessions.filter((s) => isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)));
   const weakZoneInsight = getWeakZoneInsight(filteredMine);
+  const autoGoal = useMemo(() => buildAutoGoalInsight(filteredMine), [filteredMine]);
 
   return (
     <div className="grid gap-4">
@@ -7608,7 +7683,26 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             </div>
           ) : (
             <>
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-4">
+                <Card className="rounded-[24px] border-0 bg-emerald-50 shadow-none">
+                  <CardContent className="p-5">
+                    <div className="mb-2 text-sm text-emerald-700">자동 목표</div>
+                    {autoGoal.ready ? (
+                      <>
+                        <div className="text-3xl font-bold text-emerald-900">{autoGoal.nextTarget}점</div>
+                        <div className="mt-1 text-xs text-emerald-700">
+                          평균 {autoGoal.currentAverage} · 최고 {autoGoal.recentBest} · +{autoGoal.targetStep}점 도전
+                        </div>
+                        {autoGoal.achievedPreviousTarget ? (
+                          <div className="mt-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-700">🎯 목표 달성 흐름</div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <div className="text-sm text-emerald-800">{autoGoal.message}</div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <Card className="rounded-[24px] border-0 bg-slate-50 shadow-none">
                   <CardContent className="p-5">
                     <div className="mb-2 text-sm text-slate-500">직전 경기 추세</div>
@@ -7632,6 +7726,12 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                   </CardContent>
                 </Card>
               </div>
+
+              {autoGoal.ready ? (
+                <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                  현재 평균에서 너무 멀지 않은 다음 목표를 자동으로 잡았다. 목표를 넘기면 다음 목표가 다시 올라간다.
+                </div>
+              ) : null}
 
               <div className="grid gap-4 xl:grid-cols-2">
                 <div className="rounded-3xl bg-slate-50 p-3 sm:p-4">
@@ -9612,10 +9712,16 @@ function XSessionApp() {
                       {postSaveInsight.rivalText}
                       <div className="mt-2 text-xs text-amber-800">다음 기록에서 3점 이내로 추격하면 앱 안에서 다시 알려준다.</div>
                     </div>
+                    {postSaveInsight.goalAchieved ? (
+                      <div className="rounded-2xl bg-emerald-50 p-4 text-emerald-900">
+                        🎯 목표 달성! 이전 목표 {postSaveInsight.previousTarget}점 돌파
+                        <div className="mt-1 text-xs">다음 목표는 {postSaveInsight.nextTarget ?? "-"}점으로 자동 갱신됩니다.</div>
+                      </div>
+                    ) : null}
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div className="rounded-2xl bg-blue-50 p-3 text-blue-900">🔥 {postSaveInsight.streak}일 연속 기록중</div>
                       <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-900">{postSaveInsight.personalBest ? "🎯 개인 최고 기록!" : "🎯 기록 저장 완료"}</div>
-                      <div className="rounded-2xl bg-slate-50 p-3 text-slate-700">오늘 루틴 {getTodayRoutineRate(myRoutines)}% · {getRoutineReadinessMessage(getTodayRoutineRate(myRoutines))} · {postSaveInsight.distance || "-"}m {postSaveInsight.bestScore || postSaveInsight.score}점</div>
+                      <div className="rounded-2xl bg-slate-50 p-3 text-slate-700">오늘 루틴 {getTodayRoutineRate(myRoutines)}% · {getRoutineReadinessMessage(getTodayRoutineRate(myRoutines))} · 다음 목표 {postSaveInsight.nextTarget ?? "-"}점</div>
                     </div>
                   </div>
                 ) : null}
