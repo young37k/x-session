@@ -289,11 +289,11 @@ const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
 const OFFICIAL_CLAIM_STORAGE_KEY = "elbowshot_official_claim_requests";
 
 const ROUTINE_TEMPLATE_ITEMS = [
-  { id: "strength", label: "체력운동", checked: false },
-  { id: "shooting", label: "활쏘기", checked: false },
-  { id: "stretching", label: "스트레칭", checked: false },
-  { id: "mental", label: "멘탈 루틴", checked: false },
-  { id: "recovery", label: "회복/휴식", checked: false },
+  { id: "warmup", label: "워밍업", checked: false },
+  { id: "activation", label: "어깨/코어 활성화", checked: false },
+  { id: "pre_stretching", label: "훈련 전 스트레칭", checked: false },
+  { id: "focus_breathing", label: "호흡/집중 루틴", checked: false },
+  { id: "target_check", label: "오늘 목표 점수 확인", checked: false },
 ];
 
 function makeRoutineDocId(userId, date) {
@@ -411,6 +411,14 @@ function getRoutineSessionCorrelation(routines = [], sessions = []) {
     itemInsights,
     ready: paired.length >= 5,
   };
+}
+
+function getDynamicMotivation(rate) {
+  if (rate >= 100) return "완벽한 준비. 오늘 기록으로 증명해라.";
+  if (rate >= 80) return "좋은 흐름이다. 이 리듬 유지하자.";
+  if (rate >= 60) return "나쁘지 않다. 한두 개만 더 채워보자.";
+  if (rate >= 40) return "시작은 했다. 조금만 더 밀어붙이자.";
+  return "오늘 한 개라도 체크하고 시작하자.";
 }
 
 function getRoutineReadinessMessage(rate) {
@@ -6615,8 +6623,8 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
       await setDoc(doc(appServices.db, "routines", routineId), payload, { merge: true });
       setNotice(
         normalizedStats.completionRate === 100
-          ? "🔥 오늘 준비 완료. 이제 기록을 남기면 루틴 효과를 확인할 수 있다."
-          : `오늘 준비 상태 ${normalizedStats.completionRate}% 저장 완료.`
+          ? "🔥 훈련 전 준비 완료. 오늘의 성실함이 실력을 만든다."
+          : `훈련 전 준비 상태 ${normalizedStats.completionRate}% 저장 완료.`
       );
       await onRoutineSaved?.();
     } catch (error) {
@@ -6639,8 +6647,9 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="rounded-3xl bg-gradient-to-br from-blue-950 to-red-800 p-5 text-white">
-            <div className="text-sm opacity-80">오늘 준비 상태</div>
+            <div className="text-sm opacity-80">훈련 전 준비 상태</div>
             <div className="mt-2 text-5xl font-black">{stats.completionRate}%</div>
+            <div className="mt-2 text-sm opacity-80">{getDynamicMotivation(stats.completionRate)}</div>
             <div className="mt-3">
               <Progress value={stats.completionRate} className="h-3 bg-white/20" />
             </div>
@@ -6748,7 +6757,7 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
               </div>
             ) : (
               <div className="mt-1">
-                루틴과 기록을 같은 날짜에 5일 이상 남기면, 루틴 80% 이상인 날과 50% 이하인 날의 평균 기록 차이를 보여준다.
+                훈련 전 루틴과 기록을 같은 날짜에 5일 이상 남기면, 루틴 80% 이상인 날과 50% 이하인 날의 평균 기록 차이를 보여준다.
                 <div className="mt-2 rounded-2xl bg-white p-3 text-xs text-slate-500">
                   현재 매칭 데이터 {correlation.pairedCount}/5일
                 </div>
@@ -7211,7 +7220,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Medal className="h-5 w-5 text-red-600" /> X-Ranking
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-              등록 인원 {registeredUserCount.toLocaleString()}명
+              공식/사용자 기록 {registeredUserCount.toLocaleString()}명
             </span>
           </CardTitle>
         </CardHeader>
