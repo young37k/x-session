@@ -7482,6 +7482,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   });
   const [hideOfficialRecords, setHideOfficialRecords] = useState(false);
   const [schoolSearchInput, setSchoolSearchInput] = useState("");
+  const [showAllRankings, setShowAllRankings] = useState(false);
   const rankingUsers = useMemo(() => {
     const base = hideOfficialRecords ? users.filter((user) => !user.isSampleData && !user.isOfficialRecordUser) : users;
     if (hideOfficialRecords && currentUser?.id && !base.some((user) => user.id === currentUser.id)) {
@@ -7521,6 +7522,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   useEffect(() => {
     setSchoolSearchInput(rankingFilters.groupName === "all" ? "" : rankingFilters.groupName);
   }, [rankingFilters.groupName]);
+
+  useEffect(() => {
+    setShowAllRankings(false);
+  }, [rankingType, rankingFilters.distance, rankingFilters.rankingGroup, rankingFilters.groupName, rankingFilters.regionCity, rankingFilters.gender, rankingFilters.dateFilter, rankingFilters.customDate, hideOfficialRecords]);
+
   const regionOptions = useMemo(() => sortKoreanOptions(REGION_OPTIONS), [sortKoreanOptions]);
   const rankingGroupOptions = useMemo(() => RANKING_GROUP_OPTIONS, []);
   const registeredUserCount = useMemo(() => {
@@ -7592,6 +7598,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         : rankingType === "weeklyDistance"
           ? weeklyDistanceRankings
           : weeklyTotalRankings;
+
+  const visibleRankings = showAllRankings ? activeRankings : activeRankings.slice(0, 50);
+  const hasMoreRankings = activeRankings.length > visibleRankings.length;
 
   const myRank = activeRankings.find((item) => item.userId === currentUserId);
 
@@ -7725,6 +7734,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               <div className="mt-2 font-semibold text-blue-950">공식기록을 제외하고 사용자 기록만 보고 있습니다.</div>
             ) : null}
             <div className="mt-2 font-semibold text-blue-950">👉 기록하면 순위에 반영됩니다.</div>
+            <div className="mt-2 text-[11px] text-slate-500">
+              평소에는 상위 50명만 가볍게 표시하고, 필요할 때만 전체 보기를 불러옵니다.
+            </div>
           </div>
 
           <div className="grid gap-2">
@@ -7854,7 +7866,24 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               </div>
             ) : (
               <div className="grid gap-3">
-                {activeRankings.map((item) => (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                  <span>
+                    {showAllRankings
+                      ? `전체 ${activeRankings.length.toLocaleString()}명 표시 중`
+                      : `상위 ${Math.min(50, activeRankings.length).toLocaleString()}명 표시 중 · 전체 ${activeRankings.length.toLocaleString()}명`}
+                  </span>
+                  {activeRankings.length > 50 ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-8 rounded-xl px-3 text-xs"
+                      onClick={() => setShowAllRankings((prev) => !prev)}
+                    >
+                      {showAllRankings ? "상위 50명만 보기" : "전체 보기"}
+                    </Button>
+                  ) : null}
+                </div>
+                {visibleRankings.map((item) => (
                   <div
                     key={`${rankingType}_${item.userId}_${item.distance || item.distanceLabel || "total"}`}
                     className={`rounded-2xl border px-3 py-2 ${
