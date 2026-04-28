@@ -283,6 +283,12 @@ const FIREBASE_READY = Boolean(
 
 const DEFAULT_UI = { activeTab: "routine" };
 
+function getInitialTabByRole(role) {
+  const normalized = String(role || "선수").trim();
+  if (normalized === "감독/코치/스탭" || normalized === "학부모") return "ranking";
+  return "routine";
+}
+
 const ADMIN_EMAILS = ["theyoung37k@gmail.com", "5@gmail.com"];
 const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
 const ADMIN_REVIEWED_USERS_KEY = "elbowshot_admin_reviewed_users";
@@ -5086,6 +5092,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     name: "",
     email: "",
     password: "",
+    role: "선수",
     division: "전체학년",
     gender: "남",
     groupName: "",
@@ -5099,6 +5106,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
     name: useRef(null),
     email: useRef(null),
     password: useRef(null),
+    role: useRef(null),
     division: useRef(null),
     gender: useRef(null),
     groupName: useRef(null),
@@ -5322,19 +5330,22 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                         setRegisterFieldErrors((prev) => ({ ...prev, name: false }));
                       }
                     }}
-                    placeholder="이름 입력" />
-            <select
-              value={form.role || "선수"}
-              onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none"
-            >
-              <option value="선수">선수</option>
-              <option value="감독/코치/스탭">감독/코치/스탭</option>
-              <option value="학부모">학부모</option>
-            </select>
-            <input
+                    placeholder="이름 입력"
                     className={`h-12 rounded-2xl border-0 bg-white/92 text-base shadow-sm placeholder:text-slate-400 ${registerFieldErrors.name ? "ring-2 ring-red-400" : ""}`}
                   />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-semibold text-white">가입 유형</Label>
+                  <select
+                    ref={registerFieldRefs.role}
+                    value={registerForm.role || "선수"}
+                    onChange={(e) => setRegisterForm((prev) => ({ ...prev, role: e.target.value }))}
+                    className="h-12 rounded-2xl border-0 bg-white/92 px-3 text-base text-slate-900 shadow-sm outline-none"
+                  >
+                    <option value="선수">선수</option>
+                    <option value="감독/코치/스탭">감독/코치/스탭</option>
+                    <option value="학부모">학부모</option>
+                  </select>
                 </div>
                 <div className="grid gap-2">
                   <Label className="text-sm font-semibold text-white">이메일</Label>
@@ -7105,6 +7116,7 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
             )}
           </div>
         </CardContent>
+      </Card>
       <Dialog open={routineCompleteDialogOpen} onOpenChange={setRoutineCompleteDialogOpen}>
         <DialogContent className="overflow-hidden rounded-[32px] border-0 bg-white p-0 shadow-2xl">
           <div className="relative bg-gradient-to-br from-blue-950 via-slate-900 to-red-800 p-6 text-white">
@@ -9731,7 +9743,7 @@ function XSessionApp() {
         regionDistrict: payload.regionDistrict || "",
         division: payload.division || "",
         gender: payload.gender || "남",
-        role: "player",
+        role: payload.role || "선수",
         status: "active",
         createdAt: existing.exists() ? existing.data().createdAt || serverTimestamp() : serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -9777,6 +9789,7 @@ function XSessionApp() {
             regionDistrict: pendingProfileRef.current.regionDistrict || "",
             division: pendingProfileRef.current.division || "전체학년",
             gender: pendingProfileRef.current.gender || "남",
+            role: pendingProfileRef.current.role || "선수",
             avatar: "",
             photoURL: "",
             photoPath: "",
@@ -9789,6 +9802,7 @@ function XSessionApp() {
             regionDistrict: nextProfile.regionDistrict,
             division: nextProfile.division,
             gender: nextProfile.gender,
+            role: nextProfile.role || "선수",
           });
         } else {
           nextProfile = {
@@ -9803,6 +9817,7 @@ function XSessionApp() {
             regionDistrict: "",
             division: "전체학년",
             gender: "남",
+            role: "선수",
             avatar: "",
             photoURL: "",
             photoPath: "",
@@ -9830,7 +9845,7 @@ function XSessionApp() {
         setEditingSessionId(null);
         setUi((prev) => ({
           ...prev,
-          activeTab: adminRequested && isAdminEmail(nextProfile.email) ? "admin" : "routine",
+          activeTab: adminRequested && isAdminEmail(nextProfile.email) ? "admin" : getInitialTabByRole(nextProfile.role),
         }));
 
         await loadUsersAndSessions(appServices.db);
@@ -9867,6 +9882,7 @@ function XSessionApp() {
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
         gender: input.gender || "남",
+        role: input.role || "선수",
       };
 
       const result = await createUserWithEmailAndPassword(appServices.auth, input.email, input.password);
@@ -9879,6 +9895,7 @@ function XSessionApp() {
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
         gender: input.gender || "남",
+        role: input.role || "선수",
       });
 
       const nextProfile = {
@@ -9893,6 +9910,7 @@ function XSessionApp() {
         regionDistrict: input.regionDistrict || "",
         division: input.division || "전체학년",
         gender: input.gender || "남",
+        role: input.role || "선수",
         avatar: "",
         photoURL: "",
         photoPath: "",
@@ -9902,7 +9920,7 @@ function XSessionApp() {
       setDraftSession(
         normalizeSessionShape(createNewSession(nextProfile, "cumulative"), nextProfile)
       );
-      setUi((prev) => ({ ...prev, activeTab: "routine" }));
+      setUi((prev) => ({ ...prev, activeTab: getInitialTabByRole(nextProfile.role) }));
       await loadUsersAndSessions(appServices.db);
       return { ok: true };
     } catch (error) {
