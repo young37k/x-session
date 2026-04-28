@@ -4733,6 +4733,9 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         const validAttempts = attempts.filter((attempt) => {
           const group = attempt.rankingGroup || profileRankingGroup;
           const requiredDistances = getRequiredDistancesForRankingGroup(group);
+          // 사용자 기록은 프로필/세션 구분값이 비어 있어도 거리 랭킹에는 반드시 노출한다.
+          // 공식기록은 기존 부문별 필수 거리 기준을 유지한다.
+          if (!requiredDistances.length) return !user.isSampleData;
           return requiredDistances.includes(Number(attempt.distance));
         });
 
@@ -4770,7 +4773,9 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         .filter((attempt) => String(attempt.distance) === String(selectedDistance))
         .filter((attempt) => {
           const group = attempt.rankingGroup || profileRankingGroup;
-          return getRequiredDistancesForRankingGroup(group).includes(Number(attempt.distance));
+          const requiredDistances = getRequiredDistancesForRankingGroup(group);
+          if (!requiredDistances.length) return !user.isSampleData;
+          return requiredDistances.includes(Number(attempt.distance));
         });
 
       if (!filteredAttempts.length) return null;
@@ -7325,6 +7330,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     customDate: getCurrentLocalDateString(),
   });
   const [hideOfficialRecords, setHideOfficialRecords] = useState(false);
+  const [schoolSearchInput, setSchoolSearchInput] = useState("");
   const rankingUsers = useMemo(
     () => (hideOfficialRecords ? users.filter((user) => !user.isSampleData && !user.isOfficialRecordUser) : users),
     [users, hideOfficialRecords]
@@ -7336,6 +7342,14 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [sessions, rankingUsers, hideOfficialRecords]);
   const sortKoreanOptions = useCallback((items) => [...items].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "ko-KR")), []);
   const groupOptions = useMemo(() => sortKoreanOptions(Array.from(new Set(rankingUsers.map((u) => u.groupName).filter(Boolean)))), [rankingUsers, sortKoreanOptions]);
+  const commitSchoolFilter = useCallback((value) => {
+    const trimmed = String(value || "").trim();
+    setRankingFilters((prev) => ({ ...prev, groupName: trimmed || "all" }));
+    setSchoolSearchInput(trimmed);
+  }, []);
+  useEffect(() => {
+    setSchoolSearchInput(rankingFilters.groupName === "all" ? "" : rankingFilters.groupName);
+  }, [rankingFilters.groupName]);
   const regionOptions = useMemo(() => sortKoreanOptions(REGION_OPTIONS), [sortKoreanOptions]);
   const rankingGroupOptions = useMemo(() => RANKING_GROUP_OPTIONS, []);
   const registeredUserCount = useMemo(() => {
@@ -7473,6 +7487,10 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                   <div className="mt-2 text-xs text-slate-500">
                     종합 랭킹은 부문별 필수 4거리 기록이 모두 있어야 표시됩니다. 사용자 기록을 거리별로 보려면 거리 랭킹을 선택하세요.
                   </div>
+                ) : hideOfficialRecords ? (
+                  <div className="mt-2 text-xs text-slate-500">
+                    사용자 기록의 구분/거리 정보가 비어 있으면 전체 거리 기준으로 표시되도록 보정했습니다.
+                  </div>
                 ) : null}
               </div>
             )}
@@ -7571,16 +7589,40 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학교/소속</Label>
-              <select
-                value={rankingFilters.groupName}
-                onChange={(e) => setRankingFilters((prev) => ({ ...prev, groupName: e.target.value }))}
-                className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
-              >
-                <option value="all">전체 학교/소속팀</option>
-                {groupOptions.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
+              <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                <div className="min-w-0">
+                  <input
+                    list="ranking-school-options"
+                    value={schoolSearchInput}
+                    onChange={(e) => {
+                      const nextValue = e.target.value;
+                      setSchoolSearchInput(nextValue);
+                      if (groupOptions.includes(nextValue)) commitSchoolFilter(nextValue);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        commitSchoolFilter(e.currentTarget.value);
+                      }
+                    }}
+                    placeholder="학교명을 입력하거나 선택"
+                    className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+                  />
+                  <datalist id="ranking-school-options">
+                    {groupOptions.map((item) => (
+                      <option key={item} value={item} />
+                    ))}
+                  </datalist>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-9 rounded-xl px-3 text-xs"
+                  onClick={() => commitSchoolFilter(schoolSearchInput)}
+                >
+                  적용
+                </Button>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -8850,6 +8892,49 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
 
       <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
+          <CardTitle className="text-xl">공식 기록 연결 요청</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 min-w-0">
+          {pendingOfficialClaims.length === 0 ? (
+            <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-500">
+              대기 중인 공식 기록 연결 요청이 없다.
+            </div>
+          ) : (
+            pendingOfficialClaims.map((claim) => (
+              <div key={claim.id} className="grid gap-3 rounded-2xl border border-slate-200 p-4 md:grid-cols-[1fr_auto] md:items-center">
+                <div className="min-w-0">
+                  <div className="font-semibold text-slate-900">
+                    {claim.requesterName || "요청자"} → {claim.officialName || "공식기록"}
+                  </div>
+                  <div className="mt-1 text-sm text-slate-500">
+                    요청자 소속: {claim.requesterGroup || "-"} · 공식 소속: {claim.officialGroup || "-"} · 성별: {claim.gender || "-"}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400">
+                    요청일: {formatDateOnly(claim.createdAt)} · 요청자 이메일: {claim.requesterEmail || "-"}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" className="rounded-2xl bg-blue-900 hover:bg-blue-800" onClick={() => onApproveOfficialClaim?.(claim)}>
+                    승인
+                  </Button>
+                  <Button type="button" variant="outline" className="rounded-2xl border-red-200 text-red-700 hover:bg-red-50" onClick={() => onRejectOfficialClaim?.(claim)}>
+                    반려
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+
+          {approvedOfficialClaims.length ? (
+            <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
+              승인 완료 {approvedOfficialClaims.length}건 · 승인된 공식 기록은 요청자 계정의 기록으로 연결되어 표시된다.
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
           <CardTitle className="text-xl">관리자 계정 설정</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 min-w-0">
@@ -9294,6 +9379,14 @@ function XSessionApp() {
         setRoutines([]);
         console.warn("X-Routine data could not be loaded. Check Firestore rules for routines.", routineError);
       }
+
+      try {
+        const officialClaimsSnap = await getDocs(collection(db, "official_claims"));
+        const loadedClaims = officialClaimsSnap.docs.map((snap) => ({ id: snap.id, ...snap.data() }));
+        if (loadedClaims.length) setOfficialClaims(loadedClaims);
+      } catch (claimError) {
+        console.warn("Official claim data could not be loaded. Falling back to local storage.", claimError);
+      }
     } catch (error) {
       setGlobalError(error.message || "데이터 로딩에 실패했다.");
     } finally {
@@ -9637,6 +9730,7 @@ function XSessionApp() {
       const fixedSessionDate = draftSession?.sessionDate || getCurrentLocalDateString();
       payload.sessionDate = fixedSessionDate;
 
+      let savedSessionId = editingSessionId;
       if (editingSessionId) {
         await updateDoc(doc(appServices.db, "sessions", editingSessionId), {
           sessionDate: payload.sessionDate,
@@ -9645,7 +9739,9 @@ function XSessionApp() {
           recordInputType: payload.recordInputType,
           distance: payload.distance,
           groupName: payload.groupName,
+          regionCity: payload.regionCity,
           division: payload.division,
+          gender: payload.gender,
           arrowsPerEnd: payload.arrowsPerEnd,
           arrowsPerDistance: payload.arrowsPerDistance,
           endCount: payload.endCount,
@@ -9657,18 +9753,27 @@ function XSessionApp() {
           updatedAt: serverTimestamp(),
         });
       } else {
-        const docRef = await addDoc(collection(appServices.db, "sessions"), payload);
-        await setDoc(doc(appServices.db, "sessions", docRef.id), { sessionId: docRef.id }, { merge: true });
+        const docRef = doc(collection(appServices.db, "sessions"));
+        savedSessionId = docRef.id;
+        await setDoc(docRef, {
+          ...payload,
+          sessionId: docRef.id,
+        });
       }
 
       const savedPreviewSession = {
         ...payload,
-        id: editingSessionId || "latest_saved_preview",
-        sessionId: editingSessionId || "latest_saved_preview",
+        id: savedSessionId,
+        sessionId: savedSessionId,
         isComplete: true,
         status: "completed",
         updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
+      setSessions((prev) => {
+        const withoutExisting = prev.filter((session) => session.id !== savedSessionId);
+        return [savedPreviewSession, ...withoutExisting];
+      });
       const nextInsight = buildPostSaveInsight({
         savedSession: savedPreviewSession,
         users: usersForDisplay,
@@ -9813,7 +9918,7 @@ function XSessionApp() {
   }
 
 
-  function handleRequestOfficialClaim(officialUser) {
+  async function handleRequestOfficialClaim(officialUser) {
     if (!profile || !officialUser?.isSampleData) return;
     if (!isOfficialProfileMatch(officialUser, profile)) {
       setGlobalError("이름, 학교/소속, 성별이 공식기록과 일치할 때만 연결 요청이 가능하다.");
@@ -9827,40 +9932,65 @@ function XSessionApp() {
     }
 
     const requestId = getOfficialClaimId({ sampleUserId: officialUser.id, requesterUid: profile.id });
+    const nextClaim = {
+      id: requestId,
+      sampleUserId: officialUser.id,
+      requesterUid: profile.id,
+      requesterEmail: profile.email || "",
+      requesterName: profile.name || "",
+      requesterGroup: profile.groupName || "",
+      officialName: officialUser.name || "",
+      officialGroup: officialUser.groupName || "",
+      gender: officialUser.gender || profile.gender || "",
+      rankingGroup: getRankingGroup(officialUser.division || "", officialUser.gender || "남"),
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
     setOfficialClaims((prev) => {
       if (prev.some((claim) => claim.id === requestId)) return prev;
-      const nextClaim = {
-        id: requestId,
-        sampleUserId: officialUser.id,
-        requesterUid: profile.id,
-        requesterEmail: profile.email || "",
-        requesterName: profile.name || "",
-        requesterGroup: profile.groupName || "",
-        officialName: officialUser.name || "",
-        officialGroup: officialUser.groupName || "",
-        gender: officialUser.gender || profile.gender || "",
-        rankingGroup: getRankingGroup(officialUser.division || "", officialUser.gender || "남"),
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      };
       return [...prev, nextClaim];
     });
+
+    try {
+      if (appServices?.db) {
+        await setDoc(doc(appServices.db, "official_claims", requestId), {
+          ...nextClaim,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      }
+    } catch (error) {
+      console.warn("Official claim request saved locally only.", error);
+    }
+
     setGlobalNotice("공식 기록 연결 요청을 보냈다. 관리자가 확인 후 승인하면 인증 선수로 표시된다.");
   }
 
   async function handleApproveOfficialClaim(claim) {
     if (!claim?.id) return;
     const approvedAt = new Date().toISOString();
+    const approvedClaim = {
+      ...claim,
+      status: "approved",
+      claimedByUid: claim.requesterUid,
+      approvedAt,
+      approvedBy: currentUser?.email || "",
+    };
+
     setOfficialClaims((prev) =>
-      prev.map((item) =>
-        item.id === claim.id
-          ? { ...item, status: "approved", claimedByUid: item.requesterUid, approvedAt, approvedBy: currentUser?.email || "" }
-          : item
-      )
+      prev.map((item) => (item.id === claim.id ? { ...item, ...approvedClaim } : item))
     );
 
     try {
       if (appServices?.db && claim.requesterUid) {
+        await setDoc(
+          doc(appServices.db, "official_claims", claim.id),
+          {
+            ...approvedClaim,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
         await setDoc(
           doc(appServices.db, "users", claim.requesterUid),
           {
@@ -9879,15 +10009,28 @@ function XSessionApp() {
     }
   }
 
-  function handleRejectOfficialClaim(claim) {
+  async function handleRejectOfficialClaim(claim) {
     if (!claim?.id) return;
+    const rejectedClaim = {
+      ...claim,
+      status: "rejected",
+      rejectedAt: new Date().toISOString(),
+      rejectedBy: currentUser?.email || "",
+    };
     setOfficialClaims((prev) =>
-      prev.map((item) =>
-        item.id === claim.id
-          ? { ...item, status: "rejected", rejectedAt: new Date().toISOString(), rejectedBy: currentUser?.email || "" }
-          : item
-      )
+      prev.map((item) => (item.id === claim.id ? { ...item, ...rejectedClaim } : item))
     );
+
+    try {
+      if (appServices?.db) {
+        await setDoc(doc(appServices.db, "official_claims", claim.id), {
+          ...rejectedClaim,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      }
+    } catch (error) {
+      console.warn("Official claim rejection saved locally only.", error);
+    }
     setGlobalNotice("공식 기록 연결 요청을 반려했다.");
   }
 
