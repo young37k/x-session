@@ -10192,15 +10192,22 @@ function XSessionApp() {
   const permanentSampleSessions = useMemo(() => buildPermanentSampleSessions(), []);
 
   const usersForDisplay = useMemo(() => {
+    const approvedClaims = [
+      ...(officialClaims || []),
+      ...users
+        .map((user) => user.latestOfficialClaim)
+        .filter((claim) => claim?.status === "approved" && claim.sampleUserId),
+    ];
+
     const approvedBySampleUserId = new Map(
-      (officialClaims || [])
-        .filter((claim) => claim.status === "approved" && claim.sampleUserId && claim.claimedByUid)
-        .map((claim) => [claim.sampleUserId, claim])
+      approvedClaims
+        .filter((claim) => claim.sampleUserId && (claim.claimedByUid || claim.requesterUid))
+        .map((claim) => [claim.sampleUserId, { ...claim, claimedByUid: claim.claimedByUid || claim.requesterUid }])
     );
     const verifiedUidSet = new Set(
-      (officialClaims || [])
-        .filter((claim) => claim.status === "approved" && claim.claimedByUid)
-        .map((claim) => claim.claimedByUid)
+      approvedClaims
+        .filter((claim) => claim.status === "approved" && (claim.claimedByUid || claim.requesterUid))
+        .map((claim) => claim.claimedByUid || claim.requesterUid)
     );
 
     const realUsersWithVerification = users.map((user) => ({
@@ -10222,10 +10229,17 @@ function XSessionApp() {
   }, [users, sampleUsers, officialClaims, currentUser]);
 
   const sessionsForDisplay = useMemo(() => {
+    const approvedClaims = [
+      ...(officialClaims || []),
+      ...users
+        .map((user) => user.latestOfficialClaim)
+        .filter((claim) => claim?.status === "approved" && claim.sampleUserId),
+    ];
+
     const approvedBySampleUserId = new Map(
-      (officialClaims || [])
-        .filter((claim) => claim.status === "approved" && claim.sampleUserId && claim.claimedByUid)
-        .map((claim) => [claim.sampleUserId, claim])
+      approvedClaims
+        .filter((claim) => claim.sampleUserId && (claim.claimedByUid || claim.requesterUid))
+        .map((claim) => [claim.sampleUserId, { ...claim, claimedByUid: claim.claimedByUid || claim.requesterUid }])
     );
     const existingIds = new Set(sessions.map((s) => s.id));
     const merged = [...sessions];
@@ -10239,7 +10253,8 @@ function XSessionApp() {
           userId: approvedClaim.claimedByUid,
           originalOfficialUserId: s.userId,
           claimedByUid: approvedClaim.claimedByUid,
-          officialRecord: true,
+          officialRecord: false,
+          isSampleData: false,
         });
       } else {
         merged.push(s);
@@ -10247,7 +10262,7 @@ function XSessionApp() {
     });
 
     return merged;
-  }, [sessions, permanentSampleSessions, officialClaims]);
+  }, [sessions, permanentSampleSessions, officialClaims, users]);
 
   const mySessions = useMemo(
     () => sessions.filter((s) => s.userId === authUser?.uid),
