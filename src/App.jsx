@@ -3870,7 +3870,7 @@ const SAMPLE_SHEETS = [
       { name: "이재영", school: "병천중학교", division: "중등부", rounds: [294, 246, 302, 325], total: 1167 },
       { name: "서원빈", school: "대전내동중학교", division: "중등부", rounds: [306, 237, 293, 329], total: 1165 },
       { name: "전성은", school: "병천중학교", division: "중등부", rounds: [304, 261, 291, 307], total: 1163 },
-      { name: "김지후", school: "원봉중학교", division: "중등부", rounds: [304, 239, 296, 323], total: 1162 },
+      { name: "김지후", school: "원봉중학교", division: "초등부(고학년)", rounds: [304, 239, 296, 323], total: 1162 },
       { name: "방채영", school: "연일중학교", division: "중등부", rounds: [262, 261, 302, 324], total: 1149 },
       { name: "김규선", school: "방이중학교", division: "중등부", rounds: [289, 260, 275, 317], total: 1141 },
       { name: "김규성", school: "면목중학교", division: "중등부", rounds: [265, 226, 290, 312], total: 1093 },
@@ -7054,9 +7054,12 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
 
   const todayKey = getTodayKey();
   const yesterdayKey = getYesterdayKey();
+  const getDashboardSessionDayKey = (session) =>
+    toLocalDateKey(session?.updatedAt || session?.createdAt || session?.sessionDate);
+  const hasTodayRoutine = Boolean(getRoutineForDate(routines, todayKey));
 
-  const todaySessions = completed.filter((s) => getSessionDayKey(s) === todayKey);
-  const yesterdaySessions = completed.filter((s) => getSessionDayKey(s) === yesterdayKey);
+  const todaySessions = completed.filter((s) => getDashboardSessionDayKey(s) === todayKey);
+  const yesterdaySessions = completed.filter((s) => getDashboardSessionDayKey(s) === yesterdayKey);
 
   const todayTotal = todaySessions.reduce(
     (sum, s) => sum + (s.summary?.totalScore ?? getSessionTotal(s)),
@@ -7127,12 +7130,22 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
           <div>
             <div className="text-xs font-semibold text-slate-500">입력 → 결과 → 비교 → 반복</div>
             <div className="mt-2 text-2xl font-bold text-slate-950">
-              {todayCount ? `🔥 ${recordStreak}일 연속 기록중` : "⚠ 오늘 기록 없음"}
+              {todayCount
+                ? hasTodayRoutine
+                  ? `🔥 ${recordStreak}일 연속 기록중`
+                  : "⚠ 오늘 루틴 기록 없음"
+                : hasTodayRoutine
+                  ? "⚠ 오늘 세션 기록 없음"
+                  : "⚠ 오늘 루틴/세션 기록 없음"}
             </div>
             <div className="mt-2 text-sm text-slate-600">
               {todayCount
-                ? `오늘 ${todayCount}개 기록 완료 · 개인 최고 ${allTimeBestScore}점 · 오늘 준비 상태 ${todayRoutineRate}%`
-                : `첫 행동은 기록 입력이다. 오늘 준비 상태 ${todayRoutineRate}% · 기록하면 내 성장, 내 순위, 라이벌 차이를 바로 확인할 수 있다.`}
+                ? hasTodayRoutine
+                  ? `오늘 ${todayCount}개 기록 완료 · 개인 최고 ${allTimeBestScore}점 · 오늘 준비 상태 ${todayRoutineRate}%`
+                  : `오늘 ${todayCount}개 기록은 등록됐다. 아직 루틴 기록이 없어 준비 상태는 ${todayRoutineRate}%로 표시된다.`
+                : hasTodayRoutine
+                  ? `오늘 루틴은 기록됐다. 세션 기록을 입력하면 내 성장, 내 순위, 라이벌 차이를 확인할 수 있다.`
+                  : `오늘 루틴과 세션 기록이 없다. 루틴 체크 후 기록을 남기면 내 성장, 내 순위, 라이벌 차이를 바로 확인할 수 있다.`}
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
               <span className="rounded-full bg-slate-100 px-3 py-1">1. 내 기록</span>
@@ -7141,13 +7154,17 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
               <span className="rounded-full bg-slate-100 px-3 py-1">4. 전체 랭킹</span>
             </div>
             <div className="mt-4 rounded-2xl bg-blue-50 p-3 text-xs text-blue-950">
-              <div className="font-semibold">오늘 준비 상태 {todayRoutineRate}%</div>
+              <div className="font-semibold">{hasTodayRoutine ? `오늘 준비 상태 ${todayRoutineRate}%` : "오늘 루틴 기록 없음"}</div>
               {routineCorrelation.ready && routineCorrelation.highAverage !== null && routineCorrelation.lowAverage !== null ? (
                 <div className="mt-1">
                   루틴 80% 이상 평균 {routineCorrelation.highAverage}점 · 50% 이하 평균 {routineCorrelation.lowAverage}점 · 차이 {routineCorrelation.delta > 0 ? "+" : ""}{routineCorrelation.delta}점
                 </div>
               ) : (
-                <div className="mt-1">루틴과 기록을 5일 이상 남기면 상관관계를 보여준다. 현재 {routineCorrelation.pairedCount}/5일</div>
+                <div className="mt-1">
+                  {hasTodayRoutine
+                    ? `루틴과 기록을 5일 이상 남기면 상관관계를 보여준다. 현재 ${routineCorrelation.pairedCount}/5일`
+                    : `오늘 루틴 기록이 없다. 루틴과 기록을 5일 이상 함께 남기면 상관관계를 보여준다. 현재 ${routineCorrelation.pairedCount}/5일`}
+                </div>
               )}
             </div>
           </div>
@@ -7177,7 +7194,7 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
                   {todayTotal}
                 </div>
                 <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
-                  {todayCount ? `오늘 세션 ${todayCount}개 · 평균 ${todayAverage}` : "오늘 기록 없음"}
+                  {todayCount ? `오늘 세션 ${todayCount}개 · 평균 ${todayAverage}` : "오늘 세션 기록 없음"}
                 </div>
               </div>
             </div>
@@ -7203,7 +7220,7 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
                   {todayAverage}
                 </div>
                 <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
-                  {todayCount ? `X ${todayXCount}개` : "오늘 기록 없음"}
+                  {todayCount ? `X ${todayXCount}개` : "오늘 세션 기록 없음"}
                 </div>
               </div>
             </div>
@@ -7229,7 +7246,7 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
                   {todayBestScore}
                 </div>
                 <div className="mt-2 text-[11px] leading-snug opacity-80 md:text-xs">
-                  {todayBest ? `${todayBestDistance}m 최고` : "오늘 기록 없음"}
+                  {todayBest ? `${todayBestDistance}m 최고` : "오늘 세션 기록 없음"}
                 </div>
               </div>
             </div>
