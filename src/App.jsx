@@ -7055,7 +7055,7 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
   const todayKey = getTodayKey();
   const yesterdayKey = getYesterdayKey();
   const getDashboardSessionDayKey = (session) =>
-    toLocalDateKey(session?.updatedAt || session?.createdAt || session?.sessionDate);
+    toLocalDateKey(session?.sessionDate || session?.updatedAt || session?.createdAt);
   const hasTodayRoutine = Boolean(getRoutineForDate(routines, todayKey));
 
   const todaySessions = completed.filter((s) => getDashboardSessionDayKey(s) === todayKey);
