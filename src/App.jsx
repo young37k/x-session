@@ -475,6 +475,22 @@ function isUserVerifiedByClaim(officialClaims, uid) {
   );
 }
 
+function isPermissionError(error) {
+  const raw = String(error?.message || "");
+  const code = String(error?.code || "");
+  return code.includes("permission-denied") || raw.includes("Missing or insufficient permissions") || raw.includes("permission");
+}
+
+function getFriendlySaveErrorMessage(error, fallback = "저장에 실패했습니다. 잠시 후 다시 시도해 주세요.") {
+  if (!isPermissionError(error)) return error?.message || fallback;
+  return "저장 조건을 확인해 주세요. 거리 랭킹은 최소 1개 거리 점수를 입력하면 저장됩니다. 종합 랭킹은 부문별 필수 4거리 기록이 모두 있어야 표시됩니다. 조건을 충족했는데도 계속 뜨면 관리자에게 저장 권한 설정 확인을 요청해 주세요.";
+}
+
+function getFriendlyDataErrorMessage(error, fallback = "데이터를 불러오지 못했습니다.") {
+  if (!isPermissionError(error)) return error?.message || fallback;
+  return "데이터 접근 조건을 확인해 주세요. 로그인 상태가 아니거나 관리자/저장 권한 설정이 맞지 않으면 데이터를 불러올 수 없습니다.";
+}
+
 async function deleteAllSessionsForUser(db, uid) {
   const q = query(collection(db, "sessions"), where("userId", "==", uid));
   const snap = await getDocs(q);
@@ -6017,7 +6033,7 @@ function SessionEditor({
       const fallbackMessage = !isOnline
         ? "오프라인 상태입니다. 네트워크 연결 후 다시 저장해 주세요."
         : "저장에 실패했습니다. 잠시 후 다시 시도해 주세요.";
-      setSaveError(error?.message || fallbackMessage);
+      setSaveError(getFriendlySaveErrorMessage(error, fallbackMessage));
     }
   }
 
@@ -7489,11 +7505,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                 현재 선택한 조건에서 랭킹에 반영된 기록이 없다.
                 {hideOfficialRecords && (rankingType === "total" || rankingType === "weeklyTotal") ? (
                   <div className="mt-2 text-xs text-slate-500">
-                    종합 랭킹은 부문별 필수 4거리 기록이 모두 있어야 표시됩니다. 사용자 기록을 거리별로 보려면 거리 랭킹을 선택하세요.
+                    종합 랭킹은 부문별 필수 4거리 기록이 모두 있어야 표시됩니다. 예: 남자 대학/일반부는 90m·70m·50m·30m, 여자 대학/일반부는 70m·60m·50m·30m 기록이 필요합니다.
                   </div>
                 ) : hideOfficialRecords ? (
                   <div className="mt-2 text-xs text-slate-500">
-                    사용자 기록의 구분/거리 정보가 비어 있으면 전체 거리 기준으로 표시되도록 보정했습니다.
+                    거리 랭킹은 최소 1개 거리 점수를 입력하면 표시됩니다. 학교/구분/성별/날짜 필터가 걸려 있으면 해당 조건에 맞는 기록만 보입니다.
                   </div>
                 ) : null}
               </div>
@@ -9415,7 +9431,7 @@ function XSessionApp() {
         console.warn("Official claim data could not be loaded. Falling back to local storage.", claimError);
       }
     } catch (error) {
-      setGlobalError(error.message || "데이터 로딩에 실패했다.");
+      setGlobalError(getFriendlyDataErrorMessage(error, "데이터 로딩에 실패했다."));
     } finally {
       setSessionsLoading(false);
     }
@@ -9821,9 +9837,10 @@ function XSessionApp() {
         message: editingSessionId ? "세션이 정상적으로 업데이트되었습니다." : "세션이 정상적으로 저장되었습니다.",
       };
     } catch (error) {
-      const message =
-        error?.message ||
-        "저장에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요.";
+      const message = getFriendlySaveErrorMessage(
+        error,
+        "저장에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해 주세요."
+      );
       setGlobalError(message);
       throw new Error(message);
     } finally {
@@ -10006,7 +10023,7 @@ function XSessionApp() {
     }
 
     if (!savedToFirestore) {
-      setGlobalError("공식 기록 연결 요청을 서버에 저장하지 못했다. Firestore Rules를 확인해야 관리자에게 보인다.");
+      setGlobalError("공식 기록 연결 요청을 저장하려면 로그인 상태와 공식기록 요청 저장 권한이 필요합니다. 관리자에게 공식기록 요청 권한 설정을 확인해 달라고 요청해 주세요.");
       return;
     }
 
