@@ -7191,7 +7191,8 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
               </Button>
               <Button
                 type="button"
-                className="rounded-2xl bg-white text-blue-950 hover:bg-slate-100"
+                className="rounded-2xl border border-white bg-white font-semibold !text-blue-950 hover:bg-slate-100 hover:!text-blue-950"
+                style={{ color: "#172554" }}
                 onClick={() => {
                   setRoutineCompleteDialogOpen(false);
                   onStartSession?.();
@@ -7305,7 +7306,7 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
                 ? "오늘 루틴을 먼저 체크하면 준비 상태와 성장 흐름을 확인할 수 있다."
                 : todayCount
                   ? `오늘 ${todayCount}개 기록 완료 · 개인 최고 ${allTimeBestScore}점 · 준비 상태 ${todayRoutineRate}%`
-                  : `루틴 ${todayRoutineRate}% 달성. 아직 세션 기록이 없다. 기록을 남기면 내 성장과 순위를 확인할 수 있다.`
+                  : `루틴 ${todayRoutineRate}% 달성. 세션 기록은 아직 없다. 기록을 남기면 내 성장과 순위를 확인할 수 있다.`
               }
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
@@ -10667,7 +10668,16 @@ function XSessionApp() {
                     return [savedRoutine, ...withoutSame];
                   });
                 }
-                await loadUsersAndSessions(appServices.db);
+                try {
+                  await loadUsersAndSessions(appServices.db);
+                } finally {
+                  if (savedRoutine?.id) {
+                    setRoutines((prev) => {
+                      const withoutSame = prev.filter((routine) => routine.id !== savedRoutine.id);
+                      return [savedRoutine, ...withoutSame];
+                    });
+                  }
+                }
               }} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} officialClaims={officialClaims} reviewedUserIds={reviewedUserIds} onMarkUserReviewed={markUserReviewed} onMarkAllUsersReviewed={markAllUsersReviewed} onApproveOfficialClaim={handleApproveOfficialClaim} onRejectOfficialClaim={handleRejectOfficialClaim} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
