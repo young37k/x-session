@@ -324,6 +324,37 @@ function calculateRoutineStats(items) {
   return { items: normalized, totalCount, completedCount, completionRate };
 }
 
+function getStoredRoutineItemsKey(userId) {
+  return `x_session_routine_items_${userId || "guest"}`;
+}
+
+function readStoredRoutineItems(userId) {
+  try {
+    const raw = localStorage.getItem(getStoredRoutineItemsKey(userId));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredRoutineItems(userId, items = []) {
+  try {
+    localStorage.setItem(getStoredRoutineItemsKey(userId), JSON.stringify(normalizeRoutineItems(items)));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+function mergeRoutineItems(baseItems = [], savedItems = []) {
+  const savedById = new Map((savedItems || []).map((item) => [item.id, item]));
+  const savedByLabel = new Map((savedItems || []).map((item) => [String(item.label || "").trim(), item]));
+  return normalizeRoutineItems(baseItems).map((item) => {
+    const saved = savedById.get(item.id) || savedByLabel.get(String(item.label || "").trim());
+    return saved ? { ...item, checked: Boolean(saved.checked) } : item;
+  });
+}
+
 function fromFirestoreRoutine(snap) {
   const data = snap.data() || {};
   const stats = calculateRoutineStats(data.items || []);
@@ -6896,14 +6927,25 @@ function buildPostSaveInsight({ savedSession, users = [], sessions = [], current
 function RoutinePage({ appServices, currentUser, routines = [], sessions = [], onRoutineSaved, onStartSession }) {
   const today = getCurrentLocalDateString();
   const existingRoutine = getRoutineForDate(routines, today);
-  const [items, setItems] = useState(() => normalizeRoutineItems(existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS));
+  const storedRoutineItems = useMemo(() => readStoredRoutineItems(currentUser?.id), [currentUser?.id]);
+  const [items, setItems] = useState(() => {
+    const baseItems = storedRoutineItems.length ? storedRoutineItems : ROUTINE_TEMPLATE_ITEMS;
+    return mergeRoutineItems(baseItems, existingRoutine?.items || []);
+  });
   const [newItemLabel, setNewItemLabel] = useState("");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    setItems(normalizeRoutineItems(existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS));
-  }, [existingRoutine?.id, today]);
+    const stored = readStoredRoutineItems(currentUser?.id);
+    const baseItems = stored.length ? stored : existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS;
+    setItems(mergeRoutineItems(baseItems, existingRoutine?.items || []));
+  }, [currentUser?.id, existingRoutine?.id, today]);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    writeStoredRoutineItems(currentUser.id, items);
+  }, [currentUser?.id, items]);
 
   const stats = useMemo(() => calculateRoutineStats(items), [items]);
   const correlation = useMemo(() => getRoutineSessionCorrelation(routines, sessions), [routines, sessions]);
@@ -6968,6 +7010,12 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
         createdAt: existingRoutine?.createdAt || serverTimestamp(),
       };
       await setDoc(doc(appServices.db, "routines", routineId), payload, { merge: true });
+      const optimisticRoutine = {
+        id: routineId,
+        ...payload,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
       setNotice(
         normalizedStats.completionRate === 100
           ? "🔥 최적 준비 상태. 오늘의 성실함이 실력을 만든다."
@@ -6977,7 +7025,7 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
         playRoutineCompleteSound();
         setRoutineCompleteDialogOpen(true);
       }
-      await onRoutineSaved?.();
+      await onRoutineSaved?.(optimisticRoutine);
     } catch (error) {
       const permissionMessage = String(error?.message || "").includes("permission")
         ? "루틴 저장 권한이 없습니다. Firestore Rules에 routines 권한을 추가해야 합니다."
@@ -7136,11 +7184,10 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
             <DialogFooter className="mt-5 gap-2 sm:justify-between">
               <Button
                 type="button"
-                variant="outline"
-                className="rounded-2xl border-white/40 bg-white/10 text-white hover:bg-white/20"
+                className="rounded-2xl border border-white/40 bg-blue-950 text-white hover:bg-blue-900"
                 onClick={() => setRoutineCompleteDialogOpen(false)}
               >
-                닫기
+                확인
               </Button>
               <Button
                 type="button"
@@ -7258,7 +7305,7 @@ function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSes
                 ? "오늘 루틴을 먼저 체크하면 준비 상태와 성장 흐름을 확인할 수 있다."
                 : todayCount
                   ? `오늘 ${todayCount}개 기록 완료 · 개인 최고 ${allTimeBestScore}점 · 준비 상태 ${todayRoutineRate}%`
-                  : "오늘 세션 기록이 없다. 기록을 남기면 내 성장과 순위를 확인할 수 있다."
+                  : `루틴 ${todayRoutineRate}% 달성. 아직 세션 기록이 없다. 기록을 남기면 내 성장과 순위를 확인할 수 있다.`
               }
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
@@ -10613,7 +10660,15 @@ function XSessionApp() {
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
               {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
-              {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} sessions={mySessions} onRoutineSaved={() => loadUsersAndSessions(appServices.db)} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
+              {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} sessions={mySessions} onRoutineSaved={async (savedRoutine) => {
+                if (savedRoutine?.id) {
+                  setRoutines((prev) => {
+                    const withoutSame = prev.filter((routine) => routine.id !== savedRoutine.id);
+                    return [savedRoutine, ...withoutSame];
+                  });
+                }
+                await loadUsersAndSessions(appServices.db);
+              }} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} officialClaims={officialClaims} reviewedUserIds={reviewedUserIds} onMarkUserReviewed={markUserReviewed} onMarkAllUsersReviewed={markAllUsersReviewed} onApproveOfficialClaim={handleApproveOfficialClaim} onRejectOfficialClaim={handleRejectOfficialClaim} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
             </motion.div>
