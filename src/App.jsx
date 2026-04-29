@@ -346,6 +346,31 @@ function writeStoredRoutineItems(userId, items = []) {
   }
 }
 
+function getStoredRoutineRecordKey(userId, date) {
+  return `x_session_saved_routine_${userId || "guest"}_${date || getCurrentLocalDateString()}`;
+}
+
+function readStoredRoutineRecord(userId, date = getCurrentLocalDateString()) {
+  try {
+    const raw = localStorage.getItem(getStoredRoutineRecordKey(userId, date));
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (!parsed || parsed.date !== date) return null;
+    const stats = calculateRoutineStats(parsed.items || []);
+    return { ...parsed, ...stats };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredRoutineRecord(userId, routine) {
+  try {
+    if (!userId || !routine?.date) return;
+    localStorage.setItem(getStoredRoutineRecordKey(userId, routine.date), JSON.stringify(routine));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
 function mergeRoutineItems(baseItems = [], savedItems = []) {
   const savedById = new Map((savedItems || []).map((item) => [item.id, item]));
   const savedByLabel = new Map((savedItems || []).map((item) => [String(item.label || "").trim(), item]));
@@ -7016,6 +7041,7 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+      writeStoredRoutineRecord(currentUser.id, optimisticRoutine);
       setNotice(
         normalizedStats.completionRate === 100
           ? "🔥 최적 준비 상태. 오늘의 성실함이 실력을 만든다."
@@ -7209,18 +7235,23 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
 }
 
 
-function Dashboard({ sessions, routines = [], loading, onEditSession, onStartSession }) {
+function Dashboard({ sessions, routines = [], currentUser, loading, onEditSession, onStartSession }) {
   const completed = getCompletedUserSessions(sessions);
   const recordStreak = getCurrentRecordStreak(sessions);
   const allTimeBestScore = completed.reduce((best, session) => Math.max(best, getSessionScoreForInsight(session)), 0);
-  const todayRoutineRate = getTodayRoutineRate(routines);
-  const routineCorrelation = getRoutineSessionCorrelation(routines, sessions);
 
   const todayKey = getTodayKey();
   const yesterdayKey = getYesterdayKey();
+  const todayRoutine = getRoutineForDate(routines, todayKey) || readStoredRoutineRecord(currentUser?.id, todayKey);
+  const todayRoutineRate = todayRoutine?.completionRate || 0;
+  const hasTodayRoutine = Boolean(todayRoutine);
+  const routineCorrelation = getRoutineSessionCorrelation(
+    todayRoutine && !routines.some((routine) => routine.id === todayRoutine.id) ? [todayRoutine, ...routines] : routines,
+    sessions
+  );
+
   const getDashboardSessionDayKey = (session) =>
     toLocalDateKey(session?.sessionDate || session?.updatedAt || session?.createdAt);
-  const hasTodayRoutine = Boolean(getRoutineForDate(routines, todayKey));
 
   const todaySessions = completed.filter((s) => getDashboardSessionDayKey(s) === todayKey);
   const yesterdaySessions = completed.filter((s) => getDashboardSessionDayKey(s) === yesterdayKey);
@@ -10656,7 +10687,7 @@ function XSessionApp() {
                   editingSavedSession={Boolean(editingSessionId)}
                 />
               )}
-              {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} routines={myRoutines} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
+              {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} routines={myRoutines} currentUser={currentUser} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
