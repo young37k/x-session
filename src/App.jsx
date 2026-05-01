@@ -289,7 +289,7 @@ function getInitialTabByRole(role) {
   return "routine";
 }
 
-const ADMIN_EMAILS = ["theyoung37k@gmail.com", "5@gmail.com"];
+const ADMIN_EMAILS = ["theyoung37k@gmail.com"];
 const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
 const ADMIN_REVIEWED_USERS_KEY = "elbowshot_admin_reviewed_users";
 
@@ -5010,20 +5010,38 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
 
 function getDistancePerformance(sessions) {
   const map = new Map();
-  sessions.forEach((session) => {
-    const key = `${session.distance}m`;
-    if (!map.has(key)) map.set(key, { label: key, score: 0, arrows: 0, sessions: 0 });
+
+  function addDistance(distance, score, arrows) {
+    const numericDistance = Number(distance) || 0;
+    if (!numericDistance) return;
+    const key = `${numericDistance}m`;
+    if (!map.has(key)) map.set(key, { label: key, distance: numericDistance, score: 0, arrows: 0, sessions: 0 });
     const bucket = map.get(key);
-    bucket.score += session.summary?.totalScore ?? getSessionTotal(session);
-    bucket.arrows += session.summary?.totalArrows ?? getArrowCount(session);
+    bucket.score += Number(score) || 0;
+    bucket.arrows += Number(arrows) || 0;
     bucket.sessions += 1;
+  }
+
+  sessions.forEach((session) => {
+    if (session.recordInputType === "distance" && Array.isArray(session.distanceRounds) && session.distanceRounds.length) {
+      const arrowsPerDistance = Number(session.arrowsPerDistance) || 36;
+      session.distanceRounds.forEach((round) => addDistance(round.distance, round.total, arrowsPerDistance));
+      return;
+    }
+
+    addDistance(
+      session.distance,
+      session.summary?.totalScore ?? getSessionTotal(session),
+      session.summary?.totalArrows ?? getArrowCount(session)
+    );
   });
+
   return Array.from(map.values())
     .map((item) => ({
       ...item,
       avgArrow: item.arrows ? Number((item.score / item.arrows).toFixed(2)) : 0,
     }))
-    .sort((a, b) => Number(a.label.replace("m", "")) - Number(b.label.replace("m", "")));
+    .sort((a, b) => a.distance - b.distance);
 }
 
 function getWeakZoneInsight(sessions) {
@@ -8114,6 +8132,134 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 }
 
 
+function averageNumbers(values = []) {
+  const valid = values.map(Number).filter((value) => Number.isFinite(value));
+  return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : 0;
+}
+
+function getSessionAverageForGrowth(session) {
+  const avg = session?.summary?.averageArrow ?? getAverageArrow(session);
+  return Number.isFinite(Number(avg)) ? Number(avg) : 0;
+}
+
+function buildParentGrowthSummary(sessions = []) {
+  const completed = sessions
+    .filter((session) => session?.isComplete)
+    .slice()
+    .sort((a, b) => new Date(a.sessionDate || a.updatedAt || 0) - new Date(b.sessionDate || b.updatedAt || 0));
+
+  if (completed.length === 0) {
+    return {
+      ready: false,
+      recentAverage: "-",
+      previousAverage: "-",
+      delta: 0,
+      deltaLabel: "기록 필요",
+      statusLabel: "분석 대기",
+      summary: "기록이 쌓이면 최근 평균, 이전 평균, 성장 흐름을 부모용 문장으로 보여준다.",
+      action: "먼저 동일 조건 기록을 3회 이상 저장해야 한다.",
+      retentionRate: "-",
+    };
+  }
+
+  const latestFive = completed.slice(-5);
+  const previousFive = completed.slice(-10, -5);
+  const recentAverageValue = averageNumbers(latestFive.map(getSessionAverageForGrowth));
+  const previousAverageValue = previousFive.length
+    ? averageNumbers(previousFive.map(getSessionAverageForGrowth))
+    : averageNumbers(completed.slice(0, Math.max(1, completed.length - latestFive.length)).map(getSessionAverageForGrowth));
+  const delta = Number((recentAverageValue - previousAverageValue).toFixed(2));
+  const latest = completed[completed.length - 1];
+  const latestScore = getSessionAverageForGrowth(latest);
+  const first = completed[0];
+  const firstScore = getSessionAverageForGrowth(first);
+  const totalDelta = Number((latestScore - firstScore).toFixed(2));
+  const retentionRate = previousAverageValue ? Math.max(0, Math.min(130, Math.round((recentAverageValue / previousAverageValue) * 100))) : 100;
+
+  let statusLabel = "유지";
+  if (delta >= 0.2) statusLabel = "상승";
+  if (delta <= -0.2) statusLabel = "하락";
+
+  const deltaLabel = `${delta > 0 ? "+" : ""}${delta.toFixed(2)}`;
+  const totalDeltaLabel = `${totalDelta > 0 ? "+" : ""}${totalDelta.toFixed(2)}`;
+
+  return {
+    ready: completed.length >= 2,
+    recentAverage: recentAverageValue.toFixed(2),
+    previousAverage: previousAverageValue.toFixed(2),
+    delta,
+    deltaLabel,
+    statusLabel,
+    retentionRate: `${retentionRate}%`,
+    summary: `최근 ${latestFive.length}회 평균은 ${recentAverageValue.toFixed(2)}점이며 이전 구간 대비 ${deltaLabel}점 ${statusLabel} 흐름이다. 첫 기록 대비 변화는 ${totalDeltaLabel}점이다.`,
+    action: delta >= 0.2
+      ? "현재 훈련 방향은 유지하되, 가장 약한 거리에서 반복 기록을 더 쌓아라."
+      : delta <= -0.2
+        ? "최근 하락 구간이다. 루틴, 거리, 후반 세트 하락 여부를 먼저 확인해야 한다."
+        : "기록은 유지 중이다. 점수보다 편차와 후반 유지율을 줄이는 쪽이 우선이다.",
+  };
+}
+
+function buildLateSetDropInsight(sessions = []) {
+  const candidates = sessions
+    .filter((session) => session?.isComplete && session.recordInputType !== "distance" && Array.isArray(session.ends) && session.ends.length >= 4)
+    .map((session) => {
+      const ends = session.ends || [];
+      const early = ends.slice(0, Math.ceil(ends.length / 2));
+      const late = ends.slice(Math.floor(ends.length / 2));
+      const earlyAverage = averageNumbers(early.map(endTotal));
+      const lateAverage = averageNumbers(late.map(endTotal));
+      return Number((lateAverage - earlyAverage).toFixed(1));
+    });
+
+  if (!candidates.length) {
+    return {
+      ready: false,
+      value: "-",
+      label: "엔드별 기록 필요",
+      message: "세트/엔드별 기록이 4엔드 이상 쌓이면 후반 집중력 하락을 분석한다.",
+    };
+  }
+
+  const averageDrop = Number(averageNumbers(candidates).toFixed(1));
+  if (averageDrop < -1) {
+    return {
+      ready: true,
+      value: `${averageDrop}점`,
+      label: "후반 하락",
+      message: `후반 엔드 평균이 초반보다 ${Math.abs(averageDrop)}점 낮다. 체력 또는 집중력 유지 훈련이 우선이다.`,
+    };
+  }
+
+  if (averageDrop > 1) {
+    return {
+      ready: true,
+      value: `+${averageDrop}점`,
+      label: "후반 상승",
+      message: `후반 엔드에서 평균 +${averageDrop}점 상승한다. 경기 후반 적응력이 좋은 편이다.`,
+    };
+  }
+
+  return {
+    ready: true,
+    value: `${averageDrop > 0 ? "+" : ""}${averageDrop}점`,
+    label: "후반 안정",
+    message: "초반과 후반 점수 차이가 작다. 현재는 거리별 약점 분석을 우선하면 된다.",
+  };
+}
+
+function getDistanceWeaknessFromPerformance(distancePerformance = []) {
+  const valid = distancePerformance.filter((item) => Number(item.avgArrow) > 0);
+  if (!valid.length) return { label: "거리 데이터 필요", message: "거리별 기록이 쌓이면 가장 약한 거리를 자동으로 찾는다." };
+  const weakest = valid.slice().sort((a, b) => a.avgArrow - b.avgArrow)[0];
+  const strongest = valid.slice().sort((a, b) => b.avgArrow - a.avgArrow)[0];
+  const gap = Number((strongest.avgArrow - weakest.avgArrow).toFixed(2));
+  return {
+    label: `${weakest.label} 약점`,
+    message: `${weakest.label} 평균 ${weakest.avgArrow}점으로 가장 낮다. 최고 거리(${strongest.label})와 ${gap}점 차이다.`,
+  };
+}
+
 function AnalysisBoard({ currentUser, users, sessions }) {
   const [period, setPeriod] = useState("day");
   const [matchType, setMatchType] = useState("all");
@@ -8224,6 +8370,9 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   const distancePerformance = getDistancePerformance(allMySessions.filter((s) => isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)));
   const weakZoneInsight = getWeakZoneInsight(filteredMine);
   const autoGoal = useMemo(() => buildAutoGoalInsight(filteredMine), [filteredMine]);
+  const parentGrowthSummary = useMemo(() => buildParentGrowthSummary(filteredMine), [filteredMine]);
+  const lateSetDropInsight = useMemo(() => buildLateSetDropInsight(filteredMine), [filteredMine]);
+  const distanceWeakness = useMemo(() => getDistanceWeaknessFromPerformance(distancePerformance), [distancePerformance]);
 
   return (
     <div className="grid gap-4">
@@ -8307,6 +8456,62 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             </div>
           ) : (
             <>
+              <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+                <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-blue-950 via-slate-900 to-red-800 p-5 text-white shadow-xl">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Parent Growth Report · 개발 전체 공개</div>
+                      <div className="mt-2 text-2xl font-black md:text-3xl">{getDisplayName(currentUser)} 성장 분석 리포트</div>
+                      <div className="mt-2 max-w-3xl text-sm leading-relaxed text-white/80">
+                        {parentGrowthSummary.summary}
+                      </div>
+                    </div>
+                    <Badge className="rounded-full bg-white/15 px-4 py-2 text-white">배포 전 유료 잠금 예정</Badge>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 md:grid-cols-4">
+                    <div className="rounded-3xl bg-white/10 p-4">
+                      <div className="text-xs text-white/70">최근 5회 평균</div>
+                      <div className="mt-2 text-3xl font-black">{parentGrowthSummary.recentAverage}</div>
+                      <div className="mt-1 text-xs text-white/70">이전 평균 {parentGrowthSummary.previousAverage}</div>
+                    </div>
+                    <div className="rounded-3xl bg-white/10 p-4">
+                      <div className="text-xs text-white/70">성장 변화</div>
+                      <div className={`mt-2 text-3xl font-black ${parentGrowthSummary.delta >= 0 ? "text-emerald-200" : "text-red-200"}`}>{parentGrowthSummary.deltaLabel}</div>
+                      <div className="mt-1 text-xs text-white/70">{parentGrowthSummary.statusLabel}</div>
+                    </div>
+                    <div className="rounded-3xl bg-white/10 p-4">
+                      <div className="text-xs text-white/70">후반 유지</div>
+                      <div className="mt-2 text-3xl font-black">{lateSetDropInsight.value}</div>
+                      <div className="mt-1 text-xs text-white/70">{lateSetDropInsight.label}</div>
+                    </div>
+                    <div className="rounded-3xl bg-white/10 p-4">
+                      <div className="text-xs text-white/70">유지율</div>
+                      <div className="mt-2 text-3xl font-black">{parentGrowthSummary.retentionRate}</div>
+                      <div className="mt-1 text-xs text-white/70">최근/이전 평균 기준</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 rounded-[28px] border border-slate-200 bg-white p-5 shadow-xl">
+                  <div className="flex items-center gap-2 text-lg font-black text-slate-950">
+                    <Crown className="h-5 w-5 text-amber-500" /> 결제 가치 요약
+                  </div>
+                  <div className="rounded-3xl bg-blue-50 p-4 text-sm text-blue-950">
+                    <div className="font-semibold">1. 현재 성장 흐름</div>
+                    <div className="mt-1 text-blue-800">{parentGrowthSummary.action}</div>
+                  </div>
+                  <div className="rounded-3xl bg-red-50 p-4 text-sm text-red-950">
+                    <div className="font-semibold">2. 약점 거리</div>
+                    <div className="mt-1 text-red-800">{distanceWeakness.message}</div>
+                  </div>
+                  <div className="rounded-3xl bg-slate-50 p-4 text-sm text-slate-700">
+                    <div className="font-semibold text-slate-950">3. 후반 집중력</div>
+                    <div className="mt-1">{lateSetDropInsight.message}</div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid gap-3 md:grid-cols-4">
                 <Card className="rounded-[24px] border-0 bg-emerald-50 shadow-none">
                   <CardContent className="p-5">
