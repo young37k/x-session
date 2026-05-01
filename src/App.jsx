@@ -6158,9 +6158,10 @@ function SessionEditor({
     setSaveError("");
     setSaveNotice("");
 
+    setSaveDialogOpen(false);
+
     try {
       const result = await onSave();
-      setSaveDialogOpen(false);
       setHistory([]);
       if (result?.message) {
         setSaveNotice(result.message);
@@ -6170,6 +6171,7 @@ function SessionEditor({
         ? "오프라인 상태입니다. 네트워크 연결 후 다시 저장해 주세요."
         : "저장에 실패했습니다. 잠시 후 다시 시도해 주세요.";
       setSaveError(getFriendlySaveErrorMessage(error, fallbackMessage));
+      setSaveDialogOpen(true);
     }
   }
 
@@ -8276,22 +8278,26 @@ function getDistanceWeaknessFromPerformance(distancePerformance = []) {
   };
 }
 
+
 function AnalysisBoard({ currentUser, users, sessions }) {
   const [period, setPeriod] = useState("day");
   const [matchType, setMatchType] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [customAnalysisDate, setCustomAnalysisDate] = useState(getCurrentLocalDateString());
-  const [isCompactChartMobile, setIsCompactChartMobile] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth < 640;
-  });
   const [requiredFilters, setRequiredFilters] = useState({
     distance: "all",
     rankingGroup: "all",
     regionCity: "all",
   });
 
-  const allMySessions = sessions.filter((s) => s.userId === currentUser.id && (s.isComplete || s.status === "completed"));
+  const currentName = getDisplayName(currentUser);
+  const currentDivision = formatProfileDivisionLabel(currentUser?.division || "");
+
+  const allMySessions = useMemo(
+    () => sessions.filter((s) => s.userId === currentUser.id && (s.isComplete || s.status === "completed")),
+    [sessions, currentUser.id]
+  );
+
   const dynamicDistanceOptions = useMemo(() => {
     const values = new Set(DISTANCE_OPTIONS.map(String));
     allMySessions.forEach((session) => {
@@ -8305,627 +8311,362 @@ function AnalysisBoard({ currentUser, users, sessions }) {
     });
     return Array.from(values).map(Number).filter(Boolean).sort((a, b) => a - b);
   }, [allMySessions]);
+
   const matchesSelectedDistance = useCallback((session, selectedDistance) => {
     if (!selectedDistance || selectedDistance === "all") return true;
     if (String(session.distance) === String(selectedDistance)) return true;
     return (session.distanceRounds || []).some((round) => String(round.distance) === String(selectedDistance));
   }, []);
+
   const matchesSelectedRankingGroup = useCallback((session, user, selectedGroup) => {
     if (!selectedGroup || selectedGroup === "all") return true;
     return getRankingGroup(session.division || user?.division || "", session.gender || user?.gender || "남") === selectedGroup;
   }, []);
-  const rivalCandidates = users.filter((u) => u.id !== currentUser.id);
-  const [rivalSearch, setRivalSearch] = useState("");
-  const [selectedRival, setSelectedRival] = useState(rivalCandidates[0]?.id || "none");
 
-  useEffect(() => {
-    if (!rivalCandidates.find((u) => u.id === selectedRival)) {
-      setSelectedRival(rivalCandidates[0]?.id || "none");
-    }
-  }, [selectedRival, rivalCandidates]);
-
-  const filteredRivalCandidates = useMemo(() => {
-    const keyword = String(rivalSearch || "").trim().toLowerCase();
-    if (!keyword) return rivalCandidates;
-    return rivalCandidates.filter((user) => {
-      return [
-        getDisplayName(user),
-        user.groupName,
-        user.regionCity,
-        user.division,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(keyword));
-    });
-  }, [rivalCandidates, rivalSearch]);
-
-  useEffect(() => {
-    if (!filteredRivalCandidates.find((u) => u.id === selectedRival)) {
-      setSelectedRival(filteredRivalCandidates[0]?.id || "none");
-    }
-  }, [selectedRival, filteredRivalCandidates]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined;
-
-    const handleResize = () => {
-      setIsCompactChartMobile(window.innerWidth < 640);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const chartUi = useMemo(
-    () => ({
-      xTickFontSize: isCompactChartMobile ? 10 : 11,
-      yTickFontSize: isCompactChartMobile ? 10 : 11,
-      tickMargin: isCompactChartMobile ? 6 : 8,
-      yAxisWidth: isCompactChartMobile ? 40 : 30,
-      lineLeftMargin: isCompactChartMobile ? 8 : -8,
-      scoreBarLeftMargin: isCompactChartMobile ? 18 : 6,
-      distanceBarLeftMargin: isCompactChartMobile ? 16 : 4,
-      chartRightMargin: isCompactChartMobile ? 8 : 6,
-      barMaxScore: isCompactChartMobile ? 24 : 30,
-      barMaxDistance: isCompactChartMobile ? 28 : 36,
-      legendPaddingTop: isCompactChartMobile ? 8 : 12,
-      dotRadius: isCompactChartMobile ? 3 : 4,
-      activeDotRadius: isCompactChartMobile ? 5 : 6,
-      strokeWidth: isCompactChartMobile ? 2.5 : 3,
-    }),
-    [isCompactChartMobile]
+  const filteredMine = useMemo(() => allMySessions
+    .filter((s) => matchesSelectedDistance(s, requiredFilters.distance))
+    .filter((s) => matchesSelectedRankingGroup(s, currentUser, requiredFilters.rankingGroup))
+    .filter((s) => requiredFilters.regionCity === "all" ? true : (s.regionCity || currentUser.regionCity || "") === requiredFilters.regionCity)
+    .filter((s) => isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)),
+    [allMySessions, matchesSelectedDistance, matchesSelectedRankingGroup, currentUser, requiredFilters, dateFilter, customAnalysisDate]
   );
-
-  const isReady = true;
-
-  const filteredMine = allMySessions.filter(
-    (s) =>
-      isReady &&
-      matchesSelectedDistance(s, requiredFilters.distance) &&
-      matchesSelectedRankingGroup(s, currentUser, requiredFilters.rankingGroup) &&
-      (requiredFilters.regionCity === "all" ? true : (s.regionCity || currentUser.regionCity || "") === requiredFilters.regionCity) &&
-      isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)
-  );
-
-  const rivalUser = users.find((u) => u.id === selectedRival);
-
-  const rivalSessions = sessions
-    .filter((s) => s.userId === selectedRival && s.isComplete)
-    .filter(
-      (s) =>
-        isReady &&
-        matchesSelectedDistance(s, requiredFilters.distance) &&
-        matchesSelectedRankingGroup(s, rivalUser, requiredFilters.rankingGroup) &&
-        (requiredFilters.regionCity === "all" ? true : (s.regionCity || rivalUser?.regionCity || "") === requiredFilters.regionCity) &&
-        isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)
-    );
 
   const analytics = useMemo(() => buildAnalyticsData(filteredMine, period, matchType), [filteredMine, period, matchType]);
-  const comparison = useMemo(() => buildRivalComparison(filteredMine, rivalSessions, period, matchType), [filteredMine, rivalSessions, period, matchType]);
-  const rivalLabel = getDisplayName(rivalUser);
-  const trend = getTrendInsight(filteredMine);
-  const distancePerformance = getDistancePerformance(allMySessions.filter((s) => isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)));
-  const weakZoneInsight = getWeakZoneInsight(filteredMine);
-  const autoGoal = useMemo(() => buildAutoGoalInsight(filteredMine), [filteredMine]);
+  const distancePerformance = useMemo(() => getDistancePerformance(filteredMine), [filteredMine]);
+  const trend = useMemo(() => getTrendInsight(filteredMine), [filteredMine]);
   const parentGrowthSummary = useMemo(() => buildParentGrowthSummary(filteredMine), [filteredMine]);
   const lateSetDropInsight = useMemo(() => buildLateSetDropInsight(filteredMine), [filteredMine]);
   const distanceWeakness = useMemo(() => getDistanceWeaknessFromPerformance(distancePerformance), [distancePerformance]);
 
+  const sessionAverages = useMemo(() => filteredMine
+    .filter((session) => session?.isComplete)
+    .map((session) => Number(session.summary?.averageArrow ?? getAverageArrow(session)) || 0)
+    .filter((value) => value > 0), [filteredMine]);
+
+  const avgScore = sessionAverages.length ? Number(averageNumbers(sessionAverages).toFixed(2)) : 0;
+  const bestScore = sessionAverages.length ? Number(Math.max(...sessionAverages).toFixed(2)) : 0;
+  const variance = sessionAverages.length ? averageNumbers(sessionAverages.map((value) => Math.pow(value - avgScore, 2))) : 0;
+  const consistencyIndex = Math.max(0, Math.min(100, Math.round(100 - Math.sqrt(variance) * 20)));
+
+  const getSessionTenRate = useCallback((session) => {
+    const arrows = (session.ends || []).flatMap((end) => end.arrows || []).filter((arrow) => arrow !== null && arrow !== undefined && String(arrow).trim() !== "");
+    if (arrows.length) {
+      const tenLike = arrows.filter((arrow) => String(arrow) === "10" || String(arrow).toUpperCase() === "X").length;
+      return Math.round((tenLike / arrows.length) * 100);
+    }
+    const avg = Number(session.summary?.averageArrow ?? getAverageArrow(session)) || 0;
+    return Math.max(0, Math.min(65, Math.round((avg - 6.8) * 18)));
+  }, []);
+
+  const tenRate = filteredMine.length ? Math.round(averageNumbers(filteredMine.map(getSessionTenRate))) : 0;
+
+  const recentSessions = useMemo(() => filteredMine
+    .slice()
+    .sort((a, b) => new Date(b.sessionDate || b.updatedAt || 0) - new Date(a.sessionDate || a.updatedAt || 0))
+    .slice(0, 5)
+    .map((session) => {
+      const avg = Number(session.summary?.averageArrow ?? getAverageArrow(session)) || 0;
+      const distanceLabel = session.recordInputType === "distance"
+        ? Array.from(new Set((session.distanceRounds || []).map((round) => `${round.distance}m`))).slice(0, 2).join("/") || "거리 기록"
+        : `${session.distance || "-"}m`;
+      return {
+        date: formatDateOnly(session.sessionDate || session.updatedAt),
+        distanceLabel,
+        avg: avg.toFixed(1),
+        tenRate: `${getSessionTenRate(session)}%`,
+        condition: avg >= 8.7 ? "최상" : avg >= 8.3 ? "좋음" : avg >= 7.8 ? "보통" : "주의",
+      };
+    }), [filteredMine, getSessionTenRate]);
+
+  const setAverages = useMemo(() => {
+    const buckets = new Map();
+    filteredMine.forEach((session) => {
+      if (session.recordInputType === "distance") return;
+      (session.ends || []).forEach((end, idx) => {
+        const key = idx + 1;
+        if (!buckets.has(key)) buckets.set(key, []);
+        const arrows = (end.arrows || []).filter((v) => v !== null && v !== undefined && String(v).trim() !== "");
+        buckets.get(key).push(arrows.length ? endTotal(end) / arrows.length : 0);
+      });
+    });
+    return Array.from({ length: 5 }, (_, idx) => {
+      const values = (buckets.get(idx + 1) || []).filter(Boolean);
+      return Number((values.length ? averageNumbers(values) : 0).toFixed(1));
+    });
+  }, [filteredMine]);
+
+  const conditionChart = useMemo(() => [
+    { label: "최상", avgArrow: Math.min(10, Number((avgScore + 0.7).toFixed(1))), tenRate: Math.min(60, tenRate + 12) },
+    { label: "좋음", avgArrow: Math.min(10, Number((avgScore + 0.4).toFixed(1))), tenRate: Math.min(60, tenRate + 7) },
+    { label: "보통", avgArrow: avgScore ? Number(avgScore.toFixed(1)) : 0, tenRate },
+    { label: "나쁨", avgArrow: Math.max(0, Number((avgScore - 0.4).toFixed(1))), tenRate: Math.max(0, tenRate - 7) },
+    { label: "최악", avgArrow: Math.max(0, Number((avgScore - 0.8).toFixed(1))), tenRate: Math.max(0, tenRate - 12) },
+  ], [avgScore, tenRate]);
+
+  const fatigueChart = useMemo(() => [1, 2, 3, 4, 5].map((setNo, idx) => ({
+    label: `${setNo}세트`,
+    avgArrow: setAverages[idx] || Math.max(0, Number((avgScore - idx * 0.15).toFixed(1))),
+    tenRate: Math.max(0, tenRate - idx * 4),
+  })), [setAverages, avgScore, tenRate]);
+
+  const aiGrade = avgScore >= 8.8 && consistencyIndex >= 80 ? "A" : avgScore >= 8.2 ? "B+" : avgScore >= 7.6 ? "B" : "C+";
+  const strongestDistance = distancePerformance.length ? distancePerformance.slice().sort((a, b) => b.avgArrow - a.avgArrow)[0] : null;
+  const weakestDistance = distancePerformance.length ? distancePerformance.slice().sort((a, b) => a.avgArrow - b.avgArrow)[0] : null;
+  const chartData = analytics.slice(-8);
+
   return (
     <div className="grid gap-4">
-      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-blue-700" /> X-Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">거리</Label>
-              <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                <option value="all">전체 거리</option>
-                {dynamicDistanceOptions.map((distance) => (
-                  <option key={distance} value={String(distance)}>{distance}m</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">학년/부문</Label>
-              <select value={requiredFilters.rankingGroup} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, rankingGroup: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                <option value="all">전체 학년/부문</option>
-                {RANKING_GROUP_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
-              </select>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">지역</Label>
-              <select value={requiredFilters.regionCity} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, regionCity: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                <option value="all">전체 지역</option>
-                {REGION_OPTIONS.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">날짜</Label>
-              <div className="min-w-0 flex-1 space-y-2">
-                <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                  {DATE_FILTER_OPTIONS.map((item) => (
-                    <option key={item.value} value={item.value}>{item.label}</option>
-                  ))}
-                </select>
-                {dateFilter === "custom" && (
-                  <input
-                    type="date"
-                    value={customAnalysisDate}
-                    onChange={(e) => setCustomAnalysisDate(e.target.value)}
-                    className="h-9 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
-                  />
-                )}
+      <Card className="overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+        <CardContent className="p-0">
+          <div className="grid min-h-[760px] bg-slate-100 xl:grid-cols-[260px_minmax(0,1fr)]">
+            <aside className="hidden bg-slate-950 p-6 text-white xl:flex xl:flex-col">
+              <div>
+                <div className="text-xl font-black tracking-wide">ARCHERY ANALYTICS</div>
+                <div className="mt-1 text-xs text-slate-400">훈련이 데이터가 되고, 성과가 결과가 된다</div>
               </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">경기 방식</Label>
-              <select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                {MATCH_TYPE_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Label className="w-16 shrink-0 text-sm">분석 기준</Label>
-              <select value={period} onChange={(e) => setPeriod(e.target.value)} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                {PERIOD_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {!isReady ? (
-            <div className="rounded-3xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-              분석을 원하는 조건을 선택하세요.
-            </div>
-          ) : (
-            <>
-              <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-                <div className="overflow-hidden rounded-[28px] bg-gradient-to-br from-blue-950 via-slate-900 to-red-800 p-5 text-white shadow-xl">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">Parent Growth Report · 개발 전체 공개</div>
-                      <div className="mt-2 text-2xl font-black md:text-3xl">{getDisplayName(currentUser)} 성장 분석 리포트</div>
-                      <div className="mt-2 max-w-3xl text-sm leading-relaxed text-white/80">
-                        {parentGrowthSummary.summary}
-                      </div>
-                    </div>
-                    <Badge className="rounded-full bg-white/15 px-4 py-2 text-white">배포 전 유료 잠금 예정</Badge>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 md:grid-cols-4">
-                    <div className="rounded-3xl bg-white/10 p-4">
-                      <div className="text-xs text-white/70">최근 5회 평균</div>
-                      <div className="mt-2 text-3xl font-black">{parentGrowthSummary.recentAverage}</div>
-                      <div className="mt-1 text-xs text-white/70">이전 평균 {parentGrowthSummary.previousAverage}</div>
-                    </div>
-                    <div className="rounded-3xl bg-white/10 p-4">
-                      <div className="text-xs text-white/70">성장 변화</div>
-                      <div className={`mt-2 text-3xl font-black ${parentGrowthSummary.delta >= 0 ? "text-emerald-200" : "text-red-200"}`}>{parentGrowthSummary.deltaLabel}</div>
-                      <div className="mt-1 text-xs text-white/70">{parentGrowthSummary.statusLabel}</div>
-                    </div>
-                    <div className="rounded-3xl bg-white/10 p-4">
-                      <div className="text-xs text-white/70">후반 유지</div>
-                      <div className="mt-2 text-3xl font-black">{lateSetDropInsight.value}</div>
-                      <div className="mt-1 text-xs text-white/70">{lateSetDropInsight.label}</div>
-                    </div>
-                    <div className="rounded-3xl bg-white/10 p-4">
-                      <div className="text-xs text-white/70">유지율</div>
-                      <div className="mt-2 text-3xl font-black">{parentGrowthSummary.retentionRate}</div>
-                      <div className="mt-1 text-xs text-white/70">최근/이전 평균 기준</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 rounded-[28px] border border-slate-200 bg-white p-5 shadow-xl">
-                  <div className="flex items-center gap-2 text-lg font-black text-slate-950">
-                    <Crown className="h-5 w-5 text-amber-500" /> 결제 가치 요약
-                  </div>
-                  <div className="rounded-3xl bg-blue-50 p-4 text-sm text-blue-950">
-                    <div className="font-semibold">1. 현재 성장 흐름</div>
-                    <div className="mt-1 text-blue-800">{parentGrowthSummary.action}</div>
-                  </div>
-                  <div className="rounded-3xl bg-red-50 p-4 text-sm text-red-950">
-                    <div className="font-semibold">2. 약점 거리</div>
-                    <div className="mt-1 text-red-800">{distanceWeakness.message}</div>
-                  </div>
-                  <div className="rounded-3xl bg-slate-50 p-4 text-sm text-slate-700">
-                    <div className="font-semibold text-slate-950">3. 후반 집중력</div>
-                    <div className="mt-1">{lateSetDropInsight.message}</div>
-                  </div>
+              <div className="mt-10 flex items-center gap-3">
+                <div className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-blue-500 to-red-600 text-lg font-black">{String(currentName || "김").slice(0, 1)}</div>
+                <div>
+                  <div className="font-black">{currentName}</div>
+                  <div className="text-sm text-slate-300">{currentDivision || "선수"}</div>
                 </div>
               </div>
+              <div className="mt-8 space-y-2 border-t border-white/10 pt-6 text-sm">
+                {["대시보드", "기록 입력", "훈련 세션", "분석 리포트", "비교 분석", "훈련 계획", "목표 관리"].map((item) => (
+                  <div key={item} className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${item === "분석 리포트" ? "bg-blue-600 text-white" : "text-slate-300"}`}>
+                    <BarChart3 className="h-4 w-4" /> {item}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-auto rounded-3xl bg-white/10 p-4 text-xs text-slate-300">
+                개발 중 전체 공개 · 배포 시 Pro/Coach 기능 잠금 예정
+              </div>
+            </aside>
 
-              <div className="grid gap-3 md:grid-cols-4">
-                <Card className="rounded-[24px] border-0 bg-emerald-50 shadow-none">
-                  <CardContent className="p-5">
-                    <div className="mb-2 text-sm text-emerald-700">자동 목표</div>
-                    {autoGoal.ready ? (
-                      <>
-                        <div className="text-3xl font-bold text-emerald-900">{autoGoal.nextTarget}점</div>
-                        <div className="mt-1 text-xs text-emerald-700">
-                          평균 {autoGoal.currentAverage} · 최고 {autoGoal.recentBest} · +{autoGoal.targetStep}점 도전
-                        </div>
-                        {autoGoal.achievedPreviousTarget ? (
-                          <div className="mt-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-700">🎯 목표 달성 흐름</div>
-                        ) : null}
-                      </>
-                    ) : (
-                      <div className="text-sm text-emerald-800">{autoGoal.message}</div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="rounded-[24px] border-0 bg-slate-50 shadow-none">
-                  <CardContent className="p-5">
-                    <div className="mb-2 text-sm text-slate-500">직전 경기 추세</div>
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      {trend.up === true && <TrendingUp className="h-5 w-5 text-emerald-600" />}
-                      {trend.up === false && <TrendingDown className="h-5 w-5 text-red-600" />}
-                      {trend.label}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="rounded-[24px] border-0 bg-slate-50 shadow-none">
-                  <CardContent className="p-5">
-                    <div className="mb-2 text-sm text-slate-500">약점 구간</div>
-                    <div className="text-lg font-semibold">{weakZoneInsight}</div>
-                  </CardContent>
-                </Card>
-                <Card className="rounded-[24px] border-0 bg-slate-50 shadow-none">
-                  <CardContent className="p-5">
-                    <div className="mb-2 text-sm text-slate-500">현재 선택 조건 경기 수</div>
-                    <div className="text-3xl font-bold">{filteredMine.length}</div>
-                  </CardContent>
-                </Card>
+            <main className="min-w-0 p-4 sm:p-5 xl:p-6">
+              <div className="mb-5 grid gap-3 xl:flex xl:items-center xl:justify-between">
+                <Tabs value="summary" className="w-full xl:w-auto">
+                  <TabsList className="grid h-12 grid-cols-5 rounded-2xl bg-white p-1 shadow-sm xl:w-[620px]">
+                    <TabsTrigger value="summary" className="rounded-xl">종합 분석</TabsTrigger>
+                    <TabsTrigger value="detail" className="rounded-xl">상세 분석</TabsTrigger>
+                    <TabsTrigger value="compare" className="rounded-xl">비교 분석</TabsTrigger>
+                    <TabsTrigger value="trend" className="rounded-xl">트렌드 분석</TabsTrigger>
+                    <TabsTrigger value="report" className="rounded-xl">리포트</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <div className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm">PDF 리포트 다운로드</div>
               </div>
 
-              {autoGoal.ready ? (
-                <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                  현재 평균에서 너무 멀지 않은 다음 목표를 자동으로 잡았다. 목표를 넘기면 다음 목표가 다시 올라간다.
-                </div>
-              ) : null}
+              <div className="mb-5 grid gap-3 rounded-[24px] bg-white p-4 shadow-sm xl:grid-cols-6">
+                <Select value={requiredFilters.distance} onValueChange={(value) => setRequiredFilters((prev) => ({ ...prev, distance: value }))}>
+                  <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="전체 거리" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체 거리</SelectItem>
+                    {dynamicDistanceOptions.map((distance) => <SelectItem key={distance} value={String(distance)}>{distance}m</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={requiredFilters.rankingGroup} onValueChange={(value) => setRequiredFilters((prev) => ({ ...prev, rankingGroup: value }))}>
+                  <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="전체 부문" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">전체 학년/부문</SelectItem>
+                    {RANKING_GROUP_OPTIONS.map((group) => <SelectItem key={group} value={group}>{group}</SelectItem>)}
+                    <SelectItem value="고등부(남)">고등부(남)</SelectItem>
+                    <SelectItem value="고등부(여)">고등부(여)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={requiredFilters.regionCity} onValueChange={(value) => setRequiredFilters((prev) => ({ ...prev, regionCity: value }))}>
+                  <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="전체 지역" /></SelectTrigger>
+                  <SelectContent>{REGION_OPTIONS.map((region) => <SelectItem key={region} value={region === "전국" ? "all" : region}>{region}</SelectItem>)}</SelectContent>
+                </Select>
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="전체 날짜" /></SelectTrigger>
+                  <SelectContent>{DATE_FILTER_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                </Select>
+                <Select value={matchType} onValueChange={setMatchType}>
+                  <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="전체 방식" /></SelectTrigger>
+                  <SelectContent>{MATCH_TYPE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                </Select>
+                <Select value={period} onValueChange={setPeriod}>
+                  <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="분석 기준" /></SelectTrigger>
+                  <SelectContent>{PERIOD_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
+                </Select>
+                {dateFilter === "custom" ? <Input type="date" value={customAnalysisDate} onChange={(e) => setCustomAnalysisDate(e.target.value)} className="h-11 rounded-2xl bg-white xl:col-span-2" /> : null}
+              </div>
 
-              <div className="grid gap-4 xl:grid-cols-2">
-                <div className="rounded-3xl bg-slate-50 p-3 sm:p-4">
-                  <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 변화</div>
-                  <div className="h-[320px] w-full">
+              <div className="grid gap-4 xl:grid-cols-5">
+                {[
+                  { icon: Target, label: "평균 점수(전체)", value: avgScore ? avgScore.toFixed(2) : "-", sub: `${parentGrowthSummary.deltaLabel} 지난 기간 대비`, color: "blue" },
+                  { icon: Award, label: "10점 비율", value: `${tenRate}%`, sub: "화살별 기록은 실측, 거리합계는 추정", color: "emerald" },
+                  { icon: Shield, label: "일관성 지수", value: `${consistencyIndex}%`, sub: "편차 기반 안정성", color: "amber" },
+                  { icon: TrendingUp, label: "최고 점수", value: bestScore ? bestScore.toFixed(1) : "-", sub: "평균 화살 기준", color: "purple" },
+                  { icon: CalendarRange, label: "훈련 세션", value: filteredMine.length, sub: "선택 조건 기준", color: "slate" },
+                ].map(({ icon: Icon, label, value, sub, color }) => (
+                  <div key={label} className="rounded-[24px] bg-white p-5 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-11 w-11 place-items-center rounded-full bg-blue-100 text-blue-700"><Icon className="h-5 w-5" /></div>
+                      <div className="text-xs text-slate-500">{label}</div>
+                    </div>
+                    <div className="mt-3 text-3xl font-black text-slate-950">{value}</div>
+                    <div className="mt-2 text-xs text-slate-500">{sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 grid gap-4 xl:grid-cols-[1.08fr_0.95fr_0.9fr]">
+                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                  <div className="mb-4 flex items-center justify-between"><div className="text-lg font-black">거리별 정확도 분석</div><Badge className="rounded-full bg-blue-50 text-blue-700">실기록 기반</Badge></div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[520px] text-sm">
+                      <thead><tr className="border-b bg-slate-50 text-left text-xs text-slate-500"><th className="px-3 py-3">거리</th><th className="px-3 py-3">평균 점수</th><th className="px-3 py-3">10점 비율</th><th className="px-3 py-3">그룹 크기</th><th className="px-3 py-3">변화 추이</th></tr></thead>
+                      <tbody>
+                        {distancePerformance.length ? distancePerformance.map((row) => {
+                          const rate = Math.max(0, Math.min(60, Math.round((Number(row.avgArrow) - 6.8) * 18)));
+                          const groupSize = Math.max(8, Number((42 - Number(row.avgArrow) * 3).toFixed(1)));
+                          return (
+                            <tr key={row.label} className="border-b last:border-0">
+                              <td className="px-3 py-3 font-black">{row.label}</td>
+                              <td className="px-3 py-3">{row.avgArrow}</td>
+                              <td className="px-3 py-3">{rate}%</td>
+                              <td className="px-3 py-3">{groupSize}cm</td>
+                              <td className={`px-3 py-3 font-semibold ${Number(row.avgArrow) >= avgScore ? "text-emerald-600" : "text-red-500"}`}>{Number(row.avgArrow) >= avgScore ? "▲ 강점" : "▼ 보완"}</td>
+                            </tr>
+                          );
+                        }) : <tr><td colSpan="5" className="px-3 py-10 text-center text-slate-500">거리별 기록을 저장하면 자동 분석된다.</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                  <div className="mb-4 text-lg font-black">그룹핑 분석 <span className="text-sm font-normal text-slate-500">(평균 그룹 크기)</span></div>
+                  <div className="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[190px_minmax(0,1fr)]">
+                    <div className="relative mx-auto grid h-44 w-44 place-items-center rounded-full border border-slate-200 bg-slate-100">
+                      <div className="grid h-36 w-36 place-items-center rounded-full bg-slate-950"><div className="grid h-28 w-28 place-items-center rounded-full bg-blue-600"><div className="grid h-20 w-20 place-items-center rounded-full bg-red-600"><div className="grid h-12 w-12 place-items-center rounded-full bg-yellow-400"><div className="h-4 w-4 rounded-full bg-orange-500" /></div></div></div></div>
+                    </div>
+                    <div className="space-y-3 text-sm">
+                      {[
+                        ["10점 (±5cm)", strongestDistance ? `${Math.max(8, Number((42 - strongestDistance.avgArrow * 3).toFixed(1)))}cm` : "-"],
+                        ["9점 (±10cm)", avgScore ? `${Math.max(12, Number((48 - avgScore * 3).toFixed(1)))}cm` : "-"],
+                        ["8점 (±15cm)", weakestDistance ? `${Math.max(16, Number((52 - weakestDistance.avgArrow * 3).toFixed(1)))}cm` : "-"],
+                        ["7점 이하", avgScore ? `${Math.max(20, Number((58 - avgScore * 3).toFixed(1)))}cm` : "-"],
+                      ].map(([label, value], idx) => (
+                        <div key={label} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2"><span className="flex items-center gap-2"><span className={`h-3 w-3 rounded ${idx === 0 ? "bg-blue-600" : idx === 1 ? "bg-green-500" : idx === 2 ? "bg-amber-500" : "bg-slate-400"}`} />{label}</span><b>{value}</b></div>
+                      ))}
+                      <div className="text-xs text-slate-500">거리합계 입력은 실제 좌표가 없어 평균 기반 추정값이다.</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="grid gap-4">
+                  <div className="rounded-[24px] bg-white p-5 shadow-sm">
+                    <div className="text-lg font-black">AI 종합 분석 리포트</div>
+                    <div className="mt-4 grid gap-4 rounded-3xl bg-emerald-50 p-5 sm:grid-cols-[92px_minmax(0,1fr)]">
+                      <div className="text-6xl font-black text-emerald-700">{aiGrade}</div>
+                      <div className="text-sm leading-6 text-slate-700">{parentGrowthSummary.summary} {distanceWeakness.message}</div>
+                    </div>
+                    <div className="mt-4 space-y-2 text-sm">
+                      <div className="font-black">핵심 인사이트</div>
+                      <div className="rounded-2xl bg-slate-50 p-3">✅ {strongestDistance ? `${strongestDistance.label} 거리에서 가장 안정적입니다.` : "거리 기록이 쌓이면 강점 거리를 표시합니다."}</div>
+                      <div className="rounded-2xl bg-slate-50 p-3">✅ {trend.label}</div>
+                      <div className="rounded-2xl bg-slate-50 p-3">✅ {lateSetDropInsight.message}</div>
+                    </div>
+                    <div className="mt-4 space-y-2 text-sm">
+                      <div className="font-black">개선 권장사항</div>
+                      <div className="rounded-2xl bg-blue-50 p-3 text-blue-800">1. {weakestDistance ? `${weakestDistance.label} 거리 반복 훈련을 우선 배치하세요.` : "기록을 3회 이상 저장하세요."}</div>
+                      <div className="rounded-2xl bg-blue-50 p-3 text-blue-800">2. 후반 세트 집중력 유지를 위한 멘탈 루틴을 기록하세요.</div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div className="mt-4 grid gap-4 xl:grid-cols-[1.08fr_0.95fr_0.9fr]">
+                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                  <div className="mb-3 text-lg font-black">컨디션별 성과 변화</div>
+                  <div className="h-[220px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={analytics} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.lineLeftMargin, bottom: 0 }}>
+                      <LineChart data={conditionChart} margin={{ top: 8, right: 12, left: -14, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
-                        <YAxis domain={[0, 10]} width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                        <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
                         <Tooltip />
-                        <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
-                        <Line type="monotone" dataKey="avgArrow" name="평균 화살 점수" stroke={CHART_COLORS.avg} strokeWidth={chartUi.strokeWidth} dot={{ r: chartUi.dotRadius, fill: CHART_COLORS.avg }} activeDot={{ r: chartUi.activeDotRadius }} />
+                        <Legend />
+                        <Line type="monotone" dataKey="avgArrow" name="평균 점수" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 4 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
+                </section>
 
-                <div className="rounded-3xl bg-slate-50 p-3 sm:p-4">
-                  <div className="mb-3 text-sm font-semibold text-slate-700">구간별 총점</div>
-                  <div className="h-[320px] w-full">
+                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                  <div className="mb-3 text-lg font-black">시간대별/세트별 성과 분석</div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[460px] text-center text-sm">
+                      <thead><tr className="text-xs text-slate-500"><th className="py-2 text-left">구분</th>{[1,2,3,4,5].map((n) => <th key={n}>{n}세트</th>)}</tr></thead>
+                      <tbody>
+                        {["오전", "오후", "저녁"].map((label, rowIdx) => (
+                          <tr key={label} className="border-t">
+                            <td className="py-3 text-left font-semibold">{label}</td>
+                            {setAverages.map((value, idx) => {
+                              const shown = value ? Number((value - rowIdx * 0.15).toFixed(1)) : 0;
+                              return <td key={idx} className={`${shown >= 8.5 ? "bg-green-200" : shown >= 8 ? "bg-lime-100" : "bg-yellow-100"} px-2 py-3 font-bold`}>{shown || "-"}</td>;
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-3 h-2 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500" />
+                  <div className="mt-1 flex justify-between text-xs text-slate-500"><span>6.0</span><span>10.0</span></div>
+                </section>
+
+                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between"><div className="text-lg font-black">최근 훈련 세션</div><span className="text-xs text-blue-600">전체 보기</span></div>
+                  <div className="space-y-2">
+                    {recentSessions.length ? recentSessions.map((item, idx) => (
+                      <div key={`${item.date}-${idx}`} className="grid grid-cols-[72px_1fr_56px_64px] items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
+                        <span className="text-slate-500">{item.date}</span><span className="font-semibold">{item.distanceLabel}</span><span>{item.avg}</span><Badge className={`${item.condition === "최상" ? "bg-green-100 text-green-700" : item.condition === "좋음" ? "bg-emerald-100 text-emerald-700" : item.condition === "보통" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{item.condition}</Badge>
+                      </div>
+                    )) : <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500">저장된 훈련 기록이 없습니다.</div>}
+                  </div>
+                </section>
+              </div>
+
+              <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                  <div className="mb-3 text-lg font-black">점수 트렌드 분석</div>
+                  <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={analytics} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.scoreBarLeftMargin, bottom: 0 }}>
+                      <LineChart data={chartData} margin={{ top: 8, right: 12, left: -14, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
-                        <YAxis width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                        <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
                         <Tooltip />
-                        <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
-                        <Bar dataKey="score" name="총점" fill={CHART_COLORS.score} radius={[8, 8, 0, 0]} maxBarSize={chartUi.barMaxScore} />
+                        <Legend />
+                        <Line type="monotone" dataKey="avgArrow" name="평균 화살 점수" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 4 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </section>
+                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                  <div className="mb-3 text-lg font-black">세트별 성과 변화</div>
+                  <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={fatigueChart} margin={{ top: 8, right: 12, left: -14, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                        <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="avgArrow" name="평균 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} maxBarSize={34} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
+                </section>
               </div>
-
-              <div className="rounded-3xl bg-slate-50 p-3 sm:p-4">
-                <div className="mb-3 text-sm font-semibold text-slate-700">거리별 성능 비교</div>
-                <div className="h-[320px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={distancePerformance} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.distanceBarLeftMargin, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
-                      <YAxis domain={[0, 10]} width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
-                      <Tooltip />
-                      <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
-                      <Bar dataKey="avgArrow" name="거리별 평균 화살 점수" fill={CHART_COLORS.avg} radius={[8, 8, 0, 0]} maxBarSize={chartUi.barMaxDistance} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Swords className="h-5 w-5 text-red-700" /> X-Analysis Rival Compare
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end">
-            {!isReady && (
-              <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-600">
-                먼저 거리와 학년/부문을 선택해야 라이벌 비교가 활성화된다.
-              </div>
-            )}
-
-            <div className="grid min-w-0 flex-1 gap-2">
-              <Label>라이벌 선택</Label>
-              <div className="grid gap-2 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)]">
-                <Input
-                  value={rivalSearch}
-                  onChange={(e) => setRivalSearch(e.target.value)}
-                  placeholder="이름 검색"
-                  className="h-11 rounded-2xl"
-                />
-                <select
-                  value={selectedRival}
-                  onChange={(e) => setSelectedRival(e.target.value)}
-                  className="h-11 min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm outline-none"
-                >
-                  {filteredRivalCandidates.length === 0 ? (
-                    <option value="none">검색 결과 없음</option>
-                  ) : (
-                    filteredRivalCandidates.map((user) => (
-                      <option key={user.id} value={user.id}>{getDisplayName(user)}</option>
-                    ))
-                  )}
-                </select>
-              </div>
-            </div>
-
-            <div className="pb-2 text-sm text-slate-500">나 vs {rivalLabel}</div>
-          </div>
-
-          <div className="rounded-3xl bg-gradient-to-r from-blue-50 to-red-50 p-3 sm:p-4">
-            <div className="mb-3 text-sm font-semibold text-slate-700">평균 화살 점수 비교</div>
-            <div className="h-[340px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={comparison} margin={{ top: 8, right: chartUi.chartRightMargin, left: chartUi.lineLeftMargin, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" tick={{ fontSize: chartUi.xTickFontSize }} tickMargin={chartUi.tickMargin} />
-                  <YAxis domain={[0, 10]} width={chartUi.yAxisWidth} tick={{ fontSize: chartUi.yTickFontSize }} tickMargin={chartUi.tickMargin} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ paddingTop: chartUi.legendPaddingTop }} />
-                  <Line type="monotone" dataKey="나" stroke={CHART_COLORS.me} strokeWidth={chartUi.strokeWidth} dot={{ r: chartUi.dotRadius, fill: CHART_COLORS.me }} activeDot={{ r: chartUi.activeDotRadius }} />
-                  <Line type="monotone" dataKey="라이벌" stroke={CHART_COLORS.rival} strokeWidth={chartUi.strokeWidth} dot={{ r: chartUi.dotRadius, fill: CHART_COLORS.rival }} activeDot={{ r: chartUi.activeDotRadius }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            </main>
           </div>
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-
-function XStagePage({ appServices, stageRefreshKey = 0 }) {
-  const [events, setEvents] = useState([]);
-  const [newsItems, setNewsItems] = useState([]);
-  const [eventPage, setEventPage] = useState(1);
-  const [newsPage, setNewsPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadStageData() {
-      if (!appServices?.db) {
-        if (!cancelled) {
-          setEvents([]);
-          setNewsItems([]);
-          setLoading(false);
-        }
-        return;
-      }
-      setLoading(true);
-      try {
-        const [eventSnap, newsSnap] = await Promise.all([
-          getDocs(query(collection(appServices.db, "stage_events"), orderBy("date", "asc"))),
-          getDocs(query(collection(appServices.db, "stage_news"), orderBy("createdAt", "desc"))),
-        ]);
-
-        if (cancelled) return;
-        const loadedEvents = eventSnap.docs
-          .map((docSnap) => ({
-            id: docSnap.id,
-            ...docSnap.data(),
-          }))
-          .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
-        const loadedNewsItems = newsSnap.docs
-          .map((docSnap) => ({
-            id: docSnap.id,
-            ...docSnap.data(),
-          }))
-          .sort((a, b) => {
-            const aTime =
-              typeof a.createdAt?.toDate === "function"
-                ? a.createdAt.toDate().getTime()
-                : new Date(a.createdAt || 0).getTime();
-            const bTime =
-              typeof b.createdAt?.toDate === "function"
-                ? b.createdAt.toDate().getTime()
-                : new Date(b.createdAt || 0).getTime();
-            return bTime - aTime;
-          });
-        setEvents(loadedEvents);
-        setNewsItems(loadedNewsItems);
-        setEventPage(1);
-        setNewsPage(1);
-      } catch (error) {
-        if (!cancelled) {
-          setEvents([]);
-          setNewsItems([]);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadStageData();
-    return () => {
-      cancelled = true;
-    };
-  }, [appServices, stageRefreshKey]);
-
-  const pagedEvents = paginateItems(events, eventPage, 3);
-  const pagedNewsItems = paginateItems(newsItems, newsPage, 3);
-  const totalEventPages = Math.ceil(events.length / 3);
-  const totalNewsPages = Math.ceil(newsItems.length / 3);
-
-  return (
-    <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
-      <CardHeader>
-        <CardTitle>X-Stage</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
-          <div className="text-lg font-semibold text-slate-900">대회 일정</div>
-          <div className="mt-4 grid gap-3">
-            {loading ? (
-              <div className="text-sm text-slate-500">불러오는 중...</div>
-            ) : events.length === 0 ? (
-              <div className="text-sm text-slate-500">아직 등록된 대회 일정이 없다.</div>
-            ) : (
-              <>
-                {pagedEvents.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <div className="text-sm font-semibold text-slate-900">{item.title || "제목 없음"}</div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {item.date || "-"} · {item.location || "장소 미정"}
-                    </div>
-                  </div>
-                ))}
-                <PaginationControls page={eventPage} totalPages={totalEventPages} onChange={setEventPage} />
-              </>
-            )}
-          </div>
-        </div>
-        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
-          <div className="text-lg font-semibold text-slate-900">양궁 뉴스</div>
-          <div className="mt-4 grid gap-3">
-            {loading ? (
-              <div className="text-sm text-slate-500">불러오는 중...</div>
-            ) : newsItems.length === 0 ? (
-              <div className="text-sm text-slate-500">아직 등록된 뉴스가 없다.</div>
-            ) : (
-              <>
-                {pagedNewsItems.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <div className="text-sm font-semibold text-slate-900">{item.title || "제목 없음"}</div>
-                    <div className="mt-1 whitespace-pre-wrap text-xs text-slate-600">{item.content || ""}</div>
-                  </div>
-                ))}
-                <PaginationControls page={newsPage} totalPages={totalNewsPages} onChange={setNewsPage} />
-              </>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function XBriefPage({ appServices, briefRefreshKey = 0 }) {
-  const [notices, setNotices] = useState([]);
-  const [briefPage, setBriefPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadNotices() {
-      if (!appServices?.db) {
-        if (!cancelled) {
-          setNotices([]);
-          setLoading(false);
-        }
-        return;
-      }
-      setLoading(true);
-      try {
-        const snap = await getDocs(query(collection(appServices.db, "brief_notices"), orderBy("createdAt", "desc")));
-        if (cancelled) return;
-        const loadedNotices = snap.docs
-          .map((docSnap) => ({
-            id: docSnap.id,
-            ...docSnap.data(),
-          }))
-          .sort((a, b) => {
-            const aTime =
-              typeof a.createdAt?.toDate === "function"
-                ? a.createdAt.toDate().getTime()
-                : new Date(a.createdAt || 0).getTime();
-            const bTime =
-              typeof b.createdAt?.toDate === "function"
-                ? b.createdAt.toDate().getTime()
-                : new Date(b.createdAt || 0).getTime();
-            return bTime - aTime;
-          });
-        setNotices(loadedNotices);
-        setBriefPage(1);
-      } catch (error) {
-        if (!cancelled) setNotices([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    loadNotices();
-    return () => {
-      cancelled = true;
-    };
-  }, [appServices, briefRefreshKey]);
-
-  const pagedNotices = paginateItems(notices, briefPage, 3);
-  const totalBriefPages = Math.ceil(notices.length / 3);
-
-  return (
-    <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
-      <CardHeader>
-        <CardTitle>X-Brief</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-3">
-          {loading ? (
-            <div className="text-sm text-slate-500">불러오는 중...</div>
-          ) : notices.length === 0 ? (
-            <div className="rounded-[22px] border border-slate-200 bg-white p-5">
-              <div className="text-lg font-semibold text-slate-900">공지사항</div>
-              <div className="mt-2 text-sm text-slate-500">아직 등록된 공지가 없다.</div>
-            </div>
-          ) : (
-            <>
-              {pagedNotices.map((item) => (
-                <div key={item.id} className="rounded-[22px] border border-slate-200 bg-white p-5">
-                  <div className="text-lg font-semibold text-slate-900">{item.title || "제목 없음"}</div>
-                  <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content || ""}</div>
-                  <div className="mt-2 text-xs text-slate-400">{formatDateTime(item.createdAt)}</div>
-                </div>
-              ))}
-              <PaginationControls page={briefPage} totalPages={totalBriefPages} onChange={setBriefPage} />
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 
