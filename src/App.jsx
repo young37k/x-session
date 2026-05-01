@@ -8295,6 +8295,18 @@ function AnalysisBoard({ currentUser, users, sessions }) {
     rankingGroup: "all",
     regionCity: "all",
   });
+  const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 1280 : window.innerWidth));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const isMobileAnalysis = viewportWidth < 768;
+  const isTabletAnalysis = viewportWidth >= 768 && viewportWidth < 1280;
 
   const currentName = getDisplayName(currentUser);
   const currentDivision = formatProfileDivisionLabel(currentUser?.division || "");
@@ -8419,6 +8431,154 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   const strongestDistance = distancePerformance.length ? distancePerformance.slice().sort((a, b) => b.avgArrow - a.avgArrow)[0] : null;
   const weakestDistance = distancePerformance.length ? distancePerformance.slice().sort((a, b) => a.avgArrow - b.avgArrow)[0] : null;
   const chartData = analytics.slice(-8);
+
+  if (isMobileAnalysis) {
+    const mobileTrendLabel = trend?.label || "기록 대기";
+    const mobileFeedback = filteredMine.length
+      ? `${parentGrowthSummary.summary} ${weakestDistance ? `${weakestDistance.label} 거리 보완이 필요합니다.` : "기록이 더 쌓이면 약점 거리를 표시합니다."}`
+      : "기록을 저장하면 최근 평균과 점수 트렌드가 자동으로 표시됩니다.";
+
+    return (
+      <div className="grid gap-4">
+        <Card className="rounded-[24px] border-0 bg-white shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between text-base">
+              <span>모바일 성장 요약</span>
+              <Badge className="rounded-full bg-blue-50 text-blue-700">기록 중심</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="rounded-[22px] bg-slate-950 p-5 text-white">
+              <div className="text-xs text-slate-300">최근 평균 점수</div>
+              <div className="mt-2 text-4xl font-black">{avgScore ? avgScore.toFixed(2) : "-"}</div>
+              <div className="mt-2 text-sm text-slate-300">{parentGrowthSummary.deltaLabel} 지난 기간 대비</div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-2xl bg-slate-50 p-3">
+                <div className="text-xs text-slate-500">10점 비율</div>
+                <div className="mt-1 text-xl font-black">{tenRate}%</div>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-3">
+                <div className="text-xs text-slate-500">안정성</div>
+                <div className="mt-1 text-xl font-black">{consistencyIndex}%</div>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-3">
+                <div className="text-xs text-slate-500">세션</div>
+                <div className="mt-1 text-xl font-black">{filteredMine.length}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-[24px] border-0 bg-white shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">점수 트렌드</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[210px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                  <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="avgArrow" name="평균" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-[24px] border-0 bg-white shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">오늘 피드백</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm leading-6 text-slate-700">
+            <div className="rounded-2xl bg-blue-50 p-4 text-blue-900">{mobileTrendLabel}</div>
+            <div className="rounded-2xl bg-slate-50 p-4">{mobileFeedback}</div>
+            <div className="text-xs text-slate-500">모바일은 기록과 핵심 트렌드만 표시한다. 상세 분석은 PC/태블릿에서 확인한다.</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isTabletAnalysis) {
+    return (
+      <div className="grid gap-4">
+        <Card className="rounded-[28px] border-0 bg-white shadow-xl">
+          <CardContent className="grid gap-4 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-2xl font-black text-slate-950">X-Analysis</div>
+                <div className="text-sm text-slate-500">태블릿용 2열 성장 분석 리포트</div>
+              </div>
+              <Badge className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">개발 중 전체 공개</Badge>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: "평균 점수", value: avgScore ? avgScore.toFixed(2) : "-", sub: parentGrowthSummary.deltaLabel },
+                { label: "10점 비율", value: `${tenRate}%`, sub: "화살별/추정 혼합" },
+                { label: "일관성", value: `${consistencyIndex}%`, sub: "편차 기반" },
+                { label: "훈련 세션", value: filteredMine.length, sub: "선택 조건 기준" },
+              ].map((item) => (
+                <div key={item.label} className="rounded-[22px] bg-slate-50 p-4">
+                  <div className="text-xs text-slate-500">{item.label}</div>
+                  <div className="mt-2 text-3xl font-black text-slate-950">{item.value}</div>
+                  <div className="mt-1 text-xs text-slate-500">{item.sub}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <section className="rounded-[24px] bg-slate-50 p-4">
+                <div className="mb-3 font-black">점수 트렌드</div>
+                <div className="h-[260px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                      <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="avgArrow" name="평균 점수" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              <section className="rounded-[24px] bg-slate-50 p-4">
+                <div className="mb-3 font-black">AI 분석 요약</div>
+                <div className="rounded-3xl bg-white p-4">
+                  <div className="text-5xl font-black text-emerald-700">{aiGrade}</div>
+                  <div className="mt-3 text-sm leading-6 text-slate-700">{parentGrowthSummary.summary} {distanceWeakness.message}</div>
+                </div>
+                <div className="mt-3 space-y-2 text-sm">
+                  <div className="rounded-2xl bg-white p-3">{trend.label}</div>
+                  <div className="rounded-2xl bg-white p-3">{lateSetDropInsight.message}</div>
+                </div>
+              </section>
+            </div>
+
+            <section className="rounded-[24px] bg-slate-50 p-4">
+              <div className="mb-3 font-black">거리별 분석</div>
+              <div className="grid gap-2 md:grid-cols-2">
+                {distancePerformance.length ? distancePerformance.slice(0, 6).map((row) => (
+                  <div key={row.label} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 text-sm">
+                    <b>{row.label}</b>
+                    <span>{row.avgArrow}점</span>
+                    <span className={Number(row.avgArrow) >= avgScore ? "font-semibold text-emerald-600" : "font-semibold text-red-500"}>
+                      {Number(row.avgArrow) >= avgScore ? "강점" : "보완"}
+                    </span>
+                  </div>
+                )) : <div className="rounded-2xl bg-white p-5 text-center text-sm text-slate-500 md:col-span-2">거리별 기록을 저장하면 분석된다.</div>}
+              </div>
+            </section>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4">
