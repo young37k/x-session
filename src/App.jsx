@@ -8296,6 +8296,8 @@ function AnalysisBoard({ currentUser, users, sessions }) {
     regionCity: "all",
   });
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 1280 : window.innerWidth));
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState("summary");
+  const [activeSideMenu, setActiveSideMenu] = useState("분석 리포트");
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -8599,9 +8601,21 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </div>
               <div className="mt-8 space-y-2 border-t border-white/10 pt-6 text-sm">
                 {["대시보드", "기록 입력", "훈련 세션", "분석 리포트", "비교 분석", "훈련 계획", "목표 관리"].map((item) => (
-                  <div key={item} className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${item === "분석 리포트" ? "bg-blue-600 text-white" : "text-slate-300"}`}>
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => {
+                      setActiveSideMenu(item);
+                      if (item === "비교 분석") setActiveAnalysisTab("compare");
+                      if (item === "분석 리포트") setActiveAnalysisTab("report");
+                      if (item === "대시보드") setActiveAnalysisTab("summary");
+                      if (item === "훈련 세션") setActiveAnalysisTab("detail");
+                      if (item === "훈련 계획" || item === "목표 관리") setActiveAnalysisTab("trend");
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition hover:bg-white/10 active:scale-[0.99] ${activeSideMenu === item ? "bg-blue-600 text-white" : "text-slate-300"}`}
+                  >
                     <BarChart3 className="h-4 w-4" /> {item}
-                  </div>
+                  </button>
                 ))}
               </div>
               <div className="mt-auto rounded-3xl bg-white/10 p-4 text-xs text-slate-300">
@@ -8611,7 +8625,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <main className="min-w-0 p-4 sm:p-5 xl:p-6">
               <div className="mb-5 grid gap-3 xl:flex xl:items-center xl:justify-between">
-                <Tabs value="summary" className="w-full xl:w-auto">
+                <Tabs value={activeAnalysisTab} onValueChange={setActiveAnalysisTab} className="w-full xl:w-auto">
                   <TabsList className="grid h-12 grid-cols-5 rounded-2xl bg-white p-1 shadow-sm xl:w-[620px]">
                     <TabsTrigger value="summary" className="rounded-xl">종합 분석</TabsTrigger>
                     <TabsTrigger value="detail" className="rounded-xl">상세 분석</TabsTrigger>
@@ -8620,7 +8634,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                     <TabsTrigger value="report" className="rounded-xl">리포트</TabsTrigger>
                   </TabsList>
                 </Tabs>
-                <div className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm">PDF 리포트 다운로드</div>
+                <button type="button" onClick={() => setActiveAnalysisTab("report")} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99]">PDF 리포트 다운로드</button>
               </div>
 
               <div className="mb-5 grid gap-3 rounded-[24px] bg-white p-4 shadow-sm xl:grid-cols-6">
@@ -9060,7 +9074,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
     } catch {}
   }, [extraAdmins]);
 
-  const realUsers = useMemo(() => users.filter((user) => !user.isSampleData), [users]);
+  const realUsers = useMemo(() => users.filter((user) => !user.isSampleData && !isAdminEmail(user.email)), [users]);
   const reviewedUserIdSet = useMemo(() => new Set(reviewedUserIds || []), [reviewedUserIds]);
   const unreviewedUsers = useMemo(() => realUsers.filter((user) => !reviewedUserIdSet.has(user.id)), [realUsers, reviewedUserIdSet]);
   const realSessions = useMemo(() => sessions.filter((session) => !session.isSampleData), [sessions]);
@@ -9872,8 +9886,12 @@ function XSessionApp() {
   }, []);
 
   const markAllUsersReviewed = useCallback((userIds = []) => {
-    setReviewedUserIds((prev) => Array.from(new Set([...prev, ...userIds.filter(Boolean)])));
-  }, []);
+    const allExistingUserIds = (users || [])
+      .filter((user) => !user.isSampleData && !isAdminEmail(user.email))
+      .map((user) => user.id)
+      .filter(Boolean);
+    setReviewedUserIds((prev) => Array.from(new Set([...prev, ...allExistingUserIds, ...userIds.filter(Boolean)])));
+  }, [users]);
 
 
   useEffect(() => {
@@ -10752,7 +10770,7 @@ function XSessionApp() {
   const pendingOfficialClaimCount = useMemo(() => (officialClaims || []).filter((claim) => claim.status === "pending").length, [officialClaims]);
   const unreviewedUserCount = useMemo(() => {
     const reviewed = new Set(reviewedUserIds || []);
-    return users.filter((user) => !user.isSampleData && !reviewed.has(user.id)).length;
+    return users.filter((user) => !user.isSampleData && !isAdminEmail(user.email) && !reviewed.has(user.id)).length;
   }, [users, reviewedUserIds]);
   const adminAlertCount = pendingOfficialClaimCount + unreviewedUserCount;
   const adminEmailGuard = isAdminEmail;
