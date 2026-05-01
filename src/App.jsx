@@ -4274,19 +4274,35 @@ function endTotal(end) {
 }
 
 function getSessionTotal(session) {
-  return session.ends.reduce((sum, end) => sum + endTotal(end), 0);
+  if (session?.recordInputType === "distance") {
+    return (session.distanceRounds || []).reduce((sum, round) => sum + (Number(round.total) || 0), 0);
+  }
+  return (session?.ends || []).reduce((sum, end) => sum + endTotal(end), 0);
 }
 
 function getHits(session) {
-  return session.ends.flatMap((end) => end.arrows).filter((v) => v !== null && v !== undefined && v !== "").length;
+  if (session?.recordInputType === "distance") {
+    return (session.distanceRounds || []).reduce((sum, round) => {
+      const hasScore = Number(round.total) > 0;
+      return sum + (hasScore ? Number(session.arrowsPerDistance || 36) : 0);
+    }, 0);
+  }
+  return (session?.ends || []).flatMap((end) => end.arrows).filter((v) => v !== null && v !== undefined && v !== "").length;
 }
 
 function getXs(session) {
-  return session.ends.flatMap((end) => end.arrows).filter((v) => v === "X").length;
+  if (session?.recordInputType === "distance") return Number(session.summary?.xCount || 0);
+  return (session?.ends || []).flatMap((end) => end.arrows).filter((v) => v === "X").length;
 }
 
 function getArrowCount(session) {
-  return session.ends.flatMap((end) => end.arrows).filter((v) => v !== null).length;
+  if (session?.recordInputType === "distance") {
+    return (session.distanceRounds || []).reduce((sum, round) => {
+      const hasScore = Number(round.total) > 0;
+      return sum + (hasScore ? Number(session.arrowsPerDistance || 36) : 0);
+    }, 0);
+  }
+  return (session?.ends || []).flatMap((end) => end.arrows).filter((v) => v !== null).length;
 }
 
 function getAverageArrow(session) {
@@ -4485,7 +4501,7 @@ function calculateSessionSummary(session) {
     ? (session.distanceRounds || []).reduce((sum, round) => sum + (Number(round.total) || 0), 0)
     : getSessionTotal(session);
   const totalArrows = isDistanceInput
-    ? ((session.distanceRounds || []).length * (Number(session.arrowsPerDistance) || 0))
+    ? (session.distanceRounds || []).reduce((sum, round) => sum + (Number(round.total) > 0 ? Number(session.arrowsPerDistance || 36) : 0), 0)
     : getArrowCount(session);
   const xCount = isDistanceInput ? 0 : getXs(session);
   const hitCount = isDistanceInput ? 0 : getHits(session);
@@ -8270,12 +8286,34 @@ function AnalysisBoard({ currentUser, users, sessions }) {
     return window.innerWidth < 640;
   });
   const [requiredFilters, setRequiredFilters] = useState({
-    distance: "",
-    rankingGroup: "",
+    distance: "all",
+    rankingGroup: "all",
     regionCity: "all",
   });
 
-  const allMySessions = sessions.filter((s) => s.userId === currentUser.id && s.isComplete);
+  const allMySessions = sessions.filter((s) => s.userId === currentUser.id && (s.isComplete || s.status === "completed"));
+  const dynamicDistanceOptions = useMemo(() => {
+    const values = new Set(DISTANCE_OPTIONS.map(String));
+    allMySessions.forEach((session) => {
+      if (session.recordInputType === "distance" && Array.isArray(session.distanceRounds)) {
+        session.distanceRounds.forEach((round) => {
+          if (Number(round.distance)) values.add(String(Number(round.distance)));
+        });
+      } else if (Number(session.distance)) {
+        values.add(String(Number(session.distance)));
+      }
+    });
+    return Array.from(values).map(Number).filter(Boolean).sort((a, b) => a - b);
+  }, [allMySessions]);
+  const matchesSelectedDistance = useCallback((session, selectedDistance) => {
+    if (!selectedDistance || selectedDistance === "all") return true;
+    if (String(session.distance) === String(selectedDistance)) return true;
+    return (session.distanceRounds || []).some((round) => String(round.distance) === String(selectedDistance));
+  }, []);
+  const matchesSelectedRankingGroup = useCallback((session, user, selectedGroup) => {
+    if (!selectedGroup || selectedGroup === "all") return true;
+    return getRankingGroup(session.division || user?.division || "", session.gender || user?.gender || "남") === selectedGroup;
+  }, []);
   const rivalCandidates = users.filter((u) => u.id !== currentUser.id);
   const [rivalSearch, setRivalSearch] = useState("");
   const [selectedRival, setSelectedRival] = useState(rivalCandidates[0]?.id || "none");
@@ -8339,13 +8377,13 @@ function AnalysisBoard({ currentUser, users, sessions }) {
     [isCompactChartMobile]
   );
 
-  const isReady = Boolean(requiredFilters.distance && requiredFilters.rankingGroup);
+  const isReady = true;
 
   const filteredMine = allMySessions.filter(
     (s) =>
       isReady &&
-      String(s.distance) === String(requiredFilters.distance) &&
-      getRankingGroup(s.division || currentUser.division || "", s.gender || currentUser.gender || "남") === requiredFilters.rankingGroup &&
+      matchesSelectedDistance(s, requiredFilters.distance) &&
+      matchesSelectedRankingGroup(s, currentUser, requiredFilters.rankingGroup) &&
       (requiredFilters.regionCity === "all" ? true : (s.regionCity || currentUser.regionCity || "") === requiredFilters.regionCity) &&
       isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)
   );
@@ -8357,8 +8395,8 @@ function AnalysisBoard({ currentUser, users, sessions }) {
     .filter(
       (s) =>
         isReady &&
-        String(s.distance) === String(requiredFilters.distance) &&
-        getRankingGroup(s.division || rivalUser?.division || "", s.gender || rivalUser?.gender || "남") === requiredFilters.rankingGroup &&
+        matchesSelectedDistance(s, requiredFilters.distance) &&
+        matchesSelectedRankingGroup(s, rivalUser, requiredFilters.rankingGroup) &&
         (requiredFilters.regionCity === "all" ? true : (s.regionCity || rivalUser?.regionCity || "") === requiredFilters.regionCity) &&
         isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)
     );
@@ -8387,8 +8425,8 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">거리</Label>
               <select value={requiredFilters.distance} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, distance: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                <option value="">거리 선택</option>
-                {DISTANCE_OPTIONS.map((distance) => (
+                <option value="all">전체 거리</option>
+                {dynamicDistanceOptions.map((distance) => (
                   <option key={distance} value={String(distance)}>{distance}m</option>
                 ))}
               </select>
@@ -8397,7 +8435,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">학년/부문</Label>
               <select value={requiredFilters.rankingGroup} onChange={(e) => setRequiredFilters((prev) => ({ ...prev, rankingGroup: e.target.value }))} className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none">
-                <option value="">학년/부문 선택</option>
+                <option value="all">전체 학년/부문</option>
                 {RANKING_GROUP_OPTIONS.map((item) => (<option key={item} value={item}>{item}</option>))}
               </select>
             </div>
