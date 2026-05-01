@@ -310,10 +310,14 @@ function makeRoutineDocId(userId, date) {
 function normalizeRoutineItems(items) {
   const source = Array.isArray(items) && items.length ? items : ROUTINE_TEMPLATE_ITEMS;
   return source.map((item, idx) => ({
-    id: item.id || `routine_item_${idx + 1}`,
-    label: String(item.label || item.name || "").trim() || `루틴 ${idx + 1}`,
+    id: item.id || `routine_item_`,
+    label: String(item.label || item.name || "").trim() || `루틴 `,
     checked: Boolean(item.checked),
   }));
+}
+
+function resetRoutineItemsForNewInput(items) {
+  return normalizeRoutineItems(items).map((item) => ({ ...item, checked: false }));
 }
 
 function calculateRoutineStats(items) {
@@ -332,7 +336,7 @@ function readStoredRoutineItems(userId) {
   try {
     const raw = localStorage.getItem(getStoredRoutineItemsKey(userId));
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? resetRoutineItemsForNewInput(parsed) : [];
   } catch {
     return [];
   }
@@ -340,7 +344,9 @@ function readStoredRoutineItems(userId) {
 
 function writeStoredRoutineItems(userId, items = []) {
   try {
-    localStorage.setItem(getStoredRoutineItemsKey(userId), JSON.stringify(normalizeRoutineItems(items)));
+    // 루틴 항목명/순서만 보존하고 체크 상태는 저장하지 않는다.
+    // 앱을 다시 켜거나 루틴 입력 화면에 다시 들어오면 항상 미체크 상태에서 시작한다.
+    localStorage.setItem(getStoredRoutineItemsKey(userId), JSON.stringify(resetRoutineItemsForNewInput(items)));
   } catch {
     // localStorage unavailable
   }
@@ -6990,8 +6996,8 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
   const existingRoutine = getRoutineForDate(routines, today);
   const storedRoutineItems = useMemo(() => readStoredRoutineItems(currentUser?.id), [currentUser?.id]);
   const [items, setItems] = useState(() => {
-    const baseItems = storedRoutineItems.length ? storedRoutineItems : ROUTINE_TEMPLATE_ITEMS;
-    return mergeRoutineItems(baseItems, existingRoutine?.items || []);
+    const baseItems = storedRoutineItems.length ? storedRoutineItems : existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS;
+    return resetRoutineItemsForNewInput(baseItems);
   });
   const [newItemLabel, setNewItemLabel] = useState("");
   const [saving, setSaving] = useState(false);
@@ -7000,7 +7006,7 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
   useEffect(() => {
     const stored = readStoredRoutineItems(currentUser?.id);
     const baseItems = stored.length ? stored : existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS;
-    setItems(mergeRoutineItems(baseItems, existingRoutine?.items || []));
+    setItems(resetRoutineItemsForNewInput(baseItems));
   }, [currentUser?.id, existingRoutine?.id, today]);
 
   useEffect(() => {
