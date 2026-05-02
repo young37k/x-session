@@ -6525,6 +6525,131 @@ function getDistanceWeaknessFromPerformance(distancePerformance = []) {
   };
 }
 
+function getSessionDistanceLabelForReport(session) {
+  if (!session) return "-";
+  if (session.recordInputType === "distance" && Array.isArray(session.distanceRounds) && session.distanceRounds.length) {
+    const labels = Array.from(new Set(session.distanceRounds.map((round) => `${Number(round.distance) || "-"}m`)));
+    return labels.filter((label) => !label.includes("-m")).join(" / ") || "거리기반";
+  }
+  return Number(session.distance) ? `${Number(session.distance)}m` : "-";
+}
+
+function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance = [], parentGrowthSummary = {}, lateSetDropInsight = {}) {
+  const completed = (sessions || [])
+    .filter((session) => session?.isComplete || session?.status === "completed")
+    .slice()
+    .sort((a, b) => new Date(a.sessionDate || a.updatedAt || 0) - new Date(b.sessionDate || b.updatedAt || 0));
+
+  const averages = completed
+    .map((session) => Number(session.summary?.averageArrow ?? getAverageArrow(session)) || 0)
+    .filter((value) => value > 0);
+
+  const recentFive = completed.slice(-5);
+  const previousFive = completed.slice(-10, -5);
+  const recentAverage = averages.length ? Number(averageNumbers(recentFive.map(getSessionAverageForGrowth)).toFixed(2)) : 0;
+  const previousAverage = previousFive.length
+    ? Number(averageNumbers(previousFive.map(getSessionAverageForGrowth)).toFixed(2))
+    : Number(parentGrowthSummary?.previousAverage || recentAverage || 0);
+  const delta = Number((recentAverage - previousAverage).toFixed(2));
+  const bestAverage = averages.length ? Number(Math.max(...averages).toFixed(2)) : 0;
+  const variance = averages.length ? averageNumbers(averages.map((value) => Math.pow(value - averageNumbers(averages), 2))) : 0;
+  const stability = Math.max(0, Math.min(100, Math.round(100 - Math.sqrt(variance) * 20)));
+
+  const validDistances = (distancePerformance || []).filter((item) => Number(item.avgArrow) > 0);
+  const weakestDistance = validDistances.length ? validDistances.slice().sort((a, b) => a.avgArrow - b.avgArrow)[0] : null;
+  const strongestDistance = validDistances.length ? validDistances.slice().sort((a, b) => b.avgArrow - a.avgArrow)[0] : null;
+  const weakDistanceLabel = weakestDistance?.label || "기록 필요";
+  const strongDistanceLabel = strongestDistance?.label || "기록 필요";
+  const distanceGap = weakestDistance && strongestDistance ? Number((strongestDistance.avgArrow - weakestDistance.avgArrow).toFixed(2)) : 0;
+
+  const lastSession = completed[completed.length - 1] || null;
+  const lastSessionScore = lastSession ? Number((Number(lastSession.summary?.averageArrow ?? getAverageArrow(lastSession)) || 0).toFixed(2)) : 0;
+  const lastSessionDate = lastSession ? formatDateOnly(lastSession.sessionDate || lastSession.updatedAt || "") : "-";
+  const lastSessionDistance = getSessionDistanceLabelForReport(lastSession);
+
+  const trendLabel = delta >= 0.2 ? "상승" : delta <= -0.2 ? "하락" : "유지";
+  const growthLevel = delta >= 0.4 ? "강한 상승" : delta >= 0.2 ? "상승" : delta <= -0.4 ? "주의" : delta <= -0.2 ? "하락" : "안정";
+  const lateLabel = lateSetDropInsight?.label || "엔드별 기록 필요";
+  const lateMessage = lateSetDropInsight?.message || "엔드별 기록이 쌓이면 후반 집중력 변화를 분석한다.";
+  const routineGuide = "루틴 완료율과 점수 상관관계는 루틴 저장 데이터가 누적되면 자동으로 연결된다.";
+
+  const parentSummary = completed.length
+    ? `최근 ${recentFive.length || completed.length}회 기준 평균은 ${recentAverage || "-"}점이며 이전 구간 대비 ${delta > 0 ? "+" : ""}${delta}점 ${trendLabel} 흐름입니다. 가장 약한 거리는 ${weakDistanceLabel}, 가장 안정적인 거리는 ${strongDistanceLabel}입니다.`
+    : "기록이 쌓이면 최근 평균, 성장 추세, 약점 거리, 후반 유지율을 부모용 문장으로 자동 변환합니다.";
+
+  const parentRecommendation = completed.length
+    ? `${weakDistanceLabel} 집중 훈련을 우선하고, ${lateLabel === "후반 하락" ? "후반 집중력 유지 루틴" : "동일 조건 반복 기록"}을 함께 관리하는 것이 좋습니다.`
+    : "동일 조건 기록을 3회 이상 저장하면 첫 부모용 리포트를 생성할 수 있습니다.";
+
+  return {
+    ready: completed.length >= 1,
+    sessionCount: completed.length,
+    recentAverage,
+    previousAverage,
+    delta,
+    trendLabel,
+    growthLevel,
+    bestAverage,
+    stability,
+    weakDistanceLabel,
+    strongDistanceLabel,
+    distanceGap,
+    lateLabel,
+    lateMessage,
+    lastSessionDate,
+    lastSessionDistance,
+    lastSessionScore,
+    parentSummary,
+    parentRecommendation,
+    routineGuide,
+    generatedAt: formatDateOnly(getCurrentLocalDateString()),
+  };
+}
+
+function loadExternalScriptOnce(src, globalKey) {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") return reject(new Error("브라우저 환경에서만 PDF를 생성할 수 있습니다."));
+    if (globalKey && window[globalKey]) return resolve(window[globalKey]);
+    const existing = Array.from(document.querySelectorAll("script")).find((script) => script.src === src);
+    if (existing) {
+      existing.addEventListener("load", () => resolve(globalKey ? window[globalKey] : true), { once: true });
+      existing.addEventListener("error", reject, { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve(globalKey ? window[globalKey] : true);
+    script.onerror = () => reject(new Error(`PDF 라이브러리 로드 실패: ${src}`));
+    document.body.appendChild(script);
+  });
+}
+
+async function downloadReportElementAsPdf(element, filename = "x-analysis-parent-report.pdf") {
+  if (!element) throw new Error("PDF로 저장할 리포트 영역을 찾지 못했습니다.");
+  await loadExternalScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", "html2canvas");
+  await loadExternalScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", "jspdf");
+  const canvas = await window.html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+  const imgData = canvas.toDataURL("image/png");
+  const jsPDFCtor = window.jspdf?.jsPDF;
+  if (!jsPDFCtor) throw new Error("jsPDF 초기화에 실패했습니다.");
+  const pdf = new jsPDFCtor("p", "mm", "a4");
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const imgHeight = (canvas.height * pageWidth) / canvas.width;
+  let heightLeft = imgHeight;
+  let position = 0;
+  pdf.addImage(imgData, "PNG", 0, position, pageWidth, imgHeight);
+  heightLeft -= pageHeight;
+  while (heightLeft > 0) {
+    position -= pageHeight;
+    pdf.addPage();
+    pdf.addImage(imgData, "PNG", 0, position, pageWidth, imgHeight);
+    heightLeft -= pageHeight;
+  }
+  pdf.save(filename);
+}
+
 
 function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
   const analysisStateKey = getAnalysisSessionStateKey(currentUser?.id || currentUser?.uid || currentUser?.email || "guest");
@@ -6541,6 +6666,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 1280 : window.innerWidth));
   const [activeAnalysisTab, setActiveAnalysisTab] = useState(savedAnalysisState.activeAnalysisTab || "summary");
   const [activeSideMenu, setActiveSideMenu] = useState(savedAnalysisState.activeSideMenu || "분석 리포트");
+  const [pdfBusy, setPdfBusy] = useState(false);
   const summarySectionRef = useRef(null);
   const detailSectionRef = useRef(null);
   const compareSectionRef = useRef(null);
@@ -6646,6 +6772,24 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
   const parentGrowthSummary = useMemo(() => buildParentGrowthSummary(filteredMine), [filteredMine]);
   const lateSetDropInsight = useMemo(() => buildLateSetDropInsight(filteredMine), [filteredMine]);
   const distanceWeakness = useMemo(() => getDistanceWeaknessFromPerformance(distancePerformance), [distancePerformance]);
+  const parentReportData = useMemo(
+    () => buildParentAnalysisDataFromSessions(filteredMine, distancePerformance, parentGrowthSummary, lateSetDropInsight),
+    [filteredMine, distancePerformance, parentGrowthSummary, lateSetDropInsight]
+  );
+
+  const handleDownloadParentReportPdf = useCallback(async () => {
+    try {
+      setPdfBusy(true);
+      await downloadReportElementAsPdf(
+        reportSectionRef.current,
+        `X-Analysis_부모용_리포트_${String(currentName || "선수").replace(/\s+/g, "_")}_${getCurrentLocalDateString()}.pdf`
+      );
+    } catch (error) {
+      alert(error?.message || "PDF 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setPdfBusy(false);
+    }
+  }, [currentName]);
 
   const sessionAverages = useMemo(() => filteredMine
     .filter((session) => session?.isComplete)
@@ -6916,7 +7060,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                     <TabsTrigger value="report" className="rounded-xl">리포트</TabsTrigger>
                   </TabsList>
                 </Tabs>
-                <button type="button" onClick={() => handleAnalysisTabChange("report")} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99]">PDF 리포트 다운로드</button>
+                <button type="button" onClick={handleDownloadParentReportPdf} disabled={pdfBusy} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{pdfBusy ? "PDF 생성 중..." : "부모용 PDF 다운로드"}</button>
               </div>
 
               <div className="mb-5 grid gap-3 rounded-[24px] bg-white p-4 shadow-sm xl:grid-cols-6">
@@ -7021,7 +7165,44 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
 
                 <section className="grid gap-4">
                   <div ref={reportSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
-                    <div className="text-lg font-black">AI 종합 분석 리포트</div>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-lg font-black">부모용 성장 분석 리포트</div>
+                        <div className="text-xs text-slate-500">세션 기록을 자동 변환해 성장 추세, 약점 거리, 훈련 추천을 생성합니다.</div>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-700">PDF 저장 가능</Badge>
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      {[
+                        ["최근 평균", parentReportData.recentAverage || "-", `${parentReportData.delta > 0 ? "+" : ""}${parentReportData.delta || 0}점`],
+                        ["최고 평균", parentReportData.bestAverage || "-", "개인 최고 흐름"],
+                        ["안정성", `${parentReportData.stability || 0}%`, parentReportData.growthLevel],
+                        ["약점 거리", parentReportData.weakDistanceLabel, `차이 ${parentReportData.distanceGap || 0}점`],
+                      ].map(([label, value, sub]) => (
+                        <div key={label} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                          <div className="text-xs font-semibold text-slate-500">{label}</div>
+                          <div className="mt-1 text-2xl font-black text-slate-950">{value}</div>
+                          <div className="mt-1 text-xs text-slate-500">{sub}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                      <div className="rounded-3xl bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+                        <div className="mb-1 font-black">성장 요약</div>
+                        {parentReportData.parentSummary}
+                      </div>
+                      <div className="rounded-3xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                        <div className="mb-1 font-black">후반 집중력</div>
+                        {parentReportData.lateMessage}
+                      </div>
+                      <div className="rounded-3xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                        <div className="mb-1 font-black">훈련 추천</div>
+                        {parentReportData.parentRecommendation}
+                      </div>
+                    </div>
+                    <div className="mt-4 rounded-3xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-600">
+                      최근 기록: {parentReportData.lastSessionDate} · {parentReportData.lastSessionDistance} · 평균 {parentReportData.lastSessionScore || "-"}점 / {parentReportData.routineGuide}
+                    </div>
                     <div className="mt-4 grid gap-4 rounded-3xl bg-emerald-50 p-5 sm:grid-cols-[92px_minmax(0,1fr)]">
                       <div className="text-6xl font-black text-emerald-700">{aiGrade}</div>
                       <div className="text-sm leading-6 text-slate-700">{parentGrowthSummary.summary} {distanceWeakness.message}</div>
