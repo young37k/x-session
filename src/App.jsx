@@ -5662,8 +5662,8 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAle
   ];
 
   return (
-    <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl">
-      <CardContent className="flex flex-col gap-4 p-4">
+    <Card className="rounded-[28px] border-0 bg-white/95 shadow-xl ring-1 ring-slate-200/70">
+      <CardContent className="flex flex-col gap-4 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <ProfileAvatar user={user} size="md" />
@@ -5682,17 +5682,18 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAle
           </Button>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full xl:hidden">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-3xl bg-slate-100 p-2 sm:grid-cols-3 md:grid-cols-4">
             {navs.map((item) => {
               const Icon = item.icon;
               return (
                 <TabsTrigger
                   key={item.key}
                   value={item.key}
-                  className="min-w-0 gap-1 rounded-2xl px-2 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                  className="flex h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-center text-[12px] font-semibold leading-tight text-slate-700 transition sm:text-sm data-[state=active]:bg-white data-[state=active]:text-slate-950 data-[state=active]:shadow-sm"
                 >
-                  <Icon className="h-4 w-4" /> {item.label}
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="block w-full truncate">{item.label}</span>
                   {item.alertCount > 0 ? (
                     <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">
                       {item.alertCount > 99 ? "99+" : item.alertCount}
@@ -5745,9 +5746,9 @@ function DesktopAppSidebar({ user, activeTab, setActiveTab, onLogout, isAdminUse
               key={item.key}
               type="button"
               onClick={() => setActiveTab(item.key)}
-              className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition hover:bg-white/10 active:scale-[0.99] ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30" : "text-slate-300"}`}
+              className={`flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left text-sm font-bold tracking-tight transition hover:bg-white/10 active:scale-[0.99] ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30" : "text-slate-300"}`}
             >
-              <span className="flex items-center gap-3"><Icon className="h-4 w-4" /> {item.label}</span>
+              <span className="flex min-w-0 items-center gap-3"><Icon className="h-4 w-4 shrink-0" /> <span className="truncate">{item.label}</span></span>
               {item.alertCount > 0 ? (
                 <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">
                   {item.alertCount > 99 ? "99+" : item.alertCount}
