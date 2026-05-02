@@ -366,9 +366,24 @@ function writeRoutineDailyState(userId, date, items = []) {
   }
 }
 
+function getRoutineUpdatedMs(routine) {
+  const value = routine?.updatedAt || routine?.createdAt || "";
+  if (!value) return 0;
+  if (typeof value === "string") return Date.parse(value) || 0;
+  if (typeof value?.toDate === "function") return value.toDate().getTime();
+  if (typeof value?.seconds === "number") return value.seconds * 1000;
+  return 0;
+}
+
 function getSavedRoutineForToday(userId, existingRoutine, date = getCurrentLocalDateString()) {
+  // Firestore에 저장된 값을 최우선으로 사용한다.
+  // localStorage/sessionStorage는 기기별로 다르기 때문에 PC/모바일 동기화 기준으로 쓰면 안 된다.
   const dailyState = readRoutineDailyState(userId, date);
-  return dailyState || existingRoutine || readStoredRoutineRecord(userId, date) || null;
+  const storedRecord = readStoredRoutineRecord(userId, date);
+  const candidates = [existingRoutine, dailyState, storedRecord]
+    .filter((routine) => routine && routine.date === date)
+    .sort((a, b) => getRoutineUpdatedMs(b) - getRoutineUpdatedMs(a));
+  return candidates[0] || null;
 }
 
 function getAnalysisSessionStateKey(userId) {
@@ -402,8 +417,8 @@ function makeRoutineDocId(userId, date) {
 function normalizeRoutineItems(items) {
   const source = Array.isArray(items) && items.length ? items : ROUTINE_TEMPLATE_ITEMS;
   return source.map((item, idx) => ({
-    id: item.id || `routine_item_`,
-    label: String(item.label || item.name || "").trim() || `루틴 `,
+    id: item.id || `routine_item_${idx + 1}`,
+    label: String(item.label || item.name || "").trim() || `루틴 ${idx + 1}`,
     checked: Boolean(item.checked),
   }));
 }
@@ -7182,12 +7197,12 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
   const [items, setItems] = useState(() => {
     const dailyState = readRoutineDailyState(currentUser?.id, today);
     const draft = readSessionStorageJSON(routineDraftKey, null);
-    const baseItems = dailyState?.items?.length
-      ? dailyState.items
-      : draft?.items?.length
-        ? draft.items
-        : savedTodayRoutine?.items?.length
-          ? savedTodayRoutine.items
+    const baseItems = savedTodayRoutine?.items?.length
+      ? savedTodayRoutine.items
+      : dailyState?.items?.length
+        ? dailyState.items
+        : draft?.items?.length
+          ? draft.items
           : storedRoutineItems.length
             ? storedRoutineItems
             : ROUTINE_TEMPLATE_ITEMS;
@@ -7202,12 +7217,12 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
     const draft = readSessionStorageJSON(routineDraftKey, null);
     const stored = readStoredRoutineItems(currentUser?.id);
     const currentSavedRoutine = getSavedRoutineForToday(currentUser?.id, existingRoutine, today);
-    const baseItems = dailyState?.items?.length
-      ? dailyState.items
-      : draft?.items?.length
-        ? draft.items
-        : currentSavedRoutine?.items?.length
-          ? currentSavedRoutine.items
+    const baseItems = currentSavedRoutine?.items?.length
+      ? currentSavedRoutine.items
+      : dailyState?.items?.length
+        ? dailyState.items
+        : draft?.items?.length
+          ? draft.items
           : stored.length
             ? stored
             : ROUTINE_TEMPLATE_ITEMS;
@@ -7215,7 +7230,7 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
     if (currentSavedRoutine || dailyState) {
       setNotice("오늘 루틴 상태를 불러왔다. 필요하면 체크 상태를 수정한 뒤 다시 저장하면 된다.");
     }
-  }, [currentUser?.id, existingRoutine?.id, today, routineDraftKey]);
+  }, [currentUser?.id, existingRoutine?.id, existingRoutine?.completionRate, existingRoutine?.updatedAt, today, routineDraftKey]);
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -10517,8 +10532,21 @@ function XSessionApp() {
         const routinesSnap = await getDocs(query(collection(db, "routines"), orderBy("date", "desc")));
         setRoutines(routinesSnap.docs.map((snap) => fromFirestoreRoutine(snap)));
       } catch (routineError) {
-        setRoutines([]);
-        console.warn("X-Routine data could not be loaded. Check Firestore rules for routines.", routineError);
+        console.warn("Full routine list could not be loaded. Falling back to current user's routines.", routineError);
+        if (activeUid) {
+          try {
+            const ownRoutinesSnap = await getDocs(query(collection(db, "routines"), where("userId", "==", activeUid)));
+            const ownRoutines = ownRoutinesSnap.docs
+              .map((snap) => fromFirestoreRoutine(snap))
+              .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+            setRoutines(ownRoutines);
+          } catch (ownRoutineError) {
+            setRoutines([]);
+            console.warn("Current user's routines could not be loaded. Check Firestore rules for routines.", ownRoutineError);
+          }
+        } else {
+          setRoutines([]);
+        }
       }
 
       try {
