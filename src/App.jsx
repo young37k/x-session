@@ -6834,24 +6834,86 @@ async function downloadReportElementAsPdf(element, filename = "x-analysis-parent
   if (!element) throw new Error("PDF로 저장할 리포트 영역을 찾지 못했습니다.");
   await loadExternalScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", "html2canvas");
   await loadExternalScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", "jspdf");
-  const canvas = await window.html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-  const imgData = canvas.toDataURL("image/png");
+
   const jsPDFCtor = window.jspdf?.jsPDF;
   if (!jsPDFCtor) throw new Error("jsPDF 초기화에 실패했습니다.");
+
+  // A4 문서 기준: 안전 여백을 두고, 섹션 단위로 페이지를 넘긴다.
+  // 기존 방식은 긴 화면 전체를 하나의 이미지로 만든 뒤 잘라서 글자/박스가 페이지 경계에서 잘렸다.
+  // 이 방식은 카드/섹션 하나가 중간에서 잘리지 않도록 다음 페이지로 넘긴다.
   const pdf = new jsPDFCtor("p", "mm", "a4");
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgHeight = (canvas.height * pageWidth) / canvas.width;
-  let heightLeft = imgHeight;
-  let position = 0;
-  pdf.addImage(imgData, "PNG", 0, position, pageWidth, imgHeight);
-  heightLeft -= pageHeight;
-  while (heightLeft > 0) {
-    position -= pageHeight;
-    pdf.addPage();
-    pdf.addImage(imgData, "PNG", 0, position, pageWidth, imgHeight);
-    heightLeft -= pageHeight;
+  const marginX = 12;
+  const marginTop = 12;
+  const marginBottom = 14;
+  const contentWidth = pageWidth - marginX * 2;
+  const pageContentBottom = pageHeight - marginBottom;
+  const sectionGap = 3;
+
+  const sourceChildren = Array.from(element.children || []);
+  const sections = sourceChildren.length ? sourceChildren : [element];
+  let cursorY = marginTop;
+  let hasContent = false;
+
+  const addPageIfNeeded = (requiredHeight) => {
+    if (!hasContent) return;
+    if (cursorY + requiredHeight > pageContentBottom) {
+      pdf.addPage();
+      cursorY = marginTop;
+    }
+  };
+
+  const addCanvasToPdf = (canvas) => {
+    const imgWidth = contentWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    // 보통 섹션은 한 페이지 안에 들어간다. 들어가지 않을 때만 안전 슬라이스 처리.
+    const maxHeight = pageContentBottom - marginTop;
+    if (imgHeight <= maxHeight) {
+      addPageIfNeeded(imgHeight);
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", marginX, cursorY, imgWidth, imgHeight);
+      cursorY += imgHeight + sectionGap;
+      hasContent = true;
+      return;
+    }
+
+    // 예외적으로 아주 긴 섹션은 페이지 단위로 나누되, 상하 여백을 유지한다.
+    const pxPerMm = canvas.width / imgWidth;
+    const sliceHeightPx = Math.floor(maxHeight * pxPerMm);
+    let y = 0;
+    while (y < canvas.height) {
+      if (hasContent) {
+        pdf.addPage();
+        cursorY = marginTop;
+      }
+      const currentSliceHeight = Math.min(sliceHeightPx, canvas.height - y);
+      const sliceCanvas = document.createElement("canvas");
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = currentSliceHeight;
+      const ctx = sliceCanvas.getContext("2d");
+      ctx.drawImage(canvas, 0, y, canvas.width, currentSliceHeight, 0, 0, canvas.width, currentSliceHeight);
+      const sliceMmHeight = (currentSliceHeight * imgWidth) / canvas.width;
+      pdf.addImage(sliceCanvas.toDataURL("image/png"), "PNG", marginX, cursorY, imgWidth, sliceMmHeight);
+      hasContent = true;
+      y += currentSliceHeight;
+    }
+    cursorY = pageContentBottom;
+  };
+
+  for (const section of sections) {
+    const canvas = await window.html2canvas(section, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: element.scrollWidth || 794,
+    });
+    addCanvasToPdf(canvas);
   }
+
   pdf.save(filename);
 }
 
