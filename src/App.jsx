@@ -6534,6 +6534,92 @@ function getSessionDistanceLabelForReport(session) {
   return Number(session.distance) ? `${Number(session.distance)}m` : "-";
 }
 
+function normalizeTextValue(value) {
+  return String(value ?? "").trim();
+}
+
+function getSessionConditionObject(session) {
+  return session?.condition || session?.conditions || session?.meta?.condition || session?.trainingCondition || {};
+}
+
+function getSessionConditionText(session, keys = []) {
+  const condition = getSessionConditionObject(session);
+  for (const key of keys) {
+    const value = condition?.[key] ?? session?.[key];
+    if (value !== null && value !== undefined && String(value).trim() !== "") return normalizeTextValue(value);
+  }
+  return "";
+}
+
+function getSessionConditionNumber(session, keys = []) {
+  const raw = getSessionConditionText(session, keys);
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+function buildWindMentalInsight(sessions = [], lateSetDropInsight = {}) {
+  const completed = (sessions || []).filter((session) => session?.isComplete || session?.status === "completed");
+  const windTagged = completed
+    .map((session) => ({
+      wind: getSessionConditionText(session, ["wind", "windLevel", "windStrength", "weatherWind", "바람"]),
+      avg: getSessionAverageForGrowth(session),
+    }))
+    .filter((item) => item.wind);
+
+  const calmScores = windTagged.filter((item) => /없|약|low|calm|1|2/i.test(item.wind)).map((item) => item.avg);
+  const windScores = windTagged.filter((item) => /강|중|high|wind|3|4|5/i.test(item.wind)).map((item) => item.avg);
+  const calmAvg = calmScores.length ? Number(averageNumbers(calmScores).toFixed(2)) : null;
+  const windAvg = windScores.length ? Number(averageNumbers(windScores).toFixed(2)) : null;
+  const windGap = calmAvg !== null && windAvg !== null ? Number((calmAvg - windAvg).toFixed(2)) : null;
+
+  const focusScores = completed
+    .map((session) => getSessionConditionNumber(session, ["focus", "mental", "concentration", "집중", "멘탈"]))
+    .filter((value) => value !== null);
+  const fatigueScores = completed
+    .map((session) => getSessionConditionNumber(session, ["fatigue", "tired", "피로", "피로도"]))
+    .filter((value) => value !== null);
+  const focusAvg = focusScores.length ? Number(averageNumbers(focusScores).toFixed(1)) : null;
+  const fatigueAvg = fatigueScores.length ? Number(averageNumbers(fatigueScores).toFixed(1)) : null;
+
+  const lateRisk = lateSetDropInsight?.label === "후반 하락";
+  let mentalRiskLevel = "관찰";
+  if (lateRisk || (focusAvg !== null && focusAvg <= 3) || (fatigueAvg !== null && fatigueAvg >= 4)) mentalRiskLevel = "주의";
+  if (lateRisk && ((focusAvg !== null && focusAvg <= 2.5) || (fatigueAvg !== null && fatigueAvg >= 4.5))) mentalRiskLevel = "높음";
+
+  const windMessage = windGap !== null
+    ? `바람이 약한 조건 평균은 ${calmAvg}점, 바람 영향 조건 평균은 ${windAvg}점으로 ${windGap > 0 ? `${windGap}점 하락` : `${Math.abs(windGap)}점 개선`} 흐름입니다.`
+    : "바람 조건 기록이 아직 부족합니다. 훈련 기록에 바람 강도(없음/약함/중간/강함)를 남기면 바람 대응력을 별도 분석할 수 있습니다.";
+
+  const mentalMessage = lateRisk
+    ? "후반 하락이 반복됩니다. 기술 문제로만 보면 안 됩니다. 경기 후반에는 조준이 아니라 루틴, 호흡, 판단 속도를 관리해야 합니다."
+    : "후반 점수 차이는 아직 치명적이지 않습니다. 다만 대회 환경에서는 바람과 긴장으로 흔들릴 수 있으므로 사전 멘탈 루틴을 고정해야 합니다.";
+
+  const coldDiagnosis = mentalRiskLevel === "높음"
+    ? "점수 하락의 핵심 원인은 실력 부족보다 흔들린 상황에서 루틴을 회복하지 못하는 문제일 가능성이 큽니다. 즉시 멘탈 루틴을 훈련 항목으로 분리해야 합니다."
+    : mentalRiskLevel === "주의"
+      ? "기록 흐름은 유지 가능하지만 후반 집중력과 컨디션 변동 리스크가 있습니다. 실전에서는 바람 한 번, 실수 한 발 이후 회복 루틴이 승부를 가릅니다."
+      : "현재 기록만 보면 큰 멘탈 붕괴 신호는 약합니다. 하지만 대회형 선수라면 바람 조건과 긴장 상황을 일부러 넣어 검증해야 합니다.";
+
+  return {
+    windTaggedCount: windTagged.length,
+    calmAvg,
+    windAvg,
+    windGap,
+    focusAvg,
+    fatigueAvg,
+    mentalRiskLevel,
+    windMessage,
+    mentalMessage,
+    coldDiagnosis,
+    coachingPlan: [
+      "1발 루틴 고정: 발 위치 → 호흡 1회 → 조준 기준점 → 릴리즈 후 즉시 복기.",
+      "바람 대응 기록: 바람 방향/강도를 기록하고 같은 거리에서 평균점수 변화를 비교.",
+      "실수 후 회복 루틴: 8점 이하 한 발 뒤에는 바로 다음 화살을 쏘지 말고 호흡·시선·손압을 재설정.",
+      "후반 2엔드 별도 훈련: 체력이 떨어진 상태에서 12발을 따로 기록해 후반 집중력만 추적.",
+    ],
+  };
+}
+
 function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance = [], parentGrowthSummary = {}, lateSetDropInsight = {}) {
   const completed = (sessions || [])
     .filter((session) => session?.isComplete || session?.status === "completed")
@@ -6571,14 +6657,15 @@ function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance 
   const growthLevel = delta >= 0.4 ? "강한 상승" : delta >= 0.2 ? "상승" : delta <= -0.4 ? "주의" : delta <= -0.2 ? "하락" : "안정";
   const lateLabel = lateSetDropInsight?.label || "엔드별 기록 필요";
   const lateMessage = lateSetDropInsight?.message || "엔드별 기록이 쌓이면 후반 집중력 변화를 분석한다.";
+  const windMental = buildWindMentalInsight(completed, lateSetDropInsight);
   const routineGuide = "루틴 완료율과 점수 상관관계는 루틴 저장 데이터가 누적되면 자동으로 연결된다.";
 
   const parentSummary = completed.length
-    ? `최근 ${recentFive.length || completed.length}회 기준 평균은 ${recentAverage || "-"}점이며 이전 구간 대비 ${delta > 0 ? "+" : ""}${delta}점 ${trendLabel} 흐름입니다. 가장 약한 거리는 ${weakDistanceLabel}, 가장 안정적인 거리는 ${strongDistanceLabel}입니다.`
+    ? `최근 ${recentFive.length || completed.length}회 기준 평균은 ${recentAverage || "-"}점이며 이전 구간 대비 ${delta > 0 ? "+" : ""}${delta}점 ${trendLabel} 흐름입니다. 가장 약한 거리는 ${weakDistanceLabel}, 가장 안정적인 거리는 ${strongDistanceLabel}입니다. 바람과 멘탈 변수는 점수 변동을 크게 만들 수 있으므로 별도 관리가 필요합니다.`
     : "기록이 쌓이면 최근 평균, 성장 추세, 약점 거리, 후반 유지율을 부모용 문장으로 자동 변환합니다.";
 
   const parentRecommendation = completed.length
-    ? `${weakDistanceLabel} 집중 훈련을 우선하고, ${lateLabel === "후반 하락" ? "후반 집중력 유지 루틴" : "동일 조건 반복 기록"}을 함께 관리하는 것이 좋습니다.`
+    ? `${weakDistanceLabel} 집중 훈련을 우선하고, ${lateLabel === "후반 하락" ? "후반 집중력 유지 루틴" : "동일 조건 반복 기록"}을 함께 관리하세요. 특히 바람이 있는 날과 실수 직후의 멘탈 회복 루틴을 기록해야 합니다.`
     : "동일 조건 기록을 3회 이상 저장하면 첫 부모용 리포트를 생성할 수 있습니다.";
 
   return {
@@ -6602,6 +6689,7 @@ function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance 
     parentSummary,
     parentRecommendation,
     routineGuide,
+    windMental,
     generatedAt: formatDateOnly(getCurrentLocalDateString()),
   };
 }
@@ -6623,6 +6711,123 @@ function loadExternalScriptOnce(src, globalKey) {
     script.onerror = () => reject(new Error(`PDF 라이브러리 로드 실패: ${src}`));
     document.body.appendChild(script);
   });
+}
+
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function renderCompactParentReportHtml({ reportData, playerName, divisionLabel, avgScore, tenRate, consistencyIndex, aiGrade, trendLabel, distanceWeaknessMessage, lateSetDropMessage }) {
+  const windMental = reportData?.windMental || {};
+  const coachingPlan = Array.isArray(windMental.coachingPlan) ? windMental.coachingPlan : [];
+  const generatedAt = reportData?.generatedAt || formatDateOnly(getCurrentLocalDateString());
+  const metricRows = [
+    ["최근 평균", reportData?.recentAverage || "-", "최근 5회 또는 선택 조건 기준"],
+    ["이전 대비", `${reportData?.delta > 0 ? "+" : ""}${reportData?.delta ?? 0}점`, reportData?.trendLabel || "-"],
+    ["최고 평균", reportData?.bestAverage || "-", "개인 최고 흐름"],
+    ["안정성", `${reportData?.stability || consistencyIndex || 0}%`, reportData?.growthLevel || "-"],
+    ["약점 거리", reportData?.weakDistanceLabel || "-", `강점 거리: ${reportData?.strongDistanceLabel || "-"}`],
+    ["후반 집중력", reportData?.lateLabel || "-", reportData?.lateMessage || "-"],
+    ["바람 기록", windMental.windTaggedCount ? `${windMental.windTaggedCount}회` : "기록 부족", windMental.windGap !== null && windMental.windGap !== undefined ? `바람 영향 차이 ${windMental.windGap}점` : "바람 강도 기록 필요"],
+    ["멘탈 위험도", windMental.mentalRiskLevel || "관찰", "실수 직후 회복 루틴 기준"],
+  ];
+
+  return `
+  <div style="width:794px;background:#f8fafc;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR','Malgun Gothic',Arial,sans-serif;padding:28px;box-sizing:border-box;line-height:1.42;">
+    <div style="background:#0f172a;color:white;border-radius:18px;padding:22px 24px;margin-bottom:14px;">
+      <div style="font-size:12px;letter-spacing:.08em;color:#93c5fd;font-weight:800;">X-ANALYSIS PARENT REPORT</div>
+      <div style="font-size:25px;font-weight:900;margin-top:4px;">부모용 성장 · 바람 · 멘탈 분석 리포트</div>
+      <div style="display:flex;justify-content:space-between;gap:16px;margin-top:12px;font-size:12px;color:#cbd5e1;">
+        <div>선수: <b style="color:white;">${escapeHtml(playerName || "선수")}</b> · 구분: ${escapeHtml(divisionLabel || "-")}</div>
+        <div>생성일: ${escapeHtml(generatedAt)}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+      ${[
+        ["평균", avgScore ? Number(avgScore).toFixed(2) : "-", "점수 흐름"],
+        ["10점 비율", `${tenRate || 0}%`, "정확도"],
+        ["AI 등급", aiGrade || "-", "종합 판단"],
+        ["안정성", `${consistencyIndex || 0}%`, "기복 지표"],
+      ].map(([k,v,s]) => `<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:12px;"><div style="font-size:11px;color:#64748b;font-weight:700;">${k}</div><div style="font-size:23px;font-weight:900;margin-top:2px;">${v}</div><div style="font-size:10px;color:#94a3b8;">${s}</div></div>`).join("")}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <section style="background:white;border-radius:16px;border:1px solid #e2e8f0;padding:14px;">
+        <h2 style="margin:0 0 8px;font-size:15px;">1. 냉정한 종합 진단</h2>
+        <p style="font-size:12px;margin:0;color:#334155;">${escapeHtml(reportData?.parentSummary || "기록이 부족합니다.")}</p>
+        <p style="font-size:12px;margin:8px 0 0;color:#334155;"><b>판단:</b> ${escapeHtml(windMental.coldDiagnosis || "바람과 멘탈 데이터를 더 쌓아야 정확도가 올라갑니다.")}</p>
+      </section>
+      <section style="background:white;border-radius:16px;border:1px solid #e2e8f0;padding:14px;">
+        <h2 style="margin:0 0 8px;font-size:15px;">2. 바로 해야 할 훈련</h2>
+        <p style="font-size:12px;margin:0;color:#334155;">${escapeHtml(reportData?.parentRecommendation || "동일 조건 기록을 3회 이상 저장하세요.")}</p>
+        <p style="font-size:12px;margin:8px 0 0;color:#334155;"><b>핵심:</b> 점수만 보지 말고 바람 조건, 실수 다음 화살, 후반 2엔드를 별도 관리해야 합니다.</p>
+      </section>
+    </div>
+
+    <section style="background:white;border-radius:16px;border:1px solid #e2e8f0;padding:14px;margin-bottom:12px;">
+      <h2 style="margin:0 0 8px;font-size:15px;">3. 주요 지표</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr style="background:#f1f5f9;color:#475569;"><th style="text-align:left;padding:7px;border:1px solid #e2e8f0;">항목</th><th style="text-align:left;padding:7px;border:1px solid #e2e8f0;">값</th><th style="text-align:left;padding:7px;border:1px solid #e2e8f0;">해석</th></tr></thead>
+        <tbody>${metricRows.map(([a,b,c]) => `<tr><td style="padding:7px;border:1px solid #e2e8f0;font-weight:800;">${escapeHtml(a)}</td><td style="padding:7px;border:1px solid #e2e8f0;">${escapeHtml(b)}</td><td style="padding:7px;border:1px solid #e2e8f0;color:#475569;">${escapeHtml(c)}</td></tr>`).join("")}</tbody>
+      </table>
+    </section>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <section style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px;padding:14px;">
+        <h2 style="margin:0 0 8px;font-size:15px;color:#1e3a8a;">4. 바람 대응 분석</h2>
+        <p style="font-size:12px;margin:0;color:#1e3a8a;">${escapeHtml(windMental.windMessage || "바람 조건 기록이 필요합니다.")}</p>
+        <ul style="font-size:11px;margin:8px 0 0 16px;padding:0;color:#1e40af;">
+          <li>바람 강도: 없음/약함/중간/강함으로 기록</li>
+          <li>거리별 바람 영향 점수 차이 추적</li>
+          <li>바람 있는 날은 점수보다 조준 기준 유지 여부를 기록</li>
+        </ul>
+      </section>
+      <section style="background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:14px;">
+        <h2 style="margin:0 0 8px;font-size:15px;color:#9a3412;">5. 멘탈 코칭 분석</h2>
+        <p style="font-size:12px;margin:0;color:#9a3412;">${escapeHtml(windMental.mentalMessage || "멘탈 루틴 기록이 필요합니다.")}</p>
+        <ul style="font-size:11px;margin:8px 0 0 16px;padding:0;color:#9a3412;">
+          <li>실수 직후 다음 화살 전 8초 호흡</li>
+          <li>점수 확인보다 루틴 성공 여부를 먼저 체크</li>
+          <li>후반 2엔드는 별도 집중력 지표로 관리</li>
+        </ul>
+      </section>
+    </div>
+
+    <section style="background:white;border-radius:16px;border:1px solid #e2e8f0;padding:14px;margin-bottom:12px;">
+      <h2 style="margin:0 0 8px;font-size:15px;">6. 7일 실행 계획</h2>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:11px;">
+        ${coachingPlan.map((item) => `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:9px;">${escapeHtml(item)}</div>`).join("")}
+      </div>
+    </section>
+
+    <section style="background:#0f172a;color:white;border-radius:16px;padding:14px;">
+      <h2 style="margin:0 0 8px;font-size:15px;">최종 코멘트</h2>
+      <p style="font-size:12px;margin:0;color:#e2e8f0;">양궁은 바람과 멘탈의 싸움입니다. 기술이 좋아도 바람 조건에서 기준점을 잃거나, 한 발 실수 뒤 루틴이 무너지면 기록은 급격히 흔들립니다. 다음 리포트부터는 점수뿐 아니라 바람 강도, 실수 직후 회복, 후반 집중력까지 함께 기록해야 분석 정확도가 올라갑니다.</p>
+    </section>
+  </div>`;
+}
+
+async function downloadParentAnalysisReportAsPdf(reportPayload, filename = "x-analysis-parent-report.pdf") {
+  if (typeof window === "undefined" || typeof document === "undefined") throw new Error("브라우저 환경에서만 PDF를 생성할 수 있습니다.");
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "absolute";
+  wrapper.style.left = "-99999px";
+  wrapper.style.top = "0";
+  wrapper.style.zIndex = "-1";
+  wrapper.innerHTML = renderCompactParentReportHtml(reportPayload);
+  document.body.appendChild(wrapper);
+  try {
+    await downloadReportElementAsPdf(wrapper.firstElementChild, filename);
+  } finally {
+    document.body.removeChild(wrapper);
+  }
 }
 
 async function downloadReportElementAsPdf(element, filename = "x-analysis-parent-report.pdf") {
@@ -6777,20 +6982,6 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
     [filteredMine, distancePerformance, parentGrowthSummary, lateSetDropInsight]
   );
 
-  const handleDownloadParentReportPdf = useCallback(async () => {
-    try {
-      setPdfBusy(true);
-      await downloadReportElementAsPdf(
-        reportSectionRef.current,
-        `X-Analysis_부모용_리포트_${String(currentName || "선수").replace(/\s+/g, "_")}_${getCurrentLocalDateString()}.pdf`
-      );
-    } catch (error) {
-      alert(error?.message || "PDF 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.");
-    } finally {
-      setPdfBusy(false);
-    }
-  }, [currentName]);
-
   const sessionAverages = useMemo(() => filteredMine
     .filter((session) => session?.isComplete)
     .map((session) => Number(session.summary?.averageArrow ?? getAverageArrow(session)) || 0)
@@ -6866,6 +7057,31 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
   const strongestDistance = distancePerformance.length ? distancePerformance.slice().sort((a, b) => b.avgArrow - a.avgArrow)[0] : null;
   const weakestDistance = distancePerformance.length ? distancePerformance.slice().sort((a, b) => a.avgArrow - b.avgArrow)[0] : null;
   const chartData = analytics.slice(-8);
+
+  const handleDownloadParentReportPdf = useCallback(async () => {
+    try {
+      setPdfBusy(true);
+      await downloadParentAnalysisReportAsPdf(
+        {
+          reportData: parentReportData,
+          playerName: currentName,
+          divisionLabel: currentDivision,
+          avgScore,
+          tenRate,
+          consistencyIndex,
+          aiGrade,
+          trendLabel: trend?.label,
+          distanceWeaknessMessage: distanceWeakness?.message,
+          lateSetDropMessage: lateSetDropInsight?.message,
+        },
+        `X-Analysis_부모용_리포트_${String(currentName || "선수").replace(/\s+/g, "_")}_${getCurrentLocalDateString()}.pdf`
+      );
+    } catch (error) {
+      alert(error?.message || "PDF 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setPdfBusy(false);
+    }
+  }, [currentName, currentDivision, parentReportData, avgScore, tenRate, consistencyIndex, aiGrade, trend, distanceWeakness, lateSetDropInsight]);
 
   if (isMobileAnalysis) {
     const mobileTrendLabel = trend?.label || "기록 대기";
@@ -7200,6 +7416,16 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                         {parentReportData.parentRecommendation}
                       </div>
                     </div>
+                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                      <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+                        <div className="mb-1 font-black">바람 대응 분석</div>
+                        {parentReportData.windMental?.windMessage || "바람 강도 기록이 쌓이면 바람 조건별 점수 변화를 분석합니다."}
+                      </div>
+                      <div className="rounded-3xl border border-orange-100 bg-orange-50 p-4 text-sm leading-6 text-orange-900">
+                        <div className="mb-1 font-black">멘탈 코칭 진단</div>
+                        {parentReportData.windMental?.coldDiagnosis || "실수 직후 회복 루틴과 후반 집중력 데이터를 기록해야 멘탈 분석 정확도가 올라갑니다."}
+                      </div>
+                    </div>
                     <div className="mt-4 rounded-3xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-600">
                       최근 기록: {parentReportData.lastSessionDate} · {parentReportData.lastSessionDistance} · 평균 {parentReportData.lastSessionScore || "-"}점 / {parentReportData.routineGuide}
                     </div>
@@ -7216,7 +7442,8 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                     <div className="mt-4 space-y-2 text-sm">
                       <div className="font-black">개선 권장사항</div>
                       <div className="rounded-2xl bg-blue-50 p-3 text-blue-800">1. {weakestDistance ? `${weakestDistance.label} 거리 반복 훈련을 우선 배치하세요.` : "기록을 3회 이상 저장하세요."}</div>
-                      <div className="rounded-2xl bg-blue-50 p-3 text-blue-800">2. 후반 세트 집중력 유지를 위한 멘탈 루틴을 기록하세요.</div>
+                      <div className="rounded-2xl bg-blue-50 p-3 text-blue-800">2. 바람이 있는 날과 후반 세트에서 멘탈 루틴을 별도로 기록하세요.</div>
+                      <div className="rounded-2xl bg-orange-50 p-3 text-orange-800">3. 실수 직후 다음 화살 전 8초 호흡·시선·손압 재설정 루틴을 고정하세요.</div>
                     </div>
                   </div>
                 </section>
