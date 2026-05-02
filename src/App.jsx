@@ -282,9 +282,10 @@ const FIREBASE_READY = Boolean(
 );
 
 const DEFAULT_UI = { activeTab: "routine" };
-const VALID_APP_TABS = new Set(["routine", "dashboard", "record", "ranking", "analysis", "stage", "brief", "profile", "admin"]);
+const VALID_APP_TABS = new Set(["routine", "dashboard", "record", "ranking", "analysis", "stage", "profile", "admin"]);
 function normalizeAppTab(tab, fallback = DEFAULT_UI.activeTab) {
-  const normalized = tab === "session" ? "record" : String(tab || "").trim();
+  const raw = String(tab || "").trim();
+  const normalized = raw === "session" ? "record" : raw === "brief" ? "stage" : raw;
   return VALID_APP_TABS.has(normalized) ? normalized : fallback;
 }
 
@@ -323,6 +324,14 @@ function getLiveDraftSessionKey(userId) {
 
 function getUiSessionStateKey(userId) {
   return `elbowshot_ui_state_${userId || "guest"}`;
+}
+
+function getRoutineDraftSessionKey(userId, date) {
+  return `x_session_routine_draft_${userId || "guest"}_${date || getCurrentLocalDateString()}`;
+}
+
+function getSavedRoutineForToday(userId, existingRoutine, date = getCurrentLocalDateString()) {
+  return existingRoutine || readStoredRoutineRecord(userId, date) || null;
 }
 
 function getAnalysisSessionStateKey(userId) {
@@ -5648,7 +5657,6 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAle
     { key: "ranking", label: "X-Ranking", icon: Trophy },
     { key: "analysis", label: "X-Analysis", icon: CalendarRange },
     { key: "stage", label: "X-Stage", icon: Award },
-    { key: "brief", label: "X-Brief", icon: Archive },
     { key: "profile", label: "Profile", icon: User },
     ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield, alertCount: adminAlertCount }] : []),
   ];
@@ -5675,7 +5683,7 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAle
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-9">
+          <TabsList className="grid w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-8">
             {navs.map((item) => {
               const Icon = item.icon;
               return (
@@ -5709,7 +5717,6 @@ function DesktopAppSidebar({ user, activeTab, setActiveTab, onLogout, isAdminUse
     { key: "ranking", label: "X-Ranking", icon: Trophy },
     { key: "analysis", label: "X-Analysis", icon: CalendarRange },
     { key: "stage", label: "X-Stage", icon: Award },
-    { key: "brief", label: "X-Brief", icon: Archive },
     { key: "profile", label: "Profile", icon: User },
     ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield, alertCount: adminAlertCount }] : []),
   ];
@@ -7107,25 +7114,46 @@ function buildPostSaveInsight({ savedSession, users = [], sessions = [], current
 function RoutinePage({ appServices, currentUser, routines = [], sessions = [], onRoutineSaved, onStartSession }) {
   const today = getCurrentLocalDateString();
   const existingRoutine = getRoutineForDate(routines, today);
+  const savedTodayRoutine = getSavedRoutineForToday(currentUser?.id, existingRoutine, today);
   const storedRoutineItems = useMemo(() => readStoredRoutineItems(currentUser?.id), [currentUser?.id]);
+  const routineDraftKey = getRoutineDraftSessionKey(currentUser?.id, today);
   const [items, setItems] = useState(() => {
-    const baseItems = storedRoutineItems.length ? storedRoutineItems : existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS;
-    return resetRoutineItemsForNewInput(baseItems);
+    const draft = readSessionStorageJSON(routineDraftKey, null);
+    const baseItems = draft?.items?.length
+      ? draft.items
+      : savedTodayRoutine?.items?.length
+        ? savedTodayRoutine.items
+        : storedRoutineItems.length
+          ? storedRoutineItems
+          : ROUTINE_TEMPLATE_ITEMS;
+    return normalizeRoutineItems(baseItems);
   });
   const [newItemLabel, setNewItemLabel] = useState("");
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(savedTodayRoutine ? "오늘 저장된 루틴을 불러왔다. 필요하면 체크 상태를 수정한 뒤 다시 저장하면 된다." : "");
 
   useEffect(() => {
+    const draft = readSessionStorageJSON(routineDraftKey, null);
     const stored = readStoredRoutineItems(currentUser?.id);
-    const baseItems = stored.length ? stored : existingRoutine?.items || ROUTINE_TEMPLATE_ITEMS;
-    setItems(resetRoutineItemsForNewInput(baseItems));
-  }, [currentUser?.id, existingRoutine?.id, today]);
+    const currentSavedRoutine = getSavedRoutineForToday(currentUser?.id, existingRoutine, today);
+    const baseItems = draft?.items?.length
+      ? draft.items
+      : currentSavedRoutine?.items?.length
+        ? currentSavedRoutine.items
+        : stored.length
+          ? stored
+          : ROUTINE_TEMPLATE_ITEMS;
+    setItems(normalizeRoutineItems(baseItems));
+    if (currentSavedRoutine && !draft?.items?.length) {
+      setNotice("오늘 저장된 루틴을 불러왔다. 필요하면 체크 상태를 수정한 뒤 다시 저장하면 된다.");
+    }
+  }, [currentUser?.id, existingRoutine?.id, today, routineDraftKey]);
 
   useEffect(() => {
     if (!currentUser?.id) return;
     writeStoredRoutineItems(currentUser.id, items);
-  }, [currentUser?.id, items]);
+    writeSessionStorageJSON(routineDraftKey, { date: today, items: normalizeRoutineItems(items) });
+  }, [currentUser?.id, items, routineDraftKey, today]);
 
   const stats = useMemo(() => calculateRoutineStats(items), [items]);
   const correlation = useMemo(() => getRoutineSessionCorrelation(routines, sessions), [routines, sessions]);
@@ -9200,9 +9228,10 @@ function EmptyNoticeCard({ title, description }) {
   );
 }
 
-function XStagePage({ appServices, stageRefreshKey = 0 }) {
+function XStagePage({ appServices, stageRefreshKey = 0, briefRefreshKey = 0 }) {
   const [events, setEvents] = useState([]);
   const [news, setNews] = useState([]);
+  const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -9211,9 +9240,10 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
       if (!appServices?.db) return;
       setLoading(true);
       try {
-        const [eventSnap, newsSnap] = await Promise.all([
+        const [eventSnap, newsSnap, noticeSnap] = await Promise.all([
           getDocs(collection(appServices.db, "stage_events")),
           getDocs(collection(appServices.db, "stage_news")),
+          getDocs(collection(appServices.db, "brief_notices")),
         ]);
         if (!alive) return;
         const loadedEvents = eventSnap.docs
@@ -9222,13 +9252,18 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
         const loadedNews = newsSnap.docs
           .map((snap) => ({ id: snap.id, ...snap.data() }))
           .sort((a, b) => String(b.createdAt?.seconds || b.date || "").localeCompare(String(a.createdAt?.seconds || a.date || "")));
+        const loadedNotices = noticeSnap.docs
+          .map((snap) => ({ id: snap.id, ...snap.data() }))
+          .sort((a, b) => String(b.createdAt?.seconds || b.date || "").localeCompare(String(a.createdAt?.seconds || a.date || "")));
         setEvents(loadedEvents);
         setNews(loadedNews);
+        setNotices(loadedNotices);
       } catch (error) {
         console.warn("X-Stage load failed", error);
         if (alive) {
           setEvents([]);
           setNews([]);
+          setNotices([]);
         }
       } finally {
         if (alive) setLoading(false);
@@ -9238,7 +9273,7 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
     return () => {
       alive = false;
     };
-  }, [appServices?.db, stageRefreshKey]);
+  }, [appServices?.db, stageRefreshKey, briefRefreshKey]);
 
   return (
     <div className="space-y-6">
@@ -9247,7 +9282,7 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
           <CardTitle className="flex items-center gap-2 text-xl"><Award className="h-5 w-5 text-blue-600" /> X-Stage</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-slate-600">
-          대회 일정과 양궁 뉴스를 확인하는 공간이다. 관리자 페이지에서 등록한 내용이 여기에 표시된다.
+          대회 일정, 양궁 뉴스, 공지사항을 한 화면에서 확인하는 통합 운영 공간이다. 관리자 페이지에서 등록한 X-Stage / X-Brief 내용이 모두 여기에 표시된다.
         </CardContent>
       </Card>
 
@@ -9255,7 +9290,7 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
         <Card className="rounded-[28px] border-0 bg-white shadow-sm"><CardContent className="flex items-center gap-2 p-6 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> X-Stage 데이터를 불러오는 중</CardContent></Card>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-3">
         <Card className="rounded-[28px] border-0 bg-white shadow-sm">
           <CardHeader><CardTitle className="text-lg">대회 일정</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -9287,6 +9322,23 @@ function XStagePage({ appServices, stageRefreshKey = 0 }) {
                   <div className="font-bold text-slate-950">{item.title || "양궁 뉴스"}</div>
                   {item.source || item.date ? <div className="mt-1 text-xs text-slate-400">{[item.source, item.date].filter(Boolean).join(" · ")}</div> : null}
                   {item.content || item.description ? <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content || item.description}</div> : null}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+          <CardHeader><CardTitle className="text-lg">공지사항</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {notices.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">등록된 공지사항이 없습니다.</div>
+            ) : (
+              notices.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-slate-100 p-4">
+                  <div className="font-bold text-slate-950">{item.title || "공지사항"}</div>
+                  {item.date ? <div className="mt-1 text-xs text-slate-400">{item.date}</div> : null}
+                  {item.content ? <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content}</div> : null}
                 </div>
               ))
             )}
@@ -11235,8 +11287,7 @@ function XSessionApp() {
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} routines={myRoutines} currentUser={currentUser} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} onNavigate={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} />}
-              {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
-              {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
+              {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} briefRefreshKey={briefRefreshKey} />}
               {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} sessions={mySessions} onRoutineSaved={async (savedRoutine) => {
                 if (savedRoutine?.id) {
                   setRoutines((prev) => {
