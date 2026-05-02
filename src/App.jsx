@@ -330,8 +330,45 @@ function getRoutineDraftSessionKey(userId, date) {
   return `x_session_routine_draft_${userId || "guest"}_${date || getCurrentLocalDateString()}`;
 }
 
+function getRoutineDailyStateKey(userId, date) {
+  return `x_session_routine_daily_state_${userId || "guest"}_${date || getCurrentLocalDateString()}`;
+}
+
+function readRoutineDailyState(userId, date = getCurrentLocalDateString()) {
+  try {
+    const raw = localStorage.getItem(getRoutineDailyStateKey(userId, date));
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (!parsed || parsed.date !== date) return null;
+    const stats = calculateRoutineStats(parsed.items || []);
+    return { ...parsed, ...stats };
+  } catch {
+    return null;
+  }
+}
+
+function writeRoutineDailyState(userId, date, items = []) {
+  try {
+    if (!userId || !date) return;
+    const stats = calculateRoutineStats(items);
+    const payload = {
+      id: makeRoutineDocId(userId, date),
+      userId,
+      date,
+      items: stats.items,
+      completionRate: stats.completionRate,
+      completedCount: stats.completedCount,
+      totalCount: stats.totalCount,
+      updatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(getRoutineDailyStateKey(userId, date), JSON.stringify(payload));
+  } catch {
+    // localStorage unavailable
+  }
+}
+
 function getSavedRoutineForToday(userId, existingRoutine, date = getCurrentLocalDateString()) {
-  return existingRoutine || readStoredRoutineRecord(userId, date) || null;
+  const dailyState = readRoutineDailyState(userId, date);
+  return dailyState || existingRoutine || readStoredRoutineRecord(userId, date) || null;
 }
 
 function getAnalysisSessionStateKey(userId) {
@@ -460,6 +497,11 @@ function getRoutineForDate(routines = [], date = getCurrentLocalDateString()) {
 
 function getTodayRoutineRate(routines = []) {
   return getRoutineForDate(routines)?.completionRate || 0;
+}
+
+function getTodayRoutineRateForUser(userId, routines = [], date = getCurrentLocalDateString()) {
+  const routine = getSavedRoutineForToday(userId, getRoutineForDate(routines, date), date);
+  return routine?.completionRate || 0;
 }
 
 function getRoutineSessionCorrelation(routines = [], sessions = []) {
@@ -7138,14 +7180,17 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
   const storedRoutineItems = useMemo(() => readStoredRoutineItems(currentUser?.id), [currentUser?.id]);
   const routineDraftKey = getRoutineDraftSessionKey(currentUser?.id, today);
   const [items, setItems] = useState(() => {
+    const dailyState = readRoutineDailyState(currentUser?.id, today);
     const draft = readSessionStorageJSON(routineDraftKey, null);
-    const baseItems = draft?.items?.length
-      ? draft.items
-      : savedTodayRoutine?.items?.length
-        ? savedTodayRoutine.items
-        : storedRoutineItems.length
-          ? storedRoutineItems
-          : ROUTINE_TEMPLATE_ITEMS;
+    const baseItems = dailyState?.items?.length
+      ? dailyState.items
+      : draft?.items?.length
+        ? draft.items
+        : savedTodayRoutine?.items?.length
+          ? savedTodayRoutine.items
+          : storedRoutineItems.length
+            ? storedRoutineItems
+            : ROUTINE_TEMPLATE_ITEMS;
     return normalizeRoutineItems(baseItems);
   });
   const [newItemLabel, setNewItemLabel] = useState("");
@@ -7153,25 +7198,29 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
   const [notice, setNotice] = useState(savedTodayRoutine ? "오늘 저장된 루틴을 불러왔다. 필요하면 체크 상태를 수정한 뒤 다시 저장하면 된다." : "");
 
   useEffect(() => {
+    const dailyState = readRoutineDailyState(currentUser?.id, today);
     const draft = readSessionStorageJSON(routineDraftKey, null);
     const stored = readStoredRoutineItems(currentUser?.id);
     const currentSavedRoutine = getSavedRoutineForToday(currentUser?.id, existingRoutine, today);
-    const baseItems = draft?.items?.length
-      ? draft.items
-      : currentSavedRoutine?.items?.length
-        ? currentSavedRoutine.items
-        : stored.length
-          ? stored
-          : ROUTINE_TEMPLATE_ITEMS;
+    const baseItems = dailyState?.items?.length
+      ? dailyState.items
+      : draft?.items?.length
+        ? draft.items
+        : currentSavedRoutine?.items?.length
+          ? currentSavedRoutine.items
+          : stored.length
+            ? stored
+            : ROUTINE_TEMPLATE_ITEMS;
     setItems(normalizeRoutineItems(baseItems));
-    if (currentSavedRoutine && !draft?.items?.length) {
-      setNotice("오늘 저장된 루틴을 불러왔다. 필요하면 체크 상태를 수정한 뒤 다시 저장하면 된다.");
+    if (currentSavedRoutine || dailyState) {
+      setNotice("오늘 루틴 상태를 불러왔다. 필요하면 체크 상태를 수정한 뒤 다시 저장하면 된다.");
     }
   }, [currentUser?.id, existingRoutine?.id, today, routineDraftKey]);
 
   useEffect(() => {
     if (!currentUser?.id) return;
     writeStoredRoutineItems(currentUser.id, items);
+    writeRoutineDailyState(currentUser.id, today, items);
     writeSessionStorageJSON(routineDraftKey, { date: today, items: normalizeRoutineItems(items) });
   }, [currentUser?.id, items, routineDraftKey, today]);
 
@@ -7245,6 +7294,7 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
         updatedAt: new Date().toISOString(),
       };
       writeStoredRoutineRecord(currentUser.id, optimisticRoutine);
+      writeRoutineDailyState(currentUser.id, today, normalizedStats.items);
       setNotice(
         normalizedStats.completionRate === 100
           ? "🔥 최적 준비 상태. 오늘의 성실함이 실력을 만든다."
@@ -7445,7 +7495,7 @@ function Dashboard({ sessions, routines = [], currentUser, loading, onEditSessio
 
   const todayKey = getTodayKey();
   const yesterdayKey = getYesterdayKey();
-  const todayRoutine = getRoutineForDate(routines, todayKey) || readStoredRoutineRecord(currentUser?.id, todayKey);
+  const todayRoutine = getSavedRoutineForToday(currentUser?.id, getRoutineForDate(routines, todayKey), todayKey);
   const todayRoutineRate = todayRoutine?.completionRate || 0;
   const hasTodayRoutine = Boolean(todayRoutine);
   const routineCorrelation = getRoutineSessionCorrelation(
@@ -11352,7 +11402,7 @@ function XSessionApp() {
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div className="rounded-2xl bg-blue-50 p-3 text-blue-900">🔥 {postSaveInsight.streak}일 연속 기록중</div>
                       <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-900">{postSaveInsight.personalBest ? "🎯 개인 최고 기록!" : "🎯 기록 저장 완료"}</div>
-                      <div className="rounded-2xl bg-slate-50 p-3 text-slate-700">오늘 루틴 {getTodayRoutineRate(myRoutines)}% · {getRoutineReadinessMessage(getTodayRoutineRate(myRoutines))} · 다음 목표 {postSaveInsight.nextTarget ?? "-"}점</div>
+                      <div className="rounded-2xl bg-slate-50 p-3 text-slate-700">오늘 루틴 {getTodayRoutineRateForUser(currentUser?.id, myRoutines)}% · {getRoutineReadinessMessage(getTodayRoutineRateForUser(currentUser?.id, myRoutines))} · 다음 목표 {postSaveInsight.nextTarget ?? "-"}점</div>
                     </div>
                   </div>
                 ) : null}
