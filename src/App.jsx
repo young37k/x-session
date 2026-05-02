@@ -2399,6 +2399,63 @@ async function upsertOfficialCompetitionSheetToRankingEntries(db, sheet) {
   return count;
 }
 
+async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMPLE_SHEETS) {
+  if (!db) throw new Error("Firestore DB 연결이 준비되지 않았다.");
+
+  const writes = [];
+  (sheets || []).forEach((sheet) => {
+    if (!sheet?.rows?.length) return;
+    sheet.rows.forEach((sourceRow) => {
+      const row = withCanonicalSchool(sourceRow);
+      const userId = makeSampleUserId(row.name, row.school);
+      (sheet.distances || []).forEach((distance, idx) => {
+        const score = Number(row.rounds?.[idx]);
+        if (!Number.isFinite(score)) return;
+        const entryId = `${sheet.competitionId || sheet.id}_${userId}_${Number(distance)}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
+        writes.push({
+          entryId,
+          payload: {
+            entryId,
+            sessionId: `${sheet.id}_${userId}`,
+            userId,
+            name: row.name,
+            playerName: row.name,
+            groupName: row.school,
+            schoolName: row.school,
+            regionCity: row.regionCity || sheet.regionCity || "전국",
+            division: row.division || sheet.division || "",
+            gender: row.gender || sheet.gender || "남",
+            bowType: row.bowType || sheet.bowType || "리커브",
+            rankingGroup: sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender),
+            sourceType: "competition_result",
+            competitionId: sheet.competitionId || sheet.id,
+            competitionName: sheet.competitionName || sheet.sheetLabel || "대회 결과",
+            sessionDate: sheet.date || getCurrentLocalDateString(),
+            date: sheet.date || getCurrentLocalDateString(),
+            distance: Number(distance),
+            score,
+            totalScore: Number(row.total) || 0,
+            arrows: 36,
+            sourceRank: row.sourceRank || row.rank || null,
+            updatedAt: serverTimestamp(),
+          },
+        });
+      });
+    });
+  });
+
+  const chunkSize = 450;
+  for (let i = 0; i < writes.length; i += chunkSize) {
+    const batch = writeBatch(db);
+    writes.slice(i, i + chunkSize).forEach((item) => {
+      batch.set(doc(db, "ranking_entries", item.entryId), item.payload, { merge: true });
+    });
+    await batch.commit();
+  }
+
+  return { sheetCount: (sheets || []).length, writeCount: writes.length };
+}
+
 // Firestore 추천 인덱스
 // ranking_entries: rankingGroup ASC, gender ASC, distance ASC, score DESC, sessionDate DESC
 // ranking_entries: userId ASC, rankingGroup ASC, distance ASC, score DESC
@@ -7483,6 +7540,8 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
   const [adminPublishedLoading, setAdminPublishedLoading] = useState(false);
   const [deletingPublishedId, setDeletingPublishedId] = useState("");
   const [selectedApprovedClaim, setSelectedApprovedClaim] = useState(null);
+  const [rankingUploadLoading, setRankingUploadLoading] = useState(false);
+  const [rankingUploadMessage, setRankingUploadMessage] = useState("");
 
   useEffect(() => {
     try {
@@ -7752,6 +7811,32 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
     setExtraAdmins((prev) => prev.filter((item) => item !== email));
   }
 
+  async function uploadOfficialRankingSamples() {
+    if (!appServices?.db) {
+      alert("DB 연결이 준비되지 않았다.");
+      return;
+    }
+
+    const ok = window.confirm("종별대회 기록_샘플용 데이터를 Firestore ranking_entries에 업로드할까? 같은 entryId는 덮어써서 중복 저장되지 않는다.");
+    if (!ok) return;
+
+    try {
+      setRankingUploadLoading(true);
+      setRankingUploadMessage("업로드 중...");
+      const result = await upsertOfficialCompetitionSheetsToRankingEntries(appServices.db, SAMPLE_SHEETS);
+      const message = `업로드 완료: ${result.sheetCount}개 부문 / ${result.writeCount}개 거리 기록`;
+      setRankingUploadMessage(message);
+      alert(message);
+      await onRefresh?.();
+    } catch (error) {
+      const message = error?.message || "공식 랭킹 업로드에 실패했다.";
+      setRankingUploadMessage(message);
+      alert(message);
+    } finally {
+      setRankingUploadLoading(false);
+    }
+  }
+
   async function deleteUserData(user) {
     if (!appServices?.db) {
       alert("DB 연결이 준비되지 않았다.");
@@ -7807,6 +7892,32 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
             <div className="text-sm text-red-600">미확인 가입자</div>
             <div className="mt-2 text-3xl font-bold text-red-700">{unreviewedUsers.length}</div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
+        <CardHeader>
+          <CardTitle className="text-xl">Firestore 공식 랭킹 업로드</CardTitle>
+          <DialogDescription>
+            App.jsx에는 개발용 샘플만 유지하고, 실제 랭킹은 Firestore <b>ranking_entries</b>에서 조건별로 불러오는 구조다.
+          </DialogDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="min-w-0 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+            <div className="font-semibold text-slate-900">종별대회 기록_샘플용</div>
+            <div className="mt-1">현재 파일에 남긴 최소 샘플 {SAMPLE_SHEETS.length}개 부문을 Firestore ranking_entries에 업로드한다.</div>
+            <div className="mt-1">동일 entryId는 merge 저장되므로 같은 자료를 다시 눌러도 중복으로 늘어나지 않는다.</div>
+            {rankingUploadMessage ? <div className="mt-2 font-semibold text-blue-700">{rankingUploadMessage}</div> : null}
+          </div>
+          <Button
+            type="button"
+            className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800"
+            onClick={uploadOfficialRankingSamples}
+            disabled={rankingUploadLoading}
+          >
+            {rankingUploadLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2 h-4 w-4" />}
+            Firestore 업로드
+          </Button>
         </CardContent>
       </Card>
 
