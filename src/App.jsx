@@ -10809,7 +10809,10 @@ function XSessionApp() {
     const reviewed = new Set(reviewedUserIds || []);
     return users.filter((user) => !user.isSampleData && !isAdminEmail(user.email) && !reviewed.has(user.id)).length;
   }, [users, reviewedUserIds]);
-  const adminAlertCount = pendingOfficialClaimCount + unreviewedUserCount;
+  // Admin badge is intentionally tied only to unreviewed general signups.
+  // Official-claim requests are managed inside the Admin panel so the top badge
+  // does not remain at 1 after all new signups have been reviewed.
+  const adminAlertCount = unreviewedUserCount;
   const adminEmailGuard = isAdminEmail;
 
   return (
