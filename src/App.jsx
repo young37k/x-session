@@ -282,6 +282,11 @@ const FIREBASE_READY = Boolean(
 );
 
 const DEFAULT_UI = { activeTab: "routine" };
+const VALID_APP_TABS = new Set(["routine", "dashboard", "record", "ranking", "analysis", "stage", "brief", "profile", "admin"]);
+function normalizeAppTab(tab, fallback = DEFAULT_UI.activeTab) {
+  const normalized = tab === "session" ? "record" : String(tab || "").trim();
+  return VALID_APP_TABS.has(normalized) ? normalized : fallback;
+}
 
 function readSessionStorageJSON(key, fallback = null) {
   try {
@@ -9183,6 +9188,179 @@ function ProfilePanel({ user, onUpdate, saving }) {
 }
 
 
+
+function EmptyNoticeCard({ title, description }) {
+  return (
+    <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+      <CardContent className="p-6 text-sm text-slate-500">
+        <div className="font-bold text-slate-900">{title}</div>
+        <div className="mt-2">{description}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function XStagePage({ appServices, stageRefreshKey = 0 }) {
+  const [events, setEvents] = useState([]);
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadStage() {
+      if (!appServices?.db) return;
+      setLoading(true);
+      try {
+        const [eventSnap, newsSnap] = await Promise.all([
+          getDocs(collection(appServices.db, "stage_events")),
+          getDocs(collection(appServices.db, "stage_news")),
+        ]);
+        if (!alive) return;
+        const loadedEvents = eventSnap.docs
+          .map((snap) => ({ id: snap.id, ...snap.data() }))
+          .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+        const loadedNews = newsSnap.docs
+          .map((snap) => ({ id: snap.id, ...snap.data() }))
+          .sort((a, b) => String(b.createdAt?.seconds || b.date || "").localeCompare(String(a.createdAt?.seconds || a.date || "")));
+        setEvents(loadedEvents);
+        setNews(loadedNews);
+      } catch (error) {
+        console.warn("X-Stage load failed", error);
+        if (alive) {
+          setEvents([]);
+          setNews([]);
+        }
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+    loadStage();
+    return () => {
+      alive = false;
+    };
+  }, [appServices?.db, stageRefreshKey]);
+
+  return (
+    <div className="space-y-6">
+      <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl"><Award className="h-5 w-5 text-blue-600" /> X-Stage</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-slate-600">
+          대회 일정과 양궁 뉴스를 확인하는 공간이다. 관리자 페이지에서 등록한 내용이 여기에 표시된다.
+        </CardContent>
+      </Card>
+
+      {loading ? (
+        <Card className="rounded-[28px] border-0 bg-white shadow-sm"><CardContent className="flex items-center gap-2 p-6 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> X-Stage 데이터를 불러오는 중</CardContent></Card>
+      ) : null}
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+          <CardHeader><CardTitle className="text-lg">대회 일정</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {events.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">등록된 대회 일정이 없습니다.</div>
+            ) : (
+              events.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-slate-100 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="font-bold text-slate-950">{item.title || "대회 일정"}</div>
+                    <Badge className="rounded-full bg-blue-50 text-blue-700 hover:bg-blue-50">{item.date || "날짜 미정"}</Badge>
+                  </div>
+                  {item.location ? <div className="mt-2 text-sm text-slate-500">장소: {item.location}</div> : null}
+                  {item.description ? <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.description}</div> : null}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+          <CardHeader><CardTitle className="text-lg">양궁 뉴스</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {news.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">등록된 뉴스가 없습니다.</div>
+            ) : (
+              news.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-slate-100 p-4">
+                  <div className="font-bold text-slate-950">{item.title || "양궁 뉴스"}</div>
+                  {item.source || item.date ? <div className="mt-1 text-xs text-slate-400">{[item.source, item.date].filter(Boolean).join(" · ")}</div> : null}
+                  {item.content || item.description ? <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content || item.description}</div> : null}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function XBriefPage({ appServices, briefRefreshKey = 0 }) {
+  const [notices, setNotices] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    async function loadBrief() {
+      if (!appServices?.db) return;
+      setLoading(true);
+      try {
+        const snap = await getDocs(collection(appServices.db, "brief_notices"));
+        if (!alive) return;
+        const loaded = snap.docs
+          .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+          .sort((a, b) => String(b.createdAt?.seconds || b.date || "").localeCompare(String(a.createdAt?.seconds || a.date || "")));
+        setNotices(loaded);
+      } catch (error) {
+        console.warn("X-Brief load failed", error);
+        if (alive) setNotices([]);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+    loadBrief();
+    return () => {
+      alive = false;
+    };
+  }, [appServices?.db, briefRefreshKey]);
+
+  return (
+    <div className="space-y-6">
+      <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl"><Archive className="h-5 w-5 text-blue-600" /> X-Brief</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-slate-600">
+          공지사항과 운영 안내를 확인하는 공간이다. 관리자 페이지에서 등록한 공지가 여기에 표시된다.
+        </CardContent>
+      </Card>
+
+      {loading ? (
+        <Card className="rounded-[28px] border-0 bg-white shadow-sm"><CardContent className="flex items-center gap-2 p-6 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> X-Brief 데이터를 불러오는 중</CardContent></Card>
+      ) : null}
+
+      <Card className="rounded-[28px] border-0 bg-white shadow-sm">
+        <CardHeader><CardTitle className="text-lg">공지사항</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          {notices.length === 0 ? (
+            <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">등록된 공지사항이 없습니다.</div>
+          ) : (
+            notices.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-slate-100 p-4">
+                <div className="font-bold text-slate-950">{item.title || "공지사항"}</div>
+                {item.date ? <div className="mt-1 text-xs text-slate-400">{item.date}</div> : null}
+                {item.content ? <div className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.content}</div> : null}
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function AdminPanel({ currentUser, users, sessions, appServices, officialClaims = [], reviewedUserIds = [], onMarkUserReviewed, onMarkAllUsersReviewed, onApproveOfficialClaim, onRejectOfficialClaim, onRefresh, onStageRefresh, onBriefRefresh }) {
   const [emailRegion, setEmailRegion] = useState("all");
   const [emailDivision, setEmailDivision] = useState("all");
@@ -10315,13 +10493,17 @@ function XSessionApp() {
 
         setEditingSessionId(null);
         const savedUiState = readSessionStorageJSON(getUiSessionStateKey(user.uid), null);
-        setUi((prev) => ({
-          ...prev,
-          ...(savedUiState || {}),
-          activeTab: adminRequested && isAdminEmail(nextProfile.email)
+        setUi((prev) => {
+          const fallbackTab = getInitialTabByRole(nextProfile.role);
+          const nextTab = adminRequested && isAdminEmail(nextProfile.email)
             ? "admin"
-            : (savedUiState?.activeTab || getInitialTabByRole(nextProfile.role)),
-        }));
+            : normalizeAppTab(savedUiState?.activeTab, fallbackTab);
+          return {
+            ...prev,
+            ...(savedUiState || {}),
+            activeTab: nextTab,
+          };
+        });
 
         await loadUsersAndSessions(appServices.db);
       } catch (error) {
@@ -10969,7 +11151,7 @@ function XSessionApp() {
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      {currentUser ? <DesktopAppSidebar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} /> : null}
+      {currentUser ? <DesktopAppSidebar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} /> : null}
       <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6 xl:pl-[280px]" : "gap-0"}`}>
         {currentUser ? <div className="xl:hidden"><Hero activeTab={ui.activeTab} /></div> : null}
 
@@ -10986,7 +11168,7 @@ function XSessionApp() {
         ) : (
           <>
             <div className="xl:hidden">
-              <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} />
+              <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} />
             </div>
 
             {globalNotice && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{globalNotice}</div>}
@@ -11052,7 +11234,7 @@ function XSessionApp() {
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} routines={myRoutines} currentUser={currentUser} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} />}
-              {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} onNavigate={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} />}
+              {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} onNavigate={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
               {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
               {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} sessions={mySessions} onRoutineSaved={async (savedRoutine) => {
@@ -11075,6 +11257,9 @@ function XSessionApp() {
               }} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "profile" && <ProfilePanel user={currentUser} onUpdate={handleUpdateProfile} saving={profileSaving} />}
               {ui.activeTab === "admin" && isAdminUser && <AdminPanel currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} appServices={appServices} officialClaims={officialClaims} reviewedUserIds={reviewedUserIds} onMarkUserReviewed={markUserReviewed} onMarkAllUsersReviewed={markAllUsersReviewed} onApproveOfficialClaim={handleApproveOfficialClaim} onRejectOfficialClaim={handleRejectOfficialClaim} onRefresh={() => loadUsersAndSessions(appServices.db)} onStageRefresh={() => setStageRefreshKey((prev) => prev + 1)} onBriefRefresh={() => setBriefRefreshKey((prev) => prev + 1)} />}
+              {!VALID_APP_TABS.has(normalizeAppTab(ui.activeTab, "")) && (
+                <EmptyNoticeCard title="메뉴 상태를 복구했습니다" description="이전 버전에서 저장된 메뉴 값이 현재 앱 구조와 맞지 않아 기본 화면으로 전환합니다." />
+              )}
             </motion.div>
           </>
         )}
