@@ -951,8 +951,8 @@ function buildTestRecordSheets(userId) {
       date: '2026-04-12',
       title: '테스트기록지 · 여자초등 U-11',
       division: '여자초등 U-11',
-      clubName: '천현초등학교',
-      groupName: '천현초등학교',
+      clubName: '하남천현초등학교',
+      groupName: '하남천현초등학교',
       distance: 35,
       arrowsPerDistance: 36,
       rounds: [
@@ -1948,7 +1948,7 @@ const SAMPLE_SHEETS = [
     sheetLabel: "테스트기록지 2026-03-22",
     distances: [35, 30, 25, 20],
     rows: [
-      { name: "황리우", school: "천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
+      { name: "황리우", school: "하남천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
       { name: "김설", school: "안양서초등학교", rounds: [277, 312, 314, 332], total: 1235 },
       { name: "김태리", school: "하성초등학교", rounds: [271, 302, 320, 334], total: 1227 },
       { name: "조유나", school: "수진초등학교", rounds: [271, 302, 311, 326], total: 1210 },
@@ -1963,11 +1963,11 @@ const SAMPLE_SHEETS = [
       { name: "백수연", school: "여흥초등학교", rounds: [202, 270, 275, 320], total: 1067 },
       { name: "김윤서", school: "원미초등학교", rounds: [195, 255, 290, 301], total: 1041 },
       { name: "백가은", school: "안양서초등학교", rounds: [165, 216, 273, 288], total: 942 },
-      { name: "김민채", school: "천현초등학교", rounds: [225, 213, 250, 243], total: 931 },
+      { name: "김민채", school: "하남천현초등학교", rounds: [225, 213, 250, 243], total: 931 },
       { name: "조예늘", school: "하성초등학교", rounds: [189, 203, 250, 278], total: 920 },
       { name: "윤이진", school: "여흥초등학교", rounds: [145, 194, 231, 307], total: 877 },
       { name: "고은", school: "안양서초등학교", rounds: [177, 212, 229, 255], total: 873 },
-      { name: "황리안", school: "천현초등학교", rounds: [159, 152, 209, 245], total: 765 },
+      { name: "황리안", school: "하남천현초등학교", rounds: [159, 152, 209, 245], total: 765 },
       { name: "이주아", school: "안양서초등학교", rounds: [65, 138, 117, 184], total: 504 },
     ],
   },
@@ -1982,7 +1982,7 @@ const SAMPLE_SHEETS = [
     sheetLabel: "테스트기록지 2026-04-12",
     distances: [35, 30, 25, 20],
     rows: [
-      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
+      { name: "황리우", school: "하남천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
       { name: "김태리", school: "하성초등학교", rounds: [298, 311, 322, 345], total: 1276 },
       { name: "조유나", school: "수진초등학교", rounds: [292, 301, 319, 339], total: 1251 },
       { name: "장윤혜", school: "송정초등학교", rounds: [294, 286, 320, 330], total: 1230 },
@@ -1993,7 +1993,7 @@ const SAMPLE_SHEETS = [
       { name: "홍지수", school: "송정초등학교", rounds: [257, 288, 294, 314], total: 1153 },
       { name: "원율", school: "여흥초등학교", rounds: [242, 261, 308, 327], total: 1138 },
       { name: "송의나", school: "수진초등학교", rounds: [246, 257, 307, 325], total: 1135 },
-      { name: "김민채", school: "천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
+      { name: "김민채", school: "하남천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
       { name: "백가은", school: "안양서초등학교", rounds: [238, 230, 272, 302], total: 1042 },
       { name: "조예늘", school: "하성초등학교", rounds: [166, 242, 292, 304], total: 1004 },
       { name: "백수연", school: "여흥초등학교", rounds: [179, 245, 252, 292], total: 968 },
@@ -2001,7 +2001,7 @@ const SAMPLE_SHEETS = [
       { name: "조윤서", school: "안양서초등학교", rounds: [190, 230, 218, 223], total: 861 },
       { name: "윤이진", school: "여흥초등학교", rounds: [139, 185, 252, 267], total: 843 },
       { name: "고은", school: "안양서초등학교", rounds: [139, 185, 207, 260], total: 829 },
-      { name: "황리안", school: "천현초등학교", rounds: [157, 205, 211, 281], total: 755 },
+      { name: "황리안", school: "하남천현초등학교", rounds: [157, 205, 211, 281], total: 755 },
       { name: "김바다", school: "당정초등학교", rounds: [112, 151, 263, 312], total: 575 },
       { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
     ],
@@ -2022,8 +2022,8 @@ const SAMPLE_SHEETS = [
       { name: "박찬영", school: "원미초등학교", rounds: [276, 310, 291, 302], total: 1179 },
       { name: "박도현", school: "성포초등학교", rounds: [269, 291, 284, 329], total: 1173 },
       { name: "장다준", school: "하성초등학교", rounds: [261, 231, 288, 314], total: 1094 },
-      { name: "최우빈", school: "천현초등학교", rounds: [239, 253, 294, 300], total: 1086 },
-      { name: "구교준", school: "천현초등학교", rounds: [179, 222, 266, 314], total: 981 },
+      { name: "최우빈", school: "하남천현초등학교", rounds: [239, 253, 294, 300], total: 1086 },
+      { name: "구교준", school: "하남천현초등학교", rounds: [179, 222, 266, 314], total: 981 },
       { name: "오태준", school: "성포초등학교", rounds: [56, 0, 196, 282], total: 534 },
     ],
   },
@@ -2040,8 +2040,8 @@ const SAMPLE_SHEETS = [
     rows: [
       { name: "장은혁", school: "연무초등학교", rounds: [333, 349, 344, 357], total: 1383 },
       { name: "김영재", school: "연무초등학교", rounds: [337, 342, 342, 351], total: 1372 },
-      { name: "최광빈", school: "천현초등학교", rounds: [339, 331, 345, 354], total: 1369 },
-      { name: "백종준", school: "천현초등학교", rounds: [328, 329, 343, 353], total: 1353 },
+      { name: "최광빈", school: "하남천현초등학교", rounds: [339, 331, 345, 354], total: 1369 },
+      { name: "백종준", school: "하남천현초등학교", rounds: [328, 329, 343, 353], total: 1353 },
       { name: "최수혁", school: "성포초등학교", rounds: [326, 342, 337, 347], total: 1352 },
       { name: "이우현", school: "하성초등학교", rounds: [320, 338, 341, 343], total: 1342 },
       { name: "정선우", school: "연무초등학교", rounds: [322, 330, 344, 345], total: 1341 },
@@ -2051,7 +2051,7 @@ const SAMPLE_SHEETS = [
       { name: "배재윤", school: "성포초등학교", rounds: [316, 322, 334, 345], total: 1317 },
       { name: "김영민", school: "연무초등학교", rounds: [305, 319, 334, 339], total: 1297 },
       { name: "김태원", school: "수진초등학교", rounds: [286, 312, 323, 322], total: 1243 },
-      { name: "진준호", school: "천현초등학교", rounds: [279, 310, 305, 319], total: 1213 },
+      { name: "진준호", school: "하남천현초등학교", rounds: [279, 310, 305, 319], total: 1213 },
       { name: "방도율", school: "당정초등학교", rounds: [286, 282, 312, 314], total: 1194 },
       { name: "김민준", school: "원미초등학교", rounds: [291, 264, 310, 326], total: 1191 },
       { name: "박찬영", school: "원미초등학교", rounds: [276, 310, 291, 302], total: 1179 },
@@ -2059,8 +2059,8 @@ const SAMPLE_SHEETS = [
       { name: "김선율", school: "당정초등학교", rounds: [240, 268, 299, 307], total: 1114 },
       { name: "권순용", school: "연무초등학교", rounds: [254, 271, 281, 304], total: 1110 },
       { name: "장다준", school: "하성초등학교", rounds: [261, 231, 288, 314], total: 1094 },
-      { name: "최우빈", school: "천현초등학교", rounds: [239, 253, 294, 300], total: 1086 },
-      { name: "구교준", school: "천현초등학교", rounds: [179, 222, 266, 314], total: 981 },
+      { name: "최우빈", school: "하남천현초등학교", rounds: [239, 253, 294, 300], total: 1086 },
+      { name: "구교준", school: "하남천현초등학교", rounds: [179, 222, 266, 314], total: 981 },
       { name: "오태준", school: "성포초등학교", rounds: [56, 0, 196, 282], total: 534 },
       { name: "윤주안", school: "성포초등학교", rounds: [0, 0, 207, 277], total: 484 },
     ],
@@ -2076,7 +2076,7 @@ const SAMPLE_SHEETS = [
     sheetLabel: "공식기록 2026-04-12 여자초등 U-11",
     distances: [35, 30, 25, 20],
     rows: [
-      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
+      { name: "황리우", school: "하남천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
       { name: "김태리", school: "하성초등학교", rounds: [298, 311, 322, 345], total: 1276 },
       { name: "조유나", school: "수진초등학교", rounds: [292, 301, 319, 339], total: 1251 },
       { name: "장윤혜", school: "송정초등학교", rounds: [294, 286, 320, 330], total: 1230 },
@@ -2087,7 +2087,7 @@ const SAMPLE_SHEETS = [
       { name: "홍지수", school: "송정초등학교", rounds: [257, 288, 294, 314], total: 1153 },
       { name: "원율", school: "여흥초등학교", rounds: [242, 261, 308, 327], total: 1138 },
       { name: "송의나", school: "수진초등학교", rounds: [246, 257, 307, 325], total: 1135 },
-      { name: "김민채", school: "천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
+      { name: "김민채", school: "하남천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
       { name: "백가은", school: "안양서초등학교", rounds: [238, 230, 272, 302], total: 1042 },
       { name: "조예늘", school: "하성초등학교", rounds: [166, 242, 292, 304], total: 1004 },
       { name: "백수연", school: "여흥초등학교", rounds: [179, 245, 252, 292], total: 968 },
@@ -2095,7 +2095,7 @@ const SAMPLE_SHEETS = [
       { name: "조윤서", school: "안양서초등학교", rounds: [190, 230, 218, 223], total: 861 },
       { name: "윤이진", school: "여흥초등학교", rounds: [139, 185, 252, 267], total: 843 },
       { name: "고은", school: "안양서초등학교", rounds: [157, 205, 207, 260], total: 829 },
-      { name: "황리안", school: "천현초등학교", rounds: [112, 151, 211, 281], total: 755 },
+      { name: "황리안", school: "하남천현초등학교", rounds: [112, 151, 211, 281], total: 755 },
       { name: "김바다", school: "당정초등학교", rounds: [0, 0, 263, 312], total: 575 },
       { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
     ],
@@ -2122,7 +2122,7 @@ const SAMPLE_SHEETS = [
       { name: "전다은", school: "하성초등학교", rounds: [313, 331, 344, 349], total: 1337 },
       { name: "한윤서", school: "하성초등학교", rounds: [331, 328, 332, 344], total: 1335 },
       { name: "곽나영", school: "원미초등학교", rounds: [311, 326, 344, 336], total: 1317 },
-      { name: "황리우", school: "천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
+      { name: "황리우", school: "하남천현초등학교", rounds: [305, 325, 339, 343], total: 1312 },
       { name: "손하음", school: "타겟28양궁클럽", rounds: [306, 329, 336, 339], total: 1310 },
       { name: "최승연", school: "부천시양궁협회", rounds: [307, 316, 339, 343], total: 1305 },
       { name: "강라율", school: "송정초등학교", rounds: [301, 319, 340, 342], total: 1302 },
@@ -2156,7 +2156,7 @@ const SAMPLE_SHEETS = [
       { name: "김라윤", school: "하성초등학교", rounds: [238, 286, 293, 311], total: 1128 },
       { name: "송하영", school: "수진초등학교", rounds: [243, 248, 300, 331], total: 1122 },
       { name: "한지안", school: "원미초등학교", rounds: [234, 249, 300, 307], total: 1090 },
-      { name: "김민채", school: "천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
+      { name: "김민채", school: "하남천현초등학교", rounds: [222, 236, 288, 307], total: 1053 },
       { name: "백가은", school: "안양서초등학교", rounds: [238, 230, 272, 302], total: 1042 },
       { name: "최선", school: "안양서초등학교", rounds: [231, 240, 252, 293], total: 1016 },
       { name: "조예늘", school: "하성초등학교", rounds: [166, 242, 292, 304], total: 1004 },
@@ -2165,7 +2165,7 @@ const SAMPLE_SHEETS = [
       { name: "조윤서", school: "안양서초등학교", rounds: [190, 230, 218, 223], total: 861 },
       { name: "윤이진", school: "여흥초등학교", rounds: [139, 185, 252, 267], total: 843 },
       { name: "고은", school: "안양서초등학교", rounds: [157, 205, 207, 260], total: 829 },
-      { name: "황리안", school: "천현초등학교", rounds: [112, 151, 211, 281], total: 755 },
+      { name: "황리안", school: "하남천현초등학교", rounds: [112, 151, 211, 281], total: 755 },
       { name: "김바다", school: "당정초등학교", rounds: [0, 0, 263, 312], total: 575 },
       { name: "이주아", school: "안양서초등학교", rounds: [55, 116, 79, 106], total: 356 },
     ],
@@ -2268,7 +2268,7 @@ const SAMPLE_SHEETS = [
     sheetLabel: "공식기록 2026-03-22 여자초등 U-11",
     distances: [35, 30, 25, 20],
     rows: [
-      { name: "황리우", school: "천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
+      { name: "황리우", school: "하남천현초등학교", rounds: [302, 315, 332, 333], total: 1282 },
       { name: "김설", school: "안양서초등학교", rounds: [277, 312, 314, 332], total: 1235 },
       { name: "김태리", school: "하성초등학교", rounds: [271, 302, 320, 334], total: 1227 },
       { name: "조유나", school: "수진초등학교", rounds: [271, 302, 311, 326], total: 1210 },
@@ -2283,11 +2283,11 @@ const SAMPLE_SHEETS = [
       { name: "백수연", school: "여흥초등학교", rounds: [202, 270, 275, 320], total: 1067 },
       { name: "김윤서", school: "원미초등학교", rounds: [195, 255, 290, 301], total: 1041 },
       { name: "백가은", school: "안양서초등학교", rounds: [165, 216, 273, 288], total: 942 },
-      { name: "김민채", school: "천현초등학교", rounds: [225, 213, 250, 243], total: 931 },
+      { name: "김민채", school: "하남천현초등학교", rounds: [225, 213, 250, 243], total: 931 },
       { name: "조예슬", school: "하성초등학교", rounds: [189, 203, 250, 278], total: 920 },
       { name: "윤이진", school: "여흥초등학교", rounds: [145, 194, 231, 307], total: 877 },
       { name: "고은", school: "안양서초등학교", rounds: [177, 212, 229, 255], total: 873 },
-      { name: "황리안", school: "천현초등학교", rounds: [159, 152, 209, 245], total: 765 },
+      { name: "황리안", school: "하남천현초등학교", rounds: [159, 152, 209, 245], total: 765 },
       { name: "이주아", school: "안양서초등학교", rounds: [65, 138, 117, 184], total: 504 }
     ],
   }
@@ -2336,7 +2336,7 @@ const SAMPLE_SHEETS = [
     sheetLabel: "추가기록 2025-03-23 경기도 남 초등부(통합)",
     distances: [20, 25, 30, 35],
     rows: [
-      { name: "이환지", school: "천현초등학교", rounds: [355, 354, 350, 337], total: 1396 }
+      { name: "이환지", school: "하남천현초등학교", rounds: [355, 354, 350, 337], total: 1396 }
     ],
   }
 ,
@@ -2411,7 +2411,7 @@ const SAMPLE_SHEETS = [
     sheetLabel: "추가기록 2025-04-13 경기도 남 초등부(통합)",
     distances: [20, 30],
     rows: [
-      { name: "강민국", school: "천현초등학교", rounds: [352, 345], total: 697 }
+      { name: "강민국", school: "하남천현초등학교", rounds: [352, 345], total: 697 }
     ],
   }
 ,
@@ -2576,7 +2576,7 @@ const SAMPLE_SHEETS = [
     sheetLabel: "추가기록 2025-06-15 경기도 남 초등부(통합)",
     distances: [20, 25, 30, 35],
     rows: [
-      { name: "이환지", school: "천현초등학교", rounds: [355, 355, 356, 344], total: 1410 }
+      { name: "이환지", school: "하남천현초등학교", rounds: [355, 355, 356, 344], total: 1410 }
     ],
   }
 ,
@@ -2907,7 +2907,7 @@ const SAMPLE_SHEETS = [
     sheetLabel: "추가 선수 찾음 2025-04-13 경기도 남 초등부(통합)",
     distances: [20, 30],
     rows: [
-      { name: "강민국", school: "천현초등학교", rounds: [352, 345], total: 697 }
+      { name: "강민국", school: "하남천현초등학교", rounds: [352, 345], total: 697 }
     ],
   },
 {
@@ -2921,7 +2921,7 @@ const SAMPLE_SHEETS = [
     sheetLabel: "추가 선수 찾음 2025-04-13 경기도 남 초등부(통합)",
     distances: [25, 35],
     rows: [
-      { name: "이환지", school: "천현초등학교", rounds: [341, 336], total: 677 }
+      { name: "이환지", school: "하남천현초등학교", rounds: [341, 336], total: 677 }
     ],
   },
 {
@@ -3606,7 +3606,7 @@ const SAMPLE_SHEETS = [
       { name: "주재훈", school: "봉원초등학교", division: "초등부(통합)", rounds: [302, 307, 323, 335], total: 1267 },
       { name: "이시곤", school: "대전송촌초등학교", division: "초등부(통합)", rounds: [304, 302, 321, 337], total: 1264 },
       { name: "곽상우", school: "이원초등학교", division: "초등부(통합)", rounds: [301, 295, 331, 334], total: 1261 },
-      { name: "최강빈", school: "천현초등학교", division: "초등부(통합)", rounds: [287, 307, 329, 336], total: 1259 },
+      { name: "최강빈", school: "하남천현초등학교", division: "초등부(통합)", rounds: [287, 307, 329, 336], total: 1259 },
       { name: "박찬석", school: "인천용현남초등학교", division: "초등부(통합)", rounds: [289, 317, 324, 327], total: 1257 },
       { name: "김진표", school: "인천부평서초등학교", division: "초등부(통합)", rounds: [287, 300, 330, 334], total: 1251 },
       { name: "유선유", school: "연무초등학교", division: "초등부(통합)", rounds: [277, 310, 322, 341], total: 1250 },
@@ -3647,7 +3647,7 @@ const SAMPLE_SHEETS = [
       { name: "고태환", school: "성진초등학교", division: "초등부(통합)", rounds: [214, 250, 279, 280], total: 1023 },
       { name: "정인후", school: "대구송현초등학교", division: "초등부(통합)", rounds: [255, 190, 281, 281], total: 1007 },
       { name: "김영웅", school: "인천계산초등학교", division: "초등부(통합)", rounds: [207, 247, 262, 283], total: 999 },
-      { name: "최우빈", school: "천현초등학교", division: "초등부(통합)", rounds: [218, 241, 233, 275], total: 967 },
+      { name: "최우빈", school: "하남천현초등학교", division: "초등부(통합)", rounds: [218, 241, 233, 275], total: 967 },
       { name: "김형진", school: "태서초등학교", division: "초등부(통합)", rounds: [190, 240, 264, 267], total: 961 },
       { name: "정호윤", school: "인천계산초등학교", division: "초등부(통합)", rounds: [208, 250, 242, 261], total: 961 },
       { name: "이소율", school: "봉원초등학교", division: "초등부(통합)", rounds: [217, 216, 235, 287], total: 955 },
@@ -4101,8 +4101,8 @@ const SAMPLE_SHEETS = [
       { name: "정재윤", school: "인천부평서초등학교", division: "초등부(통합)", rounds: [334, 347, 350, 354], total: 1385 },
       { name: "조재혁", school: "모덕초등학교", division: "초등부(통합)", rounds: [342, 343, 345, 355], total: 1385 },
       { name: "이도현", school: "대구동부초등학교", division: "초등부(통합)", rounds: [341, 342, 343, 355], total: 1381 },
-      { name: "이환지", school: "천현초등학교", division: "초등부(통합)", rounds: [325, 347, 352, 355], total: 1379 },
-      { name: "강민국", school: "천현초등학교", division: "초등부(통합)", rounds: [336, 341, 345, 355], total: 1377 },
+      { name: "이환지", school: "하남천현초등학교", division: "초등부(통합)", rounds: [325, 347, 352, 355], total: 1379 },
+      { name: "강민국", school: "하남천현초등학교", division: "초등부(통합)", rounds: [336, 341, 345, 355], total: 1377 },
       { name: "박수한", school: "여수좌수영초등학교", division: "초등부(통합)", rounds: [336, 339, 349, 353], total: 1377 },
       { name: "안태빈", school: "병천초등학교", division: "초등부(통합)", rounds: [328, 341, 353, 354], total: 1376 },
       { name: "김도율", school: "인천석암초등학교", division: "초등부(통합)", rounds: [334, 337, 347, 357], total: 1375 },
@@ -25688,14 +25688,43 @@ const SAMPLE_SHEETS = [
   }
 ];
 
+const SCHOOL_NAME_ALIASES = {
+  "천현초": "하남천현초등학교",
+  "천현초등학교": "하남천현초등학교",
+};
+
+function normalizeSchoolKey(value) {
+  return String(value || "").replace(/\s+/g, "").trim();
+}
+
+function getCanonicalSchoolName(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const compact = normalizeSchoolKey(raw);
+  const direct = SCHOOL_NAME_ALIASES[raw] || SCHOOL_NAME_ALIASES[compact];
+  return direct || raw;
+}
+
+function withCanonicalSchool(row = {}) {
+  const school = getCanonicalSchoolName(row.school || row.groupName || row.clubName || "");
+  return {
+    ...row,
+    school,
+    groupName: row.groupName ? getCanonicalSchoolName(row.groupName) : school,
+    clubName: row.clubName ? getCanonicalSchoolName(row.clubName) : school,
+  };
+}
+
 function makeSampleUserId(name, school) {
-  return `official_${school}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
+  const canonicalSchool = getCanonicalSchoolName(school);
+  return `official_${canonicalSchool}_${name}`.replace(/[^a-zA-Z0-9가-힣_]/g, "_");
 }
 
 function buildPermanentSampleUsers() {
   const map = new Map();
   SAMPLE_SHEETS.forEach((sheet) => {
-    sheet.rows.forEach((row) => {
+    sheet.rows.forEach((sourceRow) => {
+      const row = withCanonicalSchool(sourceRow);
       // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
       const assignedDivision = row.division || sheet.division;
       const id = makeSampleUserId(row.name, row.school);
@@ -25729,7 +25758,8 @@ function buildPermanentSampleSessions() {
   const seen = new Set();
   return SAMPLE_SHEETS.flatMap((sheet) =>
     sheet.rows
-      .map((row) => {
+      .map((sourceRow) => {
+        const row = withCanonicalSchool(sourceRow);
         // 이름/소속만 확인된 선수명단 행은 공식 선수 데이터로만 보관하고 랭킹 점수 산정에는 넣지 않는다.
         if (row.rosterOnly) return null;
         // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
@@ -26044,7 +26074,7 @@ function buildRankingEntriesFromSession(session, user = null) {
     sessionId: normalized.id || normalized.sessionId || "",
     userId: normalized.userId || profile.id || profile.uid || "",
     name: profile.name || normalized.name || "",
-    groupName: profile.groupName || normalized.groupName || normalized.clubName || "",
+    groupName: getCanonicalSchoolName(profile.groupName || normalized.groupName || normalized.clubName || ""),
     regionCity: profile.regionCity || normalized.regionCity || "전국",
     division: normalized.division || profile.division || "",
     gender: normalized.gender || profile.gender || "남",
