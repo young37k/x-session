@@ -4588,6 +4588,25 @@ function calculateSessionSummary(session) {
   };
 }
 
+function formatSessionDistanceSummary(session) {
+  if (!session) return "";
+  if (session.recordInputType === "distance" && Array.isArray(session.distanceRounds)) {
+    const distances = Array.from(
+      new Set(
+        session.distanceRounds
+          .filter((round) => Number(round.total) > 0 || Number(round.distance) > 0)
+          .map((round) => Number(round.distance))
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a - b);
+
+    if (distances.length) return `거리 ${distances.map((distance) => `${distance}m`).join(" / ")}`;
+    return "거리 기록 없음";
+  }
+
+  return `${session.distance}m, 엔드 ${session.ends?.length || 0}개`;
+}
+
 function buildSessionPayload({ draftSession, profile, uid }) {
   const summary = calculateSessionSummary(draftSession);
   const isDistanceInput = draftSession.recordInputType === "distance";
@@ -7689,9 +7708,7 @@ function Dashboard({ sessions, routines = [], currentUser, loading, onEditSessio
                           ).toFixed(2)}
                         </span>
                         <span className="text-slate-500">
-                          {session.recordInputType === "distance"
-                            ? `거리기록 ${(session.distanceRounds || []).length}개`
-                            : `${session.distance}m, 엔드 ${session.ends.length}개`}
+                          {formatSessionDistanceSummary(session)}
                         </span>
                       </div>
                     </div>
@@ -7884,6 +7901,40 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
   const myRank = activeRankings.find((item) => item.userId === currentUserId);
 
+  const myRankingGroup = myRank?.rankingGroup || getRankingGroup(currentUser?.division, currentUser?.gender) || rankingFilters.rankingGroup;
+  const myRequiredDistances = myRank?.requiredDistances?.length
+    ? myRank.requiredDistances
+    : getRequiredDistancesForRankingGroup(myRankingGroup);
+  const myDistanceRankRows = useMemo(() => {
+    if (!currentUserId || !myRequiredDistances.length) return [];
+    const weekly = rankingType === "weeklyDistance" || rankingType === "weeklyTotal";
+    return myRequiredDistances.map((distance) => {
+      const items = buildDistanceRankings(
+        effectiveRankingUsers,
+        rankingSessions,
+        {
+          ...rankingFilters,
+          distance: String(distance),
+          rankingGroup: myRankingGroup || rankingFilters.rankingGroup || "all",
+        },
+        { weekly }
+      );
+      items.sort((a, b) => {
+        if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
+        return String(b.latestDate).localeCompare(String(a.latestDate));
+      });
+      const ranked = items.map((item, idx) => ({ ...item, rank: idx + 1 }));
+      const mine = ranked.find((item) => item.userId === currentUserId);
+      return {
+        distance,
+        rank: mine?.rank || null,
+        bestScore: mine?.bestScore || 0,
+        totalCount: ranked.length,
+        qualifiedSessions: mine?.qualifiedSessions || 0,
+      };
+    });
+  }, [currentUserId, myRequiredDistances, rankingType, effectiveRankingUsers, rankingSessions, rankingFilters, myRankingGroup]);
+
   const rankingGuide =
     rankingType === "distance"
       ? rankingFilters.distance === "all"
@@ -7924,21 +7975,60 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             </div>
             {myRank ? (
               <div className="space-y-4">
-                <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-6 text-white shadow-lg">
-                  <div className="text-sm opacity-80">현재 순위</div>
-                  <div className="mt-2 text-5xl font-bold">#{myRank.rank}</div>
-                  <div className="mt-2 text-sm opacity-90">
-                    {rankingType === "distance" || rankingType === "weeklyDistance" ? (
-                      <>
-                        {myRank.distanceLabel || `${myRank.distance}m`} · 최고 {myRank.bestScore}점 · 인정 기록 {myRank.qualifiedSessions}개
-                      </>
-                    ) : (
-                      <>
-                        종합 {myRank.totalScore}점 · 기준 거리 {myRank.requiredDistances.join(" / ")}m
-                      </>
-                    )}
+                <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-5 text-white shadow-lg">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide opacity-75">
+                        {rankingType === "distance" || rankingType === "weeklyDistance" ? "거리 랭킹" : "종합 랭킹"}
+                      </div>
+                      <div className="mt-1 text-5xl font-black leading-none">#{myRank.rank}</div>
+                    </div>
+                    <div className="text-right text-xs leading-relaxed opacity-90">
+                      {rankingType === "distance" || rankingType === "weeklyDistance" ? (
+                        <>
+                          <div>{myRank.distanceLabel || `${myRank.distance}m`}</div>
+                          <div>최고 {myRank.bestScore}점 · 인정 기록 {myRank.qualifiedSessions}개</div>
+                        </>
+                      ) : (
+                        <>
+                          <div>종합 {myRank.totalScore}점</div>
+                          <div>기준 거리 {myRank.requiredDistances.join(" / ")}m</div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {myDistanceRankRows.length ? (
+                  <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <div className="text-sm font-bold text-slate-900">거리별 내 랭킹</div>
+                      <div className="text-xs text-slate-500">{myRankingGroup || "내 구분"}</div>
+                    </div>
+                    <div className="grid gap-2">
+                      {myDistanceRankRows.map((row) => (
+                        <div
+                          key={row.distance}
+                          className="grid grid-cols-[64px_1fr_auto] items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm"
+                        >
+                          <div className="font-bold text-slate-900">{row.distance}m</div>
+                          <div className="text-slate-600">
+                            {row.rank ? (
+                              <>
+                                <span className="font-semibold text-blue-700">#{row.rank}</span> / {row.totalCount}명
+                              </>
+                            ) : (
+                              <span className="text-slate-400">기록 없음</span>
+                            )}
+                          </div>
+                          <div className="text-right text-xs text-slate-500">
+                            {row.bestScore ? `${row.bestScore}점` : "-"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
