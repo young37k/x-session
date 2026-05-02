@@ -3648,7 +3648,7 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAle
           </Button>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full xl:hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full lg:hidden">
           <TabsList className="grid h-auto w-full grid-cols-3 gap-2 rounded-3xl bg-slate-100 p-2">
             {navs.map((item) => {
               const Icon = item.icon;
@@ -3689,7 +3689,7 @@ function DesktopAppSidebar({ user, activeTab, setActiveTab, onLogout, isAdminUse
   ];
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[280px] bg-slate-950 px-5 py-6 text-white shadow-2xl xl:flex xl:flex-col">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[280px] bg-slate-950 px-5 py-6 text-white shadow-2xl lg:flex lg:flex-col">
       <div>
         <div className="text-xl font-black tracking-wide">ARCHERY ANALYTICS</div>
         <div className="mt-1 text-xs leading-5 text-slate-400">훈련이 데이터가 되고, 성과가 결과가 된다</div>
@@ -4377,7 +4377,7 @@ function SessionEditor({
 
   return (
     <>
-      <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
+      <div className="grid gap-4 lg:grid-cols-[0.88fr_1.12fr]">
         <Card className="self-start rounded-[28px] border-0 bg-white shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center justify-between gap-2">
@@ -5958,7 +5958,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [rankingFilters, hideOfficialRecords]);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
+    <div className="grid gap-4 lg:grid-cols-[0.72fr_1.28fr]">
       <div className="grid gap-4">
         <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
           <CardHeader>
@@ -6930,7 +6930,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
     rankingGroup: "all",
     regionCity: "all",
   });
-  const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 1280 : window.innerWidth));
+  const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 1024 : window.innerWidth));
   const [activeAnalysisTab, setActiveAnalysisTab] = useState(savedAnalysisState.activeAnalysisTab || "summary");
   const [activeSideMenu, setActiveSideMenu] = useState(savedAnalysisState.activeSideMenu || "분석 리포트");
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -6990,7 +6990,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
   }, []);
 
   const isMobileAnalysis = viewportWidth < 768;
-  const isTabletAnalysis = viewportWidth >= 768 && viewportWidth < 1280;
+  const isTabletAnalysis = viewportWidth >= 768 && viewportWidth < 1024;
 
   const currentName = getDisplayName(currentUser);
   const currentDivision = formatProfileDivisionLabel(currentUser?.division || "");
@@ -7327,10 +7327,10 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
               </div>
             </aside>
 
-            <main className="min-w-0 p-4 sm:p-5 xl:p-6">
-              <div className="mb-5 grid gap-3 xl:flex xl:items-center xl:justify-between">
-                <Tabs value={activeAnalysisTab} onValueChange={handleAnalysisTabChange} className="w-full xl:w-auto">
-                  <TabsList className="grid h-12 grid-cols-5 rounded-2xl bg-white p-1 shadow-sm xl:w-[620px]">
+            <main className="min-w-0 p-4 sm:p-5 lg:p-6">
+              <div className="mb-5 grid gap-3 lg:flex lg:items-center lg:justify-between">
+                <Tabs value={activeAnalysisTab} onValueChange={handleAnalysisTabChange} className="w-full lg:w-auto">
+                  <TabsList className="grid h-12 grid-cols-5 rounded-2xl bg-white p-1 shadow-sm lg:w-[620px]">
                     <TabsTrigger value="summary" className="rounded-xl">종합 분석</TabsTrigger>
                     <TabsTrigger value="detail" className="rounded-xl">상세 분석</TabsTrigger>
                     <TabsTrigger value="compare" className="rounded-xl">비교 분석</TabsTrigger>
@@ -7341,7 +7341,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 <button type="button" onClick={handleDownloadParentReportPdf} disabled={pdfBusy} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{pdfBusy ? "PDF 생성 중..." : "부모용 PDF 다운로드"}</button>
               </div>
 
-              <div className="mb-5 grid gap-3 rounded-[24px] bg-white p-4 shadow-sm xl:grid-cols-6">
+              <div className="mb-5 grid gap-3 rounded-[24px] bg-white p-4 shadow-sm lg:grid-cols-6">
                 <Select value={requiredFilters.distance} onValueChange={(value) => setRequiredFilters((prev) => ({ ...prev, distance: value }))}>
                   <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="전체 거리" /></SelectTrigger>
                   <SelectContent>
@@ -7374,10 +7374,10 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                   <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="분석 기준" /></SelectTrigger>
                   <SelectContent>{PERIOD_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent>
                 </Select>
-                {dateFilter === "custom" ? <Input type="date" value={customAnalysisDate} onChange={(e) => setCustomAnalysisDate(e.target.value)} className="h-11 rounded-2xl bg-white xl:col-span-2" /> : null}
+                {dateFilter === "custom" ? <Input type="date" value={customAnalysisDate} onChange={(e) => setCustomAnalysisDate(e.target.value)} className="h-11 rounded-2xl bg-white lg:col-span-2" /> : null}
               </div>
 
-              <div ref={summarySectionRef} className="scroll-mt-6 grid gap-4 xl:grid-cols-5">
+              <div ref={summarySectionRef} className="scroll-mt-6 grid gap-4 lg:grid-cols-5">
                 {[
                   { icon: Target, label: "평균 점수(전체)", value: avgScore ? avgScore.toFixed(2) : "-", sub: `${parentGrowthSummary.deltaLabel} 지난 기간 대비`, color: "blue" },
                   { icon: Award, label: "10점 비율", value: `${tenRate}%`, sub: "화살별 기록은 실측, 거리합계는 추정", color: "emerald" },
@@ -7397,7 +7397,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
               </div>
 
               <div className="mt-4 grid gap-4">
-                <div className="grid gap-4 xl:grid-cols-[1.18fr_0.9fr]">
+                <div className="grid gap-4 lg:grid-cols-[1.18fr_0.9fr]">
                   <section ref={detailSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-4 flex items-center justify-between"><div className="text-lg font-black">거리별 정확도 분석</div><Badge className="rounded-full bg-blue-50 text-blue-700">실기록 기반</Badge></div>
                   <div className="overflow-x-auto">
@@ -7424,7 +7424,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
 
                   <section ref={compareSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-4 text-lg font-black">그룹핑 분석 <span className="text-sm font-normal text-slate-500">(평균 그룹 크기)</span></div>
-                  <div className="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[190px_minmax(0,1fr)]">
+                  <div className="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] lg:grid-cols-1 2lg:grid-cols-[190px_minmax(0,1fr)]">
                     <div className="relative mx-auto grid h-44 w-44 place-items-center rounded-full border border-slate-200 bg-slate-100">
                       <div className="grid h-36 w-36 place-items-center rounded-full bg-slate-950"><div className="grid h-28 w-28 place-items-center rounded-full bg-blue-600"><div className="grid h-20 w-20 place-items-center rounded-full bg-red-600"><div className="grid h-12 w-12 place-items-center rounded-full bg-yellow-400"><div className="h-4 w-4 rounded-full bg-orange-500" /></div></div></div></div>
                     </div>
@@ -7452,7 +7452,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                       </div>
                       <Badge className="bg-blue-100 text-blue-700">PDF 저장 가능</Badge>
                     </div>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                       {[
                         ["최근 평균", parentReportData.recentAverage || "-", `${parentReportData.delta > 0 ? "+" : ""}${parentReportData.delta || 0}점`],
                         ["최고 평균", parentReportData.bestAverage || "-", "개인 최고 흐름"],
@@ -7513,7 +7513,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 </section>
               </div>
 
-              <div className="mt-4 grid gap-4 xl:grid-cols-[1.08fr_0.95fr_0.9fr]">
+              <div className="mt-4 grid gap-4 lg:grid-cols-[1.08fr_0.95fr_0.9fr]">
                 <section className="rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-3 text-lg font-black">컨디션별 성과 변화</div>
                   <div className="h-[220px]">
@@ -7564,7 +7564,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 </section>
               </div>
 
-              <div className="mt-4 grid gap-4 xl:grid-cols-2">
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
                 <section ref={trendSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-3 text-lg font-black">점수 트렌드 분석</div>
                   <div className="h-[280px]">
@@ -7862,7 +7862,7 @@ function XStagePage({ appServices, stageRefreshKey = 0, briefRefreshKey = 0 }) {
         <Card className="rounded-[28px] border-0 bg-white shadow-sm"><CardContent className="flex items-center gap-2 p-6 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> X-Stage 데이터를 불러오는 중</CardContent></Card>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card className="rounded-[28px] border-0 bg-white shadow-sm">
           <CardHeader><CardTitle className="text-lg">대회 일정</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -8346,7 +8346,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
         <CardHeader>
           <CardTitle className="text-xl">관리자 페이지</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div className="min-w-0 rounded-2xl bg-slate-50 p-4">
             <div className="text-sm text-slate-500">관리자</div>
             <div className="mt-2 text-lg font-semibold">{currentUser?.name || "관리자"}</div>
@@ -8640,7 +8640,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
               </Button>
             </div>
 
-            <div className="mt-4 grid gap-4 xl:grid-cols-3">
+            <div className="mt-4 grid gap-4 lg:grid-cols-3">
               <div className="grid gap-2">
                 <div className="font-semibold">대회 일정</div>
                 {adminEvents.length === 0 ? (
@@ -8712,7 +8712,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
             </div>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-3">
+          <div className="grid gap-6 lg:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 p-4">
               <div className="text-base font-semibold text-slate-900">대회 일정 등록</div>
               <div className="mt-4 grid gap-3">
@@ -9843,8 +9843,8 @@ function XSessionApp() {
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       {currentUser ? <DesktopAppSidebar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} /> : null}
-      <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6 xl:pl-[280px]" : "gap-0"}`}>
-        {currentUser ? <div className="xl:hidden"><Hero activeTab={ui.activeTab} /></div> : null}
+      <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6 lg:pl-[280px]" : "gap-0"}`}>
+        {currentUser ? <div className="lg:hidden"><Hero activeTab={ui.activeTab} /></div> : null}
 
         {authLoading && !authUser ? (
           <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
@@ -9858,7 +9858,7 @@ function XSessionApp() {
           </motion.div>
         ) : (
           <>
-            <div className="xl:hidden">
+            <div className="lg:hidden">
               <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} />
             </div>
 
