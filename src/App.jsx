@@ -5654,6 +5654,73 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAle
   );
 }
 
+
+function DesktopAppSidebar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAlertCount = 0 }) {
+  const navs = [
+    { key: "record", label: "X-Session", icon: Target },
+    { key: "dashboard", label: "X-Dashboard", icon: BarChart3 },
+    { key: "ranking", label: "X-Ranking", icon: Trophy },
+    { key: "analysis", label: "X-Analysis", icon: CalendarRange },
+    { key: "stage", label: "X-Stage", icon: Award },
+    { key: "brief", label: "X-Brief", icon: Archive },
+    { key: "routine", label: "X-Routine", icon: Settings },
+    { key: "profile", label: "Profile", icon: User },
+    ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield, alertCount: adminAlertCount }] : []),
+  ];
+
+  return (
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[280px] bg-slate-950 px-5 py-6 text-white shadow-2xl xl:flex xl:flex-col">
+      <div>
+        <div className="text-xl font-black tracking-wide">ARCHERY ANALYTICS</div>
+        <div className="mt-1 text-xs leading-5 text-slate-400">훈련이 데이터가 되고, 성과가 결과가 된다</div>
+      </div>
+
+      <div className="mt-8 flex items-center gap-3 rounded-3xl bg-white/5 p-3">
+        <ProfileAvatar user={user} size="md" />
+        <div className="min-w-0">
+          <div className="truncate font-black">{getDisplayName(user)}</div>
+          <div className="truncate text-xs text-slate-400">{formatProfileDivisionLabel(user?.division || "") || user?.role || "선수"}</div>
+        </div>
+      </div>
+
+      <nav className="mt-8 space-y-2 border-t border-white/10 pt-6">
+        {navs.map((item) => {
+          const Icon = item.icon;
+          const active = activeTab === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setActiveTab(item.key)}
+              className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition hover:bg-white/10 active:scale-[0.99] ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30" : "text-slate-300"}`}
+            >
+              <span className="flex items-center gap-3"><Icon className="h-4 w-4" /> {item.label}</span>
+              {item.alertCount > 0 ? (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">
+                  {item.alertCount > 99 ? "99+" : item.alertCount}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="mt-auto space-y-3">
+        <div className="rounded-3xl bg-white/10 p-4 text-xs leading-5 text-slate-300">
+          PC에서는 왼쪽 메뉴를 공통 내비게이션으로 사용하고, X-Analysis 안에서만 상단 분석 탭을 사용한다.
+        </div>
+        <button
+          type="button"
+          onClick={onLogout}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 active:scale-[0.99]"
+        >
+          <LogOut className="h-4 w-4" /> 로그아웃
+        </button>
+      </div>
+    </aside>
+  );
+}
+
 function SessionEditor({
   session,
   setSession,
@@ -8620,8 +8687,8 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
     <div className="grid gap-4">
       <Card className="overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardContent className="p-0">
-          <div className="grid min-h-[760px] bg-slate-100 xl:grid-cols-[260px_minmax(0,1fr)]">
-            <aside className="hidden bg-slate-950 p-6 text-white xl:flex xl:flex-col">
+          <div className="grid min-h-[760px] grid-cols-1 bg-slate-100">
+            <aside className="hidden">
               <div>
                 <div className="text-xl font-black tracking-wide">ARCHERY ANALYTICS</div>
                 <div className="mt-1 text-xs text-slate-400">훈련이 데이터가 되고, 성과가 결과가 된다</div>
@@ -10817,8 +10884,9 @@ function XSessionApp() {
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6" : "gap-0"}`}>
-        {currentUser ? <Hero activeTab={ui.activeTab} /> : null}
+      {currentUser ? <DesktopAppSidebar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} /> : null}
+      <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6 xl:pl-[280px]" : "gap-0"}`}>
+        {currentUser ? <div className="xl:hidden"><Hero activeTab={ui.activeTab} /></div> : null}
 
         {authLoading && !authUser ? (
           <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
@@ -10832,7 +10900,9 @@ function XSessionApp() {
           </motion.div>
         ) : (
           <>
-            <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} />
+            <div className="xl:hidden">
+              <TopBar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} />
+            </div>
 
             {globalNotice && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{globalNotice}</div>}
             {globalError && <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
