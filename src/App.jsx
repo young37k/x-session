@@ -5702,7 +5702,7 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAle
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full xl:hidden">
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-3xl bg-slate-100 p-2 sm:grid-cols-3 md:grid-cols-4">
+          <TabsList className="grid h-auto w-full grid-cols-3 gap-2 rounded-3xl bg-slate-100 p-2">
             {navs.map((item) => {
               const Icon = item.icon;
               return (
@@ -7948,6 +7948,12 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             : "최근 7일 기준, 선택한 거리의 최고 점수로 순위가 결정됩니다."
           : "최근 7일 동안 학년/부문별 필수 4거리 최고 기록을 합산한 점수 기준으로 순위가 결정됩니다.";
 
+
+
+  const rankingTieGuide =
+    rankingType === "distance" || rankingType === "weeklyDistance"
+      ? "동점일 경우 최신 기록일이 더 최근인 선수가 앞 순위로 표시됩니다."
+      : "동점일 경우 최근 기준거리 기록일이 더 최근인 선수가 앞 순위로 표시됩니다.";
   const officialResultSources = useMemo(() => {
     if (hideOfficialRecords) return [];
     return OFFICIAL_RESULT_SOURCES.filter((item) => {
@@ -7972,6 +7978,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
           <CardContent>
             <div className="mb-3 rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">
               {rankingGuide}
+              <div className="mt-2 font-semibold text-slate-700">동점 기준: {rankingTieGuide}</div>
             </div>
             {myRank ? (
               <div className="space-y-4">
@@ -8100,6 +8107,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
           <div className="mb-4 rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">
             {rankingGuide}
+            <div className="mt-2 font-semibold text-slate-700">동점 기준: {rankingTieGuide}</div>
             {hideOfficialRecords ? (
               <div className="mt-2 font-semibold text-blue-950">공식기록을 제외하고 사용자 기록만 보고 있습니다.</div>
             ) : null}
