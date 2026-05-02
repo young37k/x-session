@@ -5629,14 +5629,14 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAle
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1 lg:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-9">
             {navs.map((item) => {
               const Icon = item.icon;
               return (
                 <TabsTrigger
                   key={item.key}
                   value={item.key}
-                  className="gap-2 rounded-2xl px-3 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                  className="min-w-0 gap-1 rounded-2xl px-2 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
                 >
                   <Icon className="h-4 w-4" /> {item.label}
                   {item.alertCount > 0 ? (
@@ -8285,7 +8285,7 @@ function getDistanceWeaknessFromPerformance(distancePerformance = []) {
 }
 
 
-function AnalysisBoard({ currentUser, users, sessions }) {
+function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
   const [period, setPeriod] = useState("day");
   const [matchType, setMatchType] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
@@ -8298,6 +8298,40 @@ function AnalysisBoard({ currentUser, users, sessions }) {
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 1280 : window.innerWidth));
   const [activeAnalysisTab, setActiveAnalysisTab] = useState("summary");
   const [activeSideMenu, setActiveSideMenu] = useState("분석 리포트");
+  const summarySectionRef = useRef(null);
+  const detailSectionRef = useRef(null);
+  const compareSectionRef = useRef(null);
+  const trendSectionRef = useRef(null);
+  const reportSectionRef = useRef(null);
+
+  const scrollToAnalysisSection = useCallback((tab) => {
+    setActiveAnalysisTab(tab);
+    const sideLabelByTab = {
+      summary: "대시보드",
+      detail: "훈련 세션",
+      compare: "비교 분석",
+      trend: "훈련 계획",
+      report: "분석 리포트",
+    };
+    if (sideLabelByTab[tab]) setActiveSideMenu(sideLabelByTab[tab]);
+    const refByTab = { summary: summarySectionRef, detail: detailSectionRef, compare: compareSectionRef, trend: trendSectionRef, report: reportSectionRef };
+    requestAnimationFrame(() => { refByTab[tab]?.current?.scrollIntoView({ behavior: "smooth", block: "start" }); });
+  }, []);
+
+  const handleAnalysisTabChange = useCallback((tab) => {
+    scrollToAnalysisSection(tab);
+  }, [scrollToAnalysisSection]);
+
+  const handleSideMenuClick = useCallback((item) => {
+    setActiveSideMenu(item);
+    if (item === "대시보드") { if (typeof onNavigate === "function") onNavigate("dashboard"); return; }
+    if (item === "기록 입력") { if (typeof onNavigate === "function") onNavigate("record"); return; }
+    if (item === "비교 분석") return scrollToAnalysisSection("compare");
+    if (item === "분석 리포트") return scrollToAnalysisSection("report");
+    if (item === "훈련 세션") return scrollToAnalysisSection("detail");
+    if (item === "훈련 계획" || item === "목표 관리") return scrollToAnalysisSection("trend");
+    return scrollToAnalysisSection("summary");
+  }, [onNavigate, scrollToAnalysisSection]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -8604,14 +8638,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                   <button
                     key={item}
                     type="button"
-                    onClick={() => {
-                      setActiveSideMenu(item);
-                      if (item === "비교 분석") setActiveAnalysisTab("compare");
-                      if (item === "분석 리포트") setActiveAnalysisTab("report");
-                      if (item === "대시보드") setActiveAnalysisTab("summary");
-                      if (item === "훈련 세션") setActiveAnalysisTab("detail");
-                      if (item === "훈련 계획" || item === "목표 관리") setActiveAnalysisTab("trend");
-                    }}
+                    onClick={() => handleSideMenuClick(item)}
                     className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition hover:bg-white/10 active:scale-[0.99] ${activeSideMenu === item ? "bg-blue-600 text-white" : "text-slate-300"}`}
                   >
                     <BarChart3 className="h-4 w-4" /> {item}
@@ -8625,7 +8652,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
 
             <main className="min-w-0 p-4 sm:p-5 xl:p-6">
               <div className="mb-5 grid gap-3 xl:flex xl:items-center xl:justify-between">
-                <Tabs value={activeAnalysisTab} onValueChange={setActiveAnalysisTab} className="w-full xl:w-auto">
+                <Tabs value={activeAnalysisTab} onValueChange={handleAnalysisTabChange} className="w-full xl:w-auto">
                   <TabsList className="grid h-12 grid-cols-5 rounded-2xl bg-white p-1 shadow-sm xl:w-[620px]">
                     <TabsTrigger value="summary" className="rounded-xl">종합 분석</TabsTrigger>
                     <TabsTrigger value="detail" className="rounded-xl">상세 분석</TabsTrigger>
@@ -8634,7 +8661,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                     <TabsTrigger value="report" className="rounded-xl">리포트</TabsTrigger>
                   </TabsList>
                 </Tabs>
-                <button type="button" onClick={() => setActiveAnalysisTab("report")} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99]">PDF 리포트 다운로드</button>
+                <button type="button" onClick={() => handleAnalysisTabChange("report")} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99]">PDF 리포트 다운로드</button>
               </div>
 
               <div className="mb-5 grid gap-3 rounded-[24px] bg-white p-4 shadow-sm xl:grid-cols-6">
@@ -8673,7 +8700,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                 {dateFilter === "custom" ? <Input type="date" value={customAnalysisDate} onChange={(e) => setCustomAnalysisDate(e.target.value)} className="h-11 rounded-2xl bg-white xl:col-span-2" /> : null}
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-5">
+              <div ref={summarySectionRef} className="scroll-mt-6 grid gap-4 xl:grid-cols-5">
                 {[
                   { icon: Target, label: "평균 점수(전체)", value: avgScore ? avgScore.toFixed(2) : "-", sub: `${parentGrowthSummary.deltaLabel} 지난 기간 대비`, color: "blue" },
                   { icon: Award, label: "10점 비율", value: `${tenRate}%`, sub: "화살별 기록은 실측, 거리합계는 추정", color: "emerald" },
@@ -8693,7 +8720,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </div>
 
               <div className="mt-4 grid gap-4 xl:grid-cols-[1.08fr_0.95fr_0.9fr]">
-                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                <section ref={detailSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-4 flex items-center justify-between"><div className="text-lg font-black">거리별 정확도 분석</div><Badge className="rounded-full bg-blue-50 text-blue-700">실기록 기반</Badge></div>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[520px] text-sm">
@@ -8717,7 +8744,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                   </div>
                 </section>
 
-                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                <section ref={compareSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-4 text-lg font-black">그룹핑 분석 <span className="text-sm font-normal text-slate-500">(평균 그룹 크기)</span></div>
                   <div className="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[190px_minmax(0,1fr)]">
                     <div className="relative mx-auto grid h-44 w-44 place-items-center rounded-full border border-slate-200 bg-slate-100">
@@ -8738,7 +8765,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
                 </section>
 
                 <section className="grid gap-4">
-                  <div className="rounded-[24px] bg-white p-5 shadow-sm">
+                  <div ref={reportSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                     <div className="text-lg font-black">AI 종합 분석 리포트</div>
                     <div className="mt-4 grid gap-4 rounded-3xl bg-emerald-50 p-5 sm:grid-cols-[92px_minmax(0,1fr)]">
                       <div className="text-6xl font-black text-emerald-700">{aiGrade}</div>
@@ -8811,7 +8838,7 @@ function AnalysisBoard({ currentUser, users, sessions }) {
               </div>
 
               <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+                <section ref={trendSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-3 text-lg font-black">점수 트렌드 분석</div>
                   <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -9075,6 +9102,14 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
   }, [extraAdmins]);
 
   const realUsers = useMemo(() => users.filter((user) => !user.isSampleData && !isAdminEmail(user.email)), [users]);
+  const adminUsers = useMemo(() => {
+    const fromUsers = users.filter((user) => !user.isSampleData && isAdminEmail(user.email));
+    if (currentUser?.email && isAdminEmail(currentUser.email) && !fromUsers.some((user) => user.id === currentUser.id)) {
+      return [currentUser, ...fromUsers];
+    }
+    return fromUsers;
+  }, [users, currentUser]);
+  const allRegisteredUsers = useMemo(() => [...adminUsers, ...realUsers], [adminUsers, realUsers]);
   const reviewedUserIdSet = useMemo(() => new Set(reviewedUserIds || []), [reviewedUserIds]);
   const unreviewedUsers = useMemo(() => realUsers.filter((user) => !reviewedUserIdSet.has(user.id)), [realUsers, reviewedUserIdSet]);
   const realSessions = useMemo(() => sessions.filter((session) => !session.isSampleData), [sessions]);
@@ -9138,7 +9173,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
 
   const visibleUsers = useMemo(() => {
     const keyword = String(userSearch || "").trim().toLowerCase();
-    const filtered = realUsers.filter((user) => {
+    const filtered = allRegisteredUsers.filter((user) => {
       if (!keyword) return true;
       return [
         user.name,
@@ -9154,7 +9189,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       .slice()
       .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ko"))
       .slice(0, 10);
-  }, [realUsers, userSearch]);
+  }, [allRegisteredUsers, userSearch]);
 
   async function loadAdminPublishedItems() {
     if (!appServices?.db) {
@@ -9553,7 +9588,9 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
                       <span className="truncate font-semibold">{getDisplayName(user)}</span>
                       <span className="ml-2 hidden truncate text-xs text-slate-500 sm:inline">{user.groupName || user.email || "소속 없음"}</span>
                     </button>
-                    {!reviewedUserIdSet.has(user.id) ? (
+                    {isAdminEmail(user.email) ? (
+                      <Badge className="rounded-full bg-blue-900 text-white">관리자</Badge>
+                    ) : !reviewedUserIdSet.has(user.id) ? (
                       <Badge className="rounded-full bg-red-600 text-white">신규</Badge>
                     ) : (
                       <Badge className="rounded-full bg-slate-200 text-slate-700">확인</Badge>
@@ -10857,7 +10894,7 @@ function XSessionApp() {
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} routines={myRoutines} currentUser={currentUser} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} />}
-              {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} />}
+              {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} onNavigate={(tab) => setUi((prev) => ({ ...prev, activeTab: tab }))} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} />}
               {ui.activeTab === "brief" && <XBriefPage appServices={appServices} briefRefreshKey={briefRefreshKey} />}
               {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} sessions={mySessions} onRoutineSaved={async (savedRoutine) => {
