@@ -376,11 +376,16 @@ function getRoutineUpdatedMs(routine) {
 }
 
 function getSavedRoutineForToday(userId, existingRoutine, date = getCurrentLocalDateString()) {
-  // Firestore에 저장된 값을 최우선으로 사용한다.
-  // localStorage/sessionStorage는 기기별로 다르기 때문에 PC/모바일 동기화 기준으로 쓰면 안 된다.
-  const dailyState = readRoutineDailyState(userId, date);
+  // PC/모바일 동기화의 기준은 반드시 Firestore에 저장된 오늘 루틴이다.
+  // localStorage/sessionStorage는 기기별 임시값이므로 Firestore 값이 있으면 절대 덮어쓰지 않는다.
+  if (existingRoutine && existingRoutine.date === date) {
+    return existingRoutine;
+  }
+
+  // Firestore를 아직 못 불러왔거나 권한 문제로 실패한 경우에만 같은 기기의 fallback 값을 사용한다.
   const storedRecord = readStoredRoutineRecord(userId, date);
-  const candidates = [existingRoutine, dailyState, storedRecord]
+  const dailyState = readRoutineDailyState(userId, date);
+  const candidates = [storedRecord, dailyState]
     .filter((routine) => routine && routine.date === date)
     .sort((a, b) => getRoutineUpdatedMs(b) - getRoutineUpdatedMs(a));
   return candidates[0] || null;
