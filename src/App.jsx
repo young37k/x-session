@@ -7334,8 +7334,9 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 ))}
               </div>
 
-              <div className="mt-4 grid gap-4 xl:grid-cols-[1.08fr_0.95fr_0.9fr]">
-                <section ref={detailSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
+              <div className="mt-4 grid gap-4 xl:grid-cols-[1.18fr_0.9fr]">
+                <div className="grid gap-4">
+                  <section ref={detailSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-4 flex items-center justify-between"><div className="text-lg font-black">거리별 정확도 분석</div><Badge className="rounded-full bg-blue-50 text-blue-700">실기록 기반</Badge></div>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[520px] text-sm">
@@ -7357,9 +7358,9 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                       </tbody>
                     </table>
                   </div>
-                </section>
+                  </section>
 
-                <section ref={compareSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
+                  <section ref={compareSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-4 text-lg font-black">그룹핑 분석 <span className="text-sm font-normal text-slate-500">(평균 그룹 크기)</span></div>
                   <div className="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[190px_minmax(0,1fr)]">
                     <div className="relative mx-auto grid h-44 w-44 place-items-center rounded-full border border-slate-200 bg-slate-100">
@@ -7377,7 +7378,8 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                       <div className="text-xs text-slate-500">거리합계 입력은 실제 좌표가 없어 평균 기반 추정값이다.</div>
                     </div>
                   </div>
-                </section>
+                  </section>
+                </div>
 
                 <section className="grid gap-4">
                   <div ref={reportSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
