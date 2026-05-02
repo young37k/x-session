@@ -283,6 +283,47 @@ const FIREBASE_READY = Boolean(
 
 const DEFAULT_UI = { activeTab: "routine" };
 
+function readSessionStorageJSON(key, fallback = null) {
+  try {
+    if (typeof window === "undefined" || !key) return fallback;
+    const raw = window.sessionStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function writeSessionStorageJSON(key, value) {
+  try {
+    if (typeof window === "undefined" || !key) return;
+    window.sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // sessionStorage unavailable
+  }
+}
+
+function removeSessionStorageKey(key) {
+  try {
+    if (typeof window === "undefined" || !key) return;
+    window.sessionStorage.removeItem(key);
+  } catch {
+    // sessionStorage unavailable
+  }
+}
+
+function getLiveDraftSessionKey(userId) {
+  return `elbowshot_live_draft_session_${userId || "guest"}`;
+}
+
+function getUiSessionStateKey(userId) {
+  return `elbowshot_ui_state_${userId || "guest"}`;
+}
+
+function getAnalysisSessionStateKey(userId) {
+  return `elbowshot_analysis_state_${userId || "guest"}`;
+}
+
 function getInitialTabByRole(role) {
   const normalized = String(role || "선수").trim();
   if (normalized === "감독/코치/스탭" || normalized === "학부모") return "ranking";
@@ -5596,13 +5637,13 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
 
 function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAlertCount = 0 }) {
   const navs = [
-    { key: "record", label: "X-Session", icon: Target },
+    { key: "routine", label: "X-Routine", icon: Settings },
     { key: "dashboard", label: "X-Dashboard", icon: BarChart3 },
+    { key: "record", label: "X-Session", icon: Target },
     { key: "ranking", label: "X-Ranking", icon: Trophy },
     { key: "analysis", label: "X-Analysis", icon: CalendarRange },
     { key: "stage", label: "X-Stage", icon: Award },
     { key: "brief", label: "X-Brief", icon: Archive },
-    { key: "routine", label: "X-Routine", icon: Settings },
     { key: "profile", label: "Profile", icon: User },
     ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield, alertCount: adminAlertCount }] : []),
   ];
@@ -5657,13 +5698,13 @@ function TopBar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAle
 
 function DesktopAppSidebar({ user, activeTab, setActiveTab, onLogout, isAdminUser, adminAlertCount = 0 }) {
   const navs = [
-    { key: "record", label: "X-Session", icon: Target },
+    { key: "routine", label: "X-Routine", icon: Settings },
     { key: "dashboard", label: "X-Dashboard", icon: BarChart3 },
+    { key: "record", label: "X-Session", icon: Target },
     { key: "ranking", label: "X-Ranking", icon: Trophy },
     { key: "analysis", label: "X-Analysis", icon: CalendarRange },
     { key: "stage", label: "X-Stage", icon: Award },
     { key: "brief", label: "X-Brief", icon: Archive },
-    { key: "routine", label: "X-Routine", icon: Settings },
     { key: "profile", label: "Profile", icon: User },
     ...(isAdminUser ? [{ key: "admin", label: "Admin", icon: Shield, alertCount: adminAlertCount }] : []),
   ];
@@ -8353,23 +8394,37 @@ function getDistanceWeaknessFromPerformance(distancePerformance = []) {
 
 
 function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
-  const [period, setPeriod] = useState("day");
-  const [matchType, setMatchType] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
-  const [customAnalysisDate, setCustomAnalysisDate] = useState(getCurrentLocalDateString());
-  const [requiredFilters, setRequiredFilters] = useState({
+  const analysisStateKey = getAnalysisSessionStateKey(currentUser?.id || currentUser?.uid || currentUser?.email || "guest");
+  const savedAnalysisState = readSessionStorageJSON(analysisStateKey, {});
+  const [period, setPeriod] = useState(savedAnalysisState.period || "day");
+  const [matchType, setMatchType] = useState(savedAnalysisState.matchType || "all");
+  const [dateFilter, setDateFilter] = useState(savedAnalysisState.dateFilter || "all");
+  const [customAnalysisDate, setCustomAnalysisDate] = useState(savedAnalysisState.customAnalysisDate || getCurrentLocalDateString());
+  const [requiredFilters, setRequiredFilters] = useState(savedAnalysisState.requiredFilters || {
     distance: "all",
     rankingGroup: "all",
     regionCity: "all",
   });
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 1280 : window.innerWidth));
-  const [activeAnalysisTab, setActiveAnalysisTab] = useState("summary");
-  const [activeSideMenu, setActiveSideMenu] = useState("분석 리포트");
+  const [activeAnalysisTab, setActiveAnalysisTab] = useState(savedAnalysisState.activeAnalysisTab || "summary");
+  const [activeSideMenu, setActiveSideMenu] = useState(savedAnalysisState.activeSideMenu || "분석 리포트");
   const summarySectionRef = useRef(null);
   const detailSectionRef = useRef(null);
   const compareSectionRef = useRef(null);
   const trendSectionRef = useRef(null);
   const reportSectionRef = useRef(null);
+
+  useEffect(() => {
+    writeSessionStorageJSON(analysisStateKey, {
+      period,
+      matchType,
+      dateFilter,
+      customAnalysisDate,
+      requiredFilters,
+      activeAnalysisTab,
+      activeSideMenu,
+    });
+  }, [analysisStateKey, period, matchType, dateFilter, customAnalysisDate, requiredFilters, activeAnalysisTab, activeSideMenu]);
 
   const scrollToAnalysisSection = useCallback((tab) => {
     setActiveAnalysisTab(tab);
@@ -9984,6 +10039,16 @@ function XSessionApp() {
     writeStoredReviewedUserIds(reviewedUserIds);
   }, [reviewedUserIds]);
 
+  useEffect(() => {
+    if (!authUser?.uid || !draftSession) return;
+    writeSessionStorageJSON(getLiveDraftSessionKey(authUser.uid), draftSession);
+  }, [authUser?.uid, draftSession]);
+
+  useEffect(() => {
+    if (!authUser?.uid || !ui) return;
+    writeSessionStorageJSON(getUiSessionStateKey(authUser.uid), ui);
+  }, [authUser?.uid, ui]);
+
   const markUserReviewed = useCallback((userId) => {
     if (!userId) return;
     setReviewedUserIds((prev) => Array.from(new Set([...prev, userId])));
@@ -10224,6 +10289,7 @@ function XSessionApp() {
         setProfile(nextProfile);
 
         const tempDraft = loadDraftFromLocal(user.uid);
+        const liveDraft = readSessionStorageJSON(getLiveDraftSessionKey(user.uid), null);
         if (tempDraft) {
           setDraftSession(
             normalizeSessionShape(
@@ -10232,6 +10298,14 @@ function XSessionApp() {
             )
           );
           setTempSaveMessage("임시 저장된 X-Session을 불러왔다.");
+        } else if (liveDraft) {
+          setDraftSession(
+            normalizeSessionShape(
+              { ...liveDraft, division: liveDraft.division || nextProfile.division || "전체학년" },
+              nextProfile
+            )
+          );
+          setTempSaveMessage("현재 웹창에서 입력 중이던 X-Session 설정을 유지했다.");
         } else {
           setDraftSession(
             normalizeSessionShape(createNewSession(nextProfile, "cumulative"), nextProfile)
@@ -10240,9 +10314,13 @@ function XSessionApp() {
         }
 
         setEditingSessionId(null);
+        const savedUiState = readSessionStorageJSON(getUiSessionStateKey(user.uid), null);
         setUi((prev) => ({
           ...prev,
-          activeTab: adminRequested && isAdminEmail(nextProfile.email) ? "admin" : getInitialTabByRole(nextProfile.role),
+          ...(savedUiState || {}),
+          activeTab: adminRequested && isAdminEmail(nextProfile.email)
+            ? "admin"
+            : (savedUiState?.activeTab || getInitialTabByRole(nextProfile.role)),
         }));
 
         await loadUsersAndSessions(appServices.db);
@@ -10395,6 +10473,11 @@ function XSessionApp() {
     setGlobalNotice("");
     setTempSaveMessage("");
     setAdminRequested(false);
+    if (authUser?.uid) {
+      removeSessionStorageKey(getLiveDraftSessionKey(authUser.uid));
+      removeSessionStorageKey(getUiSessionStateKey(authUser.uid));
+      removeSessionStorageKey(getAnalysisSessionStateKey(authUser.uid));
+    }
   }
 
   useEffect(() => {
@@ -10489,6 +10572,7 @@ function XSessionApp() {
       });
 
       clearDraftFromLocal(authUser.uid);
+      removeSessionStorageKey(getLiveDraftSessionKey(authUser.uid));
       setTempSaveMessage("");
       setEditingSessionId(null);
       await loadUsersAndSessions(appServices.db);
@@ -10519,6 +10603,7 @@ function XSessionApp() {
       setEditingSessionId(null);
       setDraftSession(normalizeSessionShape(createNewSession(profile, "cumulative"), profile));
       clearDraftFromLocal(authUser.uid);
+      removeSessionStorageKey(getLiveDraftSessionKey(authUser.uid));
       setTempSaveMessage("");
       await loadUsersAndSessions(appServices.db);
       setUi((prev) => ({ ...prev, activeTab: "dashboard" }));
