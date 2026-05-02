@@ -7334,8 +7334,8 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 ))}
               </div>
 
-              <div className="mt-4 grid gap-4 xl:grid-cols-[1.18fr_0.9fr]">
-                <div className="grid gap-4">
+              <div className="mt-4 grid gap-4">
+                <div className="grid gap-4 xl:grid-cols-[1.18fr_0.9fr]">
                   <section ref={detailSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                   <div className="mb-4 flex items-center justify-between"><div className="text-lg font-black">거리별 정확도 분석</div><Badge className="rounded-full bg-blue-50 text-blue-700">실기록 기반</Badge></div>
                   <div className="overflow-x-auto">
