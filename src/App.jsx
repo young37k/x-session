@@ -6968,6 +6968,82 @@ function buildWindMentalInsight(sessions = [], lateSetDropInsight = {}) {
   };
 }
 
+
+function buildTrainingPrescriptionData({ completed = [], weakestDistance = null, strongestDistance = null, distanceGap = 0, stability = 0, lateSetDropInsight = {}, windMental = {} } = {}) {
+  const weakLabel = weakestDistance?.label || "약점 거리";
+  const lateDropRisk = lateSetDropInsight?.label === "후반 하락";
+  const stabilityRisk = Number(stability) > 0 && Number(stability) < 70;
+  const windRisk = Number(windMental?.windGap || 0) > 0.25 || ["주의", "높음"].includes(windMental?.mentalRiskLevel);
+  const longDistanceRisk = /70|90|60|350/.test(String(weakLabel));
+
+  const strengthItems = [];
+  if (lateDropRisk || longDistanceRisk) {
+    strengthItems.push({
+      part: "하체·둔근",
+      why: "후반 엔드와 장거리에서 하체 고정이 흔들리면 조준선이 무너진다.",
+      exercise: "스쿼트 3세트 × 12회, 런지 3세트 × 10회, 월싯 40초 × 3회",
+    });
+  }
+  if (stabilityRisk || Number(distanceGap) >= 1.2) {
+    strengthItems.push({
+      part: "코어",
+      why: "좌우 흔들림과 릴리즈 순간 몸통 회전을 줄여 그룹핑을 안정화한다.",
+      exercise: "플랭크 45~60초 × 3회, 데드버그 12회 × 3세트, 사이드 플랭크 30초 × 2회",
+    });
+  }
+  strengthItems.push({
+    part: "등·견갑 안정화",
+    why: "활을 당긴 뒤 견갑을 고정하지 못하면 릴리즈 때 그룹이 퍼진다.",
+    exercise: "밴드 로우 15회 × 3세트, 밴드 풀어파트 15회 × 3세트, Y-T-W 10회 × 2세트",
+  });
+  strengthItems.push({
+    part: "어깨 회전근개",
+    why: "어깨가 버티지 못하면 후반 화살에서 조준 유지 시간이 짧아진다.",
+    exercise: "밴드 외회전 12회 × 3세트, 페이스풀 12회 × 3세트",
+  });
+
+  const cardioItems = lateDropRisk
+    ? [
+        "인터벌 러닝: 30초 빠르게 / 60초 걷기 × 8~10세트",
+        "저강도 유산소: 20~30분 빠른 걷기 또는 실내자전거, 주 2회",
+      ]
+    : [
+        "저강도 유산소: 20분 빠른 걷기 또는 조깅, 주 2회",
+        "호흡 유지 훈련: 3분 코호흡 + 3분 박스호흡",
+      ];
+
+  const balanceItems = windRisk
+    ? [
+        "한발 서기 45초 × 좌우 2회: 바람이 있을 때 하체 기준점을 잃지 않기 위함",
+        "눈 감고 균형 잡기 20초 × 2회: 흔들림 감지 능력 강화",
+      ]
+    : [
+        "한발 서기 30초 × 좌우 2회",
+        "발 위치 고정 루틴: 사대 진입 후 발 폭·무게중심 체크",
+      ];
+
+  const mentalItems = [
+    "실수 직후 8초 루틴: 점수 확인 → 호흡 1회 → 시선 기준점 → 손압 재설정 → 다음 화살",
+    "바람 있는 날 기록: 풍향/풍속 또는 체감 바람과 조준 보정 여부를 남긴다.",
+    lateDropRisk ? "후반 2엔드 별도 기록: 체력이 떨어진 상태에서 12발만 따로 기록한다." : "같은 조건 3회 반복 기록: 기술 변화보다 안정성 변화를 먼저 본다.",
+  ];
+
+  const summary = lateDropRisk
+    ? "후반 하락이 확인되므로 근력보다 먼저 지구력과 루틴 유지 능력을 같이 올려야 한다."
+    : stabilityRisk
+      ? "점수 기복이 있어 코어·견갑 안정화와 반복 루틴 고정이 우선이다."
+      : "현재는 특정 약점 거리와 바람 조건을 기준으로 보강 운동을 붙이는 단계다.";
+
+  return {
+    weakLabel,
+    summary,
+    strengthItems: strengthItems.slice(0, 4),
+    cardioItems,
+    balanceItems,
+    mentalItems,
+  };
+}
+
 function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance = [], parentGrowthSummary = {}, lateSetDropInsight = {}) {
   const completed = (sessions || [])
     .filter((session) => session?.isComplete || session?.status === "completed")
@@ -7016,6 +7092,16 @@ function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance 
     ? `${weakDistanceLabel} 집중 훈련을 우선하고, ${lateLabel === "후반 하락" ? "후반 집중력 유지 루틴" : "동일 조건 반복 기록"}을 함께 관리하세요. 특히 바람이 있는 날과 실수 직후의 멘탈 회복 루틴을 기록해야 합니다.`
     : "동일 조건 기록을 3회 이상 저장하면 첫 부모용 리포트를 생성할 수 있습니다.";
 
+  const trainingPrescription = buildTrainingPrescriptionData({
+    completed,
+    weakestDistance,
+    strongestDistance,
+    distanceGap,
+    stability,
+    lateSetDropInsight,
+    windMental,
+  });
+
   return {
     ready: completed.length >= 1,
     sessionCount: completed.length,
@@ -7038,6 +7124,7 @@ function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance 
     parentRecommendation,
     routineGuide,
     windMental,
+    trainingPrescription,
     generatedAt: formatDateOnly(getCurrentLocalDateString()),
   };
 }
@@ -7149,7 +7236,16 @@ function renderCompactParentReportHtml({ reportData, playerName, divisionLabel, 
     </div>
 
     <section style="background:white;border-radius:16px;border:1px solid #e2e8f0;padding:14px;margin-bottom:12px;">
-      <h2 style="margin:0 0 8px;font-size:15px;">6. 7일 실행 계획</h2>
+      <h2 style="margin:0 0 8px;font-size:15px;">6. 근력·유산소 처방</h2>
+      <p style="font-size:11px;margin:0 0 8px;color:#475569;">${escapeHtml(reportData?.trainingPrescription?.summary || "기록이 쌓이면 필요한 근력·유산소 운동을 자동 추천합니다.")}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:10.5px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:9px;"><b>근력</b><br/>${(reportData?.trainingPrescription?.strengthItems || []).map((item) => `${escapeHtml(item.part)}: ${escapeHtml(item.exercise)}`).join("<br/>")}</div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:9px;"><b>유산소·밸런스</b><br/>${[...(reportData?.trainingPrescription?.cardioItems || []), ...(reportData?.trainingPrescription?.balanceItems || [])].map(escapeHtml).join("<br/>")}</div>
+      </div>
+    </section>
+
+    <section style="background:white;border-radius:16px;border:1px solid #e2e8f0;padding:14px;margin-bottom:12px;">
+      <h2 style="margin:0 0 8px;font-size:15px;">7. 7일 실행 계획</h2>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:11px;">
         ${coachingPlan.map((item) => `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:9px;">${escapeHtml(item)}</div>`).join("")}
       </div>
@@ -7836,6 +7932,41 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                       <div className="rounded-3xl border border-orange-100 bg-orange-50 p-4 text-sm leading-6 text-orange-900">
                         <div className="mb-1 font-black">멘탈 코칭 진단</div>
                         {parentReportData.windMental?.coldDiagnosis || "실수 직후 회복 루틴과 후반 집중력 데이터를 기록해야 멘탈 분석 정확도가 올라갑니다."}
+                      </div>
+                    </div>
+                    <div className="mt-4 rounded-3xl border border-indigo-100 bg-indigo-50 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-black text-indigo-950">필요 근력·유산소 처방</div>
+                        <Badge className="bg-white text-indigo-700">부모/코치용 실행 과제</Badge>
+                      </div>
+                      <div className="mt-2 text-sm leading-6 text-indigo-900">{parentReportData.trainingPrescription?.summary}</div>
+                      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                        <div className="rounded-2xl bg-white/80 p-3 text-sm">
+                          <div className="mb-2 font-black text-slate-900">근력 운동 부위</div>
+                          <div className="space-y-2">
+                            {(parentReportData.trainingPrescription?.strengthItems || []).map((item) => (
+                              <div key={item.part} className="rounded-xl bg-slate-50 p-2">
+                                <div className="font-bold text-slate-900">{item.part}</div>
+                                <div className="text-xs leading-5 text-slate-600">이유: {item.why}</div>
+                                <div className="mt-1 text-xs leading-5 text-indigo-700">운동: {item.exercise}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid gap-3">
+                          <div className="rounded-2xl bg-white/80 p-3 text-sm">
+                            <div className="mb-2 font-black text-slate-900">유산소 운동</div>
+                            <ul className="list-disc space-y-1 pl-5 text-xs leading-5 text-slate-700">
+                              {(parentReportData.trainingPrescription?.cardioItems || []).map((item) => <li key={item}>{item}</li>)}
+                            </ul>
+                          </div>
+                          <div className="rounded-2xl bg-white/80 p-3 text-sm">
+                            <div className="mb-2 font-black text-slate-900">밸런스·멘탈 연결</div>
+                            <ul className="list-disc space-y-1 pl-5 text-xs leading-5 text-slate-700">
+                              {[...(parentReportData.trainingPrescription?.balanceItems || []), ...(parentReportData.trainingPrescription?.mentalItems || []).slice(0, 2)].map((item) => <li key={item}>{item}</li>)}
+                            </ul>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div className="mt-4 rounded-3xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-600">
