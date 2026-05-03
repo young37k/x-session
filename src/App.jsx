@@ -2432,6 +2432,46 @@ function getRankingQueryDistances(rankingType, rankingFilters = {}, rankingGroup
   return required.length ? required : [];
 }
 
+
+function normalizeRankingEntryData(docId, raw = {}) {
+  const name = raw.name || raw.playerName || raw.player || "공식기록";
+  const groupName = getCanonicalSchoolName(raw.groupName || raw.schoolName || raw.school || raw.team || "");
+  const rankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || getRankingGroup(raw.division, raw.gender);
+  const score = Number(raw.score ?? raw.totalScore ?? raw.total ?? 0);
+  const sessionDate = raw.sessionDate || raw.date || raw.competitionDate || "";
+  return {
+    id: docId,
+    ...raw,
+    entryId: raw.entryId || docId,
+    name,
+    playerName: name,
+    groupName,
+    schoolName: groupName,
+    rankingGroup,
+    category: raw.category || rankingGroup,
+    gender: raw.gender || "남",
+    distance: Number(raw.distance || raw.meter || raw.roundDistance || 0),
+    score,
+    totalScore: score,
+    sessionDate,
+    date: sessionDate,
+    regionCity: raw.regionCity || raw.region || "전국",
+    division: raw.division || "",
+    bowType: raw.bowType || "리커브",
+    arrows: Number(raw.arrows || 36),
+  };
+}
+
+function rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }) {
+  if (rankingGroup && rankingGroup !== "all" && !rankingGroupMatchesFilter(rankingGroup, entry.rankingGroup)) return false;
+  if (gender && gender !== "all" && String(entry.gender || "") !== String(gender)) return false;
+  if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all" && String(entry.regionCity || "") !== String(rankingFilters.regionCity)) return false;
+  if (rankingFilters?.groupName && rankingFilters.groupName !== "all" && getCanonicalSchoolName(entry.groupName || "") !== getCanonicalSchoolName(rankingFilters.groupName)) return false;
+  if (Array.isArray(distances) && distances.length && !distances.includes(Number(entry.distance))) return false;
+  if (!isWithinDateFilter(entry.sessionDate || entry.date, dateFilter, customDate)) return false;
+  return true;
+}
+
 async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, currentUser, currentUserId }) {
   if (!db) return [];
   const { rankingGroup, gender } = getRankingQueryTarget(rankingFilters, currentUser);
@@ -2445,37 +2485,46 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
   if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all") baseConstraints.push(where("regionCity", "==", rankingFilters.regionCity));
   if (rankingFilters?.groupName && rankingFilters.groupName !== "all") baseConstraints.push(where("groupName", "==", getCanonicalSchoolName(rankingFilters.groupName)));
 
-  const distanceQueries = (distances.length ? distances : [null]).map((distance) => {
-    const constraints = [...baseConstraints];
-    if (distance) constraints.push(where("distance", "==", Number(distance)));
-    constraints.push(orderBy("score", "desc"));
-    constraints.push(orderBy("sessionDate", "desc"));
-    constraints.push(limit(80));
-    return getDocs(query(collection(db, "ranking_entries"), ...constraints));
-  });
-
-  const ownConstraints = [where("userId", "==", currentUserId || "__none__")];
-  if (rankingGroup && rankingGroup !== "all") ownConstraints.push(where("rankingGroup", "==", rankingGroup));
-  if (gender && gender !== "all") ownConstraints.push(where("gender", "==", gender));
-  if (distances.length === 1) ownConstraints.push(where("distance", "==", Number(distances[0])));
-  ownConstraints.push(limit(40));
-
-  const snaps = await Promise.all([
-    ...distanceQueries,
-    currentUserId ? getDocs(query(collection(db, "ranking_entries"), ...ownConstraints)) : Promise.resolve({ docs: [] }),
-  ]);
-
-  const map = new Map();
-  snaps.forEach((snap) => {
-    (snap.docs || []).forEach((docSnap) => {
-      const data = { id: docSnap.id, ...docSnap.data() };
-      if (!isWithinDateFilter(data.sessionDate, dateFilter, customDate)) return;
-      const key = data.entryId || docSnap.id;
-      map.set(key, data);
+  try {
+    const distanceQueries = (distances.length ? distances : [null]).map((distance) => {
+      const constraints = [...baseConstraints];
+      if (distance) constraints.push(where("distance", "==", Number(distance)));
+      constraints.push(orderBy("score", "desc"));
+      constraints.push(orderBy("sessionDate", "desc"));
+      constraints.push(limit(80));
+      return getDocs(query(collection(db, "ranking_entries"), ...constraints));
     });
-  });
 
-  return Array.from(map.values());
+    const ownConstraints = [where("userId", "==", currentUserId || "__none__")];
+    if (rankingGroup && rankingGroup !== "all") ownConstraints.push(where("rankingGroup", "==", rankingGroup));
+    if (gender && gender !== "all") ownConstraints.push(where("gender", "==", gender));
+    if (distances.length === 1) ownConstraints.push(where("distance", "==", Number(distances[0])));
+    ownConstraints.push(limit(40));
+
+    const snaps = await Promise.all([
+      ...distanceQueries,
+      currentUserId ? getDocs(query(collection(db, "ranking_entries"), ...ownConstraints)) : Promise.resolve({ docs: [] }),
+    ]);
+
+    const map = new Map();
+    snaps.forEach((snap) => {
+      (snap.docs || []).forEach((docSnap) => {
+        const data = normalizeRankingEntryData(docSnap.id, docSnap.data());
+        if (!rankingEntryMatchesFilters(data, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate })) return;
+        const key = data.entryId || docSnap.id;
+        map.set(key, data);
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
+  } catch (error) {
+    console.warn("ranking_entries strict query failed; fallback to client filtering", error);
+    const snap = await getDocs(query(collection(db, "ranking_entries"), limit(2000)));
+    return (snap.docs || [])
+      .map((docSnap) => normalizeRankingEntryData(docSnap.id, docSnap.data()))
+      .filter((entry) => rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }))
+      .sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0))
+      .slice(0, 120);
+  }
 }
 
 function buildUsersFromRankingEntries(entries = []) {
