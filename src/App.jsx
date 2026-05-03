@@ -3689,13 +3689,13 @@ function DesktopAppSidebar({ user, activeTab, setActiveTab, onLogout, isAdminUse
   ];
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[280px] bg-slate-950 px-5 py-6 text-white shadow-2xl lg:flex lg:flex-col">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-[220px] bg-slate-950 px-4 py-5 text-white shadow-2xl lg:flex lg:flex-col xl:w-[240px]">
       <div>
-        <div className="text-xl font-black tracking-wide">ARCHERY ANALYTICS</div>
-        <div className="mt-1 text-xs leading-5 text-slate-400">훈련이 데이터가 되고, 성과가 결과가 된다</div>
+        <div className="text-lg font-black tracking-wide xl:text-xl">ARCHERY ANALYTICS</div>
+        <div className="mt-1 text-[11px] leading-4 text-slate-400 xl:text-xs xl:leading-5">훈련이 데이터가 되고, 성과가 결과가 된다</div>
       </div>
 
-      <div className="mt-8 flex items-center gap-3 rounded-3xl bg-white/5 p-3">
+      <div className="mt-6 flex items-center gap-2 rounded-3xl bg-white/5 p-3">
         <ProfileAvatar user={user} size="md" />
         <div className="min-w-0">
           <div className="truncate font-black">{getDisplayName(user)}</div>
@@ -3703,7 +3703,7 @@ function DesktopAppSidebar({ user, activeTab, setActiveTab, onLogout, isAdminUse
         </div>
       </div>
 
-      <nav className="mt-8 space-y-2 border-t border-white/10 pt-6">
+      <nav className="mt-6 space-y-1.5 border-t border-white/10 pt-5">
         {navs.map((item) => {
           const Icon = item.icon;
           const active = activeTab === item.key;
@@ -3712,7 +3712,7 @@ function DesktopAppSidebar({ user, activeTab, setActiveTab, onLogout, isAdminUse
               key={item.key}
               type="button"
               onClick={() => setActiveTab(item.key)}
-              className={`flex w-full items-center justify-between rounded-2xl px-4 py-3.5 text-left text-sm font-bold tracking-tight transition hover:bg-white/10 active:scale-[0.99] ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30" : "text-slate-300"}`}
+              className={`flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left text-[13px] font-bold tracking-tight transition hover:bg-white/10 active:scale-[0.99] xl:px-4 xl:py-3.5 xl:text-sm ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-900/30" : "text-slate-300"}`}
             >
               <span className="flex min-w-0 items-center gap-3"><Icon className="h-4 w-4 shrink-0" /> <span className="truncate">{item.label}</span></span>
               {item.alertCount > 0 ? (
@@ -3726,7 +3726,7 @@ function DesktopAppSidebar({ user, activeTab, setActiveTab, onLogout, isAdminUse
       </nav>
 
       <div className="mt-auto space-y-3">
-        <div className="rounded-3xl bg-white/10 p-4 text-xs leading-5 text-slate-300">
+        <div className="rounded-3xl bg-white/10 p-3 text-[11px] leading-5 text-slate-300 xl:p-4 xl:text-xs">
           PC에서는 왼쪽 메뉴를 공통 내비게이션으로 사용하고, X-Analysis 안에서만 상단 분석 탭을 사용한다.
         </div>
         <button
@@ -7327,10 +7327,10 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
               </div>
             </aside>
 
-            <main className="min-w-0 p-4 sm:p-5 lg:p-6">
+            <main className="min-w-0 p-3 sm:p-4 lg:p-4 xl:p-6">
               <div className="mb-5 grid gap-3 lg:flex lg:items-center lg:justify-between">
                 <Tabs value={activeAnalysisTab} onValueChange={handleAnalysisTabChange} className="w-full lg:w-auto">
-                  <TabsList className="grid h-12 grid-cols-5 rounded-2xl bg-white p-1 shadow-sm lg:w-[620px]">
+                  <TabsList className="grid h-11 grid-cols-5 rounded-2xl bg-white p-1 shadow-sm lg:w-[560px] xl:h-12 xl:w-[620px]">
                     <TabsTrigger value="summary" className="rounded-xl">종합 분석</TabsTrigger>
                     <TabsTrigger value="detail" className="rounded-xl">상세 분석</TabsTrigger>
                     <TabsTrigger value="compare" className="rounded-xl">비교 분석</TabsTrigger>
@@ -7341,7 +7341,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 <button type="button" onClick={handleDownloadParentReportPdf} disabled={pdfBusy} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{pdfBusy ? "PDF 생성 중..." : "부모용 PDF 다운로드"}</button>
               </div>
 
-              <div className="mb-5 grid gap-3 rounded-[24px] bg-white p-4 shadow-sm lg:grid-cols-6">
+              <div className="mb-4 grid gap-2 rounded-[24px] bg-white p-3 shadow-sm lg:grid-cols-6 xl:gap-3 xl:p-4">
                 <Select value={requiredFilters.distance} onValueChange={(value) => setRequiredFilters((prev) => ({ ...prev, distance: value }))}>
                   <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="전체 거리" /></SelectTrigger>
                   <SelectContent>
@@ -7377,7 +7377,7 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 {dateFilter === "custom" ? <Input type="date" value={customAnalysisDate} onChange={(e) => setCustomAnalysisDate(e.target.value)} className="h-11 rounded-2xl bg-white lg:col-span-2" /> : null}
               </div>
 
-              <div ref={summarySectionRef} className="scroll-mt-6 grid gap-4 lg:grid-cols-5">
+              <div ref={summarySectionRef} className="scroll-mt-6 grid gap-3 lg:grid-cols-5 xl:gap-4">
                 {[
                   { icon: Target, label: "평균 점수(전체)", value: avgScore ? avgScore.toFixed(2) : "-", sub: `${parentGrowthSummary.deltaLabel} 지난 기간 대비`, color: "blue" },
                   { icon: Award, label: "10점 비율", value: `${tenRate}%`, sub: "화살별 기록은 실측, 거리합계는 추정", color: "emerald" },
@@ -7513,12 +7513,12 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 </section>
               </div>
 
-              <div className="mt-4 grid gap-4 lg:grid-cols-[1.08fr_0.95fr_0.9fr]">
-                <section className="rounded-[24px] bg-white p-5 shadow-sm">
+              <div className="mt-4 grid gap-4">
+                <section className="rounded-[24px] bg-white p-4 shadow-sm xl:p-5">
                   <div className="mb-3 text-lg font-black">컨디션별 성과 변화</div>
-                  <div className="h-[220px]">
+                  <div className="h-[210px] xl:h-[230px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={conditionChart} margin={{ top: 8, right: 12, left: -14, bottom: 0 }}>
+                      <LineChart data={conditionChart} margin={{ top: 8, right: 18, left: -10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                         <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
@@ -7530,38 +7530,40 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                   </div>
                 </section>
 
-                <section className="rounded-[24px] bg-white p-5 shadow-sm">
-                  <div className="mb-3 text-lg font-black">시간대별/세트별 성과 분석</div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[460px] text-center text-sm">
-                      <thead><tr className="text-xs text-slate-500"><th className="py-2 text-left">구분</th>{[1,2,3,4,5].map((n) => <th key={n}>{n}세트</th>)}</tr></thead>
-                      <tbody>
-                        {["오전", "오후", "저녁"].map((label, rowIdx) => (
-                          <tr key={label} className="border-t">
-                            <td className="py-3 text-left font-semibold">{label}</td>
-                            {setAverages.map((value, idx) => {
-                              const shown = value ? Number((value - rowIdx * 0.15).toFixed(1)) : 0;
-                              return <td key={idx} className={`${shown >= 8.5 ? "bg-green-200" : shown >= 8 ? "bg-lime-100" : "bg-yellow-100"} px-2 py-3 font-bold`}>{shown || "-"}</td>;
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="mt-3 h-2 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500" />
-                  <div className="mt-1 flex justify-between text-xs text-slate-500"><span>6.0</span><span>10.0</span></div>
-                </section>
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+                  <section className="min-w-0 rounded-[24px] bg-white p-4 shadow-sm xl:p-5">
+                    <div className="mb-3 text-lg font-black">시간대별/세트별 성과 분석</div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[420px] text-center text-sm">
+                        <thead><tr className="text-xs text-slate-500"><th className="py-2 text-left">구분</th>{[1,2,3,4,5].map((n) => <th key={n}>{n}세트</th>)}</tr></thead>
+                        <tbody>
+                          {["오전", "오후", "저녁"].map((label, rowIdx) => (
+                            <tr key={label} className="border-t">
+                              <td className="py-3 text-left font-semibold">{label}</td>
+                              {setAverages.map((value, idx) => {
+                                const shown = value ? Number((value - rowIdx * 0.15).toFixed(1)) : 0;
+                                return <td key={idx} className={`${shown >= 8.5 ? "bg-green-200" : shown >= 8 ? "bg-lime-100" : "bg-yellow-100"} px-2 py-3 font-bold`}>{shown || "-"}</td>;
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-3 h-2 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500" />
+                    <div className="mt-1 flex justify-between text-xs text-slate-500"><span>6.0</span><span>10.0</span></div>
+                  </section>
 
-                <section className="rounded-[24px] bg-white p-5 shadow-sm">
-                  <div className="mb-3 flex items-center justify-between"><div className="text-lg font-black">최근 훈련 세션</div><span className="text-xs text-blue-600">전체 보기</span></div>
-                  <div className="space-y-2">
-                    {recentSessions.length ? recentSessions.map((item, idx) => (
-                      <div key={`${item.date}-${idx}`} className="grid grid-cols-[72px_1fr_56px_64px] items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
-                        <span className="text-slate-500">{item.date}</span><span className="font-semibold">{item.distanceLabel}</span><span>{item.avg}</span><Badge className={`${item.condition === "최상" ? "bg-green-100 text-green-700" : item.condition === "좋음" ? "bg-emerald-100 text-emerald-700" : item.condition === "보통" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{item.condition}</Badge>
-                      </div>
-                    )) : <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500">저장된 훈련 기록이 없습니다.</div>}
-                  </div>
-                </section>
+                  <section className="min-w-0 overflow-hidden rounded-[24px] bg-white p-4 shadow-sm xl:p-5">
+                    <div className="mb-3 flex items-center justify-between"><div className="text-lg font-black">최근 훈련 세션</div><span className="text-xs text-blue-600">전체 보기</span></div>
+                    <div className="space-y-2">
+                      {recentSessions.length ? recentSessions.map((item, idx) => (
+                        <div key={`${item.date}-${idx}`} className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)_48px_auto] items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
+                          <span className="truncate text-slate-500">{item.date}</span><span className="truncate font-semibold">{item.distanceLabel}</span><span className="text-right">{item.avg}</span><Badge className={`shrink-0 whitespace-nowrap ${item.condition === "최상" ? "bg-green-100 text-green-700" : item.condition === "좋음" ? "bg-emerald-100 text-emerald-700" : item.condition === "보통" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>{item.condition}</Badge>
+                        </div>
+                      )) : <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500">저장된 훈련 기록이 없습니다.</div>}
+                    </div>
+                  </section>
+                </div>
               </div>
 
               <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -9843,7 +9845,7 @@ function XSessionApp() {
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       {currentUser ? <DesktopAppSidebar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} /> : null}
-      <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6 lg:pl-[280px]" : "gap-0"}`}>
+      <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6 lg:pl-[220px] xl:pl-[240px]" : "gap-0"}`}>
         {currentUser ? <div className="lg:hidden"><Hero activeTab={ui.activeTab} /></div> : null}
 
         {authLoading && !authUser ? (
