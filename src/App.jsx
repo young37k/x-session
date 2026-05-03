@@ -4903,19 +4903,19 @@ function SessionEditor({
         <div className="grid gap-4 pb-28 md:pb-6">
           {session.recordInputType === "end" ? (
             <>
-              <div ref={quickPanelRef} className="sticky top-2 z-30 rounded-[28px] border border-slate-200 bg-white/95 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/90">
+              <div ref={quickPanelRef} className="sticky top-2 z-30 overflow-hidden rounded-[22px] border border-slate-200 bg-white/95 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-white/90">
                 <Card className="border-0 bg-transparent shadow-none">
-                  <CardContent className="p-3 md:p-4">
-                    <div className="mb-3 flex items-center justify-between gap-2">
+                  <CardContent className="p-2.5 md:p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
                       <div className="text-sm font-semibold text-slate-700">빠른 점수 입력</div>
                     </div>
-                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
                       {quickPanelOptions.map((score) => (
                         <Button
                           type="button"
                           key={String(score)}
                           variant="outline"
-                          className={`${getQuickButtonClass(score)} text-sm font-semibold ${
+                          className={`${getQuickButtonClass(score)} h-10 min-h-0 py-0 text-sm font-semibold ${
                             score === "CONFIRM" ? "!text-black disabled:!text-black opacity-100" : ""
                           }`}
                           onClick={() => quickInputScore(score)}
@@ -7494,7 +7494,7 @@ async function downloadReportElementAsPdf(element, filename = "x-analysis-parent
 }
 
 
-function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
+function AnalysisBoard({ currentUser, users, sessions, routines = [], appServices, onRoutineSaved, onNavigate }) {
   const analysisStateKey = getAnalysisSessionStateKey(currentUser?.id || currentUser?.uid || currentUser?.email || "guest");
   const savedAnalysisState = readSessionStorageJSON(analysisStateKey, {});
   const [period, setPeriod] = useState(savedAnalysisState.period || "day");
@@ -7519,6 +7519,10 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
   const compareSectionRef = useRef(null);
   const trendSectionRef = useRef(null);
   const reportSectionRef = useRef(null);
+  const prescriptionRoutineSyncedRef = useRef("");
+  const [prescriptionRoutineStatus, setPrescriptionRoutineStatus] = useState("");
+  const todayKeyForPrescription = getCurrentLocalDateString();
+  const prescriptionRoutineId = currentUser?.id ? makeRoutineDocId(currentUser.id, todayKeyForPrescription) : "";
 
   useEffect(() => {
     writeSessionStorageJSON(analysisStateKey, {
@@ -7629,24 +7633,113 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
     [filteredMine, distancePerformance, parentGrowthSummary, lateSetDropInsight]
   );
 
+  const buildPrescriptionRoutineItems = useCallback((checks = trainingChecks) => {
+    const checklist = parentReportData?.trainingChecklist || [];
+    const existingRoutine = getRoutineForDate(routines, todayKeyForPrescription);
+    const storedRoutine = readStoredRoutineRecord(currentUser?.id, todayKeyForPrescription);
+    const existingItems = normalizeRoutineItems(existingRoutine?.items?.length ? existingRoutine.items : storedRoutine?.items || ROUTINE_TEMPLATE_ITEMS);
+    const existingById = new Map(existingItems.map((item) => [item.id, item]));
+    const existingPrescriptionIds = new Set(checklist.map((item) => `rx_${String(item.id).replace(/[^a-zA-Z0-9가-힣_-]/g, "_")}`));
+    const baseItems = existingItems.filter((item) => !String(item.id || "").startsWith("rx_") || existingPrescriptionIds.has(item.id));
+    const prescriptionItems = checklist.map((item) => {
+      const id = `rx_${String(item.id).replace(/[^a-zA-Z0-9가-힣_-]/g, "_")}`;
+      const existing = existingById.get(id);
+      const checked = Object.prototype.hasOwnProperty.call(checks || {}, item.id) ? Boolean(checks[item.id]) : Boolean(existing?.checked);
+      return {
+        id,
+        label: `처방 · ${item.label}`,
+        checked,
+      };
+    });
+    const mergedById = new Map();
+    [...baseItems, ...prescriptionItems].forEach((item) => {
+      if (!item?.id) return;
+      mergedById.set(item.id, item);
+    });
+    return Array.from(mergedById.values());
+  }, [currentUser?.id, parentReportData?.trainingChecklist, routines, todayKeyForPrescription, trainingChecks]);
+
+  const savePrescriptionRoutine = useCallback(async (checks = trainingChecks, options = {}) => {
+    const checklist = parentReportData?.trainingChecklist || [];
+    if (!appServices?.db || !currentUser?.id || !checklist.length) return null;
+    const mergedItems = buildPrescriptionRoutineItems(checks);
+    const normalizedStats = calculateRoutineStats(mergedItems);
+    const existingRoutine = getRoutineForDate(routines, todayKeyForPrescription);
+    const payload = {
+      userId: currentUser.id,
+      date: todayKeyForPrescription,
+      items: normalizedStats.items,
+      completionRate: normalizedStats.completionRate,
+      completedCount: normalizedStats.completedCount,
+      totalCount: normalizedStats.totalCount,
+      source: "routine_with_analysis_prescription",
+      prescriptionUpdatedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
+      createdAt: existingRoutine?.createdAt || serverTimestamp(),
+    };
+    await setDoc(doc(appServices.db, "routines", prescriptionRoutineId), payload, { merge: true });
+    const optimisticRoutine = {
+      id: prescriptionRoutineId,
+      ...payload,
+      createdAt: existingRoutine?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    writeStoredRoutineRecord(currentUser.id, optimisticRoutine);
+    writeRoutineDailyState(currentUser.id, todayKeyForPrescription, normalizedStats.items);
+    await onRoutineSaved?.(optimisticRoutine);
+    if (options.showNotice !== false) {
+      setPrescriptionRoutineStatus(`루틴에 반영 완료 · 오늘 루틴 달성률 ${normalizedStats.completionRate}%`);
+    }
+    return optimisticRoutine;
+  }, [appServices?.db, buildPrescriptionRoutineItems, currentUser?.id, onRoutineSaved, parentReportData?.trainingChecklist, prescriptionRoutineId, routines, todayKeyForPrescription, trainingChecks]);
+
   const trainingChecklistKey = `x_training_prescription_checks_${currentUser?.id || currentUser?.uid || currentUser?.email || "guest"}_${getCurrentLocalDateString()}`;
+  const prescriptionRoutineCompletion = useMemo(() => {
+    const checklist = parentReportData.trainingChecklist || [];
+    const done = checklist.filter((item) => Boolean(trainingChecks[item.id])).length;
+    return {
+      done,
+      total: checklist.length,
+      rate: checklist.length ? Math.round((done / checklist.length) * 100) : 0,
+    };
+  }, [parentReportData.trainingChecklist, trainingChecks]);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(trainingChecklistKey);
-      setTrainingChecks(raw ? JSON.parse(raw) : {});
+      const storedChecks = raw ? JSON.parse(raw) : {};
+      const existingRoutine = getRoutineForDate(routines, todayKeyForPrescription);
+      const rxChecks = {};
+      (existingRoutine?.items || []).forEach((item) => {
+        if (!String(item.id || "").startsWith("rx_")) return;
+        const original = (parentReportData.trainingChecklist || []).find((checkItem) => `rx_${String(checkItem.id).replace(/[^a-zA-Z0-9가-힣_-]/g, "_")}` === item.id);
+        if (original) rxChecks[original.id] = Boolean(item.checked);
+      });
+      setTrainingChecks({ ...storedChecks, ...rxChecks });
     } catch {
       setTrainingChecks({});
     }
-  }, [trainingChecklistKey]);
+  }, [trainingChecklistKey, routines, parentReportData.trainingChecklist, todayKeyForPrescription]);
+
+  useEffect(() => {
+    const checklist = parentReportData.trainingChecklist || [];
+    if (!checklist.length || !currentUser?.id || !appServices?.db) return;
+    const syncKey = `${currentUser.id}_${todayKeyForPrescription}_${checklist.map((item) => item.id).join("|")}`;
+    if (prescriptionRoutineSyncedRef.current === syncKey) return;
+    prescriptionRoutineSyncedRef.current = syncKey;
+    savePrescriptionRoutine(trainingChecks, { showNotice: false })
+      .then(() => setPrescriptionRoutineStatus("분석 처방이 오늘 루틴에 자동 추가됐다."))
+      .catch((error) => setPrescriptionRoutineStatus(String(error?.message || "처방 루틴 자동 추가 실패")));
+  }, [appServices?.db, currentUser?.id, parentReportData.trainingChecklist, savePrescriptionRoutine, todayKeyForPrescription, trainingChecks]);
 
   const toggleTrainingCheck = useCallback((id) => {
     setTrainingChecks((prev) => {
       const next = { ...prev, [id]: !prev?.[id] };
       try { localStorage.setItem(trainingChecklistKey, JSON.stringify(next)); } catch {}
+      savePrescriptionRoutine(next).catch((error) => setPrescriptionRoutineStatus(String(error?.message || "루틴 체크 저장 실패")));
       return next;
     });
-  }, [trainingChecklistKey]);
+  }, [savePrescriptionRoutine, trainingChecklistKey]);
 
   const sessionAverages = useMemo(() => filteredMine
     .filter((session) => session?.isComplete)
@@ -8146,10 +8239,18 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                       </div>
                     </div>
                     <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="font-black text-slate-950">선수 실행 체크</div>
-                        <div className="text-xs text-slate-500">최적 위치: 분석 리포트의 운동 처방 바로 아래. 선수는 오늘 수행 여부만 체크합니다.</div>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <div className="font-black text-slate-950">선수 실행 체크</div>
+                          <div className="mt-1 text-xs leading-5 text-slate-500">분석에서 나온 처방 과제가 오늘 루틴에 자동 추가된다. 체크 결과는 오늘 루틴 달성률에 포함되고, 이후 운동 수행 vs 점수 변화 분석에 사용된다.</div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 text-right">
+                          <Badge className="bg-emerald-100 text-emerald-700">오늘 수행 {prescriptionRoutineCompletion.done}/{prescriptionRoutineCompletion.total || 0}</Badge>
+                          <Button type="button" size="sm" variant="outline" onClick={() => savePrescriptionRoutine(trainingChecks)}>루틴에 추가/동기화</Button>
+                        </div>
                       </div>
+                      {prescriptionRoutineStatus ? <div className="mt-3 rounded-2xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">{prescriptionRoutineStatus}</div> : null}
+                      <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">오늘 루틴 달성률 포함: {prescriptionRoutineCompletion.rate}% · 이 데이터가 누적되면 처방 수행일과 미수행일의 평균 점수 차이를 비교한다.</div>
                       <div className="mt-3 grid gap-2 md:grid-cols-2">
                         {(parentReportData.trainingChecklist || []).map((item) => (
                           <label key={item.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3 text-sm transition ${trainingChecks[item.id] ? "border-emerald-200 bg-emerald-50" : "border-slate-100 bg-slate-50"}`}>
@@ -10601,7 +10702,12 @@ function XSessionApp() {
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} routines={myRoutines} currentUser={currentUser} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
               {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} appServices={appServices} />}
-              {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} onNavigate={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} />}
+              {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} routines={myRoutines} appServices={appServices} onRoutineSaved={async (savedRoutine) => {
+                setRoutines((prev) => {
+                  const withoutSame = prev.filter((routine) => routine.id !== savedRoutine.id);
+                  return [savedRoutine, ...withoutSame].sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+                });
+              }} onNavigate={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} />}
               {ui.activeTab === "stage" && <XStagePage appServices={appServices} stageRefreshKey={stageRefreshKey} briefRefreshKey={briefRefreshKey} />}
               {ui.activeTab === "routine" && <RoutinePage appServices={appServices} currentUser={currentUser} routines={myRoutines} sessions={mySessions} onRoutineSaved={async (savedRoutine) => {
                 if (savedRoutine?.id) {
