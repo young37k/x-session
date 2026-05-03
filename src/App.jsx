@@ -230,6 +230,43 @@ function buildDefaultSessionWeather() {
   };
 }
 
+function getUserSchoolVenue(currentUser) {
+  const schoolName = String(
+    currentUser?.schoolName ||
+    currentUser?.groupName ||
+    currentUser?.clubName ||
+    currentUser?.school ||
+    currentUser?.affiliation ||
+    ""
+  ).trim();
+  if (!schoolName || schoolName === "all") return null;
+  return {
+    id: "user_school_home",
+    name: schoolName,
+    region: "소속 학교/훈련장",
+    latitude: null,
+    longitude: null,
+    isUserSchool: true,
+  };
+}
+
+function buildDefaultSessionWeatherForUser(currentUser) {
+  const schoolVenue = getUserSchoolVenue(currentUser);
+  if (schoolVenue) {
+    return {
+      venueId: schoolVenue.id,
+      venueName: schoolVenue.name,
+      region: schoolVenue.region,
+      latitude: schoolVenue.latitude,
+      longitude: schoolVenue.longitude,
+      athleteWindFeel: "",
+      auto: null,
+      manualNote: "",
+    };
+  }
+  return buildDefaultSessionWeather();
+}
+
 function getEffectiveWindLevel(session) {
   const weather = session?.weather || {};
   const athleteWindFeel = String(weather.athleteWindFeel || "").trim();
@@ -3880,6 +3917,7 @@ function SessionEditor({
   saving,
   tempSaveMessage,
   editingSavedSession,
+  currentUser,
 }) {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, endId: null });
@@ -3901,6 +3939,30 @@ function SessionEditor({
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState("");
   const [nearbyVenues, setNearbyVenues] = useState([]);
+  const userSchoolVenue = useMemo(() => getUserSchoolVenue(currentUser), [currentUser]);
+  const venueOptions = useMemo(() => {
+    if (!userSchoolVenue) return ARCHERY_VENUES;
+    return [userSchoolVenue, ...ARCHERY_VENUES.filter((venue) => venue.id !== userSchoolVenue.id)];
+  }, [userSchoolVenue]);
+
+  useEffect(() => {
+    if (!userSchoolVenue) return;
+    const currentWeather = session.weather || {};
+    const shouldApplySchoolDefault = !currentWeather.venueId || currentWeather.venueId === "yecheon_jinho" || currentWeather.venueId === "default_school";
+    if (!shouldApplySchoolDefault) return;
+    setSession((prev) => ({
+      ...prev,
+      weather: {
+        ...(prev.weather || buildDefaultSessionWeatherForUser(currentUser)),
+        venueId: userSchoolVenue.id,
+        venueName: userSchoolVenue.name,
+        region: userSchoolVenue.region,
+        latitude: userSchoolVenue.latitude,
+        longitude: userSchoolVenue.longitude,
+        auto: null,
+      },
+    }));
+  }, [currentUser, session.weather?.venueId, setSession, userSchoolVenue]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -4409,7 +4471,7 @@ function SessionEditor({
       patchSession((prev) => ({
         ...prev,
         weather: {
-          ...(prev.weather || buildDefaultSessionWeather()),
+          ...(prev.weather || buildDefaultSessionWeatherForUser(currentUser)),
           auto,
         },
       }));
@@ -4620,24 +4682,24 @@ function SessionEditor({
             )}
 
             <div className="grid gap-3">
-              <div className="flex items-center gap-3">
-                <Label className="w-24 shrink-0 text-sm">날짜</Label>
+              <div className="grid gap-2 md:flex md:items-center md:gap-3">
+                <Label className="text-sm font-semibold md:w-24 md:shrink-0">날짜</Label>
                 <Input
-                  className="h-11 flex-1"
+                  className="h-11 w-full md:flex-1"
                   type="date"
                   value={session.sessionDate}
-                  onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value, weather: { ...(prev.weather || buildDefaultSessionWeather()), auto: null } }))}
+                  onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value, weather: { ...(prev.weather || buildDefaultSessionWeatherForUser(currentUser)), auto: null } }))}
                 />
               </div>
 
-              <div className="flex items-start gap-3">
-                <Label className="w-24 shrink-0 pt-3 text-sm">장소/바람</Label>
-                <div className="flex-1 space-y-2 rounded-3xl border border-slate-200 bg-slate-50/70 p-3">
+              <div className="grid gap-2 md:flex md:items-start md:gap-3">
+                <Label className="text-sm font-semibold md:w-24 md:shrink-0 md:pt-3">장소/바람</Label>
+                <div className="w-full space-y-2 rounded-3xl border border-slate-200 bg-slate-50/70 p-3 md:flex-1">
                   <div className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
                     <Select
-                      value={session.weather?.venueId || buildDefaultSessionWeather().venueId}
+                      value={session.weather?.venueId || buildDefaultSessionWeatherForUser(currentUser).venueId}
                       onValueChange={(venueId) => {
-                        const venue = ARCHERY_VENUES.find((item) => item.id === venueId) || ARCHERY_VENUES[0];
+                        const venue = venueOptions.find((item) => item.id === venueId) || venueOptions[0] || ARCHERY_VENUES[0];
                         applyVenueToSession(venue);
                       }}
                     >
@@ -4645,7 +4707,7 @@ function SessionEditor({
                         <SelectValue placeholder="경기장/훈련장 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        {ARCHERY_VENUES.map((venue) => (
+                        {venueOptions.map((venue) => (
                           <SelectItem key={venue.id} value={venue.id}>
                             {venue.name} · {venue.region}
                           </SelectItem>
@@ -4692,7 +4754,7 @@ function SessionEditor({
                             key={label || "auto"}
                             type="button"
                             className={`rounded-xl px-2 py-1 ${String(session.weather?.athleteWindFeel || "") === label ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-700"}`}
-                            onClick={() => patchSession((prev) => ({ ...prev, weather: { ...(prev.weather || buildDefaultSessionWeather()), athleteWindFeel: label } }))}
+                            onClick={() => patchSession((prev) => ({ ...prev, weather: { ...(prev.weather || buildDefaultSessionWeatherForUser(currentUser)), athleteWindFeel: label } }))}
                           >
                             {label || "자동"}
                           </button>
@@ -4705,9 +4767,9 @@ function SessionEditor({
                 </div>
               </div>
 
-              <div className="flex items-start gap-3">
-                <Label className="w-24 shrink-0 pt-3 text-sm">입력 방식</Label>
-                <div className="grid flex-1 grid-cols-2 gap-2">
+              <div className="grid gap-2 md:flex md:items-start md:gap-3">
+                <Label className="text-sm font-semibold md:w-24 md:shrink-0 md:pt-3">입력 방식</Label>
+                <div className="grid w-full grid-cols-2 gap-2 md:flex-1">
                   <Button
                     variant={session.recordInputType === "end" ? "default" : "outline"}
                     className="h-11 rounded-2xl bg-blue-900 px-3 hover:bg-blue-800"
@@ -4773,7 +4835,7 @@ function SessionEditor({
 
               <div className="flex items-center gap-3">
                 <Label className="w-24 shrink-0 text-sm">학년</Label>
-                <Input className="h-11 flex-1" value={session.division || ""} disabled />
+                <Input className="h-11 w-full md:flex-1" value={session.division || ""} disabled />
               </div>
 
               {session.recordInputType === "end" ? (
@@ -4808,7 +4870,7 @@ function SessionEditor({
                 <div className="flex items-center gap-3">
                   <Label className="w-24 shrink-0 text-sm">거리당 화살 수</Label>
                   <Input
-                    className="h-11 flex-1"
+                    className="h-11 w-full md:flex-1"
                     type="number"
                     inputMode="numeric"
                     min={1}
@@ -10210,6 +10272,7 @@ function XSessionApp() {
                   saving={sessionSaving}
                   tempSaveMessage={tempSaveMessage}
                   editingSavedSession={Boolean(editingSessionId)}
+                  currentUser={currentUser}
                 />
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} routines={myRoutines} currentUser={currentUser} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
