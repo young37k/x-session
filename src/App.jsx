@@ -113,6 +113,133 @@ const DIVISION_OPTIONS = [
 ];
 const GENDER_OPTIONS = ["남", "여"];
 
+
+const ARCHERY_VENUES = [
+  { id: "yecheon_jinho", name: "예천진호국제양궁장", region: "경북 예천", latitude: 36.6579, longitude: 128.4524 },
+  { id: "jincheon_national", name: "진천 국가대표선수촌 양궁장", region: "충북 진천", latitude: 36.8676, longitude: 127.4349 },
+  { id: "gwangju_international", name: "광주국제양궁장", region: "광주", latitude: 35.1467, longitude: 126.8690 },
+  { id: "mokdong", name: "목동종합운동장 양궁장", region: "서울", latitude: 37.5305, longitude: 126.8817 },
+  { id: "anyang", name: "안양 양궁장", region: "경기 안양", latitude: 37.3943, longitude: 126.9568 },
+  { id: "default_school", name: "학교/훈련장 직접 지정", region: "직접 입력", latitude: null, longitude: null },
+];
+
+function toRadians(value) {
+  return (Number(value) * Math.PI) / 180;
+}
+
+function getDistanceKmBetweenCoords(a, b) {
+  if (!a || !b) return Number.POSITIVE_INFINITY;
+  const lat1 = Number(a.latitude);
+  const lon1 = Number(a.longitude);
+  const lat2 = Number(b.latitude);
+  const lon2 = Number(b.longitude);
+  if (![lat1, lon1, lat2, lon2].every(Number.isFinite)) return Number.POSITIVE_INFINITY;
+  const R = 6371;
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function getNearestArcheryVenues(coords, limitCount = 3) {
+  if (!coords) return ARCHERY_VENUES.filter((venue) => venue.latitude && venue.longitude).slice(0, limitCount);
+  return ARCHERY_VENUES
+    .filter((venue) => venue.latitude && venue.longitude)
+    .map((venue) => ({ ...venue, distanceKm: getDistanceKmBetweenCoords(coords, venue) }))
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .slice(0, limitCount);
+}
+
+function getWindLevelFromSpeed(speed) {
+  const value = Number(speed);
+  if (!Number.isFinite(value)) return "정보없음";
+  if (value < 1.5) return "없음";
+  if (value < 3.5) return "약함";
+  if (value < 6) return "중간";
+  return "강함";
+}
+
+function getWindDirectionLabel(degree) {
+  const value = Number(degree);
+  if (!Number.isFinite(value)) return "-";
+  const labels = ["북", "북동", "동", "남동", "남", "남서", "서", "북서"];
+  return labels[Math.round((((value % 360) + 360) % 360) / 45) % 8];
+}
+
+function getWeatherApiBaseUrl(dateText) {
+  const today = getCurrentLocalDateString();
+  const target = String(dateText || today).slice(0, 10);
+  return target < today ? "https://archive-api.open-meteo.com/v1/archive" : "https://api.open-meteo.com/v1/forecast";
+}
+
+async function fetchSessionWindWeather({ latitude, longitude, sessionDate }) {
+  const lat = Number(latitude);
+  const lon = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    throw new Error("위치 좌표가 없어 바람 정보를 조회할 수 없습니다.");
+  }
+  const date = String(sessionDate || getCurrentLocalDateString()).slice(0, 10);
+  const baseUrl = getWeatherApiBaseUrl(date);
+  const params = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    start_date: date,
+    end_date: date,
+    hourly: "wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m",
+    timezone: "Asia/Seoul",
+  });
+  const response = await fetch(`${baseUrl}?${params.toString()}`);
+  if (!response.ok) throw new Error("기상 데이터를 불러오지 못했습니다.");
+  const json = await response.json();
+  const hourly = json?.hourly || {};
+  const times = hourly.time || [];
+  if (!times.length) throw new Error("해당 날짜의 시간별 기상 데이터가 없습니다.");
+  const preferredHour = date === getCurrentLocalDateString() ? new Date().getHours() : 12;
+  let index = times.findIndex((time) => Number(String(time).slice(11, 13)) >= preferredHour);
+  if (index < 0) index = Math.floor(times.length / 2);
+  const windSpeed = Number(hourly.wind_speed_10m?.[index]);
+  const windDirection = Number(hourly.wind_direction_10m?.[index]);
+  const windGust = Number(hourly.wind_gusts_10m?.[index]);
+  const temperature = Number(hourly.temperature_2m?.[index]);
+  return {
+    source: "open-meteo",
+    fetchedAt: new Date().toISOString(),
+    observedTime: times[index],
+    latitude: lat,
+    longitude: lon,
+    windSpeed: Number.isFinite(windSpeed) ? windSpeed : null,
+    windDirection: Number.isFinite(windDirection) ? windDirection : null,
+    windDirectionLabel: getWindDirectionLabel(windDirection),
+    windGust: Number.isFinite(windGust) ? windGust : null,
+    temperature: Number.isFinite(temperature) ? temperature : null,
+    windLevel: getWindLevelFromSpeed(windSpeed),
+  };
+}
+
+function buildDefaultSessionWeather() {
+  const firstVenue = ARCHERY_VENUES[0];
+  return {
+    venueId: firstVenue.id,
+    venueName: firstVenue.name,
+    region: firstVenue.region,
+    latitude: firstVenue.latitude,
+    longitude: firstVenue.longitude,
+    athleteWindFeel: "",
+    auto: null,
+    manualNote: "",
+  };
+}
+
+function getEffectiveWindLevel(session) {
+  const weather = session?.weather || {};
+  const athleteWindFeel = String(weather.athleteWindFeel || "").trim();
+  if (athleteWindFeel) return athleteWindFeel;
+  const autoLevel = String(weather.auto?.windLevel || weather.windLevel || "").trim();
+  if (autoLevel) return autoLevel;
+  const autoSpeed = weather.auto?.windSpeed ?? weather.windSpeed;
+  return getWindLevelFromSpeed(autoSpeed);
+}
+
 function normalizeOfficialDivision(division) {
   if (division === "초등1" || division === "초등2" || division === "초등3" || division === "초등4") {
     return "초등부(저학년)";
@@ -855,6 +982,7 @@ function normalizeSessionShape(session, profile = null) {
     setPoints: safe.setPoints || { me: 0, opponent: 0 },
     ends,
     distanceRounds,
+    weather: safe.weather || buildDefaultSessionWeather(),
     isComplete: Boolean(safe.isComplete),
   };
 }
@@ -2593,6 +2721,7 @@ function buildSessionPayload({ draftSession, profile, uid }) {
           hitCount: end.arrows.filter((v) => v !== null && v !== undefined && v !== "").length,
         })),
     summary,
+    weather: draftSession.weather || buildDefaultSessionWeather(),
     status: "completed",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -2655,6 +2784,7 @@ function fromFirestoreSession(docSnap) {
     })),
     isComplete: data.status === "completed",
     summary: data.summary || null,
+    weather: data.weather || buildDefaultSessionWeather(),
   };
 }
 
@@ -3767,6 +3897,10 @@ function SessionEditor({
   const suppressAutoScrollRef = useRef(false);
   const [saveNotice, setSaveNotice] = useState("");
   const [isOnline, setIsOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
+  const [venueSuggesting, setVenueSuggesting] = useState(false);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
+  const [nearbyVenues, setNearbyVenues] = useState([]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -4214,6 +4348,78 @@ function SessionEditor({
     }
   }
 
+
+  function applyVenueToSession(venue) {
+    if (!venue) return;
+    patchSession((prev) => ({
+      ...prev,
+      weather: {
+        ...(prev.weather || buildDefaultSessionWeather()),
+        venueId: venue.id,
+        venueName: venue.name,
+        region: venue.region,
+        latitude: venue.latitude,
+        longitude: venue.longitude,
+        auto: null,
+      },
+    }));
+    setWeatherError("");
+  }
+
+  function recommendNearbyVenues() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setWeatherError("이 브라우저에서는 위치 기반 추천을 사용할 수 없습니다.");
+      return;
+    }
+    setVenueSuggesting(true);
+    setWeatherError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        const nearest = getNearestArcheryVenues(coords, 3);
+        setNearbyVenues(nearest);
+        if (nearest[0]) applyVenueToSession(nearest[0]);
+        setVenueSuggesting(false);
+      },
+      () => {
+        setWeatherError("위치 권한이 거부되어 기본 경기장 목록으로 선택하세요.");
+        setVenueSuggesting(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 1000 * 60 * 10 }
+    );
+  }
+
+  async function refreshAutoWeather() {
+    const weather = session.weather || buildDefaultSessionWeather();
+    if (!weather.latitude || !weather.longitude) {
+      setWeatherError("경기장 위치 좌표가 없어 바람 정보를 자동 조회할 수 없습니다.");
+      return;
+    }
+    setWeatherLoading(true);
+    setWeatherError("");
+    try {
+      const auto = await fetchSessionWindWeather({
+        latitude: weather.latitude,
+        longitude: weather.longitude,
+        sessionDate: session.sessionDate,
+      });
+      patchSession((prev) => ({
+        ...prev,
+        weather: {
+          ...(prev.weather || buildDefaultSessionWeather()),
+          auto,
+        },
+      }));
+    } catch (error) {
+      setWeatherError(error?.message || "바람 정보를 불러오지 못했습니다.");
+    } finally {
+      setWeatherLoading(false);
+    }
+  }
+
   function validateBeforeSave() {
     if (!session.sessionDate) return "날짜를 선택해야 한다.";
 
@@ -4420,8 +4626,83 @@ function SessionEditor({
                   className="h-11 flex-1"
                   type="date"
                   value={session.sessionDate}
-                  onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value }))}
+                  onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value, weather: { ...(prev.weather || buildDefaultSessionWeather()), auto: null } }))}
                 />
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Label className="w-24 shrink-0 pt-3 text-sm">장소/바람</Label>
+                <div className="flex-1 space-y-2 rounded-3xl border border-slate-200 bg-slate-50/70 p-3">
+                  <div className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
+                    <Select
+                      value={session.weather?.venueId || buildDefaultSessionWeather().venueId}
+                      onValueChange={(venueId) => {
+                        const venue = ARCHERY_VENUES.find((item) => item.id === venueId) || ARCHERY_VENUES[0];
+                        applyVenueToSession(venue);
+                      }}
+                    >
+                      <SelectTrigger className="h-11 bg-white">
+                        <SelectValue placeholder="경기장/훈련장 선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ARCHERY_VENUES.map((venue) => (
+                          <SelectItem key={venue.id} value={venue.id}>
+                            {venue.name} · {venue.region}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white" onClick={recommendNearbyVenues} disabled={venueSuggesting}>
+                      {venueSuggesting ? "추천 중..." : "내 주변 추천"}
+                    </Button>
+                    <Button type="button" className="h-11 rounded-2xl bg-blue-900 text-white hover:bg-blue-800" onClick={refreshAutoWeather} disabled={weatherLoading}>
+                      {weatherLoading ? "조회 중..." : "바람 자동조회"}
+                    </Button>
+                  </div>
+                  {nearbyVenues.length > 0 && (
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {nearbyVenues.map((venue) => (
+                        <button
+                          key={venue.id}
+                          type="button"
+                          className="rounded-full border border-blue-100 bg-white px-3 py-1 text-blue-800"
+                          onClick={() => applyVenueToSession(venue)}
+                        >
+                          {venue.name} {Number.isFinite(venue.distanceKm) ? `· ${venue.distanceKm.toFixed(1)}km` : ""}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="grid gap-2 md:grid-cols-[1fr_1fr]">
+                    <div className="rounded-2xl bg-white px-3 py-2 text-xs text-slate-700">
+                      <div className="font-bold text-slate-900">자동 기상 기준</div>
+                      {session.weather?.auto ? (
+                        <div>
+                          풍속 {session.weather.auto.windSpeed ?? "-"}m/s · {session.weather.auto.windDirectionLabel || "-"}풍 · 돌풍 {session.weather.auto.windGust ?? "-"}m/s · 기준 {session.weather.auto.observedTime || "-"}
+                        </div>
+                      ) : (
+                        <div>바람 자동조회를 누르면 장소/날짜 기준 기상 데이터가 저장됩니다.</div>
+                      )}
+                    </div>
+                    <div className="rounded-2xl bg-white px-3 py-2 text-xs text-slate-700">
+                      <div className="mb-1 font-bold text-slate-900">체감 바람 선택 · 선택사항</div>
+                      <div className="grid grid-cols-5 gap-1">
+                        {["", "없음", "약함", "중간", "강함"].map((label) => (
+                          <button
+                            key={label || "auto"}
+                            type="button"
+                            className={`rounded-xl px-2 py-1 ${String(session.weather?.athleteWindFeel || "") === label ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-700"}`}
+                            onClick={() => patchSession((prev) => ({ ...prev, weather: { ...(prev.weather || buildDefaultSessionWeather()), athleteWindFeel: label } }))}
+                          >
+                            {label || "자동"}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="mt-1 text-[11px] text-slate-500">체감 입력이 없으면 자동 기상 데이터 기준으로 분석합니다.</div>
+                    </div>
+                  </div>
+                  {weatherError && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">{weatherError}</div>}
+                </div>
               </div>
 
               <div className="flex items-start gap-3">
@@ -6560,11 +6841,16 @@ function getSessionConditionNumber(session, keys = []) {
 function buildWindMentalInsight(sessions = [], lateSetDropInsight = {}) {
   const completed = (sessions || []).filter((session) => session?.isComplete || session?.status === "completed");
   const windTagged = completed
-    .map((session) => ({
-      wind: getSessionConditionText(session, ["wind", "windLevel", "windStrength", "weatherWind", "바람"]),
-      avg: getSessionAverageForGrowth(session),
-    }))
-    .filter((item) => item.wind);
+    .map((session) => {
+      const manualWind = getSessionConditionText(session, ["wind", "windLevel", "windStrength", "weatherWind", "바람"]);
+      const effectiveWind = manualWind || getEffectiveWindLevel(session);
+      return {
+        wind: effectiveWind,
+        source: session?.weather?.athleteWindFeel ? "체감" : (session?.weather?.auto ? "기상" : "수동"),
+        avg: getSessionAverageForGrowth(session),
+      };
+    })
+    .filter((item) => item.wind && item.wind !== "정보없음");
 
   const calmScores = windTagged.filter((item) => /없|약|low|calm|1|2/i.test(item.wind)).map((item) => item.avg);
   const windScores = windTagged.filter((item) => /강|중|high|wind|3|4|5/i.test(item.wind)).map((item) => item.avg);
@@ -6588,7 +6874,7 @@ function buildWindMentalInsight(sessions = [], lateSetDropInsight = {}) {
 
   const windMessage = windGap !== null
     ? `바람이 약한 조건 평균은 ${calmAvg}점, 바람 영향 조건 평균은 ${windAvg}점으로 ${windGap > 0 ? `${windGap}점 하락` : `${Math.abs(windGap)}점 개선`} 흐름입니다.`
-    : "바람 조건 기록이 아직 부족합니다. 훈련 기록에 바람 강도(없음/약함/중간/강함)를 남기면 바람 대응력을 별도 분석할 수 있습니다.";
+    : "체감 바람 입력이 없어도 장소/날짜 기준 기상 데이터가 있으면 자동 바람 기준으로 분석합니다. 자동조회 기록이 부족하면 먼저 장소를 선택하고 바람 자동조회를 실행하세요.";
 
   const mentalMessage = lateRisk
     ? "후반 하락이 반복됩니다. 기술 문제로만 보면 안 됩니다. 경기 후반에는 조준이 아니라 루틴, 호흡, 판단 속도를 관리해야 합니다."
@@ -9414,6 +9700,7 @@ function XSessionApp() {
           distanceRounds: payload.distanceRounds,
           ends: payload.ends,
           summary: payload.summary,
+          weather: payload.weather,
           status: payload.status,
           updatedAt: serverTimestamp(),
         });
