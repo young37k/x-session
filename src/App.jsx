@@ -4682,20 +4682,20 @@ function SessionEditor({
             )}
 
             <div className="grid gap-3">
-              <div className="grid gap-2 md:flex md:items-center md:gap-3">
-                <Label className="text-sm font-semibold md:w-24 md:shrink-0">날짜</Label>
+              <div className="grid gap-2 xl:flex xl:items-center xl:gap-3">
+                <Label className="text-sm font-semibold xl:w-24 xl:shrink-0">날짜</Label>
                 <Input
-                  className="h-11 w-full md:flex-1"
+                  className="h-11 w-full xl:flex-1"
                   type="date"
                   value={session.sessionDate}
                   onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value, weather: { ...(prev.weather || buildDefaultSessionWeatherForUser(currentUser)), auto: null } }))}
                 />
               </div>
 
-              <div className="grid gap-2 md:flex md:items-start md:gap-3">
-                <Label className="text-sm font-semibold md:w-24 md:shrink-0 md:pt-3">장소/바람</Label>
-                <div className="w-full space-y-2 rounded-3xl border border-slate-200 bg-slate-50/70 p-3 md:flex-1">
-                  <div className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
+              <div className="grid gap-2 xl:flex xl:items-start xl:gap-3">
+                <Label className="text-sm font-semibold xl:w-24 xl:shrink-0 xl:pt-3">장소/바람</Label>
+                <div className="w-full space-y-2 rounded-3xl border border-slate-200 bg-slate-50/70 p-3 xl:flex-1">
+                  <div className="grid grid-cols-1 gap-2 xl:grid-cols-[1fr_auto_auto]">
                     <Select
                       value={session.weather?.venueId || buildDefaultSessionWeatherForUser(currentUser).venueId}
                       onValueChange={(venueId) => {
@@ -4735,7 +4735,7 @@ function SessionEditor({
                       ))}
                     </div>
                   )}
-                  <div className="grid gap-2 md:grid-cols-[1fr_1fr]">
+                  <div className="grid grid-cols-1 gap-2 xl:grid-cols-[1fr_1fr]">
                     <div className="rounded-2xl bg-white px-3 py-2 text-xs text-slate-700">
                       <div className="font-bold text-slate-900">자동 기상 기준</div>
                       {session.weather?.auto ? (
@@ -4767,9 +4767,9 @@ function SessionEditor({
                 </div>
               </div>
 
-              <div className="grid gap-2 md:flex md:items-start md:gap-3">
-                <Label className="text-sm font-semibold md:w-24 md:shrink-0 md:pt-3">입력 방식</Label>
-                <div className="grid w-full grid-cols-2 gap-2 md:flex-1">
+              <div className="grid gap-2 xl:flex xl:items-start xl:gap-3">
+                <Label className="text-sm font-semibold xl:w-24 xl:shrink-0 xl:pt-3">입력 방식</Label>
+                <div className="grid w-full grid-cols-2 gap-2 xl:flex-1">
                   <Button
                     variant={session.recordInputType === "end" ? "default" : "outline"}
                     className="h-11 rounded-2xl bg-blue-900 px-3 hover:bg-blue-800"
@@ -4835,7 +4835,7 @@ function SessionEditor({
 
               <div className="flex items-center gap-3">
                 <Label className="w-24 shrink-0 text-sm">학년</Label>
-                <Input className="h-11 w-full md:flex-1" value={session.division || ""} disabled />
+                <Input className="h-11 w-full xl:flex-1" value={session.division || ""} disabled />
               </div>
 
               {session.recordInputType === "end" ? (
@@ -4870,7 +4870,7 @@ function SessionEditor({
                 <div className="flex items-center gap-3">
                   <Label className="w-24 shrink-0 text-sm">거리당 화살 수</Label>
                   <Input
-                    className="h-11 w-full md:flex-1"
+                    className="h-11 w-full xl:flex-1"
                     type="number"
                     inputMode="numeric"
                     min={1}
@@ -7434,7 +7434,8 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
   }, []);
 
   const isMobileAnalysis = viewportWidth < 768;
-  const isTabletAnalysis = viewportWidth >= 768 && viewportWidth < 1024;
+  const isTabletAnalysis = viewportWidth >= 768 && viewportWidth < 1280;
+  const isDesktopAnalysis = viewportWidth >= 1280;
 
   const currentName = getDisplayName(currentUser);
   const currentDivision = formatProfileDivisionLabel(currentUser?.division || "");
