@@ -6856,6 +6856,132 @@ function buildLateSetDropInsight(sessions = []) {
   };
 }
 
+
+function buildLateCollapseDetail(sessions = []) {
+  const completed = (sessions || [])
+    .filter((session) => session?.isComplete && session.recordInputType !== "distance" && Array.isArray(session.ends) && session.ends.length >= 4);
+
+  const collapsePoints = [];
+  completed.forEach((session) => {
+    const endAvgs = (session.ends || []).map((end, idx) => {
+      const arrows = (end.arrows || []).filter((value) => value !== null && value !== undefined && String(value).trim() !== "");
+      return {
+        endNumber: idx + 1,
+        avg: arrows.length ? Number((endTotal(end) / arrows.length).toFixed(2)) : null,
+      };
+    }).filter((item) => item.avg !== null);
+
+    for (let i = 1; i < endAvgs.length; i += 1) {
+      const drop = Number((endAvgs[i].avg - endAvgs[i - 1].avg).toFixed(2));
+      if (drop <= -0.25) {
+        collapsePoints.push({ endNumber: endAvgs[i].endNumber, drop, date: session.sessionDate || session.updatedAt || "" });
+        break;
+      }
+    }
+  });
+
+  if (!collapsePoints.length) {
+    return {
+      ready: completed.length > 0,
+      endNumber: null,
+      label: "후반 붕괴 지점 미확인",
+      message: completed.length ? "엔드별 평균이 급격히 무너지는 구간은 아직 뚜렷하지 않습니다." : "엔드별 기록이 쌓이면 몇 엔드부터 흔들리는지 자동으로 찾습니다.",
+    };
+  }
+
+  const counts = collapsePoints.reduce((acc, item) => {
+    acc[item.endNumber] = (acc[item.endNumber] || 0) + 1;
+    return acc;
+  }, {});
+  const endNumber = Number(Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0]);
+  const endDrops = collapsePoints.filter((item) => item.endNumber === endNumber).map((item) => item.drop);
+  const avgDrop = Number(averageNumbers(endDrops).toFixed(2));
+
+  return {
+    ready: true,
+    endNumber,
+    avgDrop,
+    label: `${endNumber}엔드부터 흔들림`,
+    message: `최근 엔드별 기록에서 ${endNumber}엔드부터 평균 ${Math.abs(avgDrop)}점 하락 신호가 반복됩니다. 이 구간부터 호흡·손압·시선 루틴을 따로 체크해야 합니다.`,
+  };
+}
+
+function buildDistanceGameDeclineInsight(sessions = []) {
+  const rows = [];
+  (sessions || []).forEach((session) => {
+    if (!session?.isComplete || !Array.isArray(session.distanceRounds) || !session.distanceRounds.length) return;
+    (session.distanceRounds || []).forEach((round) => {
+      const distance = Number(round.distance);
+      const total = Number(round.total);
+      const arrows = Number(session.arrowsPerDistance || round.arrows || 36) || 36;
+      if (!distance || !Number.isFinite(total)) return;
+      rows.push({
+        distance,
+        date: session.sessionDate || session.updatedAt || "",
+        avg: Number((total / arrows).toFixed(2)),
+      });
+    });
+  });
+
+  const byDistance = new Map();
+  rows.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0)).forEach((row) => {
+    if (!byDistance.has(row.distance)) byDistance.set(row.distance, []);
+    byDistance.get(row.distance).push(row);
+  });
+
+  const declines = Array.from(byDistance.entries()).map(([distance, items]) => {
+    if (items.length < 2) return null;
+    const recent = items.slice(-3);
+    const previous = items.slice(-6, -3);
+    if (!previous.length) return null;
+    const recentAvg = Number(averageNumbers(recent.map((item) => item.avg)).toFixed(2));
+    const previousAvg = Number(averageNumbers(previous.map((item) => item.avg)).toFixed(2));
+    const delta = Number((recentAvg - previousAvg).toFixed(2));
+    return { distance, recentAvg, previousAvg, delta, count: items.length };
+  }).filter(Boolean).sort((a, b) => a.delta - b.delta);
+
+  if (!declines.length) {
+    return {
+      ready: false,
+      label: "거리별 경기 하락 데이터 필요",
+      message: "거리기반 기록이 같은 거리에서 최소 2~3회 이상 쌓이면 어느 경기·거리에서 하락했는지 분석합니다.",
+      items: [],
+    };
+  }
+
+  const worst = declines[0];
+  return {
+    ready: true,
+    label: `${worst.distance}m 최근 하락`,
+    message: `${worst.distance}m는 이전 구간 평균 ${worst.previousAvg}점에서 최근 ${worst.recentAvg}점으로 ${worst.delta}점 변화했습니다. 거리별 하락 구간을 경기 단위로 추적해야 합니다.`,
+    items: declines.slice(0, 4),
+  };
+}
+
+function buildTrainingChecklistItems(trainingPrescription = {}, lateCollapse = {}, distanceGameDecline = {}) {
+  const strength = (trainingPrescription.strengthItems || []).slice(0, 2).map((item, idx) => ({
+    id: `strength_${idx}_${item.part}`.replace(/\s+/g, "_"),
+    label: `${item.part} 운동 완료`,
+    detail: item.exercise,
+  }));
+  const cardio = (trainingPrescription.cardioItems || []).slice(0, 1).map((item, idx) => ({
+    id: `cardio_${idx}`,
+    label: "유산소 훈련 완료",
+    detail: item,
+  }));
+  const mental = (trainingPrescription.mentalItems || []).slice(0, 1).map((item, idx) => ({
+    id: `mental_${idx}`,
+    label: lateCollapse?.endNumber ? `${lateCollapse.endNumber}엔드 전 멘탈 루틴 체크` : "실수 후 멘탈 루틴 체크",
+    detail: item,
+  }));
+  const distance = distanceGameDecline?.ready ? [{
+    id: "distance_decline_focus",
+    label: `${distanceGameDecline.label} 보완 기록`,
+    detail: distanceGameDecline.message,
+  }] : [];
+  return [...strength, ...cardio, ...mental, ...distance].slice(0, 6);
+}
+
 function getDistanceWeaknessFromPerformance(distancePerformance = []) {
   const valid = distancePerformance.filter((item) => Number(item.avgArrow) > 0);
   if (!valid.length) return { label: "거리 데이터 필요", message: "거리별 기록이 쌓이면 가장 약한 거리를 자동으로 찾는다." };
@@ -7082,6 +7208,8 @@ function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance 
   const lateLabel = lateSetDropInsight?.label || "엔드별 기록 필요";
   const lateMessage = lateSetDropInsight?.message || "엔드별 기록이 쌓이면 후반 집중력 변화를 분석한다.";
   const windMental = buildWindMentalInsight(completed, lateSetDropInsight);
+  const lateCollapse = buildLateCollapseDetail(completed);
+  const distanceGameDecline = buildDistanceGameDeclineInsight(completed);
   const routineGuide = "루틴 완료율과 점수 상관관계는 루틴 저장 데이터가 누적되면 자동으로 연결된다.";
 
   const parentSummary = completed.length
@@ -7101,6 +7229,7 @@ function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance 
     lateSetDropInsight,
     windMental,
   });
+  const trainingChecklist = buildTrainingChecklistItems(trainingPrescription, lateCollapse, distanceGameDecline);
 
   return {
     ready: completed.length >= 1,
@@ -7124,7 +7253,10 @@ function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance 
     parentRecommendation,
     routineGuide,
     windMental,
+    lateCollapse,
+    distanceGameDecline,
     trainingPrescription,
+    trainingChecklist,
     generatedAt: formatDateOnly(getCurrentLocalDateString()),
   };
 }
@@ -7378,6 +7510,10 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
   const [activeAnalysisTab, setActiveAnalysisTab] = useState(savedAnalysisState.activeAnalysisTab || "summary");
   const [activeSideMenu, setActiveSideMenu] = useState(savedAnalysisState.activeSideMenu || "분석 리포트");
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [tabletFullView, setTabletFullView] = useState(() => {
+    try { return sessionStorage.getItem(`${analysisStateKey}_tablet_full_view`) === "true"; } catch { return false; }
+  });
+  const [trainingChecks, setTrainingChecks] = useState({});
   const summarySectionRef = useRef(null);
   const detailSectionRef = useRef(null);
   const compareSectionRef = useRef(null);
@@ -7395,6 +7531,10 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
       activeSideMenu,
     });
   }, [analysisStateKey, period, matchType, dateFilter, customAnalysisDate, requiredFilters, activeAnalysisTab, activeSideMenu]);
+
+  useEffect(() => {
+    try { sessionStorage.setItem(`${analysisStateKey}_tablet_full_view`, tabletFullView ? "true" : "false"); } catch {}
+  }, [analysisStateKey, tabletFullView]);
 
   const scrollToAnalysisSection = useCallback((tab) => {
     setActiveAnalysisTab(tab);
@@ -7488,6 +7628,25 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
     () => buildParentAnalysisDataFromSessions(filteredMine, distancePerformance, parentGrowthSummary, lateSetDropInsight),
     [filteredMine, distancePerformance, parentGrowthSummary, lateSetDropInsight]
   );
+
+  const trainingChecklistKey = `x_training_prescription_checks_${currentUser?.id || currentUser?.uid || currentUser?.email || "guest"}_${getCurrentLocalDateString()}`;
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(trainingChecklistKey);
+      setTrainingChecks(raw ? JSON.parse(raw) : {});
+    } catch {
+      setTrainingChecks({});
+    }
+  }, [trainingChecklistKey]);
+
+  const toggleTrainingCheck = useCallback((id) => {
+    setTrainingChecks((prev) => {
+      const next = { ...prev, [id]: !prev?.[id] };
+      try { localStorage.setItem(trainingChecklistKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [trainingChecklistKey]);
 
   const sessionAverages = useMemo(() => filteredMine
     .filter((session) => session?.isComplete)
@@ -7654,14 +7813,14 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
           <CardContent className="space-y-3 text-sm leading-6 text-slate-700">
             <div className="rounded-2xl bg-blue-50 p-4 text-blue-900">{mobileTrendLabel}</div>
             <div className="rounded-2xl bg-slate-50 p-4">{mobileFeedback}</div>
-            <div className="text-xs text-slate-500">모바일은 기록과 핵심 트렌드만 표시한다. 상세 분석은 PC/태블릿에서 확인한다.</div>
+            <div className="rounded-2xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">모바일은 기록 입력과 핵심 트렌드 확인용입니다. 후반 엔드 붕괴, 경기별 거리 하락, 부모용 PDF, 운동 처방 전체 분석은 PC/태블릿에서 확인하세요.</div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (isTabletAnalysis) {
+  if (isTabletAnalysis && !tabletFullView) {
     return (
       <div className="grid gap-4">
         <Card className="rounded-[28px] border-0 bg-white shadow-xl">
@@ -7671,7 +7830,10 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 <div className="text-2xl font-black text-slate-950">X-Analysis</div>
                 <div className="text-sm text-slate-500">태블릿용 2열 성장 분석 리포트</div>
               </div>
-              <Badge className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">개발 중 전체 공개</Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">개발 중 전체 공개</Badge>
+                <button type="button" onClick={() => setTabletFullView(true)} className="rounded-full bg-slate-900 px-4 py-2 text-xs font-black text-white shadow-sm active:scale-[0.98]">PC버전 전체보기</button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -7714,6 +7876,8 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                 <div className="mt-3 space-y-2 text-sm">
                   <div className="rounded-2xl bg-white p-3">{trend.label}</div>
                   <div className="rounded-2xl bg-white p-3">{lateSetDropInsight.message}</div>
+                  <div className="rounded-2xl bg-white p-3">{parentReportData.lateCollapse?.message}</div>
+                  <div className="rounded-2xl bg-white p-3">{parentReportData.distanceGameDecline?.message}</div>
                 </div>
               </section>
             </div>
@@ -7740,6 +7904,12 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
 
   return (
     <div className="grid gap-4">
+      {isTabletAnalysis && tabletFullView ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+          <div><b>태블릿 PC버전 전체보기 사용 중</b><br />화면은 작게 보일 수 있지만 모든 분석 기능을 확인할 수 있습니다.</div>
+          <button type="button" onClick={() => setTabletFullView(false)} className="rounded-full bg-white px-4 py-2 text-xs font-black text-blue-700 shadow-sm">태블릿 최적화로 돌아가기</button>
+        </div>
+      ) : null}
       <Card className="overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardContent className="p-0">
           <div className="grid min-h-[760px] grid-cols-1 bg-slate-100">
@@ -7926,6 +8096,11 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                       </div>
                     </div>
                     <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                      <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                        <div className="mb-1 font-black">경기별·엔드별 정밀 분석</div>
+                        <div>{parentReportData.lateCollapse?.message}</div>
+                        <div className="mt-2">{parentReportData.distanceGameDecline?.message}</div>
+                      </div>
                       <div className="rounded-3xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
                         <div className="mb-1 font-black">바람 대응 분석</div>
                         {parentReportData.windMental?.windMessage || "바람 강도 기록이 쌓이면 바람 조건별 점수 변화를 분석합니다."}
@@ -7968,6 +8143,23 @@ function AnalysisBoard({ currentUser, users, sessions, onNavigate }) {
                             </ul>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-black text-slate-950">선수 실행 체크</div>
+                        <div className="text-xs text-slate-500">최적 위치: 분석 리포트의 운동 처방 바로 아래. 선수는 오늘 수행 여부만 체크합니다.</div>
+                      </div>
+                      <div className="mt-3 grid gap-2 md:grid-cols-2">
+                        {(parentReportData.trainingChecklist || []).map((item) => (
+                          <label key={item.id} className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3 text-sm transition ${trainingChecks[item.id] ? "border-emerald-200 bg-emerald-50" : "border-slate-100 bg-slate-50"}`}>
+                            <input type="checkbox" checked={Boolean(trainingChecks[item.id])} onChange={() => toggleTrainingCheck(item.id)} className="mt-1 h-4 w-4 accent-emerald-600" />
+                            <span>
+                              <span className="block font-black text-slate-900">{item.label}</span>
+                              <span className="mt-1 block text-xs leading-5 text-slate-600">{item.detail}</span>
+                            </span>
+                          </label>
+                        ))}
                       </div>
                     </div>
                     <div className="mt-4 rounded-3xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-600">
