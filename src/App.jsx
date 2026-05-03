@@ -7520,9 +7520,27 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
   const trendSectionRef = useRef(null);
   const reportSectionRef = useRef(null);
   const prescriptionRoutineSyncedRef = useRef("");
+  const routineToastTimerRef = useRef(null);
   const [prescriptionRoutineStatus, setPrescriptionRoutineStatus] = useState("");
+  const [routineSyncToast, setRoutineSyncToast] = useState("");
   const todayKeyForPrescription = getCurrentLocalDateString();
   const prescriptionRoutineId = currentUser?.id ? makeRoutineDocId(currentUser.id, todayKeyForPrescription) : "";
+
+  const showRoutineSyncToast = useCallback((message) => {
+    if (!message) return;
+    setRoutineSyncToast(message);
+    if (routineToastTimerRef.current) {
+      clearTimeout(routineToastTimerRef.current);
+    }
+    routineToastTimerRef.current = setTimeout(() => {
+      setRoutineSyncToast("");
+      routineToastTimerRef.current = null;
+    }, 2600);
+  }, []);
+
+  useEffect(() => () => {
+    if (routineToastTimerRef.current) clearTimeout(routineToastTimerRef.current);
+  }, []);
 
   useEffect(() => {
     writeSessionStorageJSON(analysisStateKey, {
@@ -7688,10 +7706,21 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
     writeRoutineDailyState(currentUser.id, todayKeyForPrescription, normalizedStats.items);
     await onRoutineSaved?.(optimisticRoutine);
     if (options.showNotice !== false) {
-      setPrescriptionRoutineStatus(`루틴에 반영 완료 · 오늘 루틴 달성률 ${normalizedStats.completionRate}%`);
+      const hasExistingPrescription = Boolean((existingRoutine?.items || []).some((item) => String(item.id || "").startsWith("rx_")));
+      const actionMessage = options.noticeMessage
+        || (options.noticeType === "check"
+          ? "선수 실행 체크가 수정되었습니다."
+          : options.noticeType === "auto"
+            ? "분석 처방이 오늘 루틴에 자동 동기화되었습니다."
+            : hasExistingPrescription
+              ? "분석 처방 루틴이 수정되었습니다."
+              : "분석 처방이 오늘 루틴에 동기화되었습니다.");
+      const statusMessage = `${actionMessage} 오늘 루틴 달성률 ${normalizedStats.completionRate}%`;
+      setPrescriptionRoutineStatus(statusMessage);
+      showRoutineSyncToast(statusMessage);
     }
     return optimisticRoutine;
-  }, [appServices?.db, buildPrescriptionRoutineItems, currentUser?.id, onRoutineSaved, parentReportData?.trainingChecklist, prescriptionRoutineId, routines, todayKeyForPrescription, trainingChecks]);
+  }, [appServices?.db, buildPrescriptionRoutineItems, currentUser?.id, onRoutineSaved, parentReportData?.trainingChecklist, prescriptionRoutineId, routines, showRoutineSyncToast, todayKeyForPrescription, trainingChecks]);
 
   const trainingChecklistKey = `x_training_prescription_checks_${currentUser?.id || currentUser?.uid || currentUser?.email || "guest"}_${getCurrentLocalDateString()}`;
   const prescriptionRoutineCompletion = useMemo(() => {
@@ -7727,19 +7756,26 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
     const syncKey = `${currentUser.id}_${todayKeyForPrescription}_${checklist.map((item) => item.id).join("|")}`;
     if (prescriptionRoutineSyncedRef.current === syncKey) return;
     prescriptionRoutineSyncedRef.current = syncKey;
-    savePrescriptionRoutine(trainingChecks, { showNotice: false })
-      .then(() => setPrescriptionRoutineStatus("분석 처방이 오늘 루틴에 자동 추가됐다."))
-      .catch((error) => setPrescriptionRoutineStatus(String(error?.message || "처방 루틴 자동 추가 실패")));
-  }, [appServices?.db, currentUser?.id, parentReportData.trainingChecklist, savePrescriptionRoutine, todayKeyForPrescription, trainingChecks]);
+    savePrescriptionRoutine(trainingChecks, { noticeType: "auto" })
+      .catch((error) => {
+        const message = String(error?.message || "처방 루틴 자동 추가 실패");
+        setPrescriptionRoutineStatus(message);
+        showRoutineSyncToast(message);
+      });
+  }, [appServices?.db, currentUser?.id, parentReportData.trainingChecklist, savePrescriptionRoutine, showRoutineSyncToast, todayKeyForPrescription, trainingChecks]);
 
   const toggleTrainingCheck = useCallback((id) => {
     setTrainingChecks((prev) => {
       const next = { ...prev, [id]: !prev?.[id] };
       try { localStorage.setItem(trainingChecklistKey, JSON.stringify(next)); } catch {}
-      savePrescriptionRoutine(next).catch((error) => setPrescriptionRoutineStatus(String(error?.message || "루틴 체크 저장 실패")));
+      savePrescriptionRoutine(next, { noticeType: "check" }).catch((error) => {
+        const message = String(error?.message || "루틴 체크 저장 실패");
+        setPrescriptionRoutineStatus(message);
+        showRoutineSyncToast(message);
+      });
       return next;
     });
-  }, [savePrescriptionRoutine, trainingChecklistKey]);
+  }, [savePrescriptionRoutine, showRoutineSyncToast, trainingChecklistKey]);
 
   const sessionAverages = useMemo(() => filteredMine
     .filter((session) => session?.isComplete)
@@ -7997,6 +8033,14 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
 
   return (
     <div className="grid gap-4">
+      {routineSyncToast ? (
+        <div className="fixed bottom-6 left-1/2 z-[9999] w-[calc(100%-32px)] max-w-[440px] -translate-x-1/2 rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm font-bold text-emerald-800 shadow-2xl">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs">✓</span>
+            <span>{routineSyncToast}</span>
+          </div>
+        </div>
+      ) : null}
       {isTabletAnalysis && tabletFullView ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
           <div><b>태블릿 PC버전 전체보기 사용 중</b><br />화면은 작게 보일 수 있지만 모든 분석 기능을 확인할 수 있습니다.</div>
@@ -8246,7 +8290,7 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                         </div>
                         <div className="flex flex-col items-end gap-2 text-right">
                           <Badge className="bg-emerald-100 text-emerald-700">오늘 수행 {prescriptionRoutineCompletion.done}/{prescriptionRoutineCompletion.total || 0}</Badge>
-                          <Button type="button" size="sm" variant="outline" onClick={() => savePrescriptionRoutine(trainingChecks)}>루틴에 추가/동기화</Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => savePrescriptionRoutine(trainingChecks, { noticeType: "manual" })}>루틴에 추가/동기화</Button>
                         </div>
                       </div>
                       {prescriptionRoutineStatus ? <div className="mt-3 rounded-2xl bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">{prescriptionRoutineStatus}</div> : null}
