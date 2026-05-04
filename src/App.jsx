@@ -19678,6 +19678,24 @@ function getCanonicalSchoolName(value) {
   return direct || raw;
 }
 
+function normalizeSchoolSearchKey(value) {
+  return normalizeSchoolKey(getCanonicalSchoolName(value))
+    .replace(/초등학교/g, "초")
+    .replace(/중학교/g, "중")
+    .replace(/고등학교/g, "고")
+    .replace(/학교/g, "")
+    .replace(/\(동\)|\(클\)|\(리\)/g, "");
+}
+
+function schoolNameMatchesFilter(schoolName, filterValue) {
+  if (!filterValue || filterValue === "all") return true;
+  const schoolKey = normalizeSchoolSearchKey(schoolName);
+  const filterKey = normalizeSchoolSearchKey(filterValue);
+  if (!filterKey) return true;
+  if (!schoolKey) return false;
+  return schoolKey === filterKey || schoolKey.includes(filterKey) || filterKey.includes(schoolKey);
+}
+
 function withCanonicalSchool(row = {}) {
   const school = getCanonicalSchoolName(row.school || row.groupName || row.clubName || "");
   return {
@@ -20170,7 +20188,7 @@ function rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilter
   if (rankingGroup && rankingGroup !== "all" && !rankingGroupMatchesFilter(rankingGroup, entry.rankingGroup)) return false;
   if (gender && gender !== "all" && String(entry.gender || "") !== String(gender)) return false;
   if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all" && String(entry.regionCity || "") !== String(rankingFilters.regionCity)) return false;
-  if (rankingFilters?.groupName && rankingFilters.groupName !== "all" && getCanonicalSchoolName(entry.groupName || "") !== getCanonicalSchoolName(rankingFilters.groupName)) return false;
+  if (rankingFilters?.groupName && rankingFilters.groupName !== "all" && !schoolNameMatchesFilter(entry.groupName || entry.schoolName || entry.school || "", rankingFilters.groupName)) return false;
   if (Array.isArray(distances) && distances.length && !distances.includes(Number(entry.distance))) return false;
   if (!isWithinDateFilter(entry.sessionDate || entry.date, dateFilter, customDate)) return false;
   return true;
@@ -20201,7 +20219,8 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
   if (rankingGroup && rankingGroup !== "all") baseConstraints.push(where("rankingGroup", "==", rankingGroup));
   if (gender && gender !== "all") baseConstraints.push(where("gender", "==", gender));
   if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all") baseConstraints.push(where("regionCity", "==", rankingFilters.regionCity));
-  if (rankingFilters?.groupName && rankingFilters.groupName !== "all") baseConstraints.push(where("groupName", "==", getCanonicalSchoolName(rankingFilters.groupName)));
+  // 학교/소속은 대회 자료마다 축약 표기가 달라질 수 있어 서버 where 대신 클라이언트 정규화 필터로 처리한다.
+  // 예: 안양서초, 안양서초등학교, 하남천현초/천현초 등.
 
   try {
     const distanceQueries = (distances.length ? distances : [null]).map((distance) => {
@@ -23874,6 +23893,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const [hideOfficialRecords, setHideOfficialRecords] = useState(false);
   const [schoolSearchInput, setSchoolSearchInput] = useState("");
   const [showAllRankings, setShowAllRankings] = useState(false);
+  const [officialResultsOpen, setOfficialResultsOpen] = useState(false);
   const [remoteRankingEntries, setRemoteRankingEntries] = useState([]);
   const [remoteRankingLoading, setRemoteRankingLoading] = useState(false);
   const [remoteRankingNotice, setRemoteRankingNotice] = useState("");
@@ -24572,38 +24592,54 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             )}
           </div>
 
-          <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
-            <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
-              <Archive className="h-4 w-4" /> 공식 결과 목록
+          <div
+            className="mt-6 rounded-3xl border border-slate-200 bg-slate-50/70 p-4 md:p-5"
+            onDoubleClick={() => setOfficialResultsOpen((prev) => !prev)}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
+                <Archive className="h-4 w-4" /> 공식 결과 목록
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-8 rounded-xl px-3 text-xs"
+                onClick={() => setOfficialResultsOpen((prev) => !prev)}
+              >
+                {officialResultsOpen ? "접기" : "열기"}
+              </Button>
             </div>
-            <div className="mt-2 text-xs leading-relaxed text-slate-500">
-              리커브 공식 결과 원본 등록 현황이다. 2026-03-22와 2026-04-12 데이터를 포함하며, 사용자 기록 랭킹과 분리된 참고 목록으로 관리된다.
+            <div className="mt-2 rounded-2xl bg-white px-4 py-3 text-xs leading-relaxed text-slate-600">
+              공식 결과 목록은 대회가 누적되면 길어지므로 기본 접힘 상태로 관리합니다.
+              <b className="mx-1 text-slate-900">더블 클릭</b>하거나 오른쪽 버튼을 눌러 열고 닫을 수 있습니다.
             </div>
 
-            <div className="mt-4 grid gap-3">
-              {officialResultSources.length === 0 ? (
-                <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">
-                  현재 선택한 조건에 맞는 공식 결과 목록이 없다.
-                </div>
-              ) : (
-                officialResultSources.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge className="rounded-full bg-slate-900 text-white">{item.bowType}</Badge>
-                      <Badge variant="outline" className="rounded-full">{item.region}</Badge>
-                      <Badge variant="outline" className="rounded-full">{item.gender}</Badge>
-                      <Badge variant="outline" className="rounded-full">{item.rankingGroup}</Badge>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-700">
-                      <span className="font-medium">{formatCompactDate(item.date)}</span>
-                      <span>원본유형 {item.sourceType}</span>
-                      <span>상태 {item.status}</span>
-                    </div>
-                    <div className="mt-2 text-sm leading-relaxed text-slate-600">{item.notes}</div>
+            {officialResultsOpen ? (
+              <div className="mt-4 grid gap-3">
+                {officialResultSources.length === 0 ? (
+                  <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">
+                    현재 선택한 조건에 맞는 공식 결과 목록이 없다.
                   </div>
-                ))
-              )}
-            </div>
+                ) : (
+                  officialResultSources.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className="rounded-full bg-slate-900 text-white">{item.bowType}</Badge>
+                        <Badge variant="outline" className="rounded-full">{item.region}</Badge>
+                        <Badge variant="outline" className="rounded-full">{item.gender}</Badge>
+                        <Badge variant="outline" className="rounded-full">{item.rankingGroup}</Badge>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-700">
+                        <span className="font-medium">{formatCompactDate(item.date)}</span>
+                        <span>원본유형 {item.sourceType}</span>
+                        <span>상태 {item.status}</span>
+                      </div>
+                      <div className="mt-2 text-sm leading-relaxed text-slate-600">{item.notes}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>
