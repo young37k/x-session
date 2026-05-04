@@ -216,6 +216,34 @@ async function fetchSessionWindWeather({ latitude, longitude, sessionDate }) {
   };
 }
 
+
+
+function notifyGlobalLoading(active, message = "로딩중........") {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("xsession-global-loading", { detail: { active: Boolean(active), message } }));
+}
+
+function useGlobalLoadingBridge(active, message = "로딩중........") {
+  useEffect(() => {
+    if (!active) return undefined;
+    notifyGlobalLoading(true, message);
+    return () => notifyGlobalLoading(false, message);
+  }, [active, message]);
+}
+
+function GlobalLoadingOverlay({ active, message = "로딩중........" }) {
+  if (!active) return null;
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/35 backdrop-blur-[2px]" role="status" aria-live="polite" aria-label={message}>
+      <div className="flex min-w-[220px] flex-col items-center gap-3 rounded-[28px] bg-white px-8 py-7 text-center shadow-2xl ring-1 ring-slate-200">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-700" />
+        <div className="text-lg font-extrabold text-slate-950">{message}</div>
+        <div className="text-xs text-slate-500">자료를 불러오거나 저장하는 중입니다. 완료될 때까지 잠시 기다려주세요.</div>
+      </div>
+    </div>
+  );
+}
+
 function buildDefaultSessionWeather() {
   const firstVenue = ARCHERY_VENUES[0];
   return {
@@ -21766,6 +21794,7 @@ function SessionEditor({
   const [isOnline, setIsOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
   const [venueSuggesting, setVenueSuggesting] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState(false);
+  useGlobalLoadingBridge(weatherLoading, "바람 정보를 불러오는 중........");
   const [weatherError, setWeatherError] = useState("");
   const [nearbyVenues, setNearbyVenues] = useState([]);
   const userSchoolVenue = useMemo(() => getUserSchoolVenue(currentUser), [currentUser]);
@@ -23272,6 +23301,7 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
   });
   const [newItemLabel, setNewItemLabel] = useState("");
   const [saving, setSaving] = useState(false);
+  useGlobalLoadingBridge(saving, "루틴을 저장하는 중........");
   const [notice, setNotice] = useState(savedTodayRoutine ? "오늘 저장된 루틴을 불러왔다. 필요하면 체크 상태를 수정한 뒤 다시 저장하면 된다." : "");
 
   useEffect(() => {
@@ -23905,6 +23935,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const [officialResultsOpen, setOfficialResultsOpen] = useState(false);
   const [remoteRankingEntries, setRemoteRankingEntries] = useState([]);
   const [remoteRankingLoading, setRemoteRankingLoading] = useState(false);
+  useGlobalLoadingBridge(remoteRankingLoading, "랭킹 자료를 불러오는 중........");
   const [remoteRankingNotice, setRemoteRankingNotice] = useState("");
   const initialRankingAppliedRef = useRef(false);
 
@@ -26541,6 +26572,7 @@ function XStagePage({ appServices, stageRefreshKey = 0, briefRefreshKey = 0 }) {
   const [news, setNews] = useState([]);
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
+  useGlobalLoadingBridge(loading, "X-Stage 자료를 불러오는 중........");
 
   useEffect(() => {
     let alive = true;
@@ -26660,6 +26692,7 @@ function XStagePage({ appServices, stageRefreshKey = 0, briefRefreshKey = 0 }) {
 function XBriefPage({ appServices, briefRefreshKey = 0 }) {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
+  useGlobalLoadingBridge(loading, "X-Brief 자료를 불러오는 중........");
 
   useEffect(() => {
     let alive = true;
@@ -26752,6 +26785,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
   const [rankingUploadMessage, setRankingUploadMessage] = useState("");
   const [rankingMigrationLoading, setRankingMigrationLoading] = useState(false);
   const [rankingMigrationMessage, setRankingMigrationMessage] = useState("");
+  useGlobalLoadingBridge(adminPublishedLoading || rankingUploadLoading || rankingMigrationLoading || Boolean(deletingPublishedId), "관리자 자료를 처리하는 중........");
 
   useEffect(() => {
     try {
@@ -27658,9 +27692,22 @@ function XSessionApp() {
   const [officialClaims, setOfficialClaims] = useState(() => readOfficialClaimsFromStorage());
   const [reviewedUserIds, setReviewedUserIds] = useState(() => getStoredReviewedUserIds());
   const pendingProfileRef = useRef(null);
+  const [globalLoadingCount, setGlobalLoadingCount] = useState(0);
+  const [globalLoadingMessage, setGlobalLoadingMessage] = useState("로딩중........");
 
 
   const authTimeoutRef = useRef(null);
+
+
+  useEffect(() => {
+    function handleGlobalLoading(event) {
+      const detail = event.detail || {};
+      setGlobalLoadingCount((prev) => Math.max(0, prev + (detail.active ? 1 : -1)));
+      if (detail.active && detail.message) setGlobalLoadingMessage(detail.message);
+    }
+    window.addEventListener("xsession-global-loading", handleGlobalLoading);
+    return () => window.removeEventListener("xsession-global-loading", handleGlobalLoading);
+  }, []);
 
   useEffect(() => {
     writeOfficialClaimsToStorage(officialClaims);
@@ -28615,9 +28662,12 @@ function XSessionApp() {
   // does not remain at 1 after all new signups have been reviewed.
   const adminAlertCount = unreviewedUserCount;
   const adminEmailGuard = isAdminEmail;
+  const rootOperationLoading = globalLoadingCount > 0 || Boolean(authLoading) || Boolean(sessionsLoading) || Boolean(sessionSaving) || Boolean(profileSaving);
+  const rootOperationMessage = globalLoadingMessage || (sessionSaving ? "세션을 저장하는 중........" : profileSaving ? "프로필을 저장하는 중........" : sessionsLoading ? "자료를 불러오는 중........" : authLoading ? "인증 상태 확인 중........" : "로딩중........");
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+      <GlobalLoadingOverlay active={rootOperationLoading} message={rootOperationMessage} />
       {currentUser ? <DesktopAppSidebar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} /> : null}
       <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6 lg:pl-[220px] xl:pl-[240px]" : "gap-0"}`}>
         {currentUser ? <div className="lg:hidden"><Hero activeTab={ui.activeTab} /></div> : null}
