@@ -2472,13 +2472,27 @@ function rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilter
   return true;
 }
 
-async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, currentUser, currentUserId }) {
+async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, currentUser, currentUserId, fullLoad = false }) {
   if (!db) return [];
   const { rankingGroup, gender } = getRankingQueryTarget(rankingFilters, currentUser);
   const distances = getRankingQueryDistances(rankingType, rankingFilters, rankingGroup);
   const dateFilter = rankingFilters?.dateFilter || "all";
   const customDate = rankingFilters?.customDate || "";
   const baseConstraints = [];
+
+  // 검색 버튼을 누른 경우에는 조건 전체를 기준으로 넓게 불러온 뒤 앱 내부에서 최종 필터링한다.
+  // 초기 화면은 가볍게 유지하고, 사용자가 명시적으로 검색할 때만 대량 공식기록을 읽는다.
+  if (fullLoad) {
+    const snap = await getDocs(query(collection(db, "ranking_entries"), limit(5000)));
+    return (snap.docs || [])
+      .map((docSnap) => normalizeRankingEntryData(docSnap.id, docSnap.data()))
+      .filter((entry) => rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }))
+      .sort((a, b) => {
+        const scoreDiff = (Number(b.score) || 0) - (Number(a.score) || 0);
+        if (scoreDiff !== 0) return scoreDiff;
+        return String(b.sessionDate || b.date || "").localeCompare(String(a.sessionDate || a.date || ""));
+      });
+  }
 
   if (rankingGroup && rankingGroup !== "all") baseConstraints.push(where("rankingGroup", "==", rankingGroup));
   if (gender && gender !== "all") baseConstraints.push(where("gender", "==", gender));
@@ -6109,6 +6123,16 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     dateFilter: "all",
     customDate: getCurrentLocalDateString(),
   });
+  const [appliedRankingFilters, setAppliedRankingFilters] = useState({
+    distance: "all",
+    rankingGroup: initialRankingGroup,
+    groupName: "all",
+    regionCity: "all",
+    gender: initialGender,
+    dateFilter: "all",
+    customDate: getCurrentLocalDateString(),
+  });
+  const [rankingSearchMode, setRankingSearchMode] = useState(false);
   const [hideOfficialRecords, setHideOfficialRecords] = useState(false);
   const [schoolSearchInput, setSchoolSearchInput] = useState("");
   const [showAllRankings, setShowAllRankings] = useState(false);
@@ -6122,12 +6146,14 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     initialRankingAppliedRef.current = true;
     const nextRankingGroup = getRankingGroup(currentUser.division || "", currentUser.gender || "남") || "all";
     setRankingType("total");
-    setRankingFilters((prev) => ({
-      ...prev,
+    const nextFilters = {
       distance: "all",
       rankingGroup: nextRankingGroup,
       gender: currentUser.gender || "all",
-    }));
+    };
+    setRankingFilters((prev) => ({ ...prev, ...nextFilters }));
+    setAppliedRankingFilters((prev) => ({ ...prev, ...nextFilters }));
+    setRankingSearchMode(false);
   }, [currentUser?.id, currentUser?.division, currentUser?.gender]);
 
   useEffect(() => {
@@ -6138,11 +6164,21 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     }
     let cancelled = false;
     setRemoteRankingLoading(true);
-    fetchRankingEntriesForView(appServices.db, { rankingType, rankingFilters, currentUser, currentUserId })
+    fetchRankingEntriesForView(appServices.db, {
+      rankingType,
+      rankingFilters: appliedRankingFilters,
+      currentUser,
+      currentUserId,
+      fullLoad: rankingSearchMode,
+    })
       .then((entries) => {
         if (cancelled) return;
         setRemoteRankingEntries(entries);
-        setRemoteRankingNotice(entries.length ? "공식 대회 기록은 Firestore ranking_entries에서 조건별로 불러옵니다." : "조건에 맞는 Firestore 공식기록이 없으면 개발용 샘플만 표시됩니다.");
+        if (rankingSearchMode) {
+          setRemoteRankingNotice(entries.length ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다.` : "검색 조건에 맞는 Firestore 공식기록이 없습니다.");
+        } else {
+          setRemoteRankingNotice(entries.length ? "첫 화면은 내 프로필 기준 공식기록 일부만 가볍게 불러옵니다. 조건 변경 후 검색을 누르면 전체 조건 데이터를 조회합니다." : "조건에 맞는 Firestore 공식기록이 없으면 개발용 샘플만 표시됩니다.");
+        }
       })
       .catch((error) => {
         if (cancelled) return;
@@ -6154,7 +6190,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         if (!cancelled) setRemoteRankingLoading(false);
       });
     return () => { cancelled = true; };
-  }, [appServices?.db, hideOfficialRecords, rankingType, rankingFilters, currentUser?.id, currentUser?.division, currentUser?.gender, currentUserId]);
+  }, [appServices?.db, hideOfficialRecords, rankingType, appliedRankingFilters, rankingSearchMode, currentUser?.id, currentUser?.division, currentUser?.gender, currentUserId]);
 
   const remoteUsers = useMemo(() => buildUsersFromRankingEntries(remoteRankingEntries), [remoteRankingEntries]);
   const remoteSessions = useMemo(() => buildSessionsFromRankingEntries(remoteRankingEntries), [remoteRankingEntries]);
@@ -6235,40 +6271,40 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [officialClaims, currentUserId]);
 
   const distanceRankings = useMemo(() => {
-    const items = buildDistanceRankings(effectiveRankingUsers, rankingSessions, rankingFilters, { weekly: false });
+    const items = buildDistanceRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly: false });
     items.sort((a, b) => {
       if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [effectiveRankingUsers, rankingSessions, rankingFilters]);
+  }, [effectiveRankingUsers, rankingSessions, appliedRankingFilters]);
 
   const totalRankings = useMemo(() => {
-    const items = buildTotalRankings(effectiveRankingUsers, rankingSessions, rankingFilters, { weekly: false });
+    const items = buildTotalRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly: false });
     items.sort((a, b) => {
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [effectiveRankingUsers, rankingSessions, rankingFilters]);
+  }, [effectiveRankingUsers, rankingSessions, appliedRankingFilters]);
 
   const weeklyDistanceRankings = useMemo(() => {
-    const items = buildDistanceRankings(effectiveRankingUsers, rankingSessions, rankingFilters, { weekly: true });
+    const items = buildDistanceRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly: true });
     items.sort((a, b) => {
       if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [effectiveRankingUsers, rankingSessions, rankingFilters]);
+  }, [effectiveRankingUsers, rankingSessions, appliedRankingFilters]);
 
   const weeklyTotalRankings = useMemo(() => {
-    const items = buildTotalRankings(effectiveRankingUsers, rankingSessions, rankingFilters, { weekly: true });
+    const items = buildTotalRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly: true });
     items.sort((a, b) => {
       if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [effectiveRankingUsers, rankingSessions, rankingFilters]);
+  }, [effectiveRankingUsers, rankingSessions, appliedRankingFilters]);
 
   const activeRankings =
     rankingType === "distance"
@@ -6296,9 +6332,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         effectiveRankingUsers,
         rankingSessions,
         {
-          ...rankingFilters,
+          ...appliedRankingFilters,
           distance: String(distance),
-          rankingGroup: myRankingGroup || rankingFilters.rankingGroup || "all",
+          rankingGroup: myRankingGroup || appliedRankingFilters.rankingGroup || "all",
         },
         { weekly }
       );
@@ -6316,7 +6352,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         qualifiedSessions: mine?.qualifiedSessions || 0,
       };
     });
-  }, [currentUserId, myRequiredDistances, rankingType, effectiveRankingUsers, rankingSessions, rankingFilters, myRankingGroup]);
+  }, [currentUserId, myRequiredDistances, rankingType, effectiveRankingUsers, rankingSessions, appliedRankingFilters, myRankingGroup]);
 
   const rankingGuide =
     rankingType === "distance"
@@ -6340,14 +6376,38 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const officialResultSources = useMemo(() => {
     if (hideOfficialRecords) return [];
     return OFFICIAL_RESULT_SOURCES.filter((item) => {
-      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, item.rankingGroup)) return false;
-      if (rankingFilters.regionCity !== "all" && item.region !== rankingFilters.regionCity) return false;
-      if (rankingFilters.gender !== "all" && item.gender !== rankingFilters.gender) return false;
-      if (!isWithinDateFilter(item.date, rankingFilters.dateFilter || "all", rankingFilters.customDate)) return false;
-      if (rankingFilters.groupName && rankingFilters.groupName !== "all") return false;
+      if (!rankingGroupMatchesFilter(appliedRankingFilters.rankingGroup, item.rankingGroup)) return false;
+      if (appliedRankingFilters.regionCity !== "all" && item.region !== appliedRankingFilters.regionCity) return false;
+      if (appliedRankingFilters.gender !== "all" && item.gender !== appliedRankingFilters.gender) return false;
+      if (!isWithinDateFilter(item.date, appliedRankingFilters.dateFilter || "all", appliedRankingFilters.customDate)) return false;
+      if (appliedRankingFilters.groupName && appliedRankingFilters.groupName !== "all") return false;
       return true;
     }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
-  }, [rankingFilters, hideOfficialRecords]);
+  }, [appliedRankingFilters, hideOfficialRecords]);
+
+  const runRankingSearch = useCallback(() => {
+    setAppliedRankingFilters({ ...rankingFilters });
+    setRankingSearchMode(true);
+    setShowAllRankings(true);
+    setRemoteRankingNotice("검색 조건 기준으로 Firestore 공식기록을 불러오는 중입니다.");
+  }, [rankingFilters]);
+
+  const resetToProfileRanking = useCallback(() => {
+    const nextRankingGroup = getRankingGroup(currentUser?.division || "", currentUser?.gender || "남") || "all";
+    const nextFilters = {
+      distance: "all",
+      rankingGroup: nextRankingGroup,
+      groupName: "all",
+      regionCity: "all",
+      gender: currentUser?.gender || "all",
+      dateFilter: "all",
+      customDate: getCurrentLocalDateString(),
+    };
+    setRankingFilters(nextFilters);
+    setAppliedRankingFilters(nextFilters);
+    setRankingSearchMode(false);
+    setShowAllRankings(false);
+  }, [currentUser?.division, currentUser?.gender]);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[0.72fr_1.28fr]">
@@ -6456,7 +6516,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             </label>
             {!hideOfficialRecords && (
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                {remoteRankingLoading ? "Firestore 랭킹 불러오는 중" : `Firestore ${remoteRankingEntries.length}건`}
+                {remoteRankingLoading ? "Firestore 랭킹 불러오는 중" : rankingSearchMode ? `검색결과 ${remoteRankingEntries.length.toLocaleString()}건` : `Firestore ${remoteRankingEntries.length}건`}
               </span>
             )}
           </CardTitle>
@@ -6627,6 +6687,31 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                 <option value="남">남</option>
                 <option value="여">여</option>
               </select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-2">
+              <Label className="w-16 shrink-0 text-sm">검색</Label>
+              <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
+                <div className="rounded-xl bg-blue-50 px-3 py-2 text-[11px] leading-relaxed text-blue-900">
+                  조건을 바꾼 뒤 <b>검색</b>을 눌러야 Firestore 공식 결과를 전체 조건 기준으로 불러옵니다. 첫 화면은 내 프로필 기준 일부만 가볍게 표시합니다.
+                </div>
+                <Button
+                  type="button"
+                  className="h-10 rounded-xl px-5 text-sm font-bold"
+                  onClick={runRankingSearch}
+                  disabled={remoteRankingLoading}
+                >
+                  {remoteRankingLoading ? "검색 중" : "검색"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 rounded-xl px-4 text-xs"
+                  onClick={resetToProfileRanking}
+                >
+                  내 기준 초기화
+                </Button>
+              </div>
             </div>
           </div>
 
