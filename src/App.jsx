@@ -995,11 +995,10 @@ function rankingGroupMatchesFilter(selectedGroup, actualGroup) {
 }
 
 function schoolFilterMatches(selectedGroupName, actualGroupName) {
-  if (!selectedGroupName || selectedGroupName === "all") return true;
-  const selected = String(selectedGroupName).trim();
-  if (!selected) return true;
-  const actual = String(actualGroupName || "").trim();
-  return actual === selected;
+  // 학교/소속 필터는 Firestore where 정확일치로 처리하지 않는다.
+  // 대회 PDF/사용자 프로필의 표기가 "안양서초", "안양서초등학교", "하남천현초", "천현초"처럼
+  // 달라질 수 있으므로 앱 내부 정규화/부분매칭으로 처리한다.
+  return schoolNameMatchesFilter(actualGroupName, selectedGroupName);
 }
 
 
@@ -19664,10 +19663,16 @@ const SAMPLE_SHEETS = [
 const SCHOOL_NAME_ALIASES = {
   "천현초": "하남천현초등학교",
   "천현초등학교": "하남천현초등학교",
+  "하남천현초": "하남천현초등학교",
+  "안양서초": "안양서초등학교",
+  "안양서초교": "안양서초등학교",
 };
 
 function normalizeSchoolKey(value) {
-  return String(value || "").replace(/\s+/g, "").trim();
+  return String(value || "")
+    .replace(/\s+/g, "")
+    .replace(/[·ㆍ.]/g, "")
+    .trim();
 }
 
 function getCanonicalSchoolName(value) {
@@ -19679,12 +19684,16 @@ function getCanonicalSchoolName(value) {
 }
 
 function normalizeSchoolSearchKey(value) {
-  return normalizeSchoolKey(getCanonicalSchoolName(value))
+  const canonical = getCanonicalSchoolName(value);
+  return normalizeSchoolKey(canonical)
     .replace(/초등학교/g, "초")
     .replace(/중학교/g, "중")
     .replace(/고등학교/g, "고")
+    .replace(/대학교/g, "대")
     .replace(/학교/g, "")
-    .replace(/\(동\)|\(클\)|\(리\)/g, "");
+    .replace(/양궁스포츠클럽/g, "양궁클럽")
+    .replace(/\(동\)|\(클\)|\(리\)/g, "")
+    .toLowerCase();
 }
 
 function schoolNameMatchesFilter(schoolName, filterValue) {
@@ -23933,7 +23942,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         if (cancelled) return;
         setRemoteRankingEntries(entries);
         if (rankingSearchMode) {
-          setRemoteRankingNotice(entries.length ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다. 전체 조건이면 전체 업로드 데이터를 기준으로 표시합니다.` : "검색 조건에 맞는 Firestore 공식기록이 없습니다. Firestore ranking_entries 업로드 수와 필터 조건을 확인하세요.");
+          setRemoteRankingNotice(entries.length ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다. 학교/소속은 표기 차이를 정규화해 앱 내부에서 필터링합니다.` : "검색 조건에 맞는 Firestore 공식기록이 없습니다. 사용자 기록은 별도로 함께 표시되며, 공식기록은 ranking_entries 업로드 수와 필터 조건을 확인하세요.");
         } else {
           setRemoteRankingNotice(entries.length ? "첫 화면은 내 프로필 기준 공식기록 일부만 가볍게 불러옵니다. 조건 변경 후 검색을 누르면 전체 조건 데이터를 조회합니다." : "조건에 맞는 Firestore 공식기록이 없으면 개발용 샘플만 표시됩니다.");
         }
