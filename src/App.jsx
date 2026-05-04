@@ -91,17762 +91,6 @@ import {
   writeBatch,
   limit,
 } from "firebase/firestore";
-const OFFICIAL_COMPETITION_SHEETS = [
-  {
-    "id": "full_jongbyeol_elem_lower_boys_2026",
-    "sheetLabel": "종별대회 남자 초등 U-10 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "초등부(저학년)",
-    "division": "초등부(저학년)",
-    "gender": "남",
-    "distances": [
-      35,
-      30,
-      25,
-      20
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "13D",
-        "name": "김영재",
-        "school": "연무초등학교",
-        "rounds": [
-          310,
-          339,
-          338,
-          350
-        ],
-        "total": 1337,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "29D",
-        "name": "변지성",
-        "school": "인천부평서초등학교",
-        "rounds": [
-          317,
-          321,
-          344,
-          354
-        ],
-        "total": 1336,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "51C",
-        "name": "김여울",
-        "school": "용성초등학교",
-        "rounds": [
-          326,
-          327,
-          335,
-          347
-        ],
-        "total": 1335,
-        "sourceRank": 3
-      },
-      {
-        "rank": 4,
-        "target": "64A",
-        "name": "김승호",
-        "school": "대전가장초등학교",
-        "rounds": [
-          321,
-          315,
-          340,
-          347
-        ],
-        "total": 1323,
-        "sourceRank": 4
-      },
-      {
-        "rank": 5,
-        "target": "39A",
-        "name": "곽상우",
-        "school": "이원초등학교",
-        "rounds": [
-          309,
-          315,
-          335,
-          346
-        ],
-        "total": 1305,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "31B",
-        "name": "김태양",
-        "school": "봉원초등학교",
-        "rounds": [
-          303,
-          317,
-          324,
-          341
-        ],
-        "total": 1285,
-        "sourceRank": 6
-      },
-      {
-        "rank": 7,
-        "target": "15D",
-        "name": "유선유",
-        "school": "연무초등학교",
-        "rounds": [
-          294,
-          304,
-          323,
-          329
-        ],
-        "total": 1250,
-        "sourceRank": 7
-      },
-      {
-        "rank": 8,
-        "target": "53C",
-        "name": "성병옥",
-        "school": "임실군양궁스포츠클럽(동)",
-        "rounds": [
-          292,
-          301,
-          320,
-          336
-        ],
-        "total": 1249,
-        "sourceRank": 8
-      },
-      {
-        "rank": 9,
-        "target": "48C",
-        "name": "정명환",
-        "school": "인천계산초등학교",
-        "rounds": [
-          297,
-          280,
-          325,
-          336
-        ],
-        "total": 1238,
-        "sourceRank": 9
-      },
-      {
-        "rank": 10,
-        "target": "13B",
-        "name": "김규빈",
-        "school": "옥서초등학교",
-        "rounds": [
-          295,
-          299,
-          304,
-          334
-        ],
-        "total": 1232,
-        "sourceRank": 10
-      },
-      {
-        "rank": 11,
-        "target": "41D",
-        "name": "문우진",
-        "school": "남천초등학교",
-        "rounds": [
-          269,
-          306,
-          318,
-          338
-        ],
-        "total": 1231,
-        "sourceRank": 11
-      },
-      {
-        "rank": 12,
-        "target": "46C",
-        "name": "김태양",
-        "school": "인천계산초등학교",
-        "rounds": [
-          289,
-          303,
-          316,
-          320
-        ],
-        "total": 1228,
-        "sourceRank": 12
-      },
-      {
-        "rank": 13,
-        "target": "65A",
-        "name": "김민준",
-        "school": "대전가장초등학교",
-        "rounds": [
-          298,
-          295,
-          301,
-          325
-        ],
-        "total": 1219,
-        "sourceRank": 13
-      },
-      {
-        "rank": 14,
-        "target": "63B",
-        "name": "조승근",
-        "school": "두암초등학교",
-        "rounds": [
-          271,
-          302,
-          316,
-          322
-        ],
-        "total": 1211,
-        "sourceRank": 14
-      },
-      {
-        "rank": 15,
-        "target": "35C",
-        "name": "장재하",
-        "school": "괴산명덕초등학교",
-        "rounds": [
-          265,
-          266,
-          320,
-          330
-        ],
-        "total": 1181,
-        "sourceRank": 15
-      },
-      {
-        "rank": 16,
-        "target": "65C",
-        "name": "김지한",
-        "school": "경산서부초등학교",
-        "rounds": [
-          271,
-          277,
-          312,
-          318
-        ],
-        "total": 1178,
-        "sourceRank": 16
-      },
-      {
-        "rank": 17,
-        "target": "30D",
-        "name": "이윤",
-        "school": "인천부평서초등학교",
-        "rounds": [
-          266,
-          279,
-          306,
-          323
-        ],
-        "total": 1174,
-        "sourceRank": 17
-      },
-      {
-        "rank": 18,
-        "target": "40C",
-        "name": "최유담",
-        "school": "태서초등학교",
-        "rounds": [
-          257,
-          287,
-          298,
-          322
-        ],
-        "total": 1164,
-        "sourceRank": 18
-      },
-      {
-        "rank": 19,
-        "target": "52C",
-        "name": "김도윤",
-        "school": "용성초등학교",
-        "rounds": [
-          267,
-          255,
-          317,
-          314
-        ],
-        "total": 1153,
-        "sourceRank": 19
-      },
-      {
-        "rank": 20,
-        "target": "41C",
-        "name": "강태현",
-        "school": "태서초등학교",
-        "rounds": [
-          264,
-          265,
-          300,
-          323
-        ],
-        "total": 1152,
-        "sourceRank": 20
-      },
-      {
-        "rank": 21,
-        "target": "60A",
-        "name": "박도현",
-        "school": "성포초등학교",
-        "rounds": [
-          253,
-          262,
-          313,
-          323
-        ],
-        "total": 1151,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "22D",
-        "name": "엄희준",
-        "school": "예천초등학교",
-        "rounds": [
-          247,
-          274,
-          298,
-          322
-        ],
-        "total": 1141,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "27A",
-        "name": "이정현",
-        "school": "전주기린초등학교",
-        "rounds": [
-          240,
-          298,
-          278,
-          320
-        ],
-        "total": 1136,
-        "sourceRank": 23
-      },
-      {
-        "rank": 24,
-        "target": "32B",
-        "name": "구예준",
-        "school": "봉원초등학교",
-        "rounds": [
-          247,
-          240,
-          316,
-          328
-        ],
-        "total": 1131,
-        "sourceRank": 24
-      },
-      {
-        "rank": 25,
-        "target": "21D",
-        "name": "김한빈",
-        "school": "예천초등학교",
-        "rounds": [
-          253,
-          261,
-          307,
-          308
-        ],
-        "total": 1129,
-        "sourceRank": 25
-      },
-      {
-        "rank": 26,
-        "target": "55C",
-        "name": "김윤건",
-        "school": "병천초등학교",
-        "rounds": [
-          245,
-          255,
-          302,
-          319
-        ],
-        "total": 1121,
-        "sourceRank": 26
-      },
-      {
-        "rank": 27,
-        "target": "36B",
-        "name": "변수현",
-        "school": "홍남초등학교",
-        "rounds": [
-          243,
-          241,
-          307,
-          327
-        ],
-        "total": 1118,
-        "sourceRank": 27
-      },
-      {
-        "rank": 28,
-        "target": "31C",
-        "name": "최우빈",
-        "school": "하남천현초등학교",
-        "rounds": [
-          234,
-          274,
-          303,
-          306
-        ],
-        "total": 1117,
-        "sourceRank": 28
-      },
-      {
-        "rank": 29,
-        "target": "56C",
-        "name": "김태윤",
-        "school": "병천초등학교",
-        "rounds": [
-          230,
-          260,
-          291,
-          315
-        ],
-        "total": 1096,
-        "sourceRank": 29
-      },
-      {
-        "rank": 30,
-        "target": "32C",
-        "name": "구교준",
-        "school": "하남천현초등학교",
-        "rounds": [
-          233,
-          235,
-          300,
-          324
-        ],
-        "total": 1092,
-        "sourceRank": 30
-      },
-      {
-        "rank": 31,
-        "target": "14A",
-        "name": "박세준",
-        "school": "대구송현초등학교",
-        "rounds": [
-          230,
-          262,
-          305,
-          284
-        ],
-        "total": 1081,
-        "sourceRank": 31
-      },
-      {
-        "rank": 32,
-        "target": "56A",
-        "name": "김태강",
-        "school": "창녕초등학교",
-        "rounds": [
-          235,
-          260,
-          270,
-          308
-        ],
-        "total": 1073,
-        "sourceRank": 32
-      },
-      {
-        "rank": 33,
-        "target": "55A",
-        "name": "박재호",
-        "school": "창녕초등학교",
-        "rounds": [
-          193,
-          277,
-          277,
-          319
-        ],
-        "total": 1066,
-        "sourceRank": 33
-      },
-      {
-        "rank": 34,
-        "target": "36A",
-        "name": "천지환",
-        "school": "성진초등학교",
-        "rounds": [
-          204,
-          273,
-          277,
-          302
-        ],
-        "total": 1056,
-        "sourceRank": 34
-      },
-      {
-        "rank": 35,
-        "target": "54A",
-        "name": "안선율",
-        "school": "창녕초등학교",
-        "rounds": [
-          213,
-          244,
-          283,
-          303
-        ],
-        "total": 1043,
-        "sourceRank": 35
-      },
-      {
-        "rank": 36,
-        "target": "52D",
-        "name": "장다준",
-        "school": "김포하성초등학교",
-        "rounds": [
-          199,
-          240,
-          281,
-          316
-        ],
-        "total": 1036,
-        "sourceRank": 36
-      },
-      {
-        "rank": 37,
-        "target": "37B",
-        "name": "서주원",
-        "school": "홍남초등학교",
-        "rounds": [
-          228,
-          245,
-          269,
-          293
-        ],
-        "total": 1035,
-        "sourceRank": 37
-      },
-      {
-        "rank": 38,
-        "target": "55B",
-        "name": "박시훈",
-        "school": "설악초등학교",
-        "rounds": [
-          250,
-          253,
-          257,
-          272
-        ],
-        "total": 1032,
-        "sourceRank": 38
-      },
-      {
-        "rank": 38,
-        "target": "23D",
-        "name": "김승율",
-        "school": "예천초등학교",
-        "rounds": [
-          233,
-          238,
-          261,
-          300
-        ],
-        "total": 1032,
-        "sourceRank": 38
-      },
-      {
-        "rank": 40,
-        "target": "53A",
-        "name": "김준서",
-        "school": "창녕초등학교",
-        "rounds": [
-          237,
-          225,
-          250,
-          313
-        ],
-        "total": 1025,
-        "sourceRank": 40
-      },
-      {
-        "rank": 41,
-        "target": "31D",
-        "name": "박보령",
-        "school": "인천부평서초등학교",
-        "rounds": [
-          225,
-          238,
-          249,
-          301
-        ],
-        "total": 1013,
-        "sourceRank": 41
-      },
-      {
-        "rank": 42,
-        "target": "55D",
-        "name": "장도원",
-        "school": "서울인헌초등학교",
-        "rounds": [
-          188,
-          244,
-          256,
-          290
-        ],
-        "total": 978,
-        "sourceRank": 42
-      },
-      {
-        "rank": 43,
-        "target": "49C",
-        "name": "채재호",
-        "school": "인천계산초등학교",
-        "rounds": [
-          180,
-          238,
-          275,
-          273
-        ],
-        "total": 966,
-        "sourceRank": 43
-      },
-      {
-        "rank": 44,
-        "target": "64B",
-        "name": "이민우",
-        "school": "두암초등학교",
-        "rounds": [
-          185,
-          218,
-          203,
-          236
-        ],
-        "total": 842,
-        "sourceRank": 44
-      },
-      {
-        "rank": 45,
-        "target": "53D",
-        "name": "유기선",
-        "school": "송해초등학교",
-        "rounds": [
-          0,
-          0,
-          248,
-          270
-        ],
-        "total": 518,
-        "sourceRank": 45
-      },
-      {
-        "rank": 46,
-        "target": "56D",
-        "name": "김태양",
-        "school": "서울인헌초등학교",
-        "rounds": [
-          0,
-          0,
-          223,
-          253
-        ],
-        "total": 476,
-        "sourceRank": 46
-      },
-      {
-        "rank": 47,
-        "target": "25B",
-        "name": "이찬우",
-        "school": "서울청량초등학교",
-        "rounds": [
-          0,
-          0,
-          208,
-          262
-        ],
-        "total": 470,
-        "sourceRank": 47
-      },
-      {
-        "rank": 48,
-        "target": "50D",
-        "name": "진서준",
-        "school": "문산초등학교",
-        "rounds": [
-          0,
-          0,
-          139,
-          219
-        ],
-        "total": 358,
-        "sourceRank": 48
-      },
-      {
-        "rank": 49,
-        "target": "47A",
-        "name": "홍시윤",
-        "school": "충주금릉초등학교",
-        "rounds": [
-          0,
-          0,
-          134,
-          216
-        ],
-        "total": 350,
-        "sourceRank": 49
-      },
-      {
-        "rank": 50,
-        "target": "32D",
-        "name": "한성진",
-        "school": "인천부평서초등학교",
-        "rounds": [
-          0,
-          0,
-          84,
-          157
-        ],
-        "total": 241,
-        "sourceRank": 50
-      },
-      {
-        "rank": 51,
-        "target": "40A",
-        "name": "박준수",
-        "school": "이원초등학교",
-        "rounds": [
-          0,
-          0,
-          0,
-          184
-        ],
-        "total": 184,
-        "sourceRank": 51
-      },
-      {
-        "rank": 52,
-        "target": "15A",
-        "name": "구민찬",
-        "school": "대구송현초등학교",
-        "rounds": [
-          0,
-          0,
-          0,
-          166
-        ],
-        "total": 166,
-        "sourceRank": 52
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_elem_upper_boys_2026",
-    "sheetLabel": "종별대회 남자 초등 U-12 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "초등부(고학년)",
-    "division": "초등부(고학년)",
-    "gender": "남",
-    "distances": [
-      35,
-      30,
-      25,
-      20
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "31A",
-        "name": "김진원",
-        "school": "전주기린초등학교",
-        "rounds": [
-          338,
-          345,
-          351,
-          356
-        ],
-        "total": 1390,
-        "sourceRank": 1
-      },
-      {
-        "rank": 1,
-        "target": "11A",
-        "name": "이참",
-        "school": "대구송현초등학교",
-        "rounds": [
-          331,
-          348,
-          354,
-          357
-        ],
-        "total": 1390,
-        "sourceRank": 1
-      },
-      {
-        "rank": 3,
-        "target": "59D",
-        "name": "박수한",
-        "school": "여수좌수영초등학교",
-        "rounds": [
-          336,
-          346,
-          349,
-          358
-        ],
-        "total": 1389,
-        "sourceRank": 3
-      },
-      {
-        "rank": 4,
-        "target": "15C",
-        "name": "이호태",
-        "school": "인천석암초등학교",
-        "rounds": [
-          336,
-          350,
-          345,
-          357
-        ],
-        "total": 1388,
-        "sourceRank": 4
-      },
-      {
-        "rank": 5,
-        "target": "16A",
-        "name": "이주원",
-        "school": "대평초등학교",
-        "rounds": [
-          331,
-          345,
-          351,
-          355
-        ],
-        "total": 1382,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "50A",
-        "name": "조인우",
-        "school": "창녕초등학교",
-        "rounds": [
-          335,
-          347,
-          347,
-          350
-        ],
-        "total": 1379,
-        "sourceRank": 6
-      },
-      {
-        "rank": 7,
-        "target": "10B",
-        "name": "황정민",
-        "school": "옥서초등학교",
-        "rounds": [
-          332,
-          334,
-          356,
-          354
-        ],
-        "total": 1376,
-        "sourceRank": 7
-      },
-      {
-        "rank": 8,
-        "target": "29C",
-        "name": "백종준",
-        "school": "하남천현초등학교",
-        "rounds": [
-          334,
-          337,
-          349,
-          355
-        ],
-        "total": 1375,
-        "sourceRank": 8
-      },
-      {
-        "rank": 9,
-        "target": "12D",
-        "name": "장은혁",
-        "school": "연무초등학교",
-        "rounds": [
-          336,
-          340,
-          346,
-          352
-        ],
-        "total": 1374,
-        "sourceRank": 9
-      },
-      {
-        "rank": 10,
-        "target": "10A",
-        "name": "신재우",
-        "school": "대구송현초등학교",
-        "rounds": [
-          330,
-          339,
-          349,
-          353
-        ],
-        "total": 1371,
-        "sourceRank": 10
-      },
-      {
-        "rank": 11,
-        "target": "42A",
-        "name": "송바다",
-        "school": "서울북가좌초등학교",
-        "rounds": [
-          331,
-          334,
-          349,
-          355
-        ],
-        "total": 1369,
-        "sourceRank": 11
-      },
-      {
-        "rank": 11,
-        "target": "39D",
-        "name": "한상원",
-        "school": "대구불로초등학교",
-        "rounds": [
-          328,
-          336,
-          350,
-          355
-        ],
-        "total": 1369,
-        "sourceRank": 11
-      },
-      {
-        "rank": 13,
-        "target": "33C",
-        "name": "이은호",
-        "school": "괴산명덕초등학교",
-        "rounds": [
-          336,
-          333,
-          346,
-          353
-        ],
-        "total": 1368,
-        "sourceRank": 13
-      },
-      {
-        "rank": 14,
-        "target": "12B",
-        "name": "이재준",
-        "school": "옥서초등학교",
-        "rounds": [
-          329,
-          336,
-          348,
-          354
-        ],
-        "total": 1367,
-        "sourceRank": 14
-      },
-      {
-        "rank": 15,
-        "target": "41A",
-        "name": "양지율",
-        "school": "서울북가좌초등학교",
-        "rounds": [
-          335,
-          327,
-          344,
-          357
-        ],
-        "total": 1363,
-        "sourceRank": 15
-      },
-      {
-        "rank": 16,
-        "target": "62B",
-        "name": "강산",
-        "school": "대미초등학교",
-        "rounds": [
-          332,
-          335,
-          344,
-          351
-        ],
-        "total": 1362,
-        "sourceRank": 16
-      },
-      {
-        "rank": 16,
-        "target": "42C",
-        "name": "최재국",
-        "school": "대구황금초등학교",
-        "rounds": [
-          327,
-          335,
-          349,
-          351
-        ],
-        "total": 1362,
-        "sourceRank": 16
-      },
-      {
-        "rank": 18,
-        "target": "30C",
-        "name": "최강빈",
-        "school": "하남천현초등학교",
-        "rounds": [
-          333,
-          341,
-          338,
-          348
-        ],
-        "total": 1360,
-        "sourceRank": 18
-      },
-      {
-        "rank": 19,
-        "target": "36D",
-        "name": "이은찬",
-        "school": "대전서부초등학교",
-        "rounds": [
-          320,
-          338,
-          349,
-          351
-        ],
-        "total": 1358,
-        "sourceRank": 19
-      },
-      {
-        "rank": 19,
-        "target": "10C",
-        "name": "박현우",
-        "school": "용암초등학교",
-        "rounds": [
-          329,
-          340,
-          341,
-          348
-        ],
-        "total": 1358,
-        "sourceRank": 19
-      },
-      {
-        "rank": 21,
-        "target": "57C",
-        "name": "이지호",
-        "school": "오창초등학교",
-        "rounds": [
-          329,
-          328,
-          349,
-          351
-        ],
-        "total": 1357,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "11B",
-        "name": "김건후",
-        "school": "옥서초등학교",
-        "rounds": [
-          329,
-          332,
-          345,
-          350
-        ],
-        "total": 1356,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "62A",
-        "name": "김지호",
-        "school": "대전가장초등학교",
-        "rounds": [
-          328,
-          339,
-          341,
-          346
-        ],
-        "total": 1354,
-        "sourceRank": 23
-      },
-      {
-        "rank": 24,
-        "target": "19A",
-        "name": "김도헌",
-        "school": "대구동부초등학교",
-        "rounds": [
-          329,
-          331,
-          339,
-          354
-        ],
-        "total": 1353,
-        "sourceRank": 24
-      },
-      {
-        "rank": 25,
-        "target": "58A",
-        "name": "김준서",
-        "school": "성포초등학교",
-        "rounds": [
-          316,
-          333,
-          349,
-          354
-        ],
-        "total": 1352,
-        "sourceRank": 25
-      },
-      {
-        "rank": 25,
-        "target": "61A",
-        "name": "김성훈",
-        "school": "인천서면초등학교",
-        "rounds": [
-          324,
-          333,
-          342,
-          353
-        ],
-        "total": 1352,
-        "sourceRank": 25
-      },
-      {
-        "rank": 27,
-        "target": "18D",
-        "name": "이지원",
-        "school": "예천초등학교",
-        "rounds": [
-          318,
-          333,
-          350,
-          350
-        ],
-        "total": 1351,
-        "sourceRank": 27
-      },
-      {
-        "rank": 28,
-        "target": "26D",
-        "name": "장현우",
-        "school": "인천부평서초등학교",
-        "rounds": [
-          323,
-          330,
-          343,
-          353
-        ],
-        "total": 1349,
-        "sourceRank": 28
-      },
-      {
-        "rank": 29,
-        "target": "19D",
-        "name": "김태윤",
-        "school": "예천초등학교",
-        "rounds": [
-          325,
-          329,
-          345,
-          349
-        ],
-        "total": 1348,
-        "sourceRank": 29
-      },
-      {
-        "rank": 29,
-        "target": "30A",
-        "name": "우치수",
-        "school": "전주기린초등학교",
-        "rounds": [
-          325,
-          332,
-          337,
-          354
-        ],
-        "total": 1348,
-        "sourceRank": 29
-      },
-      {
-        "rank": 31,
-        "target": "43C",
-        "name": "최준",
-        "school": "대구황금초등학교",
-        "rounds": [
-          318,
-          334,
-          344,
-          351
-        ],
-        "total": 1347,
-        "sourceRank": 31
-      },
-      {
-        "rank": 31,
-        "target": "17D",
-        "name": "김현소",
-        "school": "예천초등학교",
-        "rounds": [
-          328,
-          328,
-          342,
-          349
-        ],
-        "total": 1347,
-        "sourceRank": 31
-      },
-      {
-        "rank": 31,
-        "target": "35D",
-        "name": "김도현",
-        "school": "대전서부초등학교",
-        "rounds": [
-          319,
-          332,
-          342,
-          354
-        ],
-        "total": 1347,
-        "sourceRank": 31
-      },
-      {
-        "rank": 31,
-        "target": "20B",
-        "name": "곽래우",
-        "school": "삼정초등학교",
-        "rounds": [
-          326,
-          326,
-          344,
-          351
-        ],
-        "total": 1347,
-        "sourceRank": 31
-      },
-      {
-        "rank": 35,
-        "target": "57A",
-        "name": "최수혁",
-        "school": "성포초등학교",
-        "rounds": [
-          323,
-          329,
-          343,
-          351
-        ],
-        "total": 1346,
-        "sourceRank": 35
-      },
-      {
-        "rank": 36,
-        "target": "52A",
-        "name": "박지후",
-        "school": "창녕초등학교",
-        "rounds": [
-          332,
-          321,
-          342,
-          349
-        ],
-        "total": 1344,
-        "sourceRank": 36
-      },
-      {
-        "rank": 37,
-        "target": "25A",
-        "name": "이현승",
-        "school": "인천용현남초등학교",
-        "rounds": [
-          323,
-          332,
-          343,
-          345
-        ],
-        "total": 1343,
-        "sourceRank": 37
-      },
-      {
-        "rank": 38,
-        "target": "10D",
-        "name": "임태서",
-        "school": "연무초등학교",
-        "rounds": [
-          315,
-          335,
-          344,
-          348
-        ],
-        "total": 1342,
-        "sourceRank": 38
-      },
-      {
-        "rank": 39,
-        "target": "47C",
-        "name": "김다온",
-        "school": "인천계산초등학교",
-        "rounds": [
-          325,
-          327,
-          345,
-          343
-        ],
-        "total": 1340,
-        "sourceRank": 39
-      },
-      {
-        "rank": 40,
-        "target": "21A",
-        "name": "이하준",
-        "school": "대구동부초등학교",
-        "rounds": [
-          314,
-          332,
-          342,
-          351
-        ],
-        "total": 1339,
-        "sourceRank": 40
-      },
-      {
-        "rank": 40,
-        "target": "33D",
-        "name": "이준혁",
-        "school": "복산초등학교",
-        "rounds": [
-          319,
-          331,
-          338,
-          351
-        ],
-        "total": 1339,
-        "sourceRank": 40
-      },
-      {
-        "rank": 42,
-        "target": "27B",
-        "name": "민해온",
-        "school": "봉원초등학교",
-        "rounds": [
-          316,
-          340,
-          332,
-          347
-        ],
-        "total": 1335,
-        "sourceRank": 42
-      },
-      {
-        "rank": 42,
-        "target": "14C",
-        "name": "오지호",
-        "school": "인천석암초등학교",
-        "rounds": [
-          321,
-          325,
-          344,
-          345
-        ],
-        "total": 1335,
-        "sourceRank": 42
-      },
-      {
-        "rank": 44,
-        "target": "34A",
-        "name": "양지원",
-        "school": "성진초등학교",
-        "rounds": [
-          324,
-          330,
-          338,
-          341
-        ],
-        "total": 1333,
-        "sourceRank": 44
-      },
-      {
-        "rank": 45,
-        "target": "14D",
-        "name": "김영민",
-        "school": "연무초등학교",
-        "rounds": [
-          319,
-          325,
-          345,
-          343
-        ],
-        "total": 1332,
-        "sourceRank": 45
-      },
-      {
-        "rank": 45,
-        "target": "20A",
-        "name": "이윤기",
-        "school": "대구동부초등학교",
-        "rounds": [
-          319,
-          331,
-          334,
-          348
-        ],
-        "total": 1332,
-        "sourceRank": 45
-      },
-      {
-        "rank": 47,
-        "target": "15B",
-        "name": "김시우",
-        "school": "서울방이초등학교",
-        "rounds": [
-          321,
-          334,
-          337,
-          339
-        ],
-        "total": 1331,
-        "sourceRank": 47
-      },
-      {
-        "rank": 48,
-        "target": "22B",
-        "name": "강주혁",
-        "school": "서울청량초등학교",
-        "rounds": [
-          317,
-          326,
-          341,
-          346
-        ],
-        "total": 1330,
-        "sourceRank": 48
-      },
-      {
-        "rank": 48,
-        "target": "22A",
-        "name": "정하진",
-        "school": "인천용현남초등학교",
-        "rounds": [
-          316,
-          328,
-          335,
-          351
-        ],
-        "total": 1330,
-        "sourceRank": 48
-      },
-      {
-        "rank": 48,
-        "target": "29A",
-        "name": "천미르",
-        "school": "전주기린초등학교",
-        "rounds": [
-          331,
-          316,
-          335,
-          348
-        ],
-        "total": 1330,
-        "sourceRank": 48
-      },
-      {
-        "rank": 48,
-        "target": "24D",
-        "name": "손지민",
-        "school": "모덕초등학교",
-        "rounds": [
-          321,
-          325,
-          341,
-          343
-        ],
-        "total": 1330,
-        "sourceRank": 48
-      },
-      {
-        "rank": 52,
-        "target": "47B",
-        "name": "이은호",
-        "school": "서울신학초등학교",
-        "rounds": [
-          321,
-          334,
-          331,
-          342
-        ],
-        "total": 1328,
-        "sourceRank": 52
-      },
-      {
-        "rank": 53,
-        "target": "61C",
-        "name": "박우주",
-        "school": "경산서부초등학교",
-        "rounds": [
-          315,
-          314,
-          346,
-          352
-        ],
-        "total": 1327,
-        "sourceRank": 53
-      },
-      {
-        "rank": 54,
-        "target": "17A",
-        "name": "오승현",
-        "school": "대평초등학교",
-        "rounds": [
-          312,
-          335,
-          330,
-          349
-        ],
-        "total": 1326,
-        "sourceRank": 54
-      },
-      {
-        "rank": 55,
-        "target": "11D",
-        "name": "정선우",
-        "school": "연무초등학교",
-        "rounds": [
-          319,
-          328,
-          331,
-          346
-        ],
-        "total": 1324,
-        "sourceRank": 55
-      },
-      {
-        "rank": 56,
-        "target": "22C",
-        "name": "김민준",
-        "school": "사천초등학교",
-        "rounds": [
-          320,
-          328,
-          330,
-          345
-        ],
-        "total": 1323,
-        "sourceRank": 56
-      },
-      {
-        "rank": 57,
-        "target": "20D",
-        "name": "조태양",
-        "school": "예천초등학교",
-        "rounds": [
-          325,
-          315,
-          337,
-          344
-        ],
-        "total": 1321,
-        "sourceRank": 57
-      },
-      {
-        "rank": 57,
-        "target": "51A",
-        "name": "유현빈",
-        "school": "창녕초등학교",
-        "rounds": [
-          321,
-          321,
-          334,
-          345
-        ],
-        "total": 1321,
-        "sourceRank": 57
-      },
-      {
-        "rank": 59,
-        "target": "50C",
-        "name": "손별",
-        "school": "용성초등학교",
-        "rounds": [
-          318,
-          313,
-          340,
-          347
-        ],
-        "total": 1318,
-        "sourceRank": 59
-      },
-      {
-        "rank": 60,
-        "target": "37D",
-        "name": "강동원",
-        "school": "대전서부초등학교",
-        "rounds": [
-          312,
-          323,
-          342,
-          338
-        ],
-        "total": 1315,
-        "sourceRank": 60
-      },
-      {
-        "rank": 61,
-        "target": "14B",
-        "name": "이서우",
-        "school": "서울방이초등학교",
-        "rounds": [
-          327,
-          310,
-          326,
-          351
-        ],
-        "total": 1314,
-        "sourceRank": 61
-      },
-      {
-        "rank": 62,
-        "target": "60C",
-        "name": "양진우",
-        "school": "경산서부초등학교",
-        "rounds": [
-          306,
-          333,
-          330,
-          344
-        ],
-        "total": 1313,
-        "sourceRank": 62
-      },
-      {
-        "rank": 63,
-        "target": "23A",
-        "name": "박찬석",
-        "school": "인천용현남초등학교",
-        "rounds": [
-          318,
-          318,
-          335,
-          341
-        ],
-        "total": 1312,
-        "sourceRank": 63
-      },
-      {
-        "rank": 63,
-        "target": "12A",
-        "name": "정인후",
-        "school": "대구송현초등학교",
-        "rounds": [
-          312,
-          319,
-          338,
-          343
-        ],
-        "total": 1312,
-        "sourceRank": 63
-      },
-      {
-        "rank": 63,
-        "target": "48B",
-        "name": "조승현",
-        "school": "서울신학초등학교",
-        "rounds": [
-          308,
-          321,
-          344,
-          339
-        ],
-        "total": 1312,
-        "sourceRank": 63
-      },
-      {
-        "rank": 66,
-        "target": "29B",
-        "name": "민해양",
-        "school": "봉원초등학교",
-        "rounds": [
-          312,
-          313,
-          343,
-          343
-        ],
-        "total": 1311,
-        "sourceRank": 66
-      },
-      {
-        "rank": 67,
-        "target": "44B",
-        "name": "박지혁",
-        "school": "천곡초등학교",
-        "rounds": [
-          295,
-          315,
-          350,
-          350
-        ],
-        "total": 1310,
-        "sourceRank": 67
-      },
-      {
-        "rank": 67,
-        "target": "28B",
-        "name": "주재훈",
-        "school": "봉원초등학교",
-        "rounds": [
-          314,
-          316,
-          336,
-          344
-        ],
-        "total": 1310,
-        "sourceRank": 67
-      },
-      {
-        "rank": 69,
-        "target": "43D",
-        "name": "이종민",
-        "school": "남천초등학교",
-        "rounds": [
-          307,
-          316,
-          341,
-          344
-        ],
-        "total": 1308,
-        "sourceRank": 69
-      },
-      {
-        "rank": 70,
-        "target": "44C",
-        "name": "임승현",
-        "school": "대구황금초등학교",
-        "rounds": [
-          315,
-          323,
-          330,
-          339
-        ],
-        "total": 1307,
-        "sourceRank": 70
-      },
-      {
-        "rank": 71,
-        "target": "48A",
-        "name": "김진규",
-        "school": "둔내초등학교",
-        "rounds": [
-          309,
-          314,
-          339,
-          344
-        ],
-        "total": 1306,
-        "sourceRank": 71
-      },
-      {
-        "rank": 72,
-        "target": "63A",
-        "name": "백준",
-        "school": "대전가장초등학교",
-        "rounds": [
-          316,
-          303,
-          334,
-          351
-        ],
-        "total": 1304,
-        "sourceRank": 72
-      },
-      {
-        "rank": 73,
-        "target": "34D",
-        "name": "이지한",
-        "school": "복산초등학교",
-        "rounds": [
-          305,
-          312,
-          337,
-          349
-        ],
-        "total": 1303,
-        "sourceRank": 73
-      },
-      {
-        "rank": 73,
-        "target": "51D",
-        "name": "이우현",
-        "school": "김포하성초등학교",
-        "rounds": [
-          312,
-          312,
-          337,
-          342
-        ],
-        "total": 1303,
-        "sourceRank": 73
-      },
-      {
-        "rank": 73,
-        "target": "62C",
-        "name": "김단우",
-        "school": "경산서부초등학교",
-        "rounds": [
-          312,
-          316,
-          334,
-          341
-        ],
-        "total": 1303,
-        "sourceRank": 73
-      },
-      {
-        "rank": 76,
-        "target": "27D",
-        "name": "김진표",
-        "school": "인천부평서초등학교",
-        "rounds": [
-          300,
-          323,
-          332,
-          346
-        ],
-        "total": 1301,
-        "sourceRank": 76
-      },
-      {
-        "rank": 77,
-        "target": "17C",
-        "name": "홍현민",
-        "school": "인천석암초등학교",
-        "rounds": [
-          299,
-          312,
-          343,
-          338
-        ],
-        "total": 1292,
-        "sourceRank": 77
-      },
-      {
-        "rank": 78,
-        "target": "44D",
-        "name": "김지우",
-        "school": "경화초등학교",
-        "rounds": [
-          287,
-          319,
-          337,
-          347
-        ],
-        "total": 1290,
-        "sourceRank": 78
-      },
-      {
-        "rank": 78,
-        "target": "40D",
-        "name": "이승원",
-        "school": "대구불로초등학교",
-        "rounds": [
-          299,
-          311,
-          335,
-          345
-        ],
-        "total": 1290,
-        "sourceRank": 78
-      },
-      {
-        "rank": 78,
-        "target": "16B",
-        "name": "김지호",
-        "school": "서울방이초등학교",
-        "rounds": [
-          311,
-          312,
-          332,
-          335
-        ],
-        "total": 1290,
-        "sourceRank": 78
-      },
-      {
-        "rank": 81,
-        "target": "28D",
-        "name": "이지빈",
-        "school": "인천부평서초등학교",
-        "rounds": [
-          285,
-          313,
-          343,
-          347
-        ],
-        "total": 1288,
-        "sourceRank": 81
-      },
-      {
-        "rank": 82,
-        "target": "58D",
-        "name": "김지완",
-        "school": "대전송촌초등학교",
-        "rounds": [
-          307,
-          304,
-          335,
-          341
-        ],
-        "total": 1287,
-        "sourceRank": 82
-      },
-      {
-        "rank": 83,
-        "target": "24A",
-        "name": "손겸손",
-        "school": "인천용현남초등학교",
-        "rounds": [
-          315,
-          317,
-          311,
-          343
-        ],
-        "total": 1286,
-        "sourceRank": 83
-      },
-      {
-        "rank": 84,
-        "target": "46D",
-        "name": "김유건",
-        "school": "경화초등학교",
-        "rounds": [
-          302,
-          304,
-          331,
-          348
-        ],
-        "total": 1285,
-        "sourceRank": 84
-      },
-      {
-        "rank": 85,
-        "target": "62D",
-        "name": "윤희성",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          287,
-          321,
-          331,
-          345
-        ],
-        "total": 1284,
-        "sourceRank": 85
-      },
-      {
-        "rank": 86,
-        "target": "50B",
-        "name": "이별하",
-        "school": "새일초등학교",
-        "rounds": [
-          306,
-          306,
-          328,
-          340
-        ],
-        "total": 1280,
-        "sourceRank": 86
-      },
-      {
-        "rank": 87,
-        "target": "46A",
-        "name": "이재용",
-        "school": "충주금릉초등학교",
-        "rounds": [
-          300,
-          304,
-          329,
-          346
-        ],
-        "total": 1279,
-        "sourceRank": 87
-      },
-      {
-        "rank": 87,
-        "target": "16C",
-        "name": "정현준",
-        "school": "인천석암초등학교",
-        "rounds": [
-          298,
-          311,
-          335,
-          335
-        ],
-        "total": 1279,
-        "sourceRank": 87
-      },
-      {
-        "rank": 89,
-        "target": "18A",
-        "name": "이제원",
-        "school": "대평초등학교",
-        "rounds": [
-          300,
-          313,
-          321,
-          344
-        ],
-        "total": 1278,
-        "sourceRank": 89
-      },
-      {
-        "rank": 89,
-        "target": "38D",
-        "name": "고태호",
-        "school": "대전서부초등학교",
-        "rounds": [
-          310,
-          309,
-          319,
-          340
-        ],
-        "total": 1278,
-        "sourceRank": 89
-      },
-      {
-        "rank": 91,
-        "target": "56B",
-        "name": "강지우",
-        "school": "염주초등학교",
-        "rounds": [
-          311,
-          316,
-          326,
-          321
-        ],
-        "total": 1274,
-        "sourceRank": 91
-      },
-      {
-        "rank": 92,
-        "target": "32A",
-        "name": "정상후",
-        "school": "대전태평초등학교",
-        "rounds": [
-          301,
-          309,
-          324,
-          339
-        ],
-        "total": 1273,
-        "sourceRank": 92
-      },
-      {
-        "rank": 93,
-        "target": "13C",
-        "name": "임태건",
-        "school": "인천석암초등학교",
-        "rounds": [
-          303,
-          319,
-          327,
-          323
-        ],
-        "total": 1272,
-        "sourceRank": 93
-      },
-      {
-        "rank": 94,
-        "target": "12C",
-        "name": "전현준",
-        "school": "용암초등학교",
-        "rounds": [
-          290,
-          309,
-          324,
-          342
-        ],
-        "total": 1265,
-        "sourceRank": 94
-      },
-      {
-        "rank": 95,
-        "target": "59A",
-        "name": "배재윤",
-        "school": "성포초등학교",
-        "rounds": [
-          305,
-          279,
-          335,
-          344
-        ],
-        "total": 1263,
-        "sourceRank": 95
-      },
-      {
-        "rank": 95,
-        "target": "52B",
-        "name": "김라원",
-        "school": "새일초등학교",
-        "rounds": [
-          308,
-          301,
-          326,
-          328
-        ],
-        "total": 1263,
-        "sourceRank": 95
-      },
-      {
-        "rank": 97,
-        "target": "38C",
-        "name": "정찬혁",
-        "school": "태서초등학교",
-        "rounds": [
-          288,
-          318,
-          316,
-          340
-        ],
-        "total": 1262,
-        "sourceRank": 97
-      },
-      {
-        "rank": 97,
-        "target": "28C",
-        "name": "진준호",
-        "school": "하남천현초등학교",
-        "rounds": [
-          297,
-          310,
-          321,
-          334
-        ],
-        "total": 1262,
-        "sourceRank": 97
-      },
-      {
-        "rank": 99,
-        "target": "45C",
-        "name": "김민성",
-        "school": "대구황금초등학교",
-        "rounds": [
-          288,
-          305,
-          321,
-          342
-        ],
-        "total": 1256,
-        "sourceRank": 99
-      },
-      {
-        "rank": 99,
-        "target": "45D",
-        "name": "이온유",
-        "school": "경화초등학교",
-        "rounds": [
-          289,
-          307,
-          324,
-          336
-        ],
-        "total": 1256,
-        "sourceRank": 99
-      },
-      {
-        "rank": 101,
-        "target": "42B",
-        "name": "김규빈",
-        "school": "천곡초등학교",
-        "rounds": [
-          307,
-          298,
-          323,
-          325
-        ],
-        "total": 1253,
-        "sourceRank": 101
-      },
-      {
-        "rank": 102,
-        "target": "34C",
-        "name": "이지호",
-        "school": "괴산명덕초등학교",
-        "rounds": [
-          291,
-          286,
-          332,
-          343
-        ],
-        "total": 1252,
-        "sourceRank": 102
-      },
-      {
-        "rank": 103,
-        "target": "61D",
-        "name": "임채민",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          281,
-          302,
-          329,
-          338
-        ],
-        "total": 1250,
-        "sourceRank": 103
-      },
-      {
-        "rank": 103,
-        "target": "42D",
-        "name": "문서후",
-        "school": "남천초등학교",
-        "rounds": [
-          280,
-          315,
-          323,
-          332
-        ],
-        "total": 1250,
-        "sourceRank": 103
-      },
-      {
-        "rank": 105,
-        "target": "54C",
-        "name": "김민율",
-        "school": "병천초등학교",
-        "rounds": [
-          296,
-          304,
-          325,
-          322
-        ],
-        "total": 1247,
-        "sourceRank": 105
-      },
-      {
-        "rank": 106,
-        "target": "49A",
-        "name": "손지훈",
-        "school": "둔내초등학교",
-        "rounds": [
-          280,
-          295,
-          333,
-          338
-        ],
-        "total": 1246,
-        "sourceRank": 106
-      },
-      {
-        "rank": 107,
-        "target": "37C",
-        "name": "이동민",
-        "school": "태서초등학교",
-        "rounds": [
-          291,
-          308,
-          320,
-          326
-        ],
-        "total": 1245,
-        "sourceRank": 107
-      },
-      {
-        "rank": 108,
-        "target": "38B",
-        "name": "김상우",
-        "school": "장유초등학교",
-        "rounds": [
-          290,
-          299,
-          322,
-          332
-        ],
-        "total": 1243,
-        "sourceRank": 108
-      },
-      {
-        "rank": 109,
-        "target": "47D",
-        "name": "김상윤",
-        "school": "경화초등학교",
-        "rounds": [
-          257,
-          315,
-          331,
-          339
-        ],
-        "total": 1242,
-        "sourceRank": 109
-      },
-      {
-        "rank": 109,
-        "target": "26B",
-        "name": "김영성",
-        "school": "봉원초등학교",
-        "rounds": [
-          282,
-          302,
-          321,
-          337
-        ],
-        "total": 1242,
-        "sourceRank": 109
-      },
-      {
-        "rank": 111,
-        "target": "33B",
-        "name": "김하진",
-        "school": "홍남초등학교",
-        "rounds": [
-          293,
-          301,
-          315,
-          330
-        ],
-        "total": 1239,
-        "sourceRank": 111
-      },
-      {
-        "rank": 112,
-        "target": "60D",
-        "name": "성지율",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          283,
-          296,
-          323,
-          336
-        ],
-        "total": 1238,
-        "sourceRank": 112
-      },
-      {
-        "rank": 113,
-        "target": "48D",
-        "name": "박규민",
-        "school": "문산초등학교",
-        "rounds": [
-          284,
-          305,
-          316,
-          328
-        ],
-        "total": 1233,
-        "sourceRank": 113
-      },
-      {
-        "rank": 114,
-        "target": "57B",
-        "name": "김주성",
-        "school": "염주초등학교",
-        "rounds": [
-          302,
-          282,
-          308,
-          338
-        ],
-        "total": 1230,
-        "sourceRank": 114
-      },
-      {
-        "rank": 115,
-        "target": "17B",
-        "name": "강현진",
-        "school": "서울방이초등학교",
-        "rounds": [
-          300,
-          307,
-          308,
-          314
-        ],
-        "total": 1229,
-        "sourceRank": 115
-      },
-      {
-        "rank": 116,
-        "target": "39C",
-        "name": "황다겸",
-        "school": "태서초등학교",
-        "rounds": [
-          270,
-          295,
-          331,
-          325
-        ],
-        "total": 1221,
-        "sourceRank": 116
-      },
-      {
-        "rank": 117,
-        "target": "19B",
-        "name": "이준",
-        "school": "삼정초등학교",
-        "rounds": [
-          279,
-          295,
-          314,
-          323
-        ],
-        "total": 1211,
-        "sourceRank": 117
-      },
-      {
-        "rank": 118,
-        "target": "25D",
-        "name": "오지우",
-        "school": "모덕초등학교",
-        "rounds": [
-          291,
-          273,
-          317,
-          328
-        ],
-        "total": 1209,
-        "sourceRank": 118
-      },
-      {
-        "rank": 118,
-        "target": "30B",
-        "name": "이소율",
-        "school": "봉원초등학교",
-        "rounds": [
-          302,
-          289,
-          305,
-          313
-        ],
-        "total": 1209,
-        "sourceRank": 118
-      },
-      {
-        "rank": 118,
-        "target": "33A",
-        "name": "김동현",
-        "school": "성진초등학교",
-        "rounds": [
-          286,
-          294,
-          307,
-          322
-        ],
-        "total": 1209,
-        "sourceRank": 118
-      },
-      {
-        "rank": 121,
-        "target": "57D",
-        "name": "이시곤",
-        "school": "대전송촌초등학교",
-        "rounds": [
-          284,
-          269,
-          324,
-          330
-        ],
-        "total": 1207,
-        "sourceRank": 121
-      },
-      {
-        "rank": 121,
-        "target": "61B",
-        "name": "이은호",
-        "school": "구례중앙초등학교",
-        "rounds": [
-          284,
-          272,
-          324,
-          327
-        ],
-        "total": 1207,
-        "sourceRank": 121
-      },
-      {
-        "rank": 123,
-        "target": "40B",
-        "name": "최서빈",
-        "school": "장유초등학교",
-        "rounds": [
-          263,
-          284,
-          318,
-          337
-        ],
-        "total": 1202,
-        "sourceRank": 123
-      },
-      {
-        "rank": 123,
-        "target": "51B",
-        "name": "홍석환",
-        "school": "새일초등학교",
-        "rounds": [
-          249,
-          288,
-          326,
-          339
-        ],
-        "total": 1202,
-        "sourceRank": 123
-      },
-      {
-        "rank": 125,
-        "target": "58B",
-        "name": "박재우",
-        "school": "염주초등학교",
-        "rounds": [
-          275,
-          273,
-          312,
-          341
-        ],
-        "total": 1201,
-        "sourceRank": 125
-      },
-      {
-        "rank": 125,
-        "target": "53B",
-        "name": "나하흠",
-        "school": "새일초등학교",
-        "rounds": [
-          279,
-          285,
-          313,
-          324
-        ],
-        "total": 1201,
-        "sourceRank": 125
-      },
-      {
-        "rank": 127,
-        "target": "27C",
-        "name": "박진우",
-        "school": "일로초등학교",
-        "rounds": [
-          268,
-          289,
-          316,
-          326
-        ],
-        "total": 1199,
-        "sourceRank": 127
-      },
-      {
-        "rank": 128,
-        "target": "63C",
-        "name": "전태민",
-        "school": "경산서부초등학교",
-        "rounds": [
-          264,
-          288,
-          311,
-          330
-        ],
-        "total": 1193,
-        "sourceRank": 128
-      },
-      {
-        "rank": 129,
-        "target": "49B",
-        "name": "이서준",
-        "school": "새일초등학교",
-        "rounds": [
-          269,
-          287,
-          317,
-          318
-        ],
-        "total": 1191,
-        "sourceRank": 129
-      },
-      {
-        "rank": 130,
-        "target": "60B",
-        "name": "신진욱",
-        "school": "구례중앙초등학교",
-        "rounds": [
-          246,
-          296,
-          319,
-          327
-        ],
-        "total": 1188,
-        "sourceRank": 130
-      },
-      {
-        "rank": 131,
-        "target": "43A",
-        "name": "노우현",
-        "school": "서울북가좌초등학교",
-        "rounds": [
-          264,
-          282,
-          322,
-          319
-        ],
-        "total": 1187,
-        "sourceRank": 131
-      },
-      {
-        "rank": 132,
-        "target": "54B",
-        "name": "박종현",
-        "school": "설악초등학교",
-        "rounds": [
-          280,
-          280,
-          301,
-          317
-        ],
-        "total": 1178,
-        "sourceRank": 132
-      },
-      {
-        "rank": 133,
-        "target": "24B",
-        "name": "김현승",
-        "school": "서울청량초등학교",
-        "rounds": [
-          271,
-          275,
-          310,
-          321
-        ],
-        "total": 1177,
-        "sourceRank": 133
-      },
-      {
-        "rank": 134,
-        "target": "26C",
-        "name": "박정우",
-        "school": "일로초등학교",
-        "rounds": [
-          274,
-          268,
-          309,
-          323
-        ],
-        "total": 1174,
-        "sourceRank": 134
-      },
-      {
-        "rank": 135,
-        "target": "23C",
-        "name": "이선율",
-        "school": "사천초등학교",
-        "rounds": [
-          267,
-          280,
-          302,
-          323
-        ],
-        "total": 1172,
-        "sourceRank": 135
-      },
-      {
-        "rank": 136,
-        "target": "16D",
-        "name": "권순용",
-        "school": "연무초등학교",
-        "rounds": [
-          269,
-          279,
-          302,
-          321
-        ],
-        "total": 1171,
-        "sourceRank": 136
-      },
-      {
-        "rank": 137,
-        "target": "21B",
-        "name": "손유빈",
-        "school": "삼정초등학교",
-        "rounds": [
-          244,
-          279,
-          317,
-          322
-        ],
-        "total": 1162,
-        "sourceRank": 137
-      },
-      {
-        "rank": 138,
-        "target": "65D",
-        "name": "조우석",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          280,
-          272,
-          308,
-          300
-        ],
-        "total": 1160,
-        "sourceRank": 138
-      },
-      {
-        "rank": 139,
-        "target": "54D",
-        "name": "정연오",
-        "school": "서울인헌초등학교",
-        "rounds": [
-          273,
-          270,
-          290,
-          322
-        ],
-        "total": 1155,
-        "sourceRank": 139
-      },
-      {
-        "rank": 140,
-        "target": "25C",
-        "name": "김단우",
-        "school": "일로초등학교",
-        "rounds": [
-          241,
-          282,
-          306,
-          315
-        ],
-        "total": 1144,
-        "sourceRank": 140
-      },
-      {
-        "rank": 140,
-        "target": "34B",
-        "name": "전수현",
-        "school": "홍남초등학교",
-        "rounds": [
-          257,
-          264,
-          303,
-          320
-        ],
-        "total": 1144,
-        "sourceRank": 140
-      },
-      {
-        "rank": 140,
-        "target": "18B",
-        "name": "배준수",
-        "school": "삼정초등학교",
-        "rounds": [
-          248,
-          267,
-          311,
-          318
-        ],
-        "total": 1144,
-        "sourceRank": 140
-      },
-      {
-        "rank": 143,
-        "target": "63D",
-        "name": "배단우",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          246,
-          270,
-          311,
-          316
-        ],
-        "total": 1143,
-        "sourceRank": 143
-      },
-      {
-        "rank": 144,
-        "target": "64D",
-        "name": "정진서",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          255,
-          261,
-          309,
-          317
-        ],
-        "total": 1142,
-        "sourceRank": 144
-      },
-      {
-        "rank": 145,
-        "target": "11C",
-        "name": "장하랑",
-        "school": "용암초등학교",
-        "rounds": [
-          243,
-          274,
-          305,
-          318
-        ],
-        "total": 1140,
-        "sourceRank": 145
-      },
-      {
-        "rank": 146,
-        "target": "28A",
-        "name": "박주혁",
-        "school": "전주기린초등학교",
-        "rounds": [
-          261,
-          257,
-          307,
-          311
-        ],
-        "total": 1136,
-        "sourceRank": 146
-      },
-      {
-        "rank": 147,
-        "target": "59C",
-        "name": "정민혁",
-        "school": "오창초등학교",
-        "rounds": [
-          248,
-          259,
-          301,
-          324
-        ],
-        "total": 1132,
-        "sourceRank": 147
-      },
-      {
-        "rank": 148,
-        "target": "44A",
-        "name": "신명교",
-        "school": "서울북가좌초등학교",
-        "rounds": [
-          268,
-          273,
-          274,
-          316
-        ],
-        "total": 1131,
-        "sourceRank": 148
-      },
-      {
-        "rank": 149,
-        "target": "35B",
-        "name": "이효준",
-        "school": "홍남초등학교",
-        "rounds": [
-          244,
-          263,
-          282,
-          306
-        ],
-        "total": 1095,
-        "sourceRank": 149
-      },
-      {
-        "rank": 150,
-        "target": "24C",
-        "name": "황준서",
-        "school": "사천초등학교",
-        "rounds": [
-          274,
-          286,
-          257,
-          276
-        ],
-        "total": 1093,
-        "sourceRank": 150
-      },
-      {
-        "rank": 151,
-        "target": "49D",
-        "name": "박준우",
-        "school": "문산초등학교",
-        "rounds": [
-          239,
-          257,
-          274,
-          314
-        ],
-        "total": 1084,
-        "sourceRank": 151
-      },
-      {
-        "rank": 152,
-        "target": "59B",
-        "name": "이시헌",
-        "school": "염주초등학교",
-        "rounds": [
-          240,
-          245,
-          291,
-          267
-        ],
-        "total": 1043,
-        "sourceRank": 152
-      },
-      {
-        "rank": 153,
-        "target": "64C",
-        "name": "이승민",
-        "school": "경산서부초등학교",
-        "rounds": [
-          199,
-          237,
-          291,
-          315
-        ],
-        "total": 1042,
-        "sourceRank": 153
-      },
-      {
-        "rank": 154,
-        "target": "36C",
-        "name": "류도원",
-        "school": "괴산명덕초등학교",
-        "rounds": [
-          220,
-          216,
-          261,
-          300
-        ],
-        "total": 997,
-        "sourceRank": 154
-      },
-      {
-        "rank": 155,
-        "target": "43B",
-        "name": "김수인",
-        "school": "천곡초등학교",
-        "rounds": [
-          209,
-          236,
-          244,
-          279
-        ],
-        "total": 968,
-        "sourceRank": 155
-      },
-      {
-        "rank": 156,
-        "target": "13A",
-        "name": "이시완",
-        "school": "대구송현초등학교",
-        "rounds": [
-          250,
-          226,
-          236,
-          234
-        ],
-        "total": 946,
-        "sourceRank": 156
-      },
-      {
-        "rank": 156,
-        "target": "23B",
-        "name": "강한민",
-        "school": "서울청량초등학교",
-        "rounds": [
-          229,
-          185,
-          257,
-          275
-        ],
-        "total": 946,
-        "sourceRank": 156
-      },
-      {
-        "rank": 158,
-        "target": "41B",
-        "name": "우철민",
-        "school": "제주양궁클럽",
-        "rounds": [
-          186,
-          191,
-          239,
-          276
-        ],
-        "total": 892,
-        "sourceRank": 158
-      },
-      {
-        "rank": 159,
-        "target": "45B",
-        "name": "김민결",
-        "school": "천곡초등학교",
-        "rounds": [
-          182,
-          186,
-          243,
-          271
-        ],
-        "total": 882,
-        "sourceRank": 159
-      },
-      {
-        "rank": 160,
-        "target": "58C",
-        "name": "장민수",
-        "school": "오창초등학교",
-        "rounds": [
-          152,
-          212,
-          195,
-          277
-        ],
-        "total": 836,
-        "sourceRank": 160
-      },
-      {
-        "rank": 161,
-        "target": "35A",
-        "name": "고태환",
-        "school": "성진초등학교",
-        "rounds": [
-          164,
-          202,
-          162,
-          244
-        ],
-        "total": 772,
-        "sourceRank": 161
-      },
-      {
-        "rank": 162,
-        "target": "38A",
-        "name": "임정우",
-        "school": "성진초등학교",
-        "rounds": [
-          138,
-          152,
-          206,
-          222
-        ],
-        "total": 718,
-        "sourceRank": 162
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_elem_lower_girls_2026",
-    "sheetLabel": "종별대회 여자 초등 U-10 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "초등부(저학년)",
-    "division": "초등부(저학년)",
-    "gender": "여",
-    "distances": [
-      35,
-      30,
-      25,
-      20
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "30D",
-        "name": "김태리",
-        "school": "김포하성초등학교",
-        "rounds": [
-          310,
-          332,
-          329,
-          349
-        ],
-        "total": 1320,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "25B",
-        "name": "이슬기",
-        "school": "홍남초등학교",
-        "rounds": [
-          314,
-          324,
-          331,
-          349
-        ],
-        "total": 1318,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "48C",
-        "name": "정별하",
-        "school": "용암초등학교",
-        "rounds": [
-          300,
-          319,
-          335,
-          344
-        ],
-        "total": 1298,
-        "sourceRank": 3
-      },
-      {
-        "rank": 4,
-        "target": "6B",
-        "name": "황리우",
-        "school": "하남천현초등학교",
-        "rounds": [
-          302,
-          322,
-          326,
-          347
-        ],
-        "total": 1297,
-        "sourceRank": 4
-      },
-      {
-        "rank": 5,
-        "target": "14D",
-        "name": "신유나",
-        "school": "대구송현초등학교",
-        "rounds": [
-          311,
-          327,
-          323,
-          334
-        ],
-        "total": 1295,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "37B",
-        "name": "박교금",
-        "school": "예천동부초등학교",
-        "rounds": [
-          298,
-          319,
-          337,
-          335
-        ],
-        "total": 1289,
-        "sourceRank": 6
-      },
-      {
-        "rank": 7,
-        "target": "28A",
-        "name": "정지우",
-        "school": "노암초등학교",
-        "rounds": [
-          279,
-          304,
-          319,
-          339
-        ],
-        "total": 1241,
-        "sourceRank": 7
-      },
-      {
-        "rank": 8,
-        "target": "34D",
-        "name": "조아인",
-        "school": "대전태평초등학교",
-        "rounds": [
-          274,
-          311,
-          317,
-          334
-        ],
-        "total": 1236,
-        "sourceRank": 8
-      },
-      {
-        "rank": 9,
-        "target": "34A",
-        "name": "김라하",
-        "school": "인천용현남초등학교",
-        "rounds": [
-          268,
-          307,
-          322,
-          336
-        ],
-        "total": 1233,
-        "sourceRank": 9
-      },
-      {
-        "rank": 10,
-        "target": "47C",
-        "name": "박현지",
-        "school": "용암초등학교",
-        "rounds": [
-          270,
-          295,
-          325,
-          333
-        ],
-        "total": 1223,
-        "sourceRank": 10
-      },
-      {
-        "rank": 11,
-        "target": "26B",
-        "name": "권도희",
-        "school": "홍남초등학교",
-        "rounds": [
-          283,
-          299,
-          313,
-          327
-        ],
-        "total": 1222,
-        "sourceRank": 11
-      },
-      {
-        "rank": 12,
-        "target": "41D",
-        "name": "김예은",
-        "school": "서울인헌초등학교",
-        "rounds": [
-          280,
-          296,
-          318,
-          325
-        ],
-        "total": 1219,
-        "sourceRank": 12
-      },
-      {
-        "rank": 13,
-        "target": "5B",
-        "name": "곽예린",
-        "school": "대구문성초등학교",
-        "rounds": [
-          271,
-          298,
-          318,
-          323
-        ],
-        "total": 1210,
-        "sourceRank": 13
-      },
-      {
-        "rank": 14,
-        "target": "10C",
-        "name": "정은우",
-        "school": "대구동부초등학교",
-        "rounds": [
-          289,
-          275,
-          320,
-          318
-        ],
-        "total": 1202,
-        "sourceRank": 14
-      },
-      {
-        "rank": 15,
-        "target": "38C",
-        "name": "방다은",
-        "school": "밀주초등학교",
-        "rounds": [
-          275,
-          292,
-          320,
-          310
-        ],
-        "total": 1197,
-        "sourceRank": 15
-      },
-      {
-        "rank": 16,
-        "target": "41C",
-        "name": "강민서",
-        "school": "여흥초등학교",
-        "rounds": [
-          277,
-          301,
-          301,
-          315
-        ],
-        "total": 1194,
-        "sourceRank": 16
-      },
-      {
-        "rank": 17,
-        "target": "35C",
-        "name": "장채희",
-        "school": "신계초등학교",
-        "rounds": [
-          245,
-          296,
-          302,
-          329
-        ],
-        "total": 1172,
-        "sourceRank": 17
-      },
-      {
-        "rank": 18,
-        "target": "30B",
-        "name": "최윤슬",
-        "school": "염주초등학교",
-        "rounds": [
-          249,
-          285,
-          321,
-          309
-        ],
-        "total": 1164,
-        "sourceRank": 18
-      },
-      {
-        "rank": 19,
-        "target": "15A",
-        "name": "안채이",
-        "school": "정평초등학교",
-        "rounds": [
-          243,
-          288,
-          302,
-          323
-        ],
-        "total": 1156,
-        "sourceRank": 19
-      },
-      {
-        "rank": 20,
-        "target": "36A",
-        "name": "유연선",
-        "school": "인천용현남초등학교",
-        "rounds": [
-          262,
-          265,
-          310,
-          317
-        ],
-        "total": 1154,
-        "sourceRank": 20
-      },
-      {
-        "rank": 21,
-        "target": "62D",
-        "name": "김예서",
-        "school": "설악초등학교",
-        "rounds": [
-          242,
-          265,
-          317,
-          324
-        ],
-        "total": 1148,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "32A",
-        "name": "이지윤",
-        "school": "노암초등학교",
-        "rounds": [
-          252,
-          275,
-          305,
-          315
-        ],
-        "total": 1147,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "35A",
-        "name": "김다은",
-        "school": "인천용현남초등학교",
-        "rounds": [
-          249,
-          268,
-          301,
-          323
-        ],
-        "total": 1141,
-        "sourceRank": 23
-      },
-      {
-        "rank": 24,
-        "target": "37C",
-        "name": "강다영",
-        "school": "태서초등학교",
-        "rounds": [
-          266,
-          275,
-          289,
-          308
-        ],
-        "total": 1138,
-        "sourceRank": 24
-      },
-      {
-        "rank": 25,
-        "target": "43C",
-        "name": "백수연",
-        "school": "여흥초등학교",
-        "rounds": [
-          260,
-          259,
-          304,
-          314
-        ],
-        "total": 1137,
-        "sourceRank": 25
-      },
-      {
-        "rank": 26,
-        "target": "49D",
-        "name": "김태림",
-        "school": "두암초등학교",
-        "rounds": [
-          229,
-          282,
-          303,
-          322
-        ],
-        "total": 1136,
-        "sourceRank": 26
-      },
-      {
-        "rank": 27,
-        "target": "11C",
-        "name": "김하윤",
-        "school": "대구동부초등학교",
-        "rounds": [
-          237,
-          269,
-          300,
-          324
-        ],
-        "total": 1130,
-        "sourceRank": 27
-      },
-      {
-        "rank": 28,
-        "target": "21B",
-        "name": "박다은",
-        "school": "용성초등학교",
-        "rounds": [
-          238,
-          266,
-          298,
-          326
-        ],
-        "total": 1128,
-        "sourceRank": 28
-      },
-      {
-        "rank": 29,
-        "target": "12C",
-        "name": "문채린",
-        "school": "대구동부초등학교",
-        "rounds": [
-          244,
-          258,
-          300,
-          320
-        ],
-        "total": 1122,
-        "sourceRank": 29
-      },
-      {
-        "rank": 30,
-        "target": "42C",
-        "name": "원율",
-        "school": "여흥초등학교",
-        "rounds": [
-          242,
-          273,
-          291,
-          314
-        ],
-        "total": 1120,
-        "sourceRank": 30
-      },
-      {
-        "rank": 30,
-        "target": "42D",
-        "name": "황율희",
-        "school": "서울인헌초등학교",
-        "rounds": [
-          241,
-          273,
-          285,
-          321
-        ],
-        "total": 1120,
-        "sourceRank": 30
-      },
-      {
-        "rank": 32,
-        "target": "65B",
-        "name": "박하은",
-        "school": "대구황금초등학교",
-        "rounds": [
-          247,
-          282,
-          277,
-          311
-        ],
-        "total": 1117,
-        "sourceRank": 32
-      },
-      {
-        "rank": 33,
-        "target": "55C",
-        "name": "김다솜",
-        "school": "반곡초등학교",
-        "rounds": [
-          213,
-          286,
-          304,
-          307
-        ],
-        "total": 1110,
-        "sourceRank": 33
-      },
-      {
-        "rank": 34,
-        "target": "31D",
-        "name": "조예늘",
-        "school": "김포하성초등학교",
-        "rounds": [
-          222,
-          269,
-          299,
-          315
-        ],
-        "total": 1105,
-        "sourceRank": 34
-      },
-      {
-        "rank": 35,
-        "target": "54C",
-        "name": "이민주",
-        "school": "반곡초등학교",
-        "rounds": [
-          234,
-          269,
-          288,
-          313
-        ],
-        "total": 1104,
-        "sourceRank": 35
-      },
-      {
-        "rank": 36,
-        "target": "17A",
-        "name": "전하늘",
-        "school": "병천초등학교",
-        "rounds": [
-          205,
-          276,
-          305,
-          304
-        ],
-        "total": 1090,
-        "sourceRank": 36
-      },
-      {
-        "rank": 37,
-        "target": "44C",
-        "name": "윤이진",
-        "school": "여흥초등학교",
-        "rounds": [
-          237,
-          242,
-          294,
-          314
-        ],
-        "total": 1087,
-        "sourceRank": 37
-      },
-      {
-        "rank": 38,
-        "target": "27B",
-        "name": "이가은",
-        "school": "홍남초등학교",
-        "rounds": [
-          240,
-          274,
-          273,
-          290
-        ],
-        "total": 1077,
-        "sourceRank": 38
-      },
-      {
-        "rank": 39,
-        "target": "65D",
-        "name": "김도연",
-        "school": "대평초등학교",
-        "rounds": [
-          238,
-          244,
-          279,
-          306
-        ],
-        "total": 1067,
-        "sourceRank": 39
-      },
-      {
-        "rank": 40,
-        "target": "22B",
-        "name": "김하은",
-        "school": "용성초등학교",
-        "rounds": [
-          245,
-          267,
-          261,
-          279
-        ],
-        "total": 1052,
-        "sourceRank": 40
-      },
-      {
-        "rank": 41,
-        "target": "44B",
-        "name": "김누리",
-        "school": "대구대덕초등학교",
-        "rounds": [
-          233,
-          236,
-          272,
-          304
-        ],
-        "total": 1045,
-        "sourceRank": 41
-      },
-      {
-        "rank": 42,
-        "target": "46A",
-        "name": "김소민",
-        "school": "강남초등학교",
-        "rounds": [
-          214,
-          249,
-          280,
-          296
-        ],
-        "total": 1039,
-        "sourceRank": 42
-      },
-      {
-        "rank": 43,
-        "target": "31A",
-        "name": "성다원",
-        "school": "노암초등학교",
-        "rounds": [
-          168,
-          217,
-          290,
-          306
-        ],
-        "total": 981,
-        "sourceRank": 43
-      },
-      {
-        "rank": 44,
-        "target": "63D",
-        "name": "이하림",
-        "school": "설악초등학교",
-        "rounds": [
-          185,
-          243,
-          242,
-          236
-        ],
-        "total": 906,
-        "sourceRank": 44
-      },
-      {
-        "rank": 45,
-        "target": "43D",
-        "name": "박주은",
-        "school": "서울인헌초등학교",
-        "rounds": [
-          218,
-          179,
-          175,
-          179
-        ],
-        "total": 751,
-        "sourceRank": 45
-      },
-      {
-        "rank": 46,
-        "target": "59C",
-        "name": "이주빈",
-        "school": "이원초등학교",
-        "rounds": [
-          0,
-          0,
-          216,
-          239
-        ],
-        "total": 455,
-        "sourceRank": 46
-      },
-      {
-        "rank": 47,
-        "target": "38D",
-        "name": "김아란",
-        "school": "문산초등학교",
-        "rounds": [
-          0,
-          0,
-          131,
-          258
-        ],
-        "total": 389,
-        "sourceRank": 47
-      },
-      {
-        "rank": 48,
-        "target": "18C",
-        "name": "임하린",
-        "school": "서울청량초등학교",
-        "rounds": [
-          0,
-          0,
-          150,
-          229
-        ],
-        "total": 379,
-        "sourceRank": 48
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_elem_upper_girls_2026",
-    "sheetLabel": "종별대회 여자 초등 U-12 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "초등부(고학년)",
-    "division": "초등부(고학년)",
-    "gender": "여",
-    "distances": [
-      35,
-      30,
-      25,
-      20
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "55A",
-        "name": "이지나",
-        "school": "인천갈월초등학교",
-        "rounds": [
-          339,
-          351,
-          353,
-          359
-        ],
-        "total": 1402,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "5A",
-        "name": "조민경",
-        "school": "촉석초등학교",
-        "rounds": [
-          331,
-          345,
-          357,
-          354
-        ],
-        "total": 1387,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "25D",
-        "name": "조유나",
-        "school": "김포하성초등학교",
-        "rounds": [
-          333,
-          343,
-          352,
-          357
-        ],
-        "total": 1385,
-        "sourceRank": 3
-      },
-      {
-        "rank": 4,
-        "target": "11A",
-        "name": "이세림",
-        "school": "정평초등학교",
-        "rounds": [
-          338,
-          342,
-          349,
-          355
-        ],
-        "total": 1384,
-        "sourceRank": 4
-      },
-      {
-        "rank": 5,
-        "target": "56A",
-        "name": "이지우",
-        "school": "인천갈월초등학교",
-        "rounds": [
-          331,
-          343,
-          351,
-          357
-        ],
-        "total": 1382,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "26D",
-        "name": "전다온",
-        "school": "김포하성초등학교",
-        "rounds": [
-          330,
-          340,
-          350,
-          353
-        ],
-        "total": 1373,
-        "sourceRank": 6
-      },
-      {
-        "rank": 6,
-        "target": "61C",
-        "name": "김지윤",
-        "school": "유촌초등학교",
-        "rounds": [
-          338,
-          338,
-          344,
-          353
-        ],
-        "total": 1373,
-        "sourceRank": 6
-      },
-      {
-        "rank": 8,
-        "target": "4D",
-        "name": "김수빈",
-        "school": "주몽양궁클럽(동)",
-        "rounds": [
-          334,
-          343,
-          347,
-          346
-        ],
-        "total": 1370,
-        "sourceRank": 8
-      },
-      {
-        "rank": 9,
-        "target": "33D",
-        "name": "신서연",
-        "school": "대전태평초등학교",
-        "rounds": [
-          328,
-          339,
-          350,
-          351
-        ],
-        "total": 1368,
-        "sourceRank": 9
-      },
-      {
-        "rank": 9,
-        "target": "22A",
-        "name": "김유민",
-        "school": "대전서부초등학교",
-        "rounds": [
-          330,
-          331,
-          347,
-          360
-        ],
-        "total": 1368,
-        "sourceRank": 9
-      },
-      {
-        "rank": 11,
-        "target": "27D",
-        "name": "원서아",
-        "school": "김포하성초등학교",
-        "rounds": [
-          325,
-          337,
-          348,
-          355
-        ],
-        "total": 1365,
-        "sourceRank": 11
-      },
-      {
-        "rank": 12,
-        "target": "8D",
-        "name": "강연지",
-        "school": "송정초등학교",
-        "rounds": [
-          323,
-          338,
-          349,
-          354
-        ],
-        "total": 1364,
-        "sourceRank": 12
-      },
-      {
-        "rank": 13,
-        "target": "22C",
-        "name": "김지율",
-        "school": "전주신동초등학교",
-        "rounds": [
-          321,
-          342,
-          346,
-          354
-        ],
-        "total": 1363,
-        "sourceRank": 13
-      },
-      {
-        "rank": 13,
-        "target": "53D",
-        "name": "최진솔",
-        "school": "대구덕인초등학교",
-        "rounds": [
-          322,
-          337,
-          347,
-          357
-        ],
-        "total": 1363,
-        "sourceRank": 13
-      },
-      {
-        "rank": 15,
-        "target": "56B",
-        "name": "천은우",
-        "school": "진해중앙초등학교",
-        "rounds": [
-          337,
-          335,
-          341,
-          349
-        ],
-        "total": 1362,
-        "sourceRank": 15
-      },
-      {
-        "rank": 16,
-        "target": "12A",
-        "name": "한세영",
-        "school": "정평초등학교",
-        "rounds": [
-          330,
-          333,
-          345,
-          352
-        ],
-        "total": 1360,
-        "sourceRank": 16
-      },
-      {
-        "rank": 16,
-        "target": "10A",
-        "name": "나유주",
-        "school": "정평초등학교",
-        "rounds": [
-          325,
-          339,
-          348,
-          348
-        ],
-        "total": 1360,
-        "sourceRank": 16
-      },
-      {
-        "rank": 16,
-        "target": "5C",
-        "name": "임서윤",
-        "school": "서울방이초등학교",
-        "rounds": [
-          320,
-          336,
-          350,
-          354
-        ],
-        "total": 1360,
-        "sourceRank": 16
-      },
-      {
-        "rank": 19,
-        "target": "40C",
-        "name": "송서현",
-        "school": "밀주초등학교",
-        "rounds": [
-          319,
-          341,
-          343,
-          351
-        ],
-        "total": 1354,
-        "sourceRank": 19
-      },
-      {
-        "rank": 20,
-        "target": "7C",
-        "name": "남유주",
-        "school": "서울방이초등학교",
-        "rounds": [
-          334,
-          320,
-          350,
-          349
-        ],
-        "total": 1353,
-        "sourceRank": 20
-      },
-      {
-        "rank": 21,
-        "target": "52D",
-        "name": "김윤설",
-        "school": "계림초등학교",
-        "rounds": [
-          325,
-          321,
-          353,
-          352
-        ],
-        "total": 1351,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "34B",
-        "name": "김지율",
-        "school": "예천동부초등학교",
-        "rounds": [
-          322,
-          324,
-          349,
-          354
-        ],
-        "total": 1349,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "20D",
-        "name": "김도희",
-        "school": "원미초등학교",
-        "rounds": [
-          320,
-          329,
-          343,
-          356
-        ],
-        "total": 1348,
-        "sourceRank": 23
-      },
-      {
-        "rank": 23,
-        "target": "60C",
-        "name": "윤혜원",
-        "school": "유촌초등학교",
-        "rounds": [
-          327,
-          334,
-          344,
-          343
-        ],
-        "total": 1348,
-        "sourceRank": 23
-      },
-      {
-        "rank": 25,
-        "target": "61A",
-        "name": "정예림",
-        "school": "서울신학초등학교",
-        "rounds": [
-          322,
-          334,
-          341,
-          349
-        ],
-        "total": 1346,
-        "sourceRank": 25
-      },
-      {
-        "rank": 26,
-        "target": "33A",
-        "name": "김민희",
-        "school": "인천용현남초등학교",
-        "rounds": [
-          313,
-          324,
-          352,
-          355
-        ],
-        "total": 1344,
-        "sourceRank": 26
-      },
-      {
-        "rank": 26,
-        "target": "58B",
-        "name": "김시아",
-        "school": "진해중앙초등학교",
-        "rounds": [
-          311,
-          339,
-          343,
-          351
-        ],
-        "total": 1344,
-        "sourceRank": 26
-      },
-      {
-        "rank": 28,
-        "target": "21D",
-        "name": "최준희",
-        "school": "원미초등학교",
-        "rounds": [
-          309,
-          341,
-          342,
-          350
-        ],
-        "total": 1342,
-        "sourceRank": 28
-      },
-      {
-        "rank": 29,
-        "target": "50C",
-        "name": "조윤주",
-        "school": "반곡초등학교",
-        "rounds": [
-          325,
-          324,
-          337,
-          352
-        ],
-        "total": 1338,
-        "sourceRank": 29
-      },
-      {
-        "rank": 30,
-        "target": "6A",
-        "name": "윤지후",
-        "school": "촉석초등학교",
-        "rounds": [
-          315,
-          336,
-          343,
-          343
-        ],
-        "total": 1337,
-        "sourceRank": 30
-      },
-      {
-        "rank": 31,
-        "target": "33C",
-        "name": "남예온",
-        "school": "신계초등학교",
-        "rounds": [
-          315,
-          322,
-          344,
-          355
-        ],
-        "total": 1336,
-        "sourceRank": 31
-      },
-      {
-        "rank": 32,
-        "target": "8A",
-        "name": "김세령",
-        "school": "촉석초등학교",
-        "rounds": [
-          324,
-          332,
-          335,
-          342
-        ],
-        "total": 1333,
-        "sourceRank": 32
-      },
-      {
-        "rank": 33,
-        "target": "33B",
-        "name": "김혜진",
-        "school": "예천동부초등학교",
-        "rounds": [
-          319,
-          321,
-          344,
-          348
-        ],
-        "total": 1332,
-        "sourceRank": 33
-      },
-      {
-        "rank": 34,
-        "target": "50D",
-        "name": "이시연",
-        "school": "대미초등학교",
-        "rounds": [
-          309,
-          325,
-          347,
-          350
-        ],
-        "total": 1331,
-        "sourceRank": 34
-      },
-      {
-        "rank": 34,
-        "target": "57B",
-        "name": "박수빈",
-        "school": "진해중앙초등학교",
-        "rounds": [
-          319,
-          327,
-          343,
-          342
-        ],
-        "total": 1331,
-        "sourceRank": 34
-      },
-      {
-        "rank": 36,
-        "target": "19B",
-        "name": "함주하",
-        "school": "용성초등학교",
-        "rounds": [
-          312,
-          326,
-          344,
-          348
-        ],
-        "total": 1330,
-        "sourceRank": 36
-      },
-      {
-        "rank": 37,
-        "target": "9C",
-        "name": "송도연",
-        "school": "대구동부초등학교",
-        "rounds": [
-          323,
-          320,
-          343,
-          343
-        ],
-        "total": 1329,
-        "sourceRank": 37
-      },
-      {
-        "rank": 37,
-        "target": "52B",
-        "name": "손지우",
-        "school": "새일초등학교",
-        "rounds": [
-          334,
-          328,
-          326,
-          341
-        ],
-        "total": 1329,
-        "sourceRank": 37
-      },
-      {
-        "rank": 39,
-        "target": "9A",
-        "name": "배주원",
-        "school": "촉석초등학교",
-        "rounds": [
-          303,
-          339,
-          337,
-          348
-        ],
-        "total": 1327,
-        "sourceRank": 39
-      },
-      {
-        "rank": 39,
-        "target": "46B",
-        "name": "이채윤",
-        "school": "모덕초등학교",
-        "rounds": [
-          314,
-          325,
-          339,
-          349
-        ],
-        "total": 1327,
-        "sourceRank": 39
-      },
-      {
-        "rank": 41,
-        "target": "10D",
-        "name": "신서윤",
-        "school": "송정초등학교",
-        "rounds": [
-          291,
-          339,
-          344,
-          352
-        ],
-        "total": 1326,
-        "sourceRank": 41
-      },
-      {
-        "rank": 41,
-        "target": "59B",
-        "name": "이유민",
-        "school": "진해중앙초등학교",
-        "rounds": [
-          320,
-          326,
-          337,
-          343
-        ],
-        "total": 1326,
-        "sourceRank": 41
-      },
-      {
-        "rank": 41,
-        "target": "46D",
-        "name": "고채나",
-        "school": "인천서면초등학교",
-        "rounds": [
-          318,
-          333,
-          332,
-          343
-        ],
-        "total": 1326,
-        "sourceRank": 41
-      },
-      {
-        "rank": 44,
-        "target": "35B",
-        "name": "한소희",
-        "school": "예천동부초등학교",
-        "rounds": [
-          314,
-          329,
-          334,
-          348
-        ],
-        "total": 1325,
-        "sourceRank": 44
-      },
-      {
-        "rank": 45,
-        "target": "11D",
-        "name": "김서윤",
-        "school": "송정초등학교",
-        "rounds": [
-          311,
-          325,
-          337,
-          351
-        ],
-        "total": 1324,
-        "sourceRank": 45
-      },
-      {
-        "rank": 46,
-        "target": "4B",
-        "name": "허선율",
-        "school": "대구문성초등학교",
-        "rounds": [
-          313,
-          321,
-          342,
-          346
-        ],
-        "total": 1322,
-        "sourceRank": 46
-      },
-      {
-        "rank": 47,
-        "target": "51C",
-        "name": "김서율",
-        "school": "반곡초등학교",
-        "rounds": [
-          300,
-          336,
-          344,
-          341
-        ],
-        "total": 1321,
-        "sourceRank": 47
-      },
-      {
-        "rank": 48,
-        "target": "19C",
-        "name": "김서율",
-        "school": "전주신동초등학교",
-        "rounds": [
-          316,
-          319,
-          342,
-          341
-        ],
-        "total": 1318,
-        "sourceRank": 48
-      },
-      {
-        "rank": 49,
-        "target": "19A",
-        "name": "고은아",
-        "school": "순천성남초등학교",
-        "rounds": [
-          316,
-          332,
-          326,
-          343
-        ],
-        "total": 1317,
-        "sourceRank": 49
-      },
-      {
-        "rank": 50,
-        "target": "4A",
-        "name": "이세은",
-        "school": "촉석초등학교",
-        "rounds": [
-          311,
-          314,
-          335,
-          356
-        ],
-        "total": 1316,
-        "sourceRank": 50
-      },
-      {
-        "rank": 50,
-        "target": "59D",
-        "name": "김규리",
-        "school": "오창초등학교",
-        "rounds": [
-          306,
-          324,
-          339,
-          347
-        ],
-        "total": 1316,
-        "sourceRank": 50
-      },
-      {
-        "rank": 50,
-        "target": "62A",
-        "name": "윤시아",
-        "school": "서울신학초등학교",
-        "rounds": [
-          315,
-          336,
-          325,
-          340
-        ],
-        "total": 1316,
-        "sourceRank": 50
-      },
-      {
-        "rank": 50,
-        "target": "21A",
-        "name": "정서우",
-        "school": "대전서부초등학교",
-        "rounds": [
-          317,
-          325,
-          331,
-          343
-        ],
-        "total": 1316,
-        "sourceRank": 50
-      },
-      {
-        "rank": 54,
-        "target": "58C",
-        "name": "이혜진",
-        "school": "이원초등학교",
-        "rounds": [
-          307,
-          326,
-          337,
-          345
-        ],
-        "total": 1315,
-        "sourceRank": 54
-      },
-      {
-        "rank": 55,
-        "target": "54A",
-        "name": "신다은",
-        "school": "인천갈월초등학교",
-        "rounds": [
-          313,
-          332,
-          326,
-          343
-        ],
-        "total": 1314,
-        "sourceRank": 55
-      },
-      {
-        "rank": 56,
-        "target": "36B",
-        "name": "최지원",
-        "school": "예천동부초등학교",
-        "rounds": [
-          307,
-          327,
-          335,
-          343
-        ],
-        "total": 1312,
-        "sourceRank": 56
-      },
-      {
-        "rank": 56,
-        "target": "53B",
-        "name": "연하린",
-        "school": "새일초등학교",
-        "rounds": [
-          320,
-          318,
-          334,
-          340
-        ],
-        "total": 1312,
-        "sourceRank": 56
-      },
-      {
-        "rank": 58,
-        "target": "27A",
-        "name": "이도혜",
-        "school": "노암초등학교",
-        "rounds": [
-          310,
-          323,
-          333,
-          345
-        ],
-        "total": 1311,
-        "sourceRank": 58
-      },
-      {
-        "rank": 58,
-        "target": "58A",
-        "name": "정세영",
-        "school": "인천갈월초등학교",
-        "rounds": [
-          310,
-          332,
-          330,
-          339
-        ],
-        "total": 1311,
-        "sourceRank": 58
-      },
-      {
-        "rank": 60,
-        "target": "16A",
-        "name": "안예빈",
-        "school": "병천초등학교",
-        "rounds": [
-          308,
-          331,
-          331,
-          340
-        ],
-        "total": 1310,
-        "sourceRank": 60
-      },
-      {
-        "rank": 60,
-        "target": "13A",
-        "name": "정하민",
-        "school": "정평초등학교",
-        "rounds": [
-          311,
-          325,
-          335,
-          339
-        ],
-        "total": 1310,
-        "sourceRank": 60
-      },
-      {
-        "rank": 62,
-        "target": "28D",
-        "name": "한윤서",
-        "school": "김포하성초등학교",
-        "rounds": [
-          295,
-          330,
-          343,
-          341
-        ],
-        "total": 1309,
-        "sourceRank": 62
-      },
-      {
-        "rank": 63,
-        "target": "51A",
-        "name": "이유빈",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          318,
-          317,
-          327,
-          346
-        ],
-        "total": 1308,
-        "sourceRank": 63
-      },
-      {
-        "rank": 63,
-        "target": "60B",
-        "name": "노유림",
-        "school": "대구황금초등학교",
-        "rounds": [
-          298,
-          328,
-          339,
-          343
-        ],
-        "total": 1308,
-        "sourceRank": 63
-      },
-      {
-        "rank": 65,
-        "target": "54D",
-        "name": "김민정",
-        "school": "대구덕인초등학교",
-        "rounds": [
-          306,
-          319,
-          332,
-          350
-        ],
-        "total": 1307,
-        "sourceRank": 65
-      },
-      {
-        "rank": 65,
-        "target": "57A",
-        "name": "김사랑",
-        "school": "인천갈월초등학교",
-        "rounds": [
-          311,
-          321,
-          332,
-          343
-        ],
-        "total": 1307,
-        "sourceRank": 65
-      },
-      {
-        "rank": 67,
-        "target": "38B",
-        "name": "배수빈",
-        "school": "예천동부초등학교",
-        "rounds": [
-          311,
-          334,
-          325,
-          336
-        ],
-        "total": 1306,
-        "sourceRank": 67
-      },
-      {
-        "rank": 67,
-        "target": "48B",
-        "name": "손하음",
-        "school": "타겟28(동)",
-        "rounds": [
-          317,
-          319,
-          329,
-          341
-        ],
-        "total": 1306,
-        "sourceRank": 67
-      },
-      {
-        "rank": 67,
-        "target": "24B",
-        "name": "김선율",
-        "school": "홍남초등학교",
-        "rounds": [
-          321,
-          322,
-          326,
-          337
-        ],
-        "total": 1306,
-        "sourceRank": 67
-      },
-      {
-        "rank": 70,
-        "target": "61B",
-        "name": "최소윤",
-        "school": "대구황금초등학교",
-        "rounds": [
-          301,
-          322,
-          336,
-          345
-        ],
-        "total": 1304,
-        "sourceRank": 70
-      },
-      {
-        "rank": 70,
-        "target": "18D",
-        "name": "김서현",
-        "school": "천곡초등학교",
-        "rounds": [
-          309,
-          321,
-          329,
-          345
-        ],
-        "total": 1304,
-        "sourceRank": 70
-      },
-      {
-        "rank": 72,
-        "target": "45D",
-        "name": "이다은",
-        "school": "인천서면초등학교",
-        "rounds": [
-          309,
-          314,
-          343,
-          337
-        ],
-        "total": 1303,
-        "sourceRank": 72
-      },
-      {
-        "rank": 72,
-        "target": "24A",
-        "name": "송하랑",
-        "school": "대전서부초등학교",
-        "rounds": [
-          313,
-          313,
-          336,
-          341
-        ],
-        "total": 1303,
-        "sourceRank": 72
-      },
-      {
-        "rank": 74,
-        "target": "6D",
-        "name": "김태연",
-        "school": "송정초등학교",
-        "rounds": [
-          306,
-          319,
-          334,
-          343
-        ],
-        "total": 1302,
-        "sourceRank": 74
-      },
-      {
-        "rank": 75,
-        "target": "29B",
-        "name": "김현아",
-        "school": "염주초등학교",
-        "rounds": [
-          309,
-          324,
-          329,
-          337
-        ],
-        "total": 1299,
-        "sourceRank": 75
-      },
-      {
-        "rank": 76,
-        "target": "15D",
-        "name": "이서진",
-        "school": "대구송현초등학교",
-        "rounds": [
-          291,
-          332,
-          325,
-          350
-        ],
-        "total": 1298,
-        "sourceRank": 76
-      },
-      {
-        "rank": 77,
-        "target": "40B",
-        "name": "김빛나",
-        "school": "대구대덕초등학교",
-        "rounds": [
-          299,
-          323,
-          330,
-          345
-        ],
-        "total": 1297,
-        "sourceRank": 77
-      },
-      {
-        "rank": 78,
-        "target": "24C",
-        "name": "신재이",
-        "school": "전주신동초등학교",
-        "rounds": [
-          301,
-          317,
-          335,
-          343
-        ],
-        "total": 1296,
-        "sourceRank": 78
-      },
-      {
-        "rank": 78,
-        "target": "22D",
-        "name": "곽나영",
-        "school": "원미초등학교",
-        "rounds": [
-          311,
-          314,
-          333,
-          338
-        ],
-        "total": 1296,
-        "sourceRank": 78
-      },
-      {
-        "rank": 80,
-        "target": "16D",
-        "name": "김봄",
-        "school": "천곡초등학교",
-        "rounds": [
-          298,
-          324,
-          339,
-          334
-        ],
-        "total": 1295,
-        "sourceRank": 80
-      },
-      {
-        "rank": 80,
-        "target": "51B",
-        "name": "김민서",
-        "school": "송해초등학교",
-        "rounds": [
-          311,
-          318,
-          329,
-          337
-        ],
-        "total": 1295,
-        "sourceRank": 80
-      },
-      {
-        "rank": 82,
-        "target": "11B",
-        "name": "장하연",
-        "school": "일로초등학교",
-        "rounds": [
-          308,
-          315,
-          336,
-          334
-        ],
-        "total": 1293,
-        "sourceRank": 82
-      },
-      {
-        "rank": 82,
-        "target": "14A",
-        "name": "김지율",
-        "school": "정평초등학교",
-        "rounds": [
-          304,
-          319,
-          333,
-          337
-        ],
-        "total": 1293,
-        "sourceRank": 82
-      },
-      {
-        "rank": 84,
-        "target": "44D",
-        "name": "박다영",
-        "school": "인천서면초등학교",
-        "rounds": [
-          300,
-          317,
-          331,
-          343
-        ],
-        "total": 1291,
-        "sourceRank": 84
-      },
-      {
-        "rank": 84,
-        "target": "53A",
-        "name": "류다미",
-        "school": "인천갈월초등학교",
-        "rounds": [
-          314,
-          303,
-          324,
-          350
-        ],
-        "total": 1291,
-        "sourceRank": 84
-      },
-      {
-        "rank": 86,
-        "target": "34C",
-        "name": "표하린",
-        "school": "신계초등학교",
-        "rounds": [
-          300,
-          323,
-          329,
-          337
-        ],
-        "total": 1289,
-        "sourceRank": 86
-      },
-      {
-        "rank": 86,
-        "target": "60D",
-        "name": "강다은",
-        "school": "오창초등학교",
-        "rounds": [
-          301,
-          313,
-          333,
-          342
-        ],
-        "total": 1289,
-        "sourceRank": 86
-      },
-      {
-        "rank": 88,
-        "target": "7D",
-        "name": "이다연",
-        "school": "송정초등학교",
-        "rounds": [
-          290,
-          317,
-          327,
-          354
-        ],
-        "total": 1288,
-        "sourceRank": 88
-      },
-      {
-        "rank": 88,
-        "target": "7A",
-        "name": "김민서",
-        "school": "촉석초등학교",
-        "rounds": [
-          302,
-          323,
-          322,
-          341
-        ],
-        "total": 1288,
-        "sourceRank": 88
-      },
-      {
-        "rank": 90,
-        "target": "14C",
-        "name": "김아린",
-        "school": "서울청량초등학교",
-        "rounds": [
-          290,
-          314,
-          337,
-          345
-        ],
-        "total": 1286,
-        "sourceRank": 90
-      },
-      {
-        "rank": 91,
-        "target": "39D",
-        "name": "이서윤",
-        "school": "서울인헌초등학교",
-        "rounds": [
-          308,
-          306,
-          328,
-          341
-        ],
-        "total": 1283,
-        "sourceRank": 91
-      },
-      {
-        "rank": 92,
-        "target": "59A",
-        "name": "유하은",
-        "school": "인천갈월초등학교",
-        "rounds": [
-          299,
-          319,
-          324,
-          340
-        ],
-        "total": 1282,
-        "sourceRank": 92
-      },
-      {
-        "rank": 92,
-        "target": "56D",
-        "name": "김리엘",
-        "school": "서울북가좌초등학교",
-        "rounds": [
-          308,
-          305,
-          333,
-          336
-        ],
-        "total": 1282,
-        "sourceRank": 92
-      },
-      {
-        "rank": 92,
-        "target": "51D",
-        "name": "김상희",
-        "school": "계림초등학교",
-        "rounds": [
-          300,
-          312,
-          329,
-          341
-        ],
-        "total": 1282,
-        "sourceRank": 92
-      },
-      {
-        "rank": 92,
-        "target": "55B",
-        "name": "진리안",
-        "school": "진해중앙초등학교",
-        "rounds": [
-          304,
-          309,
-          332,
-          337
-        ],
-        "total": 1282,
-        "sourceRank": 92
-      },
-      {
-        "rank": 96,
-        "target": "8C",
-        "name": "이해음",
-        "school": "임실군양궁스포츠클럽(동)",
-        "rounds": [
-          309,
-          324,
-          320,
-          327
-        ],
-        "total": 1280,
-        "sourceRank": 96
-      },
-      {
-        "rank": 96,
-        "target": "9D",
-        "name": "강라율",
-        "school": "송정초등학교",
-        "rounds": [
-          304,
-          307,
-          330,
-          339
-        ],
-        "total": 1280,
-        "sourceRank": 96
-      },
-      {
-        "rank": 98,
-        "target": "4C",
-        "name": "유주하",
-        "school": "서울방이초등학교",
-        "rounds": [
-          298,
-          309,
-          332,
-          340
-        ],
-        "total": 1279,
-        "sourceRank": 98
-      },
-      {
-        "rank": 99,
-        "target": "60A",
-        "name": "김리하",
-        "school": "서울신학초등학교",
-        "rounds": [
-          288,
-          323,
-          324,
-          341
-        ],
-        "total": 1276,
-        "sourceRank": 99
-      },
-      {
-        "rank": 99,
-        "target": "63A",
-        "name": "김희원",
-        "school": "서울신학초등학교",
-        "rounds": [
-          307,
-          314,
-          324,
-          331
-        ],
-        "total": 1276,
-        "sourceRank": 99
-      },
-      {
-        "rank": 101,
-        "target": "25C",
-        "name": "안서린",
-        "school": "전주신동초등학교",
-        "rounds": [
-          287,
-          325,
-          334,
-          326
-        ],
-        "total": 1272,
-        "sourceRank": 101
-      },
-      {
-        "rank": 101,
-        "target": "6C",
-        "name": "김연진",
-        "school": "서울방이초등학교",
-        "rounds": [
-          287,
-          318,
-          332,
-          335
-        ],
-        "total": 1272,
-        "sourceRank": 101
-      },
-      {
-        "rank": 103,
-        "target": "17D",
-        "name": "안도은",
-        "school": "천곡초등학교",
-        "rounds": [
-          309,
-          296,
-          331,
-          334
-        ],
-        "total": 1270,
-        "sourceRank": 103
-      },
-      {
-        "rank": 103,
-        "target": "63C",
-        "name": "정세윤",
-        "school": "유촌초등학교",
-        "rounds": [
-          308,
-          319,
-          316,
-          327
-        ],
-        "total": 1270,
-        "sourceRank": 103
-      },
-      {
-        "rank": 105,
-        "target": "48A",
-        "name": "안예담",
-        "school": "대전송촌초등학교",
-        "rounds": [
-          294,
-          313,
-          326,
-          336
-        ],
-        "total": 1269,
-        "sourceRank": 105
-      },
-      {
-        "rank": 106,
-        "target": "39C",
-        "name": "조유빈",
-        "school": "밀주초등학교",
-        "rounds": [
-          301,
-          315,
-          324,
-          327
-        ],
-        "total": 1267,
-        "sourceRank": 106
-      },
-      {
-        "rank": 106,
-        "target": "29D",
-        "name": "양시언",
-        "school": "김포하성초등학교",
-        "rounds": [
-          300,
-          316,
-          321,
-          330
-        ],
-        "total": 1267,
-        "sourceRank": 106
-      },
-      {
-        "rank": 108,
-        "target": "25A",
-        "name": "박하연",
-        "school": "노암초등학교",
-        "rounds": [
-          301,
-          315,
-          320,
-          328
-        ],
-        "total": 1264,
-        "sourceRank": 108
-      },
-      {
-        "rank": 109,
-        "target": "45C",
-        "name": "김지오",
-        "school": "용암초등학교",
-        "rounds": [
-          292,
-          313,
-          318,
-          339
-        ],
-        "total": 1262,
-        "sourceRank": 109
-      },
-      {
-        "rank": 110,
-        "target": "17B",
-        "name": "박서율",
-        "school": "황성초등학교",
-        "rounds": [
-          289,
-          318,
-          314,
-          339
-        ],
-        "total": 1260,
-        "sourceRank": 110
-      },
-      {
-        "rank": 110,
-        "target": "44A",
-        "name": "문유빈",
-        "school": "강남초등학교",
-        "rounds": [
-          301,
-          312,
-          304,
-          343
-        ],
-        "total": 1260,
-        "sourceRank": 110
-      },
-      {
-        "rank": 110,
-        "target": "23A",
-        "name": "조서희",
-        "school": "대전서부초등학교",
-        "rounds": [
-          292,
-          306,
-          327,
-          335
-        ],
-        "total": 1260,
-        "sourceRank": 110
-      },
-      {
-        "rank": 113,
-        "target": "24D",
-        "name": "오연희",
-        "school": "김포하성초등학교",
-        "rounds": [
-          296,
-          301,
-          320,
-          341
-        ],
-        "total": 1258,
-        "sourceRank": 113
-      },
-      {
-        "rank": 113,
-        "target": "47B",
-        "name": "김태은",
-        "school": "타겟28(동)",
-        "rounds": [
-          299,
-          310,
-          321,
-          328
-        ],
-        "total": 1258,
-        "sourceRank": 113
-      },
-      {
-        "rank": 115,
-        "target": "23D",
-        "name": "차유나",
-        "school": "원미초등학교",
-        "rounds": [
-          294,
-          306,
-          329,
-          327
-        ],
-        "total": 1256,
-        "sourceRank": 115
-      },
-      {
-        "rank": 116,
-        "target": "35D",
-        "name": "황국영",
-        "school": "문산초등학교",
-        "rounds": [
-          301,
-          297,
-          321,
-          335
-        ],
-        "total": 1254,
-        "sourceRank": 116
-      },
-      {
-        "rank": 117,
-        "target": "18A",
-        "name": "김루하",
-        "school": "순천성남초등학교",
-        "rounds": [
-          287,
-          303,
-          331,
-          332
-        ],
-        "total": 1253,
-        "sourceRank": 117
-      },
-      {
-        "rank": 117,
-        "target": "20C",
-        "name": "유연우",
-        "school": "전주신동초등학교",
-        "rounds": [
-          291,
-          307,
-          317,
-          338
-        ],
-        "total": 1253,
-        "sourceRank": 117
-      },
-      {
-        "rank": 119,
-        "target": "45B",
-        "name": "진혜민",
-        "school": "모덕초등학교",
-        "rounds": [
-          281,
-          311,
-          325,
-          335
-        ],
-        "total": 1252,
-        "sourceRank": 119
-      },
-      {
-        "rank": 120,
-        "target": "31B",
-        "name": "고윤진",
-        "school": "교동초등학교",
-        "rounds": [
-          286,
-          310,
-          323,
-          332
-        ],
-        "total": 1251,
-        "sourceRank": 120
-      },
-      {
-        "rank": 121,
-        "target": "39B",
-        "name": "윤지인",
-        "school": "예천동부초등학교",
-        "rounds": [
-          295,
-          302,
-          324,
-          328
-        ],
-        "total": 1249,
-        "sourceRank": 121
-      },
-      {
-        "rank": 122,
-        "target": "43A",
-        "name": "정지원",
-        "school": "강남초등학교",
-        "rounds": [
-          282,
-          318,
-          311,
-          337
-        ],
-        "total": 1248,
-        "sourceRank": 122
-      },
-      {
-        "rank": 122,
-        "target": "16C",
-        "name": "김한나",
-        "school": "서울청량초등학교",
-        "rounds": [
-          286,
-          306,
-          320,
-          336
-        ],
-        "total": 1248,
-        "sourceRank": 122
-      },
-      {
-        "rank": 124,
-        "target": "53C",
-        "name": "현수민",
-        "school": "반곡초등학교",
-        "rounds": [
-          284,
-          310,
-          324,
-          326
-        ],
-        "total": 1244,
-        "sourceRank": 124
-      },
-      {
-        "rank": 125,
-        "target": "46C",
-        "name": "함서율",
-        "school": "용암초등학교",
-        "rounds": [
-          267,
-          298,
-          331,
-          347
-        ],
-        "total": 1243,
-        "sourceRank": 125
-      },
-      {
-        "rank": 126,
-        "target": "41A",
-        "name": "송설아",
-        "school": "강남초등학교",
-        "rounds": [
-          288,
-          294,
-          323,
-          336
-        ],
-        "total": 1241,
-        "sourceRank": 126
-      },
-      {
-        "rank": 127,
-        "target": "57C",
-        "name": "진다흰",
-        "school": "이원초등학교",
-        "rounds": [
-          285,
-          288,
-          323,
-          344
-        ],
-        "total": 1240,
-        "sourceRank": 127
-      },
-      {
-        "rank": 128,
-        "target": "49B",
-        "name": "강하린",
-        "school": "타겟28(동)",
-        "rounds": [
-          282,
-          306,
-          315,
-          336
-        ],
-        "total": 1239,
-        "sourceRank": 128
-      },
-      {
-        "rank": 129,
-        "target": "8B",
-        "name": "김현아",
-        "school": "일로초등학교",
-        "rounds": [
-          295,
-          294,
-          312,
-          337
-        ],
-        "total": 1238,
-        "sourceRank": 129
-      },
-      {
-        "rank": 130,
-        "target": "9B",
-        "name": "안로하",
-        "school": "일로초등학교",
-        "rounds": [
-          273,
-          319,
-          314,
-          331
-        ],
-        "total": 1237,
-        "sourceRank": 130
-      },
-      {
-        "rank": 131,
-        "target": "13D",
-        "name": "박선유",
-        "school": "송정초등학교",
-        "rounds": [
-          296,
-          284,
-          320,
-          335
-        ],
-        "total": 1235,
-        "sourceRank": 131
-      },
-      {
-        "rank": 132,
-        "target": "52C",
-        "name": "장하윤",
-        "school": "반곡초등학교",
-        "rounds": [
-          285,
-          301,
-          324,
-          324
-        ],
-        "total": 1234,
-        "sourceRank": 132
-      },
-      {
-        "rank": 133,
-        "target": "12D",
-        "name": "박수연",
-        "school": "송정초등학교",
-        "rounds": [
-          288,
-          306,
-          304,
-          334
-        ],
-        "total": 1232,
-        "sourceRank": 133
-      },
-      {
-        "rank": 134,
-        "target": "5D",
-        "name": "김윤하",
-        "school": "송정초등학교",
-        "rounds": [
-          277,
-          300,
-          318,
-          328
-        ],
-        "total": 1223,
-        "sourceRank": 134
-      },
-      {
-        "rank": 135,
-        "target": "37A",
-        "name": "장윤설",
-        "school": "덕벌초등학교",
-        "rounds": [
-          269,
-          306,
-          317,
-          329
-        ],
-        "total": 1221,
-        "sourceRank": 135
-      },
-      {
-        "rank": 136,
-        "target": "32B",
-        "name": "임윤슬",
-        "school": "교동초등학교",
-        "rounds": [
-          283,
-          281,
-          316,
-          333
-        ],
-        "total": 1213,
-        "sourceRank": 136
-      },
-      {
-        "rank": 137,
-        "target": "13C",
-        "name": "배보미",
-        "school": "서울청량초등학교",
-        "rounds": [
-          280,
-          300,
-          310,
-          321
-        ],
-        "total": 1211,
-        "sourceRank": 137
-      },
-      {
-        "rank": 137,
-        "target": "23C",
-        "name": "이다연",
-        "school": "전주신동초등학교",
-        "rounds": [
-          278,
-          284,
-          318,
-          331
-        ],
-        "total": 1211,
-        "sourceRank": 137
-      },
-      {
-        "rank": 139,
-        "target": "47D",
-        "name": "이다은",
-        "school": "두암초등학교",
-        "rounds": [
-          284,
-          288,
-          302,
-          336
-        ],
-        "total": 1210,
-        "sourceRank": 139
-      },
-      {
-        "rank": 140,
-        "target": "21C",
-        "name": "송해인",
-        "school": "전주신동초등학교",
-        "rounds": [
-          299,
-          302,
-          292,
-          309
-        ],
-        "total": 1202,
-        "sourceRank": 140
-      },
-      {
-        "rank": 141,
-        "target": "14B",
-        "name": "김지안",
-        "school": "남천초등학교",
-        "rounds": [
-          267,
-          299,
-          314,
-          321
-        ],
-        "total": 1201,
-        "sourceRank": 141
-      },
-      {
-        "rank": 142,
-        "target": "32D",
-        "name": "김라윤",
-        "school": "김포하성초등학교",
-        "rounds": [
-          268,
-          298,
-          305,
-          328
-        ],
-        "total": 1199,
-        "sourceRank": 142
-      },
-      {
-        "rank": 143,
-        "target": "40D",
-        "name": "이시은",
-        "school": "서울인헌초등학교",
-        "rounds": [
-          236,
-          311,
-          320,
-          331
-        ],
-        "total": 1198,
-        "sourceRank": 143
-      },
-      {
-        "rank": 144,
-        "target": "62C",
-        "name": "박소율",
-        "school": "유촌초등학교",
-        "rounds": [
-          269,
-          294,
-          321,
-          311
-        ],
-        "total": 1195,
-        "sourceRank": 144
-      },
-      {
-        "rank": 145,
-        "target": "45A",
-        "name": "김주아",
-        "school": "강남초등학교",
-        "rounds": [
-          270,
-          280,
-          309,
-          335
-        ],
-        "total": 1194,
-        "sourceRank": 145
-      },
-      {
-        "rank": 146,
-        "target": "13B",
-        "name": "박인희",
-        "school": "남천초등학교",
-        "rounds": [
-          246,
-          286,
-          316,
-          337
-        ],
-        "total": 1185,
-        "sourceRank": 146
-      },
-      {
-        "rank": 146,
-        "target": "49A",
-        "name": "박다인",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          251,
-          298,
-          309,
-          327
-        ],
-        "total": 1185,
-        "sourceRank": 146
-      },
-      {
-        "rank": 148,
-        "target": "28B",
-        "name": "강민정",
-        "school": "염주초등학교",
-        "rounds": [
-          278,
-          252,
-          319,
-          334
-        ],
-        "total": 1183,
-        "sourceRank": 148
-      },
-      {
-        "rank": 149,
-        "target": "15B",
-        "name": "구은령",
-        "school": "황성초등학교",
-        "rounds": [
-          259,
-          295,
-          305,
-          322
-        ],
-        "total": 1181,
-        "sourceRank": 149
-      },
-      {
-        "rank": 149,
-        "target": "57D",
-        "name": "이린",
-        "school": "서울북가좌초등학교",
-        "rounds": [
-          273,
-          281,
-          310,
-          317
-        ],
-        "total": 1181,
-        "sourceRank": 149
-      },
-      {
-        "rank": 151,
-        "target": "55D",
-        "name": "김다윤",
-        "school": "대구덕인초등학교",
-        "rounds": [
-          265,
-          284,
-          297,
-          334
-        ],
-        "total": 1180,
-        "sourceRank": 151
-      },
-      {
-        "rank": 151,
-        "target": "64D",
-        "name": "전이하",
-        "school": "대평초등학교",
-        "rounds": [
-          257,
-          290,
-          310,
-          323
-        ],
-        "total": 1180,
-        "sourceRank": 151
-      },
-      {
-        "rank": 153,
-        "target": "54B",
-        "name": "김지율",
-        "school": "새일초등학교",
-        "rounds": [
-          250,
-          293,
-          303,
-          333
-        ],
-        "total": 1179,
-        "sourceRank": 153
-      },
-      {
-        "rank": 154,
-        "target": "29A",
-        "name": "윤서현",
-        "school": "노암초등학교",
-        "rounds": [
-          254,
-          308,
-          297,
-          316
-        ],
-        "total": 1175,
-        "sourceRank": 154
-      },
-      {
-        "rank": 155,
-        "target": "37D",
-        "name": "곽가현",
-        "school": "문산초등학교",
-        "rounds": [
-          258,
-          271,
-          307,
-          337
-        ],
-        "total": 1173,
-        "sourceRank": 155
-      },
-      {
-        "rank": 156,
-        "target": "52A",
-        "name": "임소민",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          264,
-          304,
-          277,
-          324
-        ],
-        "total": 1169,
-        "sourceRank": 156
-      },
-      {
-        "rank": 157,
-        "target": "65A",
-        "name": "윤봄",
-        "school": "서울신학초등학교",
-        "rounds": [
-          252,
-          280,
-          302,
-          332
-        ],
-        "total": 1166,
-        "sourceRank": 157
-      },
-      {
-        "rank": 158,
-        "target": "40A",
-        "name": "이희정",
-        "school": "사천초등학교",
-        "rounds": [
-          262,
-          251,
-          321,
-          326
-        ],
-        "total": 1160,
-        "sourceRank": 158
-      },
-      {
-        "rank": 159,
-        "target": "47A",
-        "name": "성연재",
-        "school": "대전송촌초등학교",
-        "rounds": [
-          257,
-          275,
-          304,
-          316
-        ],
-        "total": 1152,
-        "sourceRank": 159
-      },
-      {
-        "rank": 160,
-        "target": "48D",
-        "name": "김태희",
-        "school": "두암초등학교",
-        "rounds": [
-          264,
-          272,
-          302,
-          310
-        ],
-        "total": 1148,
-        "sourceRank": 160
-      },
-      {
-        "rank": 161,
-        "target": "42B",
-        "name": "정서미",
-        "school": "대구대덕초등학교",
-        "rounds": [
-          264,
-          271,
-          285,
-          318
-        ],
-        "total": 1138,
-        "sourceRank": 161
-      },
-      {
-        "rank": 162,
-        "target": "7B",
-        "name": "김라엘",
-        "school": "일로초등학교",
-        "rounds": [
-          230,
-          294,
-          298,
-          311
-        ],
-        "total": 1133,
-        "sourceRank": 162
-      },
-      {
-        "rank": 162,
-        "target": "62B",
-        "name": "정지우",
-        "school": "대구황금초등학교",
-        "rounds": [
-          260,
-          276,
-          289,
-          308
-        ],
-        "total": 1133,
-        "sourceRank": 162
-      },
-      {
-        "rank": 164,
-        "target": "36C",
-        "name": "김하율",
-        "school": "태서초등학교",
-        "rounds": [
-          257,
-          275,
-          285,
-          311
-        ],
-        "total": 1128,
-        "sourceRank": 164
-      },
-      {
-        "rank": 165,
-        "target": "58D",
-        "name": "손지희",
-        "school": "서울북가좌초등학교",
-        "rounds": [
-          255,
-          278,
-          294,
-          298
-        ],
-        "total": 1125,
-        "sourceRank": 165
-      },
-      {
-        "rank": 166,
-        "target": "64C",
-        "name": "양세영",
-        "school": "유촌초등학교",
-        "rounds": [
-          225,
-          289,
-          287,
-          318
-        ],
-        "total": 1119,
-        "sourceRank": 166
-      },
-      {
-        "rank": 167,
-        "target": "30A",
-        "name": "하다율",
-        "school": "노암초등학교",
-        "rounds": [
-          229,
-          260,
-          309,
-          315
-        ],
-        "total": 1113,
-        "sourceRank": 167
-      },
-      {
-        "rank": 168,
-        "target": "41B",
-        "name": "장연우",
-        "school": "대구대덕초등학교",
-        "rounds": [
-          243,
-          255,
-          306,
-          304
-        ],
-        "total": 1108,
-        "sourceRank": 168
-      },
-      {
-        "rank": 169,
-        "target": "18B",
-        "name": "박서현",
-        "school": "황성초등학교",
-        "rounds": [
-          235,
-          254,
-          294,
-          317
-        ],
-        "total": 1100,
-        "sourceRank": 169
-      },
-      {
-        "rank": 170,
-        "target": "50A",
-        "name": "김민지",
-        "school": "서울개봉초등학교",
-        "rounds": [
-          230,
-          264,
-          287,
-          314
-        ],
-        "total": 1095,
-        "sourceRank": 170
-      },
-      {
-        "rank": 171,
-        "target": "15C",
-        "name": "김지민",
-        "school": "서울청량초등학교",
-        "rounds": [
-          251,
-          250,
-          284,
-          306
-        ],
-        "total": 1091,
-        "sourceRank": 171
-      },
-      {
-        "rank": 172,
-        "target": "49C",
-        "name": "송서영",
-        "school": "용암초등학교",
-        "rounds": [
-          207,
-          276,
-          290,
-          314
-        ],
-        "total": 1087,
-        "sourceRank": 172
-      },
-      {
-        "rank": 173,
-        "target": "10B",
-        "name": "이다인",
-        "school": "일로초등학교",
-        "rounds": [
-          238,
-          238,
-          301,
-          290
-        ],
-        "total": 1067,
-        "sourceRank": 173
-      },
-      {
-        "rank": 173,
-        "target": "19D",
-        "name": "정의솔",
-        "school": "천곡초등학교",
-        "rounds": [
-          230,
-          243,
-          292,
-          302
-        ],
-        "total": 1067,
-        "sourceRank": 173
-      },
-      {
-        "rank": 175,
-        "target": "63B",
-        "name": "김민서",
-        "school": "대구황금초등학교",
-        "rounds": [
-          219,
-          236,
-          289,
-          305
-        ],
-        "total": 1049,
-        "sourceRank": 175
-      },
-      {
-        "rank": 176,
-        "target": "65C",
-        "name": "손세아",
-        "school": "유촌초등학교",
-        "rounds": [
-          223,
-          268,
-          258,
-          291
-        ],
-        "total": 1040,
-        "sourceRank": 176
-      },
-      {
-        "rank": 177,
-        "target": "26A",
-        "name": "최유주",
-        "school": "노암초등학교",
-        "rounds": [
-          235,
-          243,
-          277,
-          270
-        ],
-        "total": 1025,
-        "sourceRank": 177
-      },
-      {
-        "rank": 178,
-        "target": "36D",
-        "name": "민서우",
-        "school": "문산초등학교",
-        "rounds": [
-          184,
-          258,
-          271,
-          308
-        ],
-        "total": 1021,
-        "sourceRank": 178
-      },
-      {
-        "rank": 179,
-        "target": "39A",
-        "name": "장채원",
-        "school": "사천초등학교",
-        "rounds": [
-          186,
-          233,
-          276,
-          315
-        ],
-        "total": 1010,
-        "sourceRank": 179
-      },
-      {
-        "rank": 180,
-        "target": "38A",
-        "name": "정해담",
-        "school": "덕벌초등학교",
-        "rounds": [
-          200,
-          255,
-          254,
-          284
-        ],
-        "total": 993,
-        "sourceRank": 180
-      },
-      {
-        "rank": 181,
-        "target": "43B",
-        "name": "최예인",
-        "school": "대구대덕초등학교",
-        "rounds": [
-          182,
-          229,
-          236,
-          293
-        ],
-        "total": 940,
-        "sourceRank": 181
-      },
-      {
-        "rank": 182,
-        "target": "12B",
-        "name": "김이현",
-        "school": "남천초등학교",
-        "rounds": [
-          112,
-          179,
-          205,
-          196
-        ],
-        "total": 692,
-        "sourceRank": 182
-      },
-      {
-        "rank": 183,
-        "target": "50B",
-        "name": "이서현",
-        "school": "송해초등학교",
-        "rounds": [
-          0,
-          0,
-          239,
-          286
-        ],
-        "total": 525,
-        "sourceRank": 183
-      },
-      {
-        "rank": 184,
-        "target": "23B",
-        "name": "JIN SHIYAN",
-        "school": "용성초등학교",
-        "rounds": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "total": 0,
-        "sourceRank": 184
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_middle_boys_2026",
-    "sheetLabel": "종별대회 남자 중학부 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "중등부",
-    "division": "중등부",
-    "gender": "남",
-    "distances": [
-      60,
-      50,
-      40,
-      30
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "62B",
-        "name": "조강민",
-        "school": "순천풍덕중학교",
-        "rounds": [
-          337,
-          335,
-          348,
-          357
-        ],
-        "total": 1377,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "25C",
-        "name": "안은찬",
-        "school": "성포중학교",
-        "rounds": [
-          348,
-          331,
-          340,
-          354
-        ],
-        "total": 1373,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "38C",
-        "name": "손민서",
-        "school": "경북체육중학교",
-        "rounds": [
-          333,
-          337,
-          342,
-          360
-        ],
-        "total": 1372,
-        "sourceRank": 3
-      },
-      {
-        "rank": 4,
-        "target": "58A",
-        "name": "이주완",
-        "school": "원천중학교",
-        "rounds": [
-          338,
-          330,
-          346,
-          352
-        ],
-        "total": 1366,
-        "sourceRank": 4
-      },
-      {
-        "rank": 4,
-        "target": "32A",
-        "name": "최윤찬",
-        "school": "미리벌중학교",
-        "rounds": [
-          343,
-          328,
-          345,
-          350
-        ],
-        "total": 1366,
-        "sourceRank": 4
-      },
-      {
-        "rank": 4,
-        "target": "42A",
-        "name": "서준용",
-        "school": "동진중학교",
-        "rounds": [
-          342,
-          328,
-          346,
-          350
-        ],
-        "total": 1366,
-        "sourceRank": 4
-      },
-      {
-        "rank": 7,
-        "target": "18C",
-        "name": "김형호",
-        "school": "무거중학교",
-        "rounds": [
-          348,
-          327,
-          340,
-          350
-        ],
-        "total": 1365,
-        "sourceRank": 7
-      },
-      {
-        "rank": 8,
-        "target": "47C",
-        "name": "황태민",
-        "school": "하성중학교",
-        "rounds": [
-          340,
-          334,
-          337,
-          352
-        ],
-        "total": 1363,
-        "sourceRank": 8
-      },
-      {
-        "rank": 9,
-        "target": "44B",
-        "name": "박규필",
-        "school": "부산체육중학교",
-        "rounds": [
-          336,
-          330,
-          343,
-          350
-        ],
-        "total": 1359,
-        "sourceRank": 9
-      },
-      {
-        "rank": 10,
-        "target": "45B",
-        "name": "김준서",
-        "school": "광주체육중학교",
-        "rounds": [
-          339,
-          323,
-          339,
-          353
-        ],
-        "total": 1354,
-        "sourceRank": 10
-      },
-      {
-        "rank": 11,
-        "target": "12B",
-        "name": "안현준",
-        "school": "예천중학교",
-        "rounds": [
-          335,
-          322,
-          338,
-          356
-        ],
-        "total": 1351,
-        "sourceRank": 11
-      },
-      {
-        "rank": 12,
-        "target": "12A",
-        "name": "이성윤",
-        "school": "운리중학교",
-        "rounds": [
-          328,
-          336,
-          337,
-          349
-        ],
-        "total": 1350,
-        "sourceRank": 12
-      },
-      {
-        "rank": 13,
-        "target": "39C",
-        "name": "이재준",
-        "school": "경북체육중학교",
-        "rounds": [
-          328,
-          334,
-          340,
-          347
-        ],
-        "total": 1349,
-        "sourceRank": 13
-      },
-      {
-        "rank": 14,
-        "target": "50C",
-        "name": "라경현",
-        "school": "오수중학교",
-        "rounds": [
-          331,
-          321,
-          346,
-          350
-        ],
-        "total": 1348,
-        "sourceRank": 14
-      },
-      {
-        "rank": 15,
-        "target": "38A",
-        "name": "김도겸",
-        "school": "서야중학교",
-        "rounds": [
-          331,
-          334,
-          336,
-          346
-        ],
-        "total": 1347,
-        "sourceRank": 15
-      },
-      {
-        "rank": 15,
-        "target": "15C",
-        "name": "박예준",
-        "school": "면목중학교",
-        "rounds": [
-          328,
-          326,
-          341,
-          352
-        ],
-        "total": 1347,
-        "sourceRank": 15
-      },
-      {
-        "rank": 15,
-        "target": "26A",
-        "name": "주현승",
-        "school": "진주봉원중학교",
-        "rounds": [
-          325,
-          326,
-          344,
-          352
-        ],
-        "total": 1347,
-        "sourceRank": 15
-      },
-      {
-        "rank": 15,
-        "target": "64A",
-        "name": "김성혁",
-        "school": "만수북중학교",
-        "rounds": [
-          329,
-          329,
-          342,
-          347
-        ],
-        "total": 1347,
-        "sourceRank": 15
-      },
-      {
-        "rank": 15,
-        "target": "63A",
-        "name": "임찬혁",
-        "school": "만수북중학교",
-        "rounds": [
-          339,
-          320,
-          342,
-          346
-        ],
-        "total": 1347,
-        "sourceRank": 15
-      },
-      {
-        "rank": 20,
-        "target": "51C",
-        "name": "박민혁",
-        "school": "모라중학교",
-        "rounds": [
-          331,
-          325,
-          342,
-          346
-        ],
-        "total": 1344,
-        "sourceRank": 20
-      },
-      {
-        "rank": 21,
-        "target": "56C",
-        "name": "정현우",
-        "school": "방이중학교",
-        "rounds": [
-          328,
-          325,
-          342,
-          347
-        ],
-        "total": 1342,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "36C",
-        "name": "권동하",
-        "school": "경북체육중학교",
-        "rounds": [
-          332,
-          324,
-          332,
-          353
-        ],
-        "total": 1341,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "52A",
-        "name": "정재윤",
-        "school": "부평동중학교",
-        "rounds": [
-          329,
-          325,
-          333,
-          352
-        ],
-        "total": 1339,
-        "sourceRank": 23
-      },
-      {
-        "rank": 23,
-        "target": "50A",
-        "name": "정민우",
-        "school": "부평동중학교",
-        "rounds": [
-          332,
-          326,
-          339,
-          342
-        ],
-        "total": 1339,
-        "sourceRank": 23
-      },
-      {
-        "rank": 23,
-        "target": "29B",
-        "name": "이재원",
-        "school": "중원중학교",
-        "rounds": [
-          335,
-          320,
-          336,
-          348
-        ],
-        "total": 1339,
-        "sourceRank": 23
-      },
-      {
-        "rank": 26,
-        "target": "60B",
-        "name": "주영빈",
-        "school": "이원중학교",
-        "rounds": [
-          332,
-          318,
-          341,
-          347
-        ],
-        "total": 1338,
-        "sourceRank": 26
-      },
-      {
-        "rank": 26,
-        "target": "31B",
-        "name": "박민혁",
-        "school": "북인천중학교",
-        "rounds": [
-          334,
-          319,
-          336,
-          349
-        ],
-        "total": 1338,
-        "sourceRank": 26
-      },
-      {
-        "rank": 28,
-        "target": "54A",
-        "name": "장영한",
-        "school": "용하중학교",
-        "rounds": [
-          328,
-          318,
-          340,
-          351
-        ],
-        "total": 1337,
-        "sourceRank": 28
-      },
-      {
-        "rank": 28,
-        "target": "59B",
-        "name": "신동주",
-        "school": "이원중학교",
-        "rounds": [
-          330,
-          321,
-          336,
-          350
-        ],
-        "total": 1337,
-        "sourceRank": 28
-      },
-      {
-        "rank": 30,
-        "target": "13B",
-        "name": "이상윤",
-        "school": "예천중학교",
-        "rounds": [
-          336,
-          327,
-          329,
-          344
-        ],
-        "total": 1336,
-        "sourceRank": 30
-      },
-      {
-        "rank": 30,
-        "target": "40C",
-        "name": "이호진",
-        "school": "경북체육중학교",
-        "rounds": [
-          331,
-          330,
-          330,
-          345
-        ],
-        "total": 1336,
-        "sourceRank": 30
-      },
-      {
-        "rank": 30,
-        "target": "27C",
-        "name": "서은민",
-        "school": "성포중학교",
-        "rounds": [
-          332,
-          323,
-          336,
-          345
-        ],
-        "total": 1336,
-        "sourceRank": 30
-      },
-      {
-        "rank": 30,
-        "target": "36B",
-        "name": "석주원",
-        "school": "선인중학교",
-        "rounds": [
-          338,
-          321,
-          332,
-          345
-        ],
-        "total": 1336,
-        "sourceRank": 30
-      },
-      {
-        "rank": 34,
-        "target": "59A",
-        "name": "안준서",
-        "school": "원천중학교",
-        "rounds": [
-          334,
-          323,
-          329,
-          349
-        ],
-        "total": 1335,
-        "sourceRank": 34
-      },
-      {
-        "rank": 35,
-        "target": "43A",
-        "name": "강민우",
-        "school": "동진중학교",
-        "rounds": [
-          323,
-          325,
-          343,
-          343
-        ],
-        "total": 1334,
-        "sourceRank": 35
-      },
-      {
-        "rank": 36,
-        "target": "61B",
-        "name": "주영진",
-        "school": "이원중학교",
-        "rounds": [
-          332,
-          312,
-          332,
-          356
-        ],
-        "total": 1332,
-        "sourceRank": 36
-      },
-      {
-        "rank": 36,
-        "target": "33A",
-        "name": "이진율",
-        "school": "불로중학교",
-        "rounds": [
-          332,
-          321,
-          333,
-          346
-        ],
-        "total": 1332,
-        "sourceRank": 36
-      },
-      {
-        "rank": 36,
-        "target": "48B",
-        "name": "김용현",
-        "school": "광주체육중학교",
-        "rounds": [
-          329,
-          320,
-          337,
-          346
-        ],
-        "total": 1332,
-        "sourceRank": 36
-      },
-      {
-        "rank": 39,
-        "target": "44A",
-        "name": "김준호",
-        "school": "동진중학교",
-        "rounds": [
-          329,
-          323,
-          333,
-          345
-        ],
-        "total": 1330,
-        "sourceRank": 39
-      },
-      {
-        "rank": 40,
-        "target": "51A",
-        "name": "김동율",
-        "school": "부평동중학교",
-        "rounds": [
-          335,
-          309,
-          338,
-          347
-        ],
-        "total": 1329,
-        "sourceRank": 40
-      },
-      {
-        "rank": 41,
-        "target": "31A",
-        "name": "안도현",
-        "school": "미리벌중학교",
-        "rounds": [
-          331,
-          308,
-          337,
-          352
-        ],
-        "total": 1328,
-        "sourceRank": 41
-      },
-      {
-        "rank": 42,
-        "target": "60C",
-        "name": "최진욱",
-        "school": "대서중학교",
-        "rounds": [
-          333,
-          309,
-          332,
-          353
-        ],
-        "total": 1327,
-        "sourceRank": 42
-      },
-      {
-        "rank": 43,
-        "target": "20B",
-        "name": "고현빈",
-        "school": "대전내동중학교",
-        "rounds": [
-          324,
-          313,
-          339,
-          350
-        ],
-        "total": 1326,
-        "sourceRank": 43
-      },
-      {
-        "rank": 43,
-        "target": "34B",
-        "name": "손요한",
-        "school": "선인중학교",
-        "rounds": [
-          325,
-          309,
-          340,
-          352
-        ],
-        "total": 1326,
-        "sourceRank": 43
-      },
-      {
-        "rank": 43,
-        "target": "54B",
-        "name": "이체현",
-        "school": "전주온고을중학교",
-        "rounds": [
-          328,
-          314,
-          336,
-          348
-        ],
-        "total": 1326,
-        "sourceRank": 43
-      },
-      {
-        "rank": 46,
-        "target": "34A",
-        "name": "박지웅",
-        "school": "불로중학교",
-        "rounds": [
-          327,
-          312,
-          339,
-          347
-        ],
-        "total": 1325,
-        "sourceRank": 46
-      },
-      {
-        "rank": 47,
-        "target": "19B",
-        "name": "문보량",
-        "school": "대전내동중학교",
-        "rounds": [
-          320,
-          327,
-          334,
-          343
-        ],
-        "total": 1324,
-        "sourceRank": 47
-      },
-      {
-        "rank": 48,
-        "target": "58B",
-        "name": "최여준",
-        "school": "이원중학교",
-        "rounds": [
-          324,
-          317,
-          332,
-          348
-        ],
-        "total": 1321,
-        "sourceRank": 48
-      },
-      {
-        "rank": 49,
-        "target": "43C",
-        "name": "최준혁",
-        "school": "부천남중학교",
-        "rounds": [
-          327,
-          317,
-          327,
-          347
-        ],
-        "total": 1318,
-        "sourceRank": 49
-      },
-      {
-        "rank": 50,
-        "target": "22C",
-        "name": "이환지",
-        "school": "신장중학교",
-        "rounds": [
-          334,
-          314,
-          329,
-          340
-        ],
-        "total": 1317,
-        "sourceRank": 50
-      },
-      {
-        "rank": 50,
-        "target": "28C",
-        "name": "박민교",
-        "school": "성포중학교",
-        "rounds": [
-          330,
-          309,
-          339,
-          339
-        ],
-        "total": 1317,
-        "sourceRank": 50
-      },
-      {
-        "rank": 52,
-        "target": "61C",
-        "name": "박서준",
-        "school": "대서중학교",
-        "rounds": [
-          314,
-          321,
-          327,
-          353
-        ],
-        "total": 1315,
-        "sourceRank": 52
-      },
-      {
-        "rank": 53,
-        "target": "13A",
-        "name": "이태헌",
-        "school": "운리중학교",
-        "rounds": [
-          325,
-          319,
-          326,
-          343
-        ],
-        "total": 1313,
-        "sourceRank": 53
-      },
-      {
-        "rank": 53,
-        "target": "14B",
-        "name": "임지우",
-        "school": "예천중학교",
-        "rounds": [
-          334,
-          301,
-          329,
-          349
-        ],
-        "total": 1313,
-        "sourceRank": 53
-      },
-      {
-        "rank": 55,
-        "target": "35B",
-        "name": "김수혁",
-        "school": "선인중학교",
-        "rounds": [
-          327,
-          310,
-          330,
-          344
-        ],
-        "total": 1311,
-        "sourceRank": 55
-      },
-      {
-        "rank": 56,
-        "target": "41B",
-        "name": "송현빈",
-        "school": "부산체육중학교",
-        "rounds": [
-          324,
-          313,
-          332,
-          341
-        ],
-        "total": 1310,
-        "sourceRank": 56
-      },
-      {
-        "rank": 56,
-        "target": "55C",
-        "name": "김윤조",
-        "school": "방이중학교",
-        "rounds": [
-          330,
-          319,
-          322,
-          339
-        ],
-        "total": 1310,
-        "sourceRank": 56
-      },
-      {
-        "rank": 58,
-        "target": "34C",
-        "name": "이대로",
-        "school": "경북체육중학교",
-        "rounds": [
-          321,
-          315,
-          334,
-          339
-        ],
-        "total": 1309,
-        "sourceRank": 58
-      },
-      {
-        "rank": 59,
-        "target": "26C",
-        "name": "홍지훈",
-        "school": "성포중학교",
-        "rounds": [
-          327,
-          309,
-          330,
-          342
-        ],
-        "total": 1308,
-        "sourceRank": 59
-      },
-      {
-        "rank": 60,
-        "target": "32B",
-        "name": "이현율",
-        "school": "북인천중학교",
-        "rounds": [
-          325,
-          307,
-          330,
-          344
-        ],
-        "total": 1306,
-        "sourceRank": 60
-      },
-      {
-        "rank": 61,
-        "target": "18A",
-        "name": "변종율",
-        "school": "북원중학교",
-        "rounds": [
-          316,
-          314,
-          339,
-          336
-        ],
-        "total": 1305,
-        "sourceRank": 61
-      },
-      {
-        "rank": 62,
-        "target": "35A",
-        "name": "우성준",
-        "school": "불로중학교",
-        "rounds": [
-          317,
-          314,
-          331,
-          342
-        ],
-        "total": 1304,
-        "sourceRank": 62
-      },
-      {
-        "rank": 62,
-        "target": "46B",
-        "name": "조여준",
-        "school": "광주체육중학교",
-        "rounds": [
-          326,
-          304,
-          330,
-          344
-        ],
-        "total": 1304,
-        "sourceRank": 62
-      },
-      {
-        "rank": 64,
-        "target": "47B",
-        "name": "이하늘",
-        "school": "광주체육중학교",
-        "rounds": [
-          323,
-          310,
-          324,
-          346
-        ],
-        "total": 1303,
-        "sourceRank": 64
-      },
-      {
-        "rank": 65,
-        "target": "25A",
-        "name": "변승민",
-        "school": "진주봉원중학교",
-        "rounds": [
-          321,
-          311,
-          325,
-          345
-        ],
-        "total": 1302,
-        "sourceRank": 65
-      },
-      {
-        "rank": 65,
-        "target": "52C",
-        "name": "조재혁",
-        "school": "모라중학교",
-        "rounds": [
-          328,
-          313,
-          320,
-          341
-        ],
-        "total": 1302,
-        "sourceRank": 65
-      },
-      {
-        "rank": 67,
-        "target": "21C",
-        "name": "강민국",
-        "school": "신장중학교",
-        "rounds": [
-          321,
-          311,
-          333,
-          335
-        ],
-        "total": 1300,
-        "sourceRank": 67
-      },
-      {
-        "rank": 68,
-        "target": "49B",
-        "name": "김혜혁",
-        "school": "광주체육중학교",
-        "rounds": [
-          324,
-          306,
-          328,
-          341
-        ],
-        "total": 1299,
-        "sourceRank": 68
-      },
-      {
-        "rank": 69,
-        "target": "55A",
-        "name": "김승현",
-        "school": "용성중학교",
-        "rounds": [
-          318,
-          299,
-          327,
-          354
-        ],
-        "total": 1298,
-        "sourceRank": 69
-      },
-      {
-        "rank": 70,
-        "target": "63C",
-        "name": "정원진",
-        "school": "창일중학교",
-        "rounds": [
-          319,
-          312,
-          327,
-          336
-        ],
-        "total": 1294,
-        "sourceRank": 70
-      },
-      {
-        "rank": 70,
-        "target": "33C",
-        "name": "김지후",
-        "school": "원봉중학교",
-        "rounds": [
-          308,
-          316,
-          330,
-          340
-        ],
-        "total": 1294,
-        "sourceRank": 70
-      },
-      {
-        "rank": 72,
-        "target": "23A",
-        "name": "윤건우",
-        "school": "연일중학교",
-        "rounds": [
-          317,
-          307,
-          323,
-          345
-        ],
-        "total": 1292,
-        "sourceRank": 72
-      },
-      {
-        "rank": 73,
-        "target": "37C",
-        "name": "심우영",
-        "school": "경북체육중학교",
-        "rounds": [
-          320,
-          316,
-          324,
-          331
-        ],
-        "total": 1291,
-        "sourceRank": 73
-      },
-      {
-        "rank": 74,
-        "target": "62A",
-        "name": "원종혁",
-        "school": "만수북중학교",
-        "rounds": [
-          315,
-          304,
-          327,
-          343
-        ],
-        "total": 1289,
-        "sourceRank": 74
-      },
-      {
-        "rank": 74,
-        "target": "29C",
-        "name": "김준혁",
-        "school": "성포중학교",
-        "rounds": [
-          325,
-          304,
-          322,
-          338
-        ],
-        "total": 1289,
-        "sourceRank": 74
-      },
-      {
-        "rank": 76,
-        "target": "15B",
-        "name": "강태균",
-        "school": "예천중학교",
-        "rounds": [
-          324,
-          296,
-          325,
-          343
-        ],
-        "total": 1288,
-        "sourceRank": 76
-      },
-      {
-        "rank": 76,
-        "target": "56A",
-        "name": "진민오",
-        "school": "원천중학교",
-        "rounds": [
-          322,
-          301,
-          324,
-          341
-        ],
-        "total": 1288,
-        "sourceRank": 76
-      },
-      {
-        "rank": 78,
-        "target": "40B",
-        "name": "서예준",
-        "school": "선인중학교",
-        "rounds": [
-          325,
-          316,
-          311,
-          334
-        ],
-        "total": 1286,
-        "sourceRank": 78
-      },
-      {
-        "rank": 79,
-        "target": "49A",
-        "name": "이인서",
-        "school": "부평동중학교",
-        "rounds": [
-          322,
-          304,
-          320,
-          336
-        ],
-        "total": 1282,
-        "sourceRank": 79
-      },
-      {
-        "rank": 79,
-        "target": "19A",
-        "name": "이정우",
-        "school": "북원중학교",
-        "rounds": [
-          317,
-          307,
-          322,
-          336
-        ],
-        "total": 1282,
-        "sourceRank": 79
-      },
-      {
-        "rank": 81,
-        "target": "63B",
-        "name": "김민재",
-        "school": "순천풍덕중학교",
-        "rounds": [
-          312,
-          300,
-          323,
-          346
-        ],
-        "total": 1281,
-        "sourceRank": 81
-      },
-      {
-        "rank": 82,
-        "target": "18B",
-        "name": "김보형",
-        "school": "수원시양궁협회",
-        "rounds": [
-          308,
-          299,
-          331,
-          342
-        ],
-        "total": 1280,
-        "sourceRank": 82
-      },
-      {
-        "rank": 82,
-        "target": "16A",
-        "name": "김예성",
-        "school": "운리중학교",
-        "rounds": [
-          318,
-          304,
-          323,
-          335
-        ],
-        "total": 1280,
-        "sourceRank": 82
-      },
-      {
-        "rank": 82,
-        "target": "17B",
-        "name": "손우주",
-        "school": "수원시양궁협회",
-        "rounds": [
-          313,
-          300,
-          328,
-          339
-        ],
-        "total": 1280,
-        "sourceRank": 82
-      },
-      {
-        "rank": 85,
-        "target": "17C",
-        "name": "이시윤",
-        "school": "무거중학교",
-        "rounds": [
-          317,
-          301,
-          321,
-          340
-        ],
-        "total": 1279,
-        "sourceRank": 85
-      },
-      {
-        "rank": 86,
-        "target": "61A",
-        "name": "김영준",
-        "school": "만수북중학교",
-        "rounds": [
-          316,
-          296,
-          317,
-          349
-        ],
-        "total": 1278,
-        "sourceRank": 86
-      },
-      {
-        "rank": 86,
-        "target": "16B",
-        "name": "정은균",
-        "school": "예천중학교",
-        "rounds": [
-          320,
-          297,
-          323,
-          338
-        ],
-        "total": 1278,
-        "sourceRank": 86
-      },
-      {
-        "rank": 88,
-        "target": "13C",
-        "name": "김도진",
-        "school": "강원체육중학교",
-        "rounds": [
-          320,
-          309,
-          311,
-          337
-        ],
-        "total": 1277,
-        "sourceRank": 88
-      },
-      {
-        "rank": 89,
-        "target": "57B",
-        "name": "박현준",
-        "school": "전주온고을중학교",
-        "rounds": [
-          316,
-          300,
-          316,
-          341
-        ],
-        "total": 1273,
-        "sourceRank": 89
-      },
-      {
-        "rank": 90,
-        "target": "35C",
-        "name": "유찬",
-        "school": "경북체육중학교",
-        "rounds": [
-          308,
-          303,
-          323,
-          335
-        ],
-        "total": 1269,
-        "sourceRank": 90
-      },
-      {
-        "rank": 91,
-        "target": "59C",
-        "name": "양가온",
-        "school": "대서중학교",
-        "rounds": [
-          303,
-          296,
-          329,
-          340
-        ],
-        "total": 1268,
-        "sourceRank": 91
-      },
-      {
-        "rank": 92,
-        "target": "64B",
-        "name": "김민준",
-        "school": "순천풍덕중학교",
-        "rounds": [
-          318,
-          299,
-          316,
-          334
-        ],
-        "total": 1267,
-        "sourceRank": 92
-      },
-      {
-        "rank": 92,
-        "target": "36A",
-        "name": "이도현",
-        "school": "불로중학교",
-        "rounds": [
-          310,
-          296,
-          322,
-          339
-        ],
-        "total": 1267,
-        "sourceRank": 92
-      },
-      {
-        "rank": 94,
-        "target": "12C",
-        "name": "김지성",
-        "school": "강원체육중학교",
-        "rounds": [
-          302,
-          306,
-          314,
-          342
-        ],
-        "total": 1264,
-        "sourceRank": 94
-      },
-      {
-        "rank": 95,
-        "target": "40A",
-        "name": "김수현",
-        "school": "동진중학교",
-        "rounds": [
-          302,
-          298,
-          319,
-          344
-        ],
-        "total": 1263,
-        "sourceRank": 95
-      },
-      {
-        "rank": 95,
-        "target": "37A",
-        "name": "권하준",
-        "school": "불로중학교",
-        "rounds": [
-          315,
-          294,
-          313,
-          341
-        ],
-        "total": 1263,
-        "sourceRank": 95
-      },
-      {
-        "rank": 95,
-        "target": "22B",
-        "name": "박태환",
-        "school": "대전내동중학교",
-        "rounds": [
-          314,
-          284,
-          320,
-          345
-        ],
-        "total": 1263,
-        "sourceRank": 95
-      },
-      {
-        "rank": 98,
-        "target": "22A",
-        "name": "방채영",
-        "school": "연일중학교",
-        "rounds": [
-          311,
-          298,
-          317,
-          336
-        ],
-        "total": 1262,
-        "sourceRank": 98
-      },
-      {
-        "rank": 98,
-        "target": "55B",
-        "name": "최율",
-        "school": "전주온고을중학교",
-        "rounds": [
-          313,
-          296,
-          318,
-          335
-        ],
-        "total": 1262,
-        "sourceRank": 98
-      },
-      {
-        "rank": 98,
-        "target": "24C",
-        "name": "문윤서",
-        "school": "전남체육중학교",
-        "rounds": [
-          319,
-          308,
-          303,
-          332
-        ],
-        "total": 1262,
-        "sourceRank": 98
-      },
-      {
-        "rank": 101,
-        "target": "57A",
-        "name": "정준영",
-        "school": "원천중학교",
-        "rounds": [
-          313,
-          291,
-          320,
-          336
-        ],
-        "total": 1260,
-        "sourceRank": 101
-      },
-      {
-        "rank": 102,
-        "target": "32C",
-        "name": "황시윤",
-        "school": "성포중학교",
-        "rounds": [
-          317,
-          291,
-          318,
-          333
-        ],
-        "total": 1259,
-        "sourceRank": 102
-      },
-      {
-        "rank": 103,
-        "target": "44C",
-        "name": "배시우",
-        "school": "양화중학교",
-        "rounds": [
-          305,
-          312,
-          306,
-          334
-        ],
-        "total": 1257,
-        "sourceRank": 103
-      },
-      {
-        "rank": 104,
-        "target": "31C",
-        "name": "오태윤",
-        "school": "성포중학교",
-        "rounds": [
-          312,
-          300,
-          310,
-          333
-        ],
-        "total": 1255,
-        "sourceRank": 104
-      },
-      {
-        "rank": 104,
-        "target": "38B",
-        "name": "임동현",
-        "school": "선인중학교",
-        "rounds": [
-          314,
-          300,
-          315,
-          326
-        ],
-        "total": 1255,
-        "sourceRank": 104
-      },
-      {
-        "rank": 106,
-        "target": "37B",
-        "name": "김민권",
-        "school": "선인중학교",
-        "rounds": [
-          304,
-          291,
-          321,
-          337
-        ],
-        "total": 1253,
-        "sourceRank": 106
-      },
-      {
-        "rank": 107,
-        "target": "48C",
-        "name": "김수완",
-        "school": "성사중학교",
-        "rounds": [
-          300,
-          298,
-          319,
-          333
-        ],
-        "total": 1250,
-        "sourceRank": 107
-      },
-      {
-        "rank": 108,
-        "target": "30C",
-        "name": "명지훈",
-        "school": "성포중학교",
-        "rounds": [
-          312,
-          281,
-          320,
-          336
-        ],
-        "total": 1249,
-        "sourceRank": 108
-      },
-      {
-        "rank": 109,
-        "target": "43B",
-        "name": "김원영",
-        "school": "부산체육중학교",
-        "rounds": [
-          315,
-          300,
-          311,
-          318
-        ],
-        "total": 1244,
-        "sourceRank": 109
-      },
-      {
-        "rank": 110,
-        "target": "65A",
-        "name": "정예준",
-        "school": "만수북중학교",
-        "rounds": [
-          292,
-          305,
-          314,
-          332
-        ],
-        "total": 1243,
-        "sourceRank": 110
-      },
-      {
-        "rank": 111,
-        "target": "41A",
-        "name": "반승우",
-        "school": "동진중학교",
-        "rounds": [
-          291,
-          293,
-          318,
-          340
-        ],
-        "total": 1242,
-        "sourceRank": 111
-      },
-      {
-        "rank": 112,
-        "target": "24A",
-        "name": "권도훈",
-        "school": "연일중학교",
-        "rounds": [
-          302,
-          289,
-          317,
-          329
-        ],
-        "total": 1237,
-        "sourceRank": 112
-      },
-      {
-        "rank": 113,
-        "target": "21B",
-        "name": "김태훈",
-        "school": "대전내동중학교",
-        "rounds": [
-          300,
-          279,
-          317,
-          340
-        ],
-        "total": 1236,
-        "sourceRank": 113
-      },
-      {
-        "rank": 113,
-        "target": "19C",
-        "name": "정범준",
-        "school": "무거중학교",
-        "rounds": [
-          304,
-          294,
-          303,
-          335
-        ],
-        "total": 1236,
-        "sourceRank": 113
-      },
-      {
-        "rank": 115,
-        "target": "28A",
-        "name": "황수용",
-        "school": "구례중학교",
-        "rounds": [
-          305,
-          295,
-          310,
-          324
-        ],
-        "total": 1234,
-        "sourceRank": 115
-      },
-      {
-        "rank": 116,
-        "target": "24B",
-        "name": "손승우",
-        "school": "대전내동중학교",
-        "rounds": [
-          299,
-          270,
-          324,
-          338
-        ],
-        "total": 1231,
-        "sourceRank": 116
-      },
-      {
-        "rank": 117,
-        "target": "25B",
-        "name": "이헌우",
-        "school": "제주양궁클럽",
-        "rounds": [
-          310,
-          278,
-          306,
-          336
-        ],
-        "total": 1230,
-        "sourceRank": 117
-      },
-      {
-        "rank": 118,
-        "target": "54C",
-        "name": "김규선",
-        "school": "방이중학교",
-        "rounds": [
-          308,
-          277,
-          315,
-          329
-        ],
-        "total": 1229,
-        "sourceRank": 118
-      },
-      {
-        "rank": 119,
-        "target": "14C",
-        "name": "이우형",
-        "school": "강원체육중학교",
-        "rounds": [
-          302,
-          285,
-          304,
-          335
-        ],
-        "total": 1226,
-        "sourceRank": 119
-      },
-      {
-        "rank": 119,
-        "target": "46C",
-        "name": "원동우",
-        "school": "하성중학교",
-        "rounds": [
-          310,
-          296,
-          306,
-          314
-        ],
-        "total": 1226,
-        "sourceRank": 119
-      },
-      {
-        "rank": 121,
-        "target": "33B",
-        "name": "김도율",
-        "school": "선인중학교",
-        "rounds": [
-          293,
-          295,
-          309,
-          327
-        ],
-        "total": 1224,
-        "sourceRank": 121
-      },
-      {
-        "rank": 121,
-        "target": "62C",
-        "name": "정시우",
-        "school": "창일중학교",
-        "rounds": [
-          305,
-          282,
-          318,
-          319
-        ],
-        "total": 1224,
-        "sourceRank": 121
-      },
-      {
-        "rank": 123,
-        "target": "28B",
-        "name": "유재광",
-        "school": "대전대청중학교",
-        "rounds": [
-          310,
-          264,
-          318,
-          330
-        ],
-        "total": 1222,
-        "sourceRank": 123
-      },
-      {
-        "rank": 124,
-        "target": "47A",
-        "name": "한지환",
-        "school": "병천중학교",
-        "rounds": [
-          292,
-          290,
-          309,
-          330
-        ],
-        "total": 1221,
-        "sourceRank": 124
-      },
-      {
-        "rank": 125,
-        "target": "48A",
-        "name": "김민표",
-        "school": "부평동중학교",
-        "rounds": [
-          307,
-          286,
-          309,
-          318
-        ],
-        "total": 1220,
-        "sourceRank": 125
-      },
-      {
-        "rank": 126,
-        "target": "58C",
-        "name": "황보길",
-        "school": "방이중학교",
-        "rounds": [
-          307,
-          282,
-          304,
-          322
-        ],
-        "total": 1215,
-        "sourceRank": 126
-      },
-      {
-        "rank": 127,
-        "target": "30B",
-        "name": "이락희",
-        "school": "남천중학교",
-        "rounds": [
-          290,
-          289,
-          299,
-          336
-        ],
-        "total": 1214,
-        "sourceRank": 127
-      },
-      {
-        "rank": 128,
-        "target": "46A",
-        "name": "전성은",
-        "school": "병천중학교",
-        "rounds": [
-          297,
-          258,
-          322,
-          336
-        ],
-        "total": 1213,
-        "sourceRank": 128
-      },
-      {
-        "rank": 129,
-        "target": "29A",
-        "name": "정진우",
-        "school": "구례중학교",
-        "rounds": [
-          295,
-          277,
-          310,
-          329
-        ],
-        "total": 1211,
-        "sourceRank": 129
-      },
-      {
-        "rank": 130,
-        "target": "14A",
-        "name": "김재준",
-        "school": "운리중학교",
-        "rounds": [
-          282,
-          284,
-          316,
-          328
-        ],
-        "total": 1210,
-        "sourceRank": 130
-      },
-      {
-        "rank": 130,
-        "target": "51B",
-        "name": "조유준",
-        "school": "광주체육중학교",
-        "rounds": [
-          296,
-          284,
-          299,
-          331
-        ],
-        "total": 1210,
-        "sourceRank": 130
-      },
-      {
-        "rank": 132,
-        "target": "39B",
-        "name": "이강호",
-        "school": "선인중학교",
-        "rounds": [
-          278,
-          296,
-          301,
-          326
-        ],
-        "total": 1201,
-        "sourceRank": 132
-      },
-      {
-        "rank": 133,
-        "target": "65C",
-        "name": "한준희",
-        "school": "창일중학교",
-        "rounds": [
-          293,
-          271,
-          301,
-          323
-        ],
-        "total": 1188,
-        "sourceRank": 133
-      },
-      {
-        "rank": 134,
-        "target": "41C",
-        "name": "강지석",
-        "school": "부천남중학교",
-        "rounds": [
-          284,
-          275,
-          292,
-          335
-        ],
-        "total": 1186,
-        "sourceRank": 134
-      },
-      {
-        "rank": 135,
-        "target": "15A",
-        "name": "김경탁",
-        "school": "운리중학교",
-        "rounds": [
-          302,
-          260,
-          302,
-          316
-        ],
-        "total": 1180,
-        "sourceRank": 135
-      },
-      {
-        "rank": 136,
-        "target": "23B",
-        "name": "서원빈",
-        "school": "대전내동중학교",
-        "rounds": [
-          300,
-          264,
-          288,
-          321
-        ],
-        "total": 1173,
-        "sourceRank": 136
-      },
-      {
-        "rank": 137,
-        "target": "45C",
-        "name": "박민수",
-        "school": "양화중학교",
-        "rounds": [
-          292,
-          262,
-          292,
-          320
-        ],
-        "total": 1166,
-        "sourceRank": 137
-      },
-      {
-        "rank": 138,
-        "target": "23C",
-        "name": "이선우",
-        "school": "전남체육중학교",
-        "rounds": [
-          280,
-          284,
-          283,
-          318
-        ],
-        "total": 1165,
-        "sourceRank": 138
-      },
-      {
-        "rank": 139,
-        "target": "50B",
-        "name": "정하준",
-        "school": "광주체육중학교",
-        "rounds": [
-          283,
-          247,
-          307,
-          324
-        ],
-        "total": 1161,
-        "sourceRank": 139
-      },
-      {
-        "rank": 140,
-        "target": "20A",
-        "name": "정민규",
-        "school": "북원중학교",
-        "rounds": [
-          252,
-          281,
-          309,
-          317
-        ],
-        "total": 1159,
-        "sourceRank": 140
-      },
-      {
-        "rank": 141,
-        "target": "42B",
-        "name": "이유은",
-        "school": "부산체육중학교",
-        "rounds": [
-          279,
-          231,
-          318,
-          328
-        ],
-        "total": 1156,
-        "sourceRank": 141
-      },
-      {
-        "rank": 142,
-        "target": "53B",
-        "name": "곽륜우",
-        "school": "광주체육중학교",
-        "rounds": [
-          251,
-          266,
-          319,
-          312
-        ],
-        "total": 1148,
-        "sourceRank": 142
-      },
-      {
-        "rank": 142,
-        "target": "64C",
-        "name": "표은율",
-        "school": "창일중학교",
-        "rounds": [
-          291,
-          270,
-          269,
-          318
-        ],
-        "total": 1148,
-        "sourceRank": 142
-      },
-      {
-        "rank": 144,
-        "target": "52B",
-        "name": "조담준",
-        "school": "광주체육중학교",
-        "rounds": [
-          285,
-          267,
-          277,
-          318
-        ],
-        "total": 1147,
-        "sourceRank": 144
-      },
-      {
-        "rank": 145,
-        "target": "42C",
-        "name": "차준",
-        "school": "부천남중학교",
-        "rounds": [
-          266,
-          245,
-          315,
-          319
-        ],
-        "total": 1145,
-        "sourceRank": 145
-      },
-      {
-        "rank": 146,
-        "target": "27B",
-        "name": "강성은",
-        "school": "제주양궁클럽",
-        "rounds": [
-          290,
-          253,
-          285,
-          314
-        ],
-        "total": 1142,
-        "sourceRank": 146
-      },
-      {
-        "rank": 147,
-        "target": "17A",
-        "name": "안수혁",
-        "school": "운리중학교",
-        "rounds": [
-          280,
-          265,
-          267,
-          328
-        ],
-        "total": 1140,
-        "sourceRank": 147
-      },
-      {
-        "rank": 148,
-        "target": "57C",
-        "name": "김종민",
-        "school": "방이중학교",
-        "rounds": [
-          281,
-          245,
-          310,
-          297
-        ],
-        "total": 1133,
-        "sourceRank": 148
-      },
-      {
-        "rank": 149,
-        "target": "20C",
-        "name": "이찬희",
-        "school": "신장중학교",
-        "rounds": [
-          289,
-          239,
-          294,
-          303
-        ],
-        "total": 1125,
-        "sourceRank": 149
-      },
-      {
-        "rank": 150,
-        "target": "53C",
-        "name": "신경환",
-        "school": "박종숙양궁아카데미",
-        "rounds": [
-          285,
-          248,
-          264,
-          316
-        ],
-        "total": 1113,
-        "sourceRank": 150
-      },
-      {
-        "rank": 151,
-        "target": "30A",
-        "name": "강윤우",
-        "school": "미리벌중학교",
-        "rounds": [
-          294,
-          221,
-          281,
-          309
-        ],
-        "total": 1105,
-        "sourceRank": 151
-      },
-      {
-        "rank": 152,
-        "target": "49C",
-        "name": "유지안",
-        "school": "성사중학교",
-        "rounds": [
-          274,
-          241,
-          284,
-          304
-        ],
-        "total": 1103,
-        "sourceRank": 152
-      },
-      {
-        "rank": 153,
-        "target": "27A",
-        "name": "김시후",
-        "school": "진주봉원중학교",
-        "rounds": [
-          255,
-          221,
-          245,
-          316
-        ],
-        "total": 1037,
-        "sourceRank": 153
-      },
-      {
-        "rank": 154,
-        "target": "21A",
-        "name": "정민준",
-        "school": "북원중학교",
-        "rounds": [
-          238,
-          197,
-          291,
-          292
-        ],
-        "total": 1018,
-        "sourceRank": 154
-      },
-      {
-        "rank": 155,
-        "target": "16C",
-        "name": "김규성",
-        "school": "면목중학교",
-        "rounds": [
-          257,
-          216,
-          245,
-          290
-        ],
-        "total": 1008,
-        "sourceRank": 155
-      },
-      {
-        "rank": 156,
-        "target": "26B",
-        "name": "우경민",
-        "school": "제주양궁클럽",
-        "rounds": [
-          228,
-          227,
-          251,
-          274
-        ],
-        "total": 980,
-        "sourceRank": 156
-      },
-      {
-        "rank": 157,
-        "target": "56B",
-        "name": "전소익",
-        "school": "전주온고을중학교",
-        "rounds": [
-          243,
-          167,
-          272,
-          286
-        ],
-        "total": 968,
-        "sourceRank": 157
-      },
-      {
-        "rank": 158,
-        "target": "65B",
-        "name": "양시윤",
-        "school": "순천풍덕중학교",
-        "rounds": [
-          220,
-          213,
-          242,
-          285
-        ],
-        "total": 960,
-        "sourceRank": 158
-      },
-      {
-        "rank": 159,
-        "target": "53A",
-        "name": "허민혁",
-        "school": "부평동중학교",
-        "rounds": [
-          317,
-          328,
-          306,
-          0
-        ],
-        "total": 951,
-        "sourceRank": 159
-      },
-      {
-        "rank": 160,
-        "target": "45A",
-        "name": "이재영",
-        "school": "병천중학교",
-        "rounds": [
-          0,
-          0,
-          0,
-          0
-        ],
-        "total": 0,
-        "sourceRank": 160
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_middle_girls_2026",
-    "sheetLabel": "종별대회 여자 중학부 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "중등부",
-    "division": "중등부",
-    "gender": "여",
-    "distances": [
-      60,
-      50,
-      40,
-      30
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "58B",
-        "name": "윤노을",
-        "school": "대전대청중학교",
-        "rounds": [
-          344,
-          334,
-          348,
-          357
-        ],
-        "total": 1383,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "34C",
-        "name": "류수민",
-        "school": "부일중학교",
-        "rounds": [
-          336,
-          327,
-          347,
-          349
-        ],
-        "total": 1359,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "32A",
-        "name": "박수연",
-        "school": "경북체육중학교",
-        "rounds": [
-          342,
-          317,
-          344,
-          352
-        ],
-        "total": 1355,
-        "sourceRank": 3
-      },
-      {
-        "rank": 4,
-        "target": "31A",
-        "name": "안서영",
-        "school": "경북체육중학교",
-        "rounds": [
-          335,
-          325,
-          340,
-          351
-        ],
-        "total": 1351,
-        "sourceRank": 4
-      },
-      {
-        "rank": 5,
-        "target": "61A",
-        "name": "우소민",
-        "school": "미리벌중학교",
-        "rounds": [
-          336,
-          322,
-          340,
-          352
-        ],
-        "total": 1350,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "24A",
-        "name": "조여민 임실군",
-        "school": "양궁스포츠클럽",
-        "rounds": [
-          334,
-          323,
-          341,
-          351
-        ],
-        "total": 1349,
-        "sourceRank": 6
-      },
-      {
-        "rank": 6,
-        "target": "61C",
-        "name": "이하은",
-        "school": "남천중학교",
-        "rounds": [
-          330,
-          320,
-          343,
-          356
-        ],
-        "total": 1349,
-        "sourceRank": 6
-      },
-      {
-        "rank": 6,
-        "target": "34A",
-        "name": "우가람",
-        "school": "용암중학교",
-        "rounds": [
-          337,
-          324,
-          338,
-          350
-        ],
-        "total": 1349,
-        "sourceRank": 6
-      },
-      {
-        "rank": 9,
-        "target": "51A",
-        "name": "변다해",
-        "school": "인천여자중학교",
-        "rounds": [
-          330,
-          321,
-          343,
-          352
-        ],
-        "total": 1346,
-        "sourceRank": 9
-      },
-      {
-        "rank": 10,
-        "target": "19A",
-        "name": "이주은",
-        "school": "성사중학교",
-        "rounds": [
-          333,
-          325,
-          338,
-          349
-        ],
-        "total": 1345,
-        "sourceRank": 10
-      },
-      {
-        "rank": 10,
-        "target": "17A",
-        "name": "염정민",
-        "school": "서라벌여자중학교",
-        "rounds": [
-          333,
-          321,
-          337,
-          354
-        ],
-        "total": 1345,
-        "sourceRank": 10
-      },
-      {
-        "rank": 12,
-        "target": "20B",
-        "name": "안지현",
-        "school": "창용중학교",
-        "rounds": [
-          333,
-          321,
-          339,
-          351
-        ],
-        "total": 1344,
-        "sourceRank": 12
-      },
-      {
-        "rank": 12,
-        "target": "58D",
-        "name": "김다을",
-        "school": "용성중학교",
-        "rounds": [
-          338,
-          324,
-          331,
-          351
-        ],
-        "total": 1344,
-        "sourceRank": 12
-      },
-      {
-        "rank": 12,
-        "target": "46A",
-        "name": "장여진",
-        "school": "여흥중학교",
-        "rounds": [
-          327,
-          328,
-          342,
-          347
-        ],
-        "total": 1344,
-        "sourceRank": 12
-      },
-      {
-        "rank": 15,
-        "target": "11D",
-        "name": "권수연",
-        "school": "상도중학교",
-        "rounds": [
-          337,
-          328,
-          333,
-          345
-        ],
-        "total": 1343,
-        "sourceRank": 15
-      },
-      {
-        "rank": 16,
-        "target": "25A",
-        "name": "조여경 임실군",
-        "school": "양궁스포츠클럽",
-        "rounds": [
-          331,
-          317,
-          335,
-          358
-        ],
-        "total": 1341,
-        "sourceRank": 16
-      },
-      {
-        "rank": 17,
-        "target": "21B",
-        "name": "최서진",
-        "school": "창용중학교",
-        "rounds": [
-          337,
-          328,
-          333,
-          342
-        ],
-        "total": 1340,
-        "sourceRank": 17
-      },
-      {
-        "rank": 18,
-        "target": "38D",
-        "name": "이경민",
-        "school": "광주동명중학교",
-        "rounds": [
-          332,
-          325,
-          334,
-          348
-        ],
-        "total": 1339,
-        "sourceRank": 18
-      },
-      {
-        "rank": 18,
-        "target": "57C",
-        "name": "박소민",
-        "school": "성화중학교",
-        "rounds": [
-          327,
-          329,
-          341,
-          342
-        ],
-        "total": 1339,
-        "sourceRank": 18
-      },
-      {
-        "rank": 20,
-        "target": "22B",
-        "name": "김주은",
-        "school": "창용중학교",
-        "rounds": [
-          327,
-          324,
-          337,
-          350
-        ],
-        "total": 1338,
-        "sourceRank": 20
-      },
-      {
-        "rank": 21,
-        "target": "21A",
-        "name": "전이지",
-        "school": "성사중학교",
-        "rounds": [
-          329,
-          328,
-          328,
-          350
-        ],
-        "total": 1335,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "15C",
-        "name": "김지수",
-        "school": "무거중학교",
-        "rounds": [
-          329,
-          324,
-          339,
-          342
-        ],
-        "total": 1334,
-        "sourceRank": 22
-      },
-      {
-        "rank": 22,
-        "target": "45B",
-        "name": "장인영",
-        "school": "홍성여자중학교",
-        "rounds": [
-          327,
-          313,
-          343,
-          351
-        ],
-        "total": 1334,
-        "sourceRank": 22
-      },
-      {
-        "rank": 24,
-        "target": "28D",
-        "name": "김미소",
-        "school": "광주체육중학교",
-        "rounds": [
-          328,
-          319,
-          339,
-          347
-        ],
-        "total": 1333,
-        "sourceRank": 24
-      },
-      {
-        "rank": 25,
-        "target": "46D",
-        "name": "이선영",
-        "school": "예천여자중학교",
-        "rounds": [
-          322,
-          322,
-          339,
-          349
-        ],
-        "total": 1332,
-        "sourceRank": 25
-      },
-      {
-        "rank": 26,
-        "target": "33C",
-        "name": "반서진",
-        "school": "부일중학교",
-        "rounds": [
-          331,
-          312,
-          335,
-          352
-        ],
-        "total": 1330,
-        "sourceRank": 26
-      },
-      {
-        "rank": 26,
-        "target": "54B",
-        "name": "홍아인",
-        "school": "중원중학교",
-        "rounds": [
-          323,
-          323,
-          336,
-          348
-        ],
-        "total": 1330,
-        "sourceRank": 26
-      },
-      {
-        "rank": 28,
-        "target": "48C",
-        "name": "고다연",
-        "school": "대전체육중학교",
-        "rounds": [
-          324,
-          325,
-          331,
-          349
-        ],
-        "total": 1329,
-        "sourceRank": 28
-      },
-      {
-        "rank": 29,
-        "target": "48D",
-        "name": "김지율",
-        "school": "예천여자중학교",
-        "rounds": [
-          327,
-          312,
-          338,
-          350
-        ],
-        "total": 1327,
-        "sourceRank": 29
-      },
-      {
-        "rank": 30,
-        "target": "57B",
-        "name": "김도연",
-        "school": "대전대청중학교",
-        "rounds": [
-          331,
-          323,
-          332,
-          337
-        ],
-        "total": 1323,
-        "sourceRank": 30
-      },
-      {
-        "rank": 30,
-        "target": "18B",
-        "name": "김연아",
-        "school": "창용중학교",
-        "rounds": [
-          321,
-          318,
-          334,
-          350
-        ],
-        "total": 1323,
-        "sourceRank": 30
-      },
-      {
-        "rank": 32,
-        "target": "51C",
-        "name": "김현서",
-        "school": "대전체육중학교",
-        "rounds": [
-          322,
-          317,
-          337,
-          346
-        ],
-        "total": 1322,
-        "sourceRank": 32
-      },
-      {
-        "rank": 33,
-        "target": "20A",
-        "name": "신주하",
-        "school": "성사중학교",
-        "rounds": [
-          330,
-          311,
-          335,
-          345
-        ],
-        "total": 1321,
-        "sourceRank": 33
-      },
-      {
-        "rank": 34,
-        "target": "41A",
-        "name": "김보현",
-        "school": "여흥중학교",
-        "rounds": [
-          325,
-          315,
-          331,
-          348
-        ],
-        "total": 1319,
-        "sourceRank": 34
-      },
-      {
-        "rank": 35,
-        "target": "19B",
-        "name": "박예주",
-        "school": "창용중학교",
-        "rounds": [
-          322,
-          317,
-          330,
-          349
-        ],
-        "total": 1318,
-        "sourceRank": 35
-      },
-      {
-        "rank": 36,
-        "target": "42B",
-        "name": "이서은",
-        "school": "전남체육중학교",
-        "rounds": [
-          323,
-          318,
-          328,
-          346
-        ],
-        "total": 1315,
-        "sourceRank": 36
-      },
-      {
-        "rank": 36,
-        "target": "13C",
-        "name": "임서현",
-        "school": "오창중학교",
-        "rounds": [
-          323,
-          322,
-          326,
-          344
-        ],
-        "total": 1315,
-        "sourceRank": 36
-      },
-      {
-        "rank": 38,
-        "target": "61B",
-        "name": "윤채민",
-        "school": "신흥여자중학교",
-        "rounds": [
-          321,
-          324,
-          327,
-          342
-        ],
-        "total": 1314,
-        "sourceRank": 38
-      },
-      {
-        "rank": 39,
-        "target": "47D",
-        "name": "김주아",
-        "school": "예천여자중학교",
-        "rounds": [
-          324,
-          310,
-          332,
-          346
-        ],
-        "total": 1312,
-        "sourceRank": 39
-      },
-      {
-        "rank": 39,
-        "target": "58C",
-        "name": "정윤서",
-        "school": "성화중학교",
-        "rounds": [
-          323,
-          316,
-          337,
-          336
-        ],
-        "total": 1312,
-        "sourceRank": 39
-      },
-      {
-        "rank": 41,
-        "target": "56D",
-        "name": "배효린",
-        "school": "용성중학교",
-        "rounds": [
-          322,
-          304,
-          336,
-          349
-        ],
-        "total": 1311,
-        "sourceRank": 41
-      },
-      {
-        "rank": 42,
-        "target": "26D",
-        "name": "서예람",
-        "school": "광주체육중학교",
-        "rounds": [
-          332,
-          296,
-          334,
-          348
-        ],
-        "total": 1310,
-        "sourceRank": 42
-      },
-      {
-        "rank": 43,
-        "target": "43B",
-        "name": "윤예진",
-        "school": "홍성여자중학교",
-        "rounds": [
-          308,
-          318,
-          340,
-          343
-        ],
-        "total": 1309,
-        "sourceRank": 43
-      },
-      {
-        "rank": 43,
-        "target": "40D",
-        "name": "고윤우",
-        "school": "광주동명중학교",
-        "rounds": [
-          320,
-          316,
-          326,
-          347
-        ],
-        "total": 1309,
-        "sourceRank": 43
-      },
-      {
-        "rank": 43,
-        "target": "39D",
-        "name": "심예인",
-        "school": "광주동명중학교",
-        "rounds": [
-          322,
-          317,
-          325,
-          345
-        ],
-        "total": 1309,
-        "sourceRank": 43
-      },
-      {
-        "rank": 46,
-        "target": "33D",
-        "name": "손시언",
-        "school": "진해중학교",
-        "rounds": [
-          322,
-          316,
-          323,
-          347
-        ],
-        "total": 1308,
-        "sourceRank": 46
-      },
-      {
-        "rank": 47,
-        "target": "16B",
-        "name": "김소은",
-        "school": "강화여자중학교",
-        "rounds": [
-          328,
-          323,
-          331,
-          325
-        ],
-        "total": 1307,
-        "sourceRank": 47
-      },
-      {
-        "rank": 47,
-        "target": "22D",
-        "name": "문다현",
-        "school": "모라중학교",
-        "rounds": [
-          329,
-          311,
-          331,
-          336
-        ],
-        "total": 1307,
-        "sourceRank": 47
-      },
-      {
-        "rank": 49,
-        "target": "49A",
-        "name": "박다희",
-        "school": "전주솔빛중학교",
-        "rounds": [
-          307,
-          319,
-          334,
-          346
-        ],
-        "total": 1306,
-        "sourceRank": 49
-      },
-      {
-        "rank": 49,
-        "target": "44D",
-        "name": "이루나",
-        "school": "양화중학교",
-        "rounds": [
-          316,
-          313,
-          332,
-          345
-        ],
-        "total": 1306,
-        "sourceRank": 49
-      },
-      {
-        "rank": 51,
-        "target": "35C",
-        "name": "김시하",
-        "school": "부일중학교",
-        "rounds": [
-          325,
-          296,
-          336,
-          348
-        ],
-        "total": 1305,
-        "sourceRank": 51
-      },
-      {
-        "rank": 51,
-        "target": "57D",
-        "name": "신연우",
-        "school": "용성중학교",
-        "rounds": [
-          330,
-          319,
-          315,
-          341
-        ],
-        "total": 1305,
-        "sourceRank": 51
-      },
-      {
-        "rank": 53,
-        "target": "54D",
-        "name": "이민솔",
-        "school": "신장중학교",
-        "rounds": [
-          322,
-          310,
-          328,
-          343
-        ],
-        "total": 1303,
-        "sourceRank": 53
-      },
-      {
-        "rank": 54,
-        "target": "23B",
-        "name": "주혜인",
-        "school": "창용중학교",
-        "rounds": [
-          318,
-          314,
-          326,
-          344
-        ],
-        "total": 1302,
-        "sourceRank": 54
-      },
-      {
-        "rank": 55,
-        "target": "35B",
-        "name": "채수현",
-        "school": "대구체육중학교",
-        "rounds": [
-          326,
-          321,
-          330,
-          324
-        ],
-        "total": 1301,
-        "sourceRank": 55
-      },
-      {
-        "rank": 55,
-        "target": "49D",
-        "name": "전소율",
-        "school": "예천여자중학교",
-        "rounds": [
-          314,
-          304,
-          339,
-          344
-        ],
-        "total": 1301,
-        "sourceRank": 55
-      },
-      {
-        "rank": 55,
-        "target": "25C",
-        "name": "이소현",
-        "school": "하랑중학교",
-        "rounds": [
-          320,
-          307,
-          329,
-          345
-        ],
-        "total": 1301,
-        "sourceRank": 55
-      },
-      {
-        "rank": 58,
-        "target": "24B",
-        "name": "이소연",
-        "school": "창용중학교",
-        "rounds": [
-          316,
-          298,
-          342,
-          344
-        ],
-        "total": 1300,
-        "sourceRank": 58
-      },
-      {
-        "rank": 58,
-        "target": "36B",
-        "name": "류가예",
-        "school": "대구체육중학교",
-        "rounds": [
-          328,
-          310,
-          322,
-          340
-        ],
-        "total": 1300,
-        "sourceRank": 58
-      },
-      {
-        "rank": 60,
-        "target": "17D",
-        "name": "최지은",
-        "school": "면목중학교",
-        "rounds": [
-          316,
-          314,
-          320,
-          348
-        ],
-        "total": 1298,
-        "sourceRank": 60
-      },
-      {
-        "rank": 61,
-        "target": "60B",
-        "name": "김민별",
-        "school": "신흥여자중학교",
-        "rounds": [
-          310,
-          308,
-          332,
-          347
-        ],
-        "total": 1297,
-        "sourceRank": 61
-      },
-      {
-        "rank": 61,
-        "target": "55C",
-        "name": "조예림",
-        "school": "연일중학교",
-        "rounds": [
-          319,
-          306,
-          329,
-          343
-        ],
-        "total": 1297,
-        "sourceRank": 61
-      },
-      {
-        "rank": 63,
-        "target": "21D",
-        "name": "양서연",
-        "school": "모라중학교",
-        "rounds": [
-          315,
-          308,
-          332,
-          340
-        ],
-        "total": 1295,
-        "sourceRank": 63
-      },
-      {
-        "rank": 64,
-        "target": "17B",
-        "name": "김수연",
-        "school": "창용중학교",
-        "rounds": [
-          308,
-          317,
-          331,
-          337
-        ],
-        "total": 1293,
-        "sourceRank": 64
-      },
-      {
-        "rank": 64,
-        "target": "48A",
-        "name": "임예은",
-        "school": "전주솔빛중학교",
-        "rounds": [
-          312,
-          307,
-          330,
-          344
-        ],
-        "total": 1293,
-        "sourceRank": 64
-      },
-      {
-        "rank": 64,
-        "target": "59C",
-        "name": "여다민",
-        "school": "성화중학교",
-        "rounds": [
-          315,
-          310,
-          326,
-          342
-        ],
-        "total": 1293,
-        "sourceRank": 64
-      },
-      {
-        "rank": 64,
-        "target": "34B",
-        "name": "서민정",
-        "school": "대구체육중학교",
-        "rounds": [
-          314,
-          314,
-          319,
-          346
-        ],
-        "total": 1293,
-        "sourceRank": 64
-      },
-      {
-        "rank": 68,
-        "target": "45A",
-        "name": "윤도경",
-        "school": "여흥중학교",
-        "rounds": [
-          299,
-          321,
-          324,
-          348
-        ],
-        "total": 1292,
-        "sourceRank": 68
-      },
-      {
-        "rank": 68,
-        "target": "36C",
-        "name": "전인서",
-        "school": "부일중학교",
-        "rounds": [
-          318,
-          312,
-          320,
-          342
-        ],
-        "total": 1292,
-        "sourceRank": 68
-      },
-      {
-        "rank": 70,
-        "target": "27C",
-        "name": "김수지",
-        "school": "부산체육중학교",
-        "rounds": [
-          312,
-          303,
-          331,
-          345
-        ],
-        "total": 1291,
-        "sourceRank": 70
-      },
-      {
-        "rank": 70,
-        "target": "29D",
-        "name": "이설하",
-        "school": "광주체육중학교",
-        "rounds": [
-          318,
-          317,
-          321,
-          335
-        ],
-        "total": 1291,
-        "sourceRank": 70
-      },
-      {
-        "rank": 72,
-        "target": "27D",
-        "name": "박채윤",
-        "school": "광주체육중학교",
-        "rounds": [
-          324,
-          316,
-          313,
-          337
-        ],
-        "total": 1290,
-        "sourceRank": 72
-      },
-      {
-        "rank": 72,
-        "target": "63A",
-        "name": "김소원",
-        "school": "미리벌중학교",
-        "rounds": [
-          314,
-          314,
-          315,
-          347
-        ],
-        "total": 1290,
-        "sourceRank": 72
-      },
-      {
-        "rank": 72,
-        "target": "62B",
-        "name": "남수아",
-        "school": "신흥여자중학교",
-        "rounds": [
-          311,
-          318,
-          319,
-          342
-        ],
-        "total": 1290,
-        "sourceRank": 72
-      },
-      {
-        "rank": 72,
-        "target": "55D",
-        "name": "윤소미",
-        "school": "신장중학교",
-        "rounds": [
-          319,
-          304,
-          329,
-          338
-        ],
-        "total": 1290,
-        "sourceRank": 72
-      },
-      {
-        "rank": 76,
-        "target": "36D",
-        "name": "민소이",
-        "school": "진해중학교",
-        "rounds": [
-          315,
-          301,
-          329,
-          343
-        ],
-        "total": 1288,
-        "sourceRank": 76
-      },
-      {
-        "rank": 76,
-        "target": "28B",
-        "name": "김정음",
-        "school": "창용중학교",
-        "rounds": [
-          308,
-          320,
-          317,
-          343
-        ],
-        "total": 1288,
-        "sourceRank": 76
-      },
-      {
-        "rank": 78,
-        "target": "57A",
-        "name": "고다현",
-        "school": "방이중학교",
-        "rounds": [
-          316,
-          302,
-          324,
-          345
-        ],
-        "total": 1287,
-        "sourceRank": 78
-      },
-      {
-        "rank": 79,
-        "target": "29A",
-        "name": "전아윤",
-        "school": "경북체육중학교",
-        "rounds": [
-          309,
-          305,
-          324,
-          347
-        ],
-        "total": 1285,
-        "sourceRank": 79
-      },
-      {
-        "rank": 79,
-        "target": "37C",
-        "name": "이희율",
-        "school": "부일중학교",
-        "rounds": [
-          311,
-          315,
-          327,
-          332
-        ],
-        "total": 1285,
-        "sourceRank": 79
-      },
-      {
-        "rank": 81,
-        "target": "45C",
-        "name": "신다솔",
-        "school": "대전체육중학교",
-        "rounds": [
-          324,
-          302,
-          326,
-          332
-        ],
-        "total": 1284,
-        "sourceRank": 81
-      },
-      {
-        "rank": 81,
-        "target": "30B",
-        "name": "천지유",
-        "school": "경포중학교",
-        "rounds": [
-          304,
-          310,
-          330,
-          340
-        ],
-        "total": 1284,
-        "sourceRank": 81
-      },
-      {
-        "rank": 81,
-        "target": "64D",
-        "name": "이서진",
-        "school": "버들중학교",
-        "rounds": [
-          315,
-          307,
-          323,
-          339
-        ],
-        "total": 1284,
-        "sourceRank": 81
-      },
-      {
-        "rank": 84,
-        "target": "45D",
-        "name": "김예슬",
-        "school": "양화중학교",
-        "rounds": [
-          308,
-          310,
-          326,
-          339
-        ],
-        "total": 1283,
-        "sourceRank": 84
-      },
-      {
-        "rank": 85,
-        "target": "47C",
-        "name": "유윤서",
-        "school": "대전체육중학교",
-        "rounds": [
-          309,
-          301,
-          327,
-          344
-        ],
-        "total": 1281,
-        "sourceRank": 85
-      },
-      {
-        "rank": 85,
-        "target": "43D",
-        "name": "박소을",
-        "school": "양화중학교",
-        "rounds": [
-          320,
-          306,
-          319,
-          336
-        ],
-        "total": 1281,
-        "sourceRank": 85
-      },
-      {
-        "rank": 87,
-        "target": "18C",
-        "name": "김규린",
-        "school": "진주봉원중학교",
-        "rounds": [
-          310,
-          292,
-          327,
-          350
-        ],
-        "total": 1279,
-        "sourceRank": 87
-      },
-      {
-        "rank": 88,
-        "target": "60C",
-        "name": "송수지",
-        "school": "남천중학교",
-        "rounds": [
-          309,
-          300,
-          332,
-          336
-        ],
-        "total": 1277,
-        "sourceRank": 88
-      },
-      {
-        "rank": 88,
-        "target": "44A",
-        "name": "유수진",
-        "school": "여흥중학교",
-        "rounds": [
-          314,
-          308,
-          312,
-          343
-        ],
-        "total": 1277,
-        "sourceRank": 88
-      },
-      {
-        "rank": 90,
-        "target": "46C",
-        "name": "임현서",
-        "school": "대전체육중학교",
-        "rounds": [
-          301,
-          305,
-          334,
-          336
-        ],
-        "total": 1276,
-        "sourceRank": 90
-      },
-      {
-        "rank": 90,
-        "target": "53B",
-        "name": "조수하",
-        "school": "중원중학교",
-        "rounds": [
-          316,
-          305,
-          323,
-          332
-        ],
-        "total": 1276,
-        "sourceRank": 90
-      },
-      {
-        "rank": 92,
-        "target": "53D",
-        "name": "정하은",
-        "school": "예천여자중학교",
-        "rounds": [
-          308,
-          304,
-          320,
-          343
-        ],
-        "total": 1275,
-        "sourceRank": 92
-      },
-      {
-        "rank": 92,
-        "target": "64A",
-        "name": "문현정",
-        "school": "미리벌중학교",
-        "rounds": [
-          302,
-          301,
-          332,
-          340
-        ],
-        "total": 1275,
-        "sourceRank": 92
-      },
-      {
-        "rank": 92,
-        "target": "12B",
-        "name": "황채영",
-        "school": "구례여자중학교",
-        "rounds": [
-          318,
-          309,
-          310,
-          338
-        ],
-        "total": 1275,
-        "sourceRank": 92
-      },
-      {
-        "rank": 95,
-        "target": "38A",
-        "name": "허정아",
-        "school": "하성중학교",
-        "rounds": [
-          314,
-          299,
-          326,
-          333
-        ],
-        "total": 1272,
-        "sourceRank": 95
-      },
-      {
-        "rank": 95,
-        "target": "51B",
-        "name": "이가은",
-        "school": "수원시양궁협회",
-        "rounds": [
-          309,
-          300,
-          327,
-          336
-        ],
-        "total": 1272,
-        "sourceRank": 95
-      },
-      {
-        "rank": 97,
-        "target": "13B",
-        "name": "허윤",
-        "school": "구례여자중학교",
-        "rounds": [
-          317,
-          307,
-          314,
-          332
-        ],
-        "total": 1270,
-        "sourceRank": 97
-      },
-      {
-        "rank": 98,
-        "target": "33B",
-        "name": "오한솔",
-        "school": "대구체육중학교",
-        "rounds": [
-          304,
-          294,
-          329,
-          342
-        ],
-        "total": 1269,
-        "sourceRank": 98
-      },
-      {
-        "rank": 98,
-        "target": "20C",
-        "name": "김소은",
-        "school": "진주봉원중학교",
-        "rounds": [
-          307,
-          297,
-          326,
-          339
-        ],
-        "total": 1269,
-        "sourceRank": 98
-      },
-      {
-        "rank": 98,
-        "target": "31B",
-        "name": "박소현",
-        "school": "경포중학교",
-        "rounds": [
-          308,
-          300,
-          323,
-          338
-        ],
-        "total": 1269,
-        "sourceRank": 98
-      },
-      {
-        "rank": 98,
-        "target": "30D",
-        "name": "진연아",
-        "school": "광주체육중학교",
-        "rounds": [
-          314,
-          295,
-          327,
-          333
-        ],
-        "total": 1269,
-        "sourceRank": 98
-      },
-      {
-        "rank": 102,
-        "target": "19C",
-        "name": "이수빈",
-        "school": "진주봉원중학교",
-        "rounds": [
-          314,
-          289,
-          325,
-          340
-        ],
-        "total": 1268,
-        "sourceRank": 102
-      },
-      {
-        "rank": 102,
-        "target": "11B",
-        "name": "서인교",
-        "school": "구례여자중학교",
-        "rounds": [
-          313,
-          295,
-          318,
-          342
-        ],
-        "total": 1268,
-        "sourceRank": 102
-      },
-      {
-        "rank": 104,
-        "target": "61D",
-        "name": "조현아",
-        "school": "버들중학교",
-        "rounds": [
-          290,
-          303,
-          329,
-          345
-        ],
-        "total": 1267,
-        "sourceRank": 104
-      },
-      {
-        "rank": 105,
-        "target": "55A",
-        "name": "심유리",
-        "school": "방이중학교",
-        "rounds": [
-          321,
-          288,
-          315,
-          340
-        ],
-        "total": 1264,
-        "sourceRank": 105
-      },
-      {
-        "rank": 106,
-        "target": "49C",
-        "name": "이아영",
-        "school": "대전체육중학교",
-        "rounds": [
-          317,
-          293,
-          313,
-          339
-        ],
-        "total": 1262,
-        "sourceRank": 106
-      },
-      {
-        "rank": 107,
-        "target": "27B",
-        "name": "한세빈",
-        "school": "창용중학교",
-        "rounds": [
-          321,
-          283,
-          316,
-          340
-        ],
-        "total": 1260,
-        "sourceRank": 107
-      },
-      {
-        "rank": 108,
-        "target": "56A",
-        "name": "양이정",
-        "school": "방이중학교",
-        "rounds": [
-          299,
-          299,
-          323,
-          338
-        ],
-        "total": 1259,
-        "sourceRank": 108
-      },
-      {
-        "rank": 109,
-        "target": "33A",
-        "name": "이세은",
-        "school": "용암중학교",
-        "rounds": [
-          318,
-          280,
-          319,
-          340
-        ],
-        "total": 1257,
-        "sourceRank": 109
-      },
-      {
-        "rank": 109,
-        "target": "12D",
-        "name": "유하원",
-        "school": "상도중학교",
-        "rounds": [
-          304,
-          294,
-          321,
-          338
-        ],
-        "total": 1257,
-        "sourceRank": 109
-      },
-      {
-        "rank": 111,
-        "target": "31C",
-        "name": "나연우",
-        "school": "관악중학교",
-        "rounds": [
-          315,
-          287,
-          319,
-          335
-        ],
-        "total": 1256,
-        "sourceRank": 111
-      },
-      {
-        "rank": 112,
-        "target": "30A",
-        "name": "최효주",
-        "school": "경북체육중학교",
-        "rounds": [
-          319,
-          281,
-          315,
-          338
-        ],
-        "total": 1253,
-        "sourceRank": 112
-      },
-      {
-        "rank": 112,
-        "target": "49B",
-        "name": "오승은",
-        "school": "제주양궁클럽",
-        "rounds": [
-          299,
-          307,
-          318,
-          329
-        ],
-        "total": 1253,
-        "sourceRank": 112
-      },
-      {
-        "rank": 114,
-        "target": "44C",
-        "name": "김래현",
-        "school": "대전체육중학교",
-        "rounds": [
-          306,
-          279,
-          324,
-          342
-        ],
-        "total": 1251,
-        "sourceRank": 114
-      },
-      {
-        "rank": 114,
-        "target": "37D",
-        "name": "이승혜",
-        "school": "진해중학교",
-        "rounds": [
-          311,
-          285,
-          315,
-          340
-        ],
-        "total": 1251,
-        "sourceRank": 114
-      },
-      {
-        "rank": 116,
-        "target": "52A",
-        "name": "김다솜",
-        "school": "인천여자중학교",
-        "rounds": [
-          290,
-          307,
-          329,
-          323
-        ],
-        "total": 1249,
-        "sourceRank": 116
-      },
-      {
-        "rank": 116,
-        "target": "42D",
-        "name": "손예은",
-        "school": "광주동명중학교",
-        "rounds": [
-          305,
-          294,
-          318,
-          332
-        ],
-        "total": 1249,
-        "sourceRank": 116
-      },
-      {
-        "rank": 116,
-        "target": "29B",
-        "name": "서예원",
-        "school": "경포중학교",
-        "rounds": [
-          314,
-          298,
-          310,
-          327
-        ],
-        "total": 1249,
-        "sourceRank": 116
-      },
-      {
-        "rank": 119,
-        "target": "41C",
-        "name": "윤세아",
-        "school": "부일중학교",
-        "rounds": [
-          306,
-          262,
-          334,
-          345
-        ],
-        "total": 1247,
-        "sourceRank": 119
-      },
-      {
-        "rank": 120,
-        "target": "15B",
-        "name": "정하연",
-        "school": "대서중학교",
-        "rounds": [
-          309,
-          294,
-          312,
-          331
-        ],
-        "total": 1246,
-        "sourceRank": 120
-      },
-      {
-        "rank": 121,
-        "target": "38C",
-        "name": "이가은",
-        "school": "부일중학교",
-        "rounds": [
-          303,
-          280,
-          330,
-          332
-        ],
-        "total": 1245,
-        "sourceRank": 121
-      },
-      {
-        "rank": 122,
-        "target": "65D",
-        "name": "강연우",
-        "school": "버들중학교",
-        "rounds": [
-          298,
-          276,
-          318,
-          352
-        ],
-        "total": 1244,
-        "sourceRank": 122
-      },
-      {
-        "rank": 122,
-        "target": "16C",
-        "name": "오윤아",
-        "school": "무거중학교",
-        "rounds": [
-          300,
-          280,
-          325,
-          339
-        ],
-        "total": 1244,
-        "sourceRank": 122
-      },
-      {
-        "rank": 122,
-        "target": "41D",
-        "name": "손세린",
-        "school": "광주동명중학교",
-        "rounds": [
-          307,
-          285,
-          311,
-          341
-        ],
-        "total": 1244,
-        "sourceRank": 122
-      },
-      {
-        "rank": 125,
-        "target": "59B",
-        "name": "이세형",
-        "school": "신흥여자중학교",
-        "rounds": [
-          312,
-          286,
-          309,
-          335
-        ],
-        "total": 1242,
-        "sourceRank": 125
-      },
-      {
-        "rank": 126,
-        "target": "51D",
-        "name": "최혜아",
-        "school": "예천여자중학교",
-        "rounds": [
-          299,
-          287,
-          320,
-          335
-        ],
-        "total": 1241,
-        "sourceRank": 126
-      },
-      {
-        "rank": 127,
-        "target": "27A",
-        "name": "성예나",
-        "school": "경북체육중학교",
-        "rounds": [
-          310,
-          269,
-          323,
-          338
-        ],
-        "total": 1240,
-        "sourceRank": 127
-      },
-      {
-        "rank": 128,
-        "target": "28A",
-        "name": "장채윤",
-        "school": "경북체육중학교",
-        "rounds": [
-          308,
-          282,
-          317,
-          330
-        ],
-        "total": 1237,
-        "sourceRank": 128
-      },
-      {
-        "rank": 128,
-        "target": "19D",
-        "name": "문다윤",
-        "school": "모라중학교",
-        "rounds": [
-          301,
-          294,
-          321,
-          321
-        ],
-        "total": 1237,
-        "sourceRank": 128
-      },
-      {
-        "rank": 130,
-        "target": "14C",
-        "name": "김예빈",
-        "school": "무거중학교",
-        "rounds": [
-          311,
-          273,
-          315,
-          334
-        ],
-        "total": 1233,
-        "sourceRank": 130
-      },
-      {
-        "rank": 130,
-        "target": "39A",
-        "name": "유하은",
-        "school": "하성중학교",
-        "rounds": [
-          307,
-          281,
-          302,
-          343
-        ],
-        "total": 1233,
-        "sourceRank": 130
-      },
-      {
-        "rank": 132,
-        "target": "64C",
-        "name": "이승희",
-        "school": "안양서중학교",
-        "rounds": [
-          316,
-          273,
-          303,
-          340
-        ],
-        "total": 1232,
-        "sourceRank": 132
-      },
-      {
-        "rank": 133,
-        "target": "63B",
-        "name": "김민정",
-        "school": "신흥여자중학교",
-        "rounds": [
-          298,
-          297,
-          306,
-          329
-        ],
-        "total": 1230,
-        "sourceRank": 133
-      },
-      {
-        "rank": 133,
-        "target": "26C",
-        "name": "임유빈",
-        "school": "부산체육중학교",
-        "rounds": [
-          310,
-          273,
-          314,
-          333
-        ],
-        "total": 1230,
-        "sourceRank": 133
-      },
-      {
-        "rank": 135,
-        "target": "37A",
-        "name": "석지우",
-        "school": "하성중학교",
-        "rounds": [
-          316,
-          275,
-          308,
-          329
-        ],
-        "total": 1228,
-        "sourceRank": 135
-      },
-      {
-        "rank": 136,
-        "target": "35D",
-        "name": "이혜승",
-        "school": "진해중학교",
-        "rounds": [
-          276,
-          277,
-          331,
-          341
-        ],
-        "total": 1225,
-        "sourceRank": 136
-      },
-      {
-        "rank": 137,
-        "target": "56C",
-        "name": "임예은",
-        "school": "연일중학교",
-        "rounds": [
-          311,
-          280,
-          304,
-          329
-        ],
-        "total": 1224,
-        "sourceRank": 137
-      },
-      {
-        "rank": 138,
-        "target": "26A",
-        "name": "최지아 임실군",
-        "school": "양궁스포츠클럽",
-        "rounds": [
-          290,
-          286,
-          318,
-          329
-        ],
-        "total": 1223,
-        "sourceRank": 138
-      },
-      {
-        "rank": 139,
-        "target": "29C",
-        "name": "최윤서",
-        "school": "관악중학교",
-        "rounds": [
-          283,
-          274,
-          325,
-          339
-        ],
-        "total": 1221,
-        "sourceRank": 139
-      },
-      {
-        "rank": 139,
-        "target": "56B",
-        "name": "유소율",
-        "school": "대전대청중학교",
-        "rounds": [
-          304,
-          276,
-          312,
-          329
-        ],
-        "total": 1221,
-        "sourceRank": 139
-      },
-      {
-        "rank": 141,
-        "target": "62C",
-        "name": "허지원",
-        "school": "남천중학교",
-        "rounds": [
-          294,
-          271,
-          323,
-          332
-        ],
-        "total": 1220,
-        "sourceRank": 141
-      },
-      {
-        "rank": 141,
-        "target": "31D",
-        "name": "김하온",
-        "school": "광주체육중학교",
-        "rounds": [
-          312,
-          274,
-          300,
-          334
-        ],
-        "total": 1220,
-        "sourceRank": 141
-      },
-      {
-        "rank": 143,
-        "target": "30C",
-        "name": "정예서",
-        "school": "관악중학교",
-        "rounds": [
-          311,
-          279,
-          295,
-          334
-        ],
-        "total": 1219,
-        "sourceRank": 143
-      },
-      {
-        "rank": 143,
-        "target": "25B",
-        "name": "한새론",
-        "school": "창용중학교",
-        "rounds": [
-          296,
-          272,
-          317,
-          334
-        ],
-        "total": 1219,
-        "sourceRank": 143
-      },
-      {
-        "rank": 143,
-        "target": "59D",
-        "name": "김도연",
-        "school": "버들중학교",
-        "rounds": [
-          317,
-          269,
-          310,
-          323
-        ],
-        "total": 1219,
-        "sourceRank": 143
-      },
-      {
-        "rank": 146,
-        "target": "50A",
-        "name": "유채민",
-        "school": "인천여자중학교",
-        "rounds": [
-          297,
-          277,
-          316,
-          328
-        ],
-        "total": 1218,
-        "sourceRank": 146
-      },
-      {
-        "rank": 147,
-        "target": "42C",
-        "name": "이가영",
-        "school": "대전체육중학교",
-        "rounds": [
-          288,
-          291,
-          301,
-          337
-        ],
-        "total": 1217,
-        "sourceRank": 147
-      },
-      {
-        "rank": 148,
-        "target": "37B",
-        "name": "박예은",
-        "school": "대구체육중학교",
-        "rounds": [
-          296,
-          283,
-          302,
-          335
-        ],
-        "total": 1216,
-        "sourceRank": 148
-      },
-      {
-        "rank": 148,
-        "target": "44B",
-        "name": "김서윤",
-        "school": "홍성여자중학교",
-        "rounds": [
-          292,
-          299,
-          297,
-          328
-        ],
-        "total": 1216,
-        "sourceRank": 148
-      },
-      {
-        "rank": 150,
-        "target": "12A",
-        "name": "오정주",
-        "school": "서라벌여자중학교",
-        "rounds": [
-          309,
-          277,
-          311,
-          318
-        ],
-        "total": 1215,
-        "sourceRank": 150
-      },
-      {
-        "rank": 150,
-        "target": "36A",
-        "name": "박재이",
-        "school": "용암중학교",
-        "rounds": [
-          297,
-          277,
-          314,
-          327
-        ],
-        "total": 1215,
-        "sourceRank": 150
-      },
-      {
-        "rank": 152,
-        "target": "15D",
-        "name": "권우솔",
-        "school": "상도중학교",
-        "rounds": [
-          293,
-          273,
-          312,
-          332
-        ],
-        "total": 1210,
-        "sourceRank": 152
-      },
-      {
-        "rank": 153,
-        "target": "18D",
-        "name": "최하민",
-        "school": "면목중학교",
-        "rounds": [
-          293,
-          285,
-          309,
-          322
-        ],
-        "total": 1209,
-        "sourceRank": 153
-      },
-      {
-        "rank": 154,
-        "target": "55B",
-        "name": "임소연",
-        "school": "대전대청중학교",
-        "rounds": [
-          289,
-          276,
-          317,
-          325
-        ],
-        "total": 1207,
-        "sourceRank": 154
-      },
-      {
-        "rank": 154,
-        "target": "15A",
-        "name": "박지영",
-        "school": "서라벌여자중학교",
-        "rounds": [
-          301,
-          278,
-          308,
-          320
-        ],
-        "total": 1207,
-        "sourceRank": 154
-      },
-      {
-        "rank": 156,
-        "target": "24D",
-        "name": "장혜주",
-        "school": "모라중학교",
-        "rounds": [
-          313,
-          264,
-          310,
-          318
-        ],
-        "total": 1205,
-        "sourceRank": 156
-      },
-      {
-        "rank": 157,
-        "target": "34D",
-        "name": "전하린",
-        "school": "진해중학교",
-        "rounds": [
-          298,
-          280,
-          301,
-          325
-        ],
-        "total": 1204,
-        "sourceRank": 157
-      },
-      {
-        "rank": 158,
-        "target": "50C",
-        "name": "이효민",
-        "school": "대전체육중학교",
-        "rounds": [
-          284,
-          276,
-          310,
-          333
-        ],
-        "total": 1203,
-        "sourceRank": 158
-      },
-      {
-        "rank": 158,
-        "target": "64B",
-        "name": "윤서영",
-        "school": "신흥여자중학교",
-        "rounds": [
-          297,
-          280,
-          308,
-          318
-        ],
-        "total": 1203,
-        "sourceRank": 158
-      },
-      {
-        "rank": 160,
-        "target": "12C",
-        "name": "노수연",
-        "school": "오창중학교",
-        "rounds": [
-          303,
-          270,
-          294,
-          333
-        ],
-        "total": 1200,
-        "sourceRank": 160
-      },
-      {
-        "rank": 161,
-        "target": "62D",
-        "name": "최서현",
-        "school": "버들중학교",
-        "rounds": [
-          274,
-          265,
-          322,
-          333
-        ],
-        "total": 1194,
-        "sourceRank": 161
-      },
-      {
-        "rank": 162,
-        "target": "14D",
-        "name": "김하늘",
-        "school": "상도중학교",
-        "rounds": [
-          281,
-          260,
-          316,
-          336
-        ],
-        "total": 1193,
-        "sourceRank": 162
-      },
-      {
-        "rank": 162,
-        "target": "50D",
-        "name": "권보배",
-        "school": "예천여자중학교",
-        "rounds": [
-          287,
-          275,
-          312,
-          319
-        ],
-        "total": 1193,
-        "sourceRank": 162
-      },
-      {
-        "rank": 164,
-        "target": "16D",
-        "name": "박시연",
-        "school": "면목중학교",
-        "rounds": [
-          287,
-          274,
-          309,
-          322
-        ],
-        "total": 1192,
-        "sourceRank": 164
-      },
-      {
-        "rank": 165,
-        "target": "26B",
-        "name": "윤이나",
-        "school": "창용중학교",
-        "rounds": [
-          277,
-          267,
-          306,
-          340
-        ],
-        "total": 1190,
-        "sourceRank": 165
-      },
-      {
-        "rank": 166,
-        "target": "43C",
-        "name": "김가연",
-        "school": "대전체육중학교",
-        "rounds": [
-          292,
-          270,
-          293,
-          333
-        ],
-        "total": 1188,
-        "sourceRank": 166
-      },
-      {
-        "rank": 166,
-        "target": "18A",
-        "name": "김지민",
-        "school": "서라벌여자중학교",
-        "rounds": [
-          304,
-          272,
-          288,
-          324
-        ],
-        "total": 1188,
-        "sourceRank": 166
-      },
-      {
-        "rank": 168,
-        "target": "58A",
-        "name": "정유하",
-        "school": "방이중학교",
-        "rounds": [
-          299,
-          271,
-          290,
-          325
-        ],
-        "total": 1185,
-        "sourceRank": 168
-      },
-      {
-        "rank": 169,
-        "target": "52B",
-        "name": "이주은",
-        "school": "중원중학교",
-        "rounds": [
-          296,
-          273,
-          293,
-          317
-        ],
-        "total": 1179,
-        "sourceRank": 169
-      },
-      {
-        "rank": 169,
-        "target": "48B",
-        "name": "김나경",
-        "school": "제주양궁클럽",
-        "rounds": [
-          302,
-          273,
-          283,
-          321
-        ],
-        "total": 1179,
-        "sourceRank": 169
-      },
-      {
-        "rank": 171,
-        "target": "23D",
-        "name": "변하늘",
-        "school": "모라중학교",
-        "rounds": [
-          278,
-          256,
-          305,
-          334
-        ],
-        "total": 1173,
-        "sourceRank": 171
-      },
-      {
-        "rank": 171,
-        "target": "14B",
-        "name": "심하연",
-        "school": "대서중학교",
-        "rounds": [
-          268,
-          280,
-          302,
-          323
-        ],
-        "total": 1173,
-        "sourceRank": 171
-      },
-      {
-        "rank": 173,
-        "target": "13D",
-        "name": "소리아",
-        "school": "상도중학교",
-        "rounds": [
-          305,
-          261,
-          296,
-          309
-        ],
-        "total": 1171,
-        "sourceRank": 173
-      },
-      {
-        "rank": 174,
-        "target": "63D",
-        "name": "박예나",
-        "school": "버들중학교",
-        "rounds": [
-          286,
-          260,
-          295,
-          319
-        ],
-        "total": 1160,
-        "sourceRank": 174
-      },
-      {
-        "rank": 174,
-        "target": "65C",
-        "name": "김혜림",
-        "school": "안양서중학교",
-        "rounds": [
-          276,
-          276,
-          293,
-          315
-        ],
-        "total": 1160,
-        "sourceRank": 174
-      },
-      {
-        "rank": 176,
-        "target": "46B",
-        "name": "김다인",
-        "school": "홍성여자중학교",
-        "rounds": [
-          299,
-          254,
-          284,
-          319
-        ],
-        "total": 1156,
-        "sourceRank": 176
-      },
-      {
-        "rank": 177,
-        "target": "52D",
-        "name": "김소율",
-        "school": "예천여자중학교",
-        "rounds": [
-          273,
-          267,
-          291,
-          323
-        ],
-        "total": 1154,
-        "sourceRank": 177
-      },
-      {
-        "rank": 178,
-        "target": "60A",
-        "name": "박하윤",
-        "school": "방이중학교",
-        "rounds": [
-          286,
-          284,
-          287,
-          292
-        ],
-        "total": 1149,
-        "sourceRank": 178
-      },
-      {
-        "rank": 179,
-        "target": "65B",
-        "name": "송서아",
-        "school": "신흥여자중학교",
-        "rounds": [
-          276,
-          271,
-          294,
-          304
-        ],
-        "total": 1145,
-        "sourceRank": 179
-      },
-      {
-        "rank": 180,
-        "target": "32D",
-        "name": "심려원",
-        "school": "광주체육중학교",
-        "rounds": [
-          279,
-          251,
-          290,
-          320
-        ],
-        "total": 1140,
-        "sourceRank": 180
-      },
-      {
-        "rank": 181,
-        "target": "47A",
-        "name": "함소이",
-        "school": "여흥중학교",
-        "rounds": [
-          289,
-          260,
-          285,
-          305
-        ],
-        "total": 1139,
-        "sourceRank": 181
-      },
-      {
-        "rank": 182,
-        "target": "53A",
-        "name": "권아윤",
-        "school": "인천여자중학교",
-        "rounds": [
-          275,
-          254,
-          287,
-          319
-        ],
-        "total": 1135,
-        "sourceRank": 182
-      },
-      {
-        "rank": 183,
-        "target": "41B",
-        "name": "유민영",
-        "school": "전남체육중학교",
-        "rounds": [
-          273,
-          235,
-          289,
-          322
-        ],
-        "total": 1119,
-        "sourceRank": 183
-      },
-      {
-        "rank": 184,
-        "target": "54A",
-        "name": "이윤서",
-        "school": "인천여자중학교",
-        "rounds": [
-          265,
-          267,
-          270,
-          314
-        ],
-        "total": 1116,
-        "sourceRank": 184
-      },
-      {
-        "rank": 185,
-        "target": "38B",
-        "name": "윤초아",
-        "school": "전남체육중학교",
-        "rounds": [
-          269,
-          255,
-          282,
-          308
-        ],
-        "total": 1114,
-        "sourceRank": 185
-      },
-      {
-        "rank": 186,
-        "target": "40A",
-        "name": "고나연",
-        "school": "여흥중학교",
-        "rounds": [
-          263,
-          256,
-          266,
-          325
-        ],
-        "total": 1110,
-        "sourceRank": 186
-      },
-      {
-        "rank": 187,
-        "target": "63C",
-        "name": "김세아",
-        "school": "안양서중학교",
-        "rounds": [
-          284,
-          248,
-          269,
-          307
-        ],
-        "total": 1108,
-        "sourceRank": 187
-      },
-      {
-        "rank": 188,
-        "target": "17C",
-        "name": "정지민",
-        "school": "무거중학교",
-        "rounds": [
-          266,
-          227,
-          300,
-          311
-        ],
-        "total": 1104,
-        "sourceRank": 188
-      },
-      {
-        "rank": 189,
-        "target": "52C",
-        "name": "기효원",
-        "school": "창일중학교",
-        "rounds": [
-          256,
-          246,
-          289,
-          308
-        ],
-        "total": 1099,
-        "sourceRank": 189
-      },
-      {
-        "rank": 190,
-        "target": "60D",
-        "name": "양서정",
-        "school": "버들중학교",
-        "rounds": [
-          260,
-          231,
-          275,
-          329
-        ],
-        "total": 1095,
-        "sourceRank": 190
-      },
-      {
-        "rank": 191,
-        "target": "23C",
-        "name": "정해린",
-        "school": "청주중앙여자중학교",
-        "rounds": [
-          267,
-          224,
-          289,
-          309
-        ],
-        "total": 1089,
-        "sourceRank": 191
-      },
-      {
-        "rank": 192,
-        "target": "40B",
-        "name": "박하은",
-        "school": "전남체육중학교",
-        "rounds": [
-          272,
-          251,
-          251,
-          305
-        ],
-        "total": 1079,
-        "sourceRank": 192
-      },
-      {
-        "rank": 193,
-        "target": "22A",
-        "name": "백수정",
-        "school": "성사중학교",
-        "rounds": [
-          255,
-          235,
-          265,
-          305
-        ],
-        "total": 1060,
-        "sourceRank": 193
-      },
-      {
-        "rank": 193,
-        "target": "65A",
-        "name": "손효주",
-        "school": "미리벌중학교",
-        "rounds": [
-          280,
-          211,
-          258,
-          311
-        ],
-        "total": 1060,
-        "sourceRank": 193
-      },
-      {
-        "rank": 195,
-        "target": "35A",
-        "name": "김세아",
-        "school": "용암중학교",
-        "rounds": [
-          282,
-          206,
-          263,
-          308
-        ],
-        "total": 1059,
-        "sourceRank": 195
-      },
-      {
-        "rank": 196,
-        "target": "53C",
-        "name": "김유민",
-        "school": "창일중학교",
-        "rounds": [
-          241,
-          224,
-          291,
-          300
-        ],
-        "total": 1056,
-        "sourceRank": 196
-      },
-      {
-        "rank": 197,
-        "target": "42A",
-        "name": "김지윤",
-        "school": "여흥중학교",
-        "rounds": [
-          255,
-          199,
-          301,
-          298
-        ],
-        "total": 1053,
-        "sourceRank": 197
-      },
-      {
-        "rank": 198,
-        "target": "54C",
-        "name": "최지우",
-        "school": "창일중학교",
-        "rounds": [
-          237,
-          232,
-          281,
-          302
-        ],
-        "total": 1052,
-        "sourceRank": 198
-      },
-      {
-        "rank": 199,
-        "target": "14A",
-        "name": "김도희",
-        "school": "서라벌여자중학교",
-        "rounds": [
-          260,
-          228,
-          252,
-          295
-        ],
-        "total": 1035,
-        "sourceRank": 199
-      },
-      {
-        "rank": 200,
-        "target": "11C",
-        "name": "김하늘",
-        "school": "오창중학교",
-        "rounds": [
-          258,
-          213,
-          252,
-          303
-        ],
-        "total": 1026,
-        "sourceRank": 200
-      },
-      {
-        "rank": 201,
-        "target": "28C",
-        "name": "임채원",
-        "school": "관악중학교",
-        "rounds": [
-          248,
-          149,
-          287,
-          318
-        ],
-        "total": 1002,
-        "sourceRank": 201
-      },
-      {
-        "rank": 202,
-        "target": "43A",
-        "name": "김하은",
-        "school": "여흥중학교",
-        "rounds": [
-          246,
-          217,
-          241,
-          278
-        ],
-        "total": 982,
-        "sourceRank": 202
-      },
-      {
-        "rank": 203,
-        "target": "22C",
-        "name": "서은비",
-        "school": "청주중앙여자중학교",
-        "rounds": [
-          223,
-          197,
-          265,
-          286
-        ],
-        "total": 971,
-        "sourceRank": 203
-      },
-      {
-        "rank": 204,
-        "target": "24C",
-        "name": "박수빈",
-        "school": "하랑중학교",
-        "rounds": [
-          218,
-          188,
-          242,
-          289
-        ],
-        "total": 937,
-        "sourceRank": 204
-      },
-      {
-        "rank": 205,
-        "target": "16A",
-        "name": "이서현",
-        "school": "서라벌여자중학교",
-        "rounds": [
-          246,
-          161,
-          241,
-          284
-        ],
-        "total": 932,
-        "sourceRank": 205
-      },
-      {
-        "rank": 206,
-        "target": "47B",
-        "name": "김승아",
-        "school": "홍성여자중학교",
-        "rounds": [
-          216,
-          179,
-          213,
-          272
-        ],
-        "total": 880,
-        "sourceRank": 206
-      },
-      {
-        "rank": 207,
-        "target": "13A",
-        "name": "최여원",
-        "school": "서라벌여자중학교",
-        "rounds": [
-          0,
-          169,
-          264,
-          281
-        ],
-        "total": 714,
-        "sourceRank": 207
-      },
-      {
-        "rank": 208,
-        "target": "50B",
-        "name": "강현서",
-        "school": "제주양궁클럽",
-        "rounds": [
-          199,
-          93,
-          170,
-          218
-        ],
-        "total": 680,
-        "sourceRank": 208
-      },
-      {
-        "rank": 209,
-        "target": "59A",
-        "name": "김별",
-        "school": "방이중학교",
-        "rounds": [
-          0,
-          0,
-          238,
-          294
-        ],
-        "total": 532,
-        "sourceRank": 209
-      },
-      {
-        "rank": 210,
-        "target": "21C",
-        "name": "박하윤",
-        "school": "청주중앙여자중학교",
-        "rounds": [
-          0,
-          0,
-          242,
-          278
-        ],
-        "total": 520,
-        "sourceRank": 210
-      },
-      {
-        "rank": 211,
-        "target": "32C",
-        "name": "김가율",
-        "school": "관악중학교",
-        "rounds": [
-          0,
-          0,
-          218,
-          264
-        ],
-        "total": 482,
-        "sourceRank": 211
-      },
-      {
-        "rank": 212,
-        "target": "62A",
-        "name": "변시진",
-        "school": "미리벌중학교",
-        "rounds": [
-          314,
-          9,
-          0,
-          0
-        ],
-        "total": 323,
-        "sourceRank": 212
-      },
-      {
-        "rank": 213,
-        "target": "20D",
-        "name": "강다윤",
-        "school": "모라중학교",
-        "rounds": [
-          0,
-          0,
-          0,
-          297
-        ],
-        "total": 297,
-        "sourceRank": 213
-      },
-      {
-        "rank": 214,
-        "target": "11A",
-        "name": "이지혜",
-        "school": "서라벌여자중학교",
-        "rounds": [
-          0,
-          0,
-          0,
-          271
-        ],
-        "total": 271,
-        "sourceRank": 214
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_high_boys_2026",
-    "sheetLabel": "종별대회 남자 고등부 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "고등부(남)",
-    "division": "고등부",
-    "gender": "남",
-    "distances": [
-      90,
-      70,
-      50,
-      30
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "19B",
-        "name": "김태서",
-        "school": "충북체육고등학교",
-        "rounds": [
-          312,
-          337,
-          328,
-          353
-        ],
-        "total": 1330,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "20A",
-        "name": "김성용",
-        "school": "광주체육고등학교",
-        "rounds": [
-          315,
-          331,
-          334,
-          339
-        ],
-        "total": 1319,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "30B",
-        "name": "임은재",
-        "school": "인천영선고등학교",
-        "rounds": [
-          310,
-          326,
-          331,
-          351
-        ],
-        "total": 1318,
-        "sourceRank": 3
-      },
-      {
-        "rank": 3,
-        "target": "20B",
-        "name": "조성윤",
-        "school": "충북체육고등학교",
-        "rounds": [
-          303,
-          337,
-          329,
-          349
-        ],
-        "total": 1318,
-        "sourceRank": 3
-      },
-      {
-        "rank": 5,
-        "target": "26B",
-        "name": "이지호",
-        "school": "경북일고등학교",
-        "rounds": [
-          301,
-          326,
-          333,
-          350
-        ],
-        "total": 1310,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "59B",
-        "name": "조세현",
-        "school": "서울체육고등학교",
-        "rounds": [
-          296,
-          329,
-          332,
-          352
-        ],
-        "total": 1309,
-        "sourceRank": 6
-      },
-      {
-        "rank": 7,
-        "target": "35A",
-        "name": "여우영",
-        "school": "강원체육고등학교",
-        "rounds": [
-          301,
-          323,
-          336,
-          348
-        ],
-        "total": 1308,
-        "sourceRank": 7
-      },
-      {
-        "rank": 8,
-        "target": "21A",
-        "name": "심유한",
-        "school": "광주체육고등학교",
-        "rounds": [
-          306,
-          321,
-          327,
-          351
-        ],
-        "total": 1305,
-        "sourceRank": 8
-      },
-      {
-        "rank": 9,
-        "target": "40A",
-        "name": "김성준",
-        "school": "경북체육고등학교",
-        "rounds": [
-          296,
-          327,
-          328,
-          349
-        ],
-        "total": 1300,
-        "sourceRank": 9
-      },
-      {
-        "rank": 10,
-        "target": "41B",
-        "name": "김호균",
-        "school": "경기체육고등학교",
-        "rounds": [
-          292,
-          332,
-          329,
-          346
-        ],
-        "total": 1299,
-        "sourceRank": 10
-      },
-      {
-        "rank": 11,
-        "target": "46A",
-        "name": "김라온",
-        "school": "대전체육고등학교",
-        "rounds": [
-          295,
-          325,
-          331,
-          346
-        ],
-        "total": 1297,
-        "sourceRank": 11
-      },
-      {
-        "rank": 12,
-        "target": "60B",
-        "name": "윤성빈",
-        "school": "서울체육고등학교",
-        "rounds": [
-          287,
-          329,
-          331,
-          349
-        ],
-        "total": 1296,
-        "sourceRank": 12
-      },
-      {
-        "rank": 12,
-        "target": "19A",
-        "name": "박주혁",
-        "school": "광주체육고등학교",
-        "rounds": [
-          297,
-          323,
-          328,
-          348
-        ],
-        "total": 1296,
-        "sourceRank": 12
-      },
-      {
-        "rank": 14,
-        "target": "24B",
-        "name": "박상준",
-        "school": "경북일고등학교",
-        "rounds": [
-          300,
-          327,
-          322,
-          346
-        ],
-        "total": 1295,
-        "sourceRank": 14
-      },
-      {
-        "rank": 14,
-        "target": "26A",
-        "name": "유지백",
-        "school": "병천고등학교",
-        "rounds": [
-          290,
-          332,
-          323,
-          350
-        ],
-        "total": 1295,
-        "sourceRank": 14
-      },
-      {
-        "rank": 16,
-        "target": "30A",
-        "name": "정시우",
-        "school": "효원고등학교",
-        "rounds": [
-          305,
-          316,
-          323,
-          349
-        ],
-        "total": 1293,
-        "sourceRank": 16
-      },
-      {
-        "rank": 17,
-        "target": "57B",
-        "name": "성하준",
-        "school": "서울체육고등학교",
-        "rounds": [
-          290,
-          323,
-          325,
-          353
-        ],
-        "total": 1291,
-        "sourceRank": 17
-      },
-      {
-        "rank": 18,
-        "target": "51A",
-        "name": "김규성",
-        "school": "서야고등학교",
-        "rounds": [
-          300,
-          315,
-          322,
-          353
-        ],
-        "total": 1290,
-        "sourceRank": 18
-      },
-      {
-        "rank": 19,
-        "target": "44A",
-        "name": "권오율",
-        "school": "대전체육고등학교",
-        "rounds": [
-          290,
-          327,
-          321,
-          351
-        ],
-        "total": 1289,
-        "sourceRank": 19
-      },
-      {
-        "rank": 19,
-        "target": "25B",
-        "name": "황운재",
-        "school": "경북일고등학교",
-        "rounds": [
-          283,
-          327,
-          332,
-          347
-        ],
-        "total": 1289,
-        "sourceRank": 19
-      },
-      {
-        "rank": 21,
-        "target": "58B",
-        "name": "박명재",
-        "school": "서울체육고등학교",
-        "rounds": [
-          279,
-          328,
-          333,
-          348
-        ],
-        "total": 1288,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "39B",
-        "name": "한경수",
-        "school": "경기체육고등학교",
-        "rounds": [
-          276,
-          327,
-          333,
-          350
-        ],
-        "total": 1286,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "28A",
-        "name": "김세진",
-        "school": "효원고등학교",
-        "rounds": [
-          291,
-          322,
-          322,
-          350
-        ],
-        "total": 1285,
-        "sourceRank": 23
-      },
-      {
-        "rank": 24,
-        "target": "36B",
-        "name": "김시우",
-        "school": "경기체육고등학교",
-        "rounds": [
-          277,
-          327,
-          329,
-          351
-        ],
-        "total": 1284,
-        "sourceRank": 24
-      },
-      {
-        "rank": 24,
-        "target": "46B",
-        "name": "오예인",
-        "school": "부산체육고등학교",
-        "rounds": [
-          291,
-          315,
-          325,
-          353
-        ],
-        "total": 1284,
-        "sourceRank": 24
-      },
-      {
-        "rank": 24,
-        "target": "56B",
-        "name": "곽동범",
-        "school": "경북고등학교",
-        "rounds": [
-          299,
-          321,
-          320,
-          344
-        ],
-        "total": 1284,
-        "sourceRank": 24
-      },
-      {
-        "rank": 27,
-        "target": "65B",
-        "name": "장태하",
-        "school": "서울체육고등학교",
-        "rounds": [
-          282,
-          331,
-          323,
-          346
-        ],
-        "total": 1282,
-        "sourceRank": 27
-      },
-      {
-        "rank": 27,
-        "target": "47B",
-        "name": "신민재",
-        "school": "부산체육고등학교",
-        "rounds": [
-          302,
-          328,
-          313,
-          339
-        ],
-        "total": 1282,
-        "sourceRank": 27
-      },
-      {
-        "rank": 29,
-        "target": "32A",
-        "name": "김태현",
-        "school": "효원고등학교",
-        "rounds": [
-          288,
-          318,
-          324,
-          350
-        ],
-        "total": 1280,
-        "sourceRank": 29
-      },
-      {
-        "rank": 29,
-        "target": "55B",
-        "name": "박건우",
-        "school": "경북고등학교",
-        "rounds": [
-          279,
-          331,
-          328,
-          342
-        ],
-        "total": 1280,
-        "sourceRank": 29
-      },
-      {
-        "rank": 29,
-        "target": "53A",
-        "name": "조예성",
-        "school": "경남체육고등학교",
-        "rounds": [
-          290,
-          321,
-          323,
-          346
-        ],
-        "total": 1280,
-        "sourceRank": 29
-      },
-      {
-        "rank": 32,
-        "target": "29A",
-        "name": "주재윤",
-        "school": "효원고등학교",
-        "rounds": [
-          291,
-          326,
-          318,
-          344
-        ],
-        "total": 1279,
-        "sourceRank": 32
-      },
-      {
-        "rank": 33,
-        "target": "45B",
-        "name": "박정우",
-        "school": "부산체육고등학교",
-        "rounds": [
-          293,
-          312,
-          323,
-          350
-        ],
-        "total": 1278,
-        "sourceRank": 33
-      },
-      {
-        "rank": 33,
-        "target": "48A",
-        "name": "김동욱",
-        "school": "대전체육고등학교",
-        "rounds": [
-          290,
-          318,
-          326,
-          344
-        ],
-        "total": 1278,
-        "sourceRank": 33
-      },
-      {
-        "rank": 33,
-        "target": "59A",
-        "name": "이재헌",
-        "school": "인천체육고등학교",
-        "rounds": [
-          288,
-          327,
-          324,
-          339
-        ],
-        "total": 1278,
-        "sourceRank": 33
-      },
-      {
-        "rank": 36,
-        "target": "37A",
-        "name": "이태건",
-        "school": "강원체육고등학교",
-        "rounds": [
-          277,
-          329,
-          326,
-          345
-        ],
-        "total": 1277,
-        "sourceRank": 36
-      },
-      {
-        "rank": 37,
-        "target": "38B",
-        "name": "김준성",
-        "school": "경기체육고등학교",
-        "rounds": [
-          283,
-          318,
-          326,
-          349
-        ],
-        "total": 1276,
-        "sourceRank": 37
-      },
-      {
-        "rank": 37,
-        "target": "45A",
-        "name": "강유석",
-        "school": "대전체육고등학교",
-        "rounds": [
-          276,
-          324,
-          330,
-          346
-        ],
-        "total": 1276,
-        "sourceRank": 37
-      },
-      {
-        "rank": 37,
-        "target": "61B",
-        "name": "정승욱",
-        "school": "서울체육고등학교",
-        "rounds": [
-          285,
-          323,
-          322,
-          346
-        ],
-        "total": 1276,
-        "sourceRank": 37
-      },
-      {
-        "rank": 40,
-        "target": "54B",
-        "name": "이희범",
-        "school": "경북고등학교",
-        "rounds": [
-          276,
-          328,
-          326,
-          345
-        ],
-        "total": 1275,
-        "sourceRank": 40
-      },
-      {
-        "rank": 41,
-        "target": "27B",
-        "name": "최봉석",
-        "school": "경북일고등학교",
-        "rounds": [
-          279,
-          320,
-          332,
-          343
-        ],
-        "total": 1274,
-        "sourceRank": 41
-      },
-      {
-        "rank": 42,
-        "target": "65A",
-        "name": "변현빈",
-        "school": "인천체육고등학교",
-        "rounds": [
-          276,
-          322,
-          322,
-          351
-        ],
-        "total": 1271,
-        "sourceRank": 42
-      },
-      {
-        "rank": 42,
-        "target": "31A",
-        "name": "김은찬",
-        "school": "효원고등학교",
-        "rounds": [
-          280,
-          314,
-          331,
-          346
-        ],
-        "total": 1271,
-        "sourceRank": 42
-      },
-      {
-        "rank": 44,
-        "target": "49A",
-        "name": "노지원",
-        "school": "대전체육고등학교",
-        "rounds": [
-          291,
-          316,
-          321,
-          341
-        ],
-        "total": 1269,
-        "sourceRank": 44
-      },
-      {
-        "rank": 45,
-        "target": "48B",
-        "name": "이진혁",
-        "school": "부산체육고등학교",
-        "rounds": [
-          285,
-          323,
-          316,
-          341
-        ],
-        "total": 1265,
-        "sourceRank": 45
-      },
-      {
-        "rank": 45,
-        "target": "25A",
-        "name": "한승제",
-        "school": "광주체육고등학교",
-        "rounds": [
-          291,
-          306,
-          322,
-          346
-        ],
-        "total": 1265,
-        "sourceRank": 45
-      },
-      {
-        "rank": 47,
-        "target": "47A",
-        "name": "최우석",
-        "school": "대전체육고등학교",
-        "rounds": [
-          279,
-          318,
-          320,
-          347
-        ],
-        "total": 1264,
-        "sourceRank": 47
-      },
-      {
-        "rank": 47,
-        "target": "34B",
-        "name": "이채호",
-        "school": "전북체육고등학교",
-        "rounds": [
-          296,
-          308,
-          317,
-          343
-        ],
-        "total": 1264,
-        "sourceRank": 47
-      },
-      {
-        "rank": 47,
-        "target": "43B",
-        "name": "박정훈",
-        "school": "경기체육고등학교",
-        "rounds": [
-          292,
-          317,
-          316,
-          339
-        ],
-        "total": 1264,
-        "sourceRank": 47
-      },
-      {
-        "rank": 50,
-        "target": "52A",
-        "name": "이상원",
-        "school": "서야고등학교",
-        "rounds": [
-          277,
-          322,
-          321,
-          341
-        ],
-        "total": 1261,
-        "sourceRank": 50
-      },
-      {
-        "rank": 51,
-        "target": "63B",
-        "name": "신재윤",
-        "school": "서울체육고등학교",
-        "rounds": [
-          271,
-          318,
-          326,
-          345
-        ],
-        "total": 1260,
-        "sourceRank": 51
-      },
-      {
-        "rank": 52,
-        "target": "54A",
-        "name": "최시윤",
-        "school": "경남체육고등학교",
-        "rounds": [
-          269,
-          326,
-          318,
-          346
-        ],
-        "total": 1259,
-        "sourceRank": 52
-      },
-      {
-        "rank": 52,
-        "target": "22A",
-        "name": "윤동영",
-        "school": "광주체육고등학교",
-        "rounds": [
-          282,
-          321,
-          309,
-          347
-        ],
-        "total": 1259,
-        "sourceRank": 52
-      },
-      {
-        "rank": 54,
-        "target": "55A",
-        "name": "이구식",
-        "school": "경남체육고등학교",
-        "rounds": [
-          282,
-          323,
-          312,
-          339
-        ],
-        "total": 1256,
-        "sourceRank": 54
-      },
-      {
-        "rank": 55,
-        "target": "33B",
-        "name": "신승현",
-        "school": "전북체육고등학교",
-        "rounds": [
-          280,
-          320,
-          316,
-          338
-        ],
-        "total": 1254,
-        "sourceRank": 55
-      },
-      {
-        "rank": 56,
-        "target": "40B",
-        "name": "권용민",
-        "school": "경기체육고등학교",
-        "rounds": [
-          286,
-          316,
-          317,
-          332
-        ],
-        "total": 1251,
-        "sourceRank": 56
-      },
-      {
-        "rank": 56,
-        "target": "37B",
-        "name": "최제웅",
-        "school": "경기체육고등학교",
-        "rounds": [
-          280,
-          308,
-          316,
-          347
-        ],
-        "total": 1251,
-        "sourceRank": 56
-      },
-      {
-        "rank": 56,
-        "target": "63A",
-        "name": "박세현",
-        "school": "인천체육고등학교",
-        "rounds": [
-          281,
-          320,
-          309,
-          341
-        ],
-        "total": 1251,
-        "sourceRank": 56
-      },
-      {
-        "rank": 59,
-        "target": "34A",
-        "name": "윤정민",
-        "school": "강원체육고등학교",
-        "rounds": [
-          270,
-          319,
-          317,
-          342
-        ],
-        "total": 1248,
-        "sourceRank": 59
-      },
-      {
-        "rank": 59,
-        "target": "50A",
-        "name": "송석민",
-        "school": "대전체육고등학교",
-        "rounds": [
-          288,
-          315,
-          308,
-          337
-        ],
-        "total": 1248,
-        "sourceRank": 59
-      },
-      {
-        "rank": 61,
-        "target": "36A",
-        "name": "장대한",
-        "school": "강원체육고등학교",
-        "rounds": [
-          280,
-          310,
-          317,
-          339
-        ],
-        "total": 1246,
-        "sourceRank": 61
-      },
-      {
-        "rank": 62,
-        "target": "64A",
-        "name": "김주엽",
-        "school": "인천체육고등학교",
-        "rounds": [
-          283,
-          316,
-          304,
-          340
-        ],
-        "total": 1243,
-        "sourceRank": 62
-      },
-      {
-        "rank": 63,
-        "target": "42B",
-        "name": "강민우",
-        "school": "경기체육고등학교",
-        "rounds": [
-          272,
-          311,
-          318,
-          339
-        ],
-        "total": 1240,
-        "sourceRank": 63
-      },
-      {
-        "rank": 64,
-        "target": "49B",
-        "name": "강연수",
-        "school": "부산체육고등학교",
-        "rounds": [
-          291,
-          301,
-          313,
-          334
-        ],
-        "total": 1239,
-        "sourceRank": 64
-      },
-      {
-        "rank": 65,
-        "target": "23B",
-        "name": "조영신",
-        "school": "충북체육고등학교",
-        "rounds": [
-          271,
-          315,
-          307,
-          343
-        ],
-        "total": 1236,
-        "sourceRank": 65
-      },
-      {
-        "rank": 66,
-        "target": "57A",
-        "name": "고범찬",
-        "school": "경남체육고등학교",
-        "rounds": [
-          273,
-          315,
-          309,
-          336
-        ],
-        "total": 1233,
-        "sourceRank": 66
-      },
-      {
-        "rank": 67,
-        "target": "58A",
-        "name": "양지호",
-        "school": "경남체육고등학교",
-        "rounds": [
-          267,
-          307,
-          314,
-          342
-        ],
-        "total": 1230,
-        "sourceRank": 67
-      },
-      {
-        "rank": 68,
-        "target": "62A",
-        "name": "박리안",
-        "school": "인천체육고등학교",
-        "rounds": [
-          241,
-          317,
-          332,
-          339
-        ],
-        "total": 1229,
-        "sourceRank": 68
-      },
-      {
-        "rank": 68,
-        "target": "61A",
-        "name": "박진호",
-        "school": "인천체육고등학교",
-        "rounds": [
-          259,
-          318,
-          311,
-          341
-        ],
-        "total": 1229,
-        "sourceRank": 68
-      },
-      {
-        "rank": 70,
-        "target": "29B",
-        "name": "서익언",
-        "school": "순천고등학교",
-        "rounds": [
-          270,
-          306,
-          314,
-          337
-        ],
-        "total": 1227,
-        "sourceRank": 70
-      },
-      {
-        "rank": 70,
-        "target": "60A",
-        "name": "박건호",
-        "school": "인천체육고등학교",
-        "rounds": [
-          281,
-          303,
-          312,
-          331
-        ],
-        "total": 1227,
-        "sourceRank": 70
-      },
-      {
-        "rank": 72,
-        "target": "41A",
-        "name": "김동현",
-        "school": "경북체육고등학교",
-        "rounds": [
-          268,
-          310,
-          313,
-          335
-        ],
-        "total": 1226,
-        "sourceRank": 72
-      },
-      {
-        "rank": 73,
-        "target": "27A",
-        "name": "유희제",
-        "school": "효원고등학교",
-        "rounds": [
-          274,
-          303,
-          313,
-          334
-        ],
-        "total": 1224,
-        "sourceRank": 73
-      },
-      {
-        "rank": 74,
-        "target": "42A",
-        "name": "강동윤",
-        "school": "경북체육고등학교",
-        "rounds": [
-          272,
-          316,
-          297,
-          335
-        ],
-        "total": 1220,
-        "sourceRank": 74
-      },
-      {
-        "rank": 75,
-        "target": "23A",
-        "name": "김종연",
-        "school": "광주체육고등학교",
-        "rounds": [
-          274,
-          295,
-          309,
-          339
-        ],
-        "total": 1217,
-        "sourceRank": 75
-      },
-      {
-        "rank": 75,
-        "target": "38A",
-        "name": "최승원",
-        "school": "강원체육고등학교",
-        "rounds": [
-          261,
-          300,
-          315,
-          341
-        ],
-        "total": 1217,
-        "sourceRank": 75
-      },
-      {
-        "rank": 77,
-        "target": "22B",
-        "name": "오승준",
-        "school": "충북체육고등학교",
-        "rounds": [
-          282,
-          297,
-          295,
-          336
-        ],
-        "total": 1210,
-        "sourceRank": 77
-      },
-      {
-        "rank": 77,
-        "target": "62B",
-        "name": "전용현",
-        "school": "서울체육고등학교",
-        "rounds": [
-          251,
-          315,
-          308,
-          336
-        ],
-        "total": 1210,
-        "sourceRank": 77
-      },
-      {
-        "rank": 77,
-        "target": "21B",
-        "name": "김태균",
-        "school": "충북체육고등학교",
-        "rounds": [
-          260,
-          295,
-          317,
-          338
-        ],
-        "total": 1210,
-        "sourceRank": 77
-      },
-      {
-        "rank": 80,
-        "target": "56A",
-        "name": "이영욱",
-        "school": "경남체육고등학교",
-        "rounds": [
-          257,
-          312,
-          314,
-          322
-        ],
-        "total": 1205,
-        "sourceRank": 80
-      },
-      {
-        "rank": 80,
-        "target": "35B",
-        "name": "최시후",
-        "school": "경기체육고등학교",
-        "rounds": [
-          263,
-          292,
-          314,
-          336
-        ],
-        "total": 1205,
-        "sourceRank": 80
-      },
-      {
-        "rank": 82,
-        "target": "64B",
-        "name": "정우진",
-        "school": "서울체육고등학교",
-        "rounds": [
-          270,
-          284,
-          312,
-          333
-        ],
-        "total": 1199,
-        "sourceRank": 82
-      },
-      {
-        "rank": 83,
-        "target": "28B",
-        "name": "김기영",
-        "school": "순천고등학교",
-        "rounds": [
-          242,
-          307,
-          306,
-          341
-        ],
-        "total": 1196,
-        "sourceRank": 83
-      },
-      {
-        "rank": 84,
-        "target": "24A",
-        "name": "서하랑",
-        "school": "광주체육고등학교",
-        "rounds": [
-          267,
-          289,
-          302,
-          334
-        ],
-        "total": 1192,
-        "sourceRank": 84
-      },
-      {
-        "rank": 85,
-        "target": "44B",
-        "name": "강동주",
-        "school": "울산스포츠과학고등학교",
-        "rounds": [
-          258,
-          297,
-          305,
-          330
-        ],
-        "total": 1190,
-        "sourceRank": 85
-      },
-      {
-        "rank": 86,
-        "target": "31B",
-        "name": "신희범",
-        "school": "인천영선고등학교",
-        "rounds": [
-          262,
-          284,
-          302,
-          336
-        ],
-        "total": 1184,
-        "sourceRank": 86
-      },
-      {
-        "rank": 87,
-        "target": "51B",
-        "name": "곽우승",
-        "school": "부산체육고등학교",
-        "rounds": [
-          260,
-          296,
-          294,
-          323
-        ],
-        "total": 1173,
-        "sourceRank": 87
-      },
-      {
-        "rank": 88,
-        "target": "33A",
-        "name": "최준원",
-        "school": "강원체육고등학교",
-        "rounds": [
-          251,
-          305,
-          295,
-          320
-        ],
-        "total": 1171,
-        "sourceRank": 88
-      },
-      {
-        "rank": 89,
-        "target": "50B",
-        "name": "최성민",
-        "school": "부산체육고등학교",
-        "rounds": [
-          237,
-          299,
-          293,
-          335
-        ],
-        "total": 1164,
-        "sourceRank": 89
-      },
-      {
-        "rank": 90,
-        "target": "39A",
-        "name": "나근도",
-        "school": "강원체육고등학교",
-        "rounds": [
-          222,
-          294,
-          291,
-          335
-        ],
-        "total": 1142,
-        "sourceRank": 90
-      },
-      {
-        "rank": 91,
-        "target": "53B",
-        "name": "김범진",
-        "school": "경북고등학교",
-        "rounds": [
-          257,
-          276,
-          264,
-          334
-        ],
-        "total": 1131,
-        "sourceRank": 91
-      },
-      {
-        "rank": 92,
-        "target": "43A",
-        "name": "김제준",
-        "school": "경북체육고등학교",
-        "rounds": [
-          229,
-          277,
-          280,
-          317
-        ],
-        "total": 1103,
-        "sourceRank": 92
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_high_girls_2026",
-    "sheetLabel": "종별대회 여자 고등부 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "고등부(여)",
-    "division": "고등부",
-    "gender": "여",
-    "distances": [
-      70,
-      60,
-      50,
-      30
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "29A",
-        "name": "윤가영",
-        "school": "홍성여자고등학교",
-        "rounds": [
-          331,
-          343,
-          334,
-          354
-        ],
-        "total": 1362,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "30B",
-        "name": "고하린",
-        "school": "대전체육고등학교",
-        "rounds": [
-          326,
-          341,
-          331,
-          350
-        ],
-        "total": 1348,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "62B",
-        "name": "김수민",
-        "school": "부산체육고등학교",
-        "rounds": [
-          328,
-          338,
-          327,
-          353
-        ],
-        "total": 1346,
-        "sourceRank": 3
-      },
-      {
-        "rank": 4,
-        "target": "16A",
-        "name": "김민서",
-        "school": "대구체육고등학교",
-        "rounds": [
-          334,
-          337,
-          320,
-          352
-        ],
-        "total": 1343,
-        "sourceRank": 4
-      },
-      {
-        "rank": 5,
-        "target": "59A",
-        "name": "구슬",
-        "school": "경기체육고등학교",
-        "rounds": [
-          332,
-          339,
-          322,
-          349
-        ],
-        "total": 1342,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "35A",
-        "name": "양가은",
-        "school": "부개고등학교",
-        "rounds": [
-          335,
-          339,
-          318,
-          349
-        ],
-        "total": 1341,
-        "sourceRank": 6
-      },
-      {
-        "rank": 7,
-        "target": "34B",
-        "name": "하윤진",
-        "school": "서울체육고등학교",
-        "rounds": [
-          339,
-          342,
-          318,
-          341
-        ],
-        "total": 1340,
-        "sourceRank": 7
-      },
-      {
-        "rank": 8,
-        "target": "21A",
-        "name": "김가영",
-        "school": "경북체육고등학교",
-        "rounds": [
-          333,
-          333,
-          321,
-          352
-        ],
-        "total": 1339,
-        "sourceRank": 8
-      },
-      {
-        "rank": 8,
-        "target": "63A",
-        "name": "김은찬",
-        "school": "경기체육고등학교",
-        "rounds": [
-          321,
-          339,
-          330,
-          349
-        ],
-        "total": 1339,
-        "sourceRank": 8
-      },
-      {
-        "rank": 10,
-        "target": "39B",
-        "name": "양다혜",
-        "school": "진해여자고등학교",
-        "rounds": [
-          332,
-          339,
-          321,
-          346
-        ],
-        "total": 1338,
-        "sourceRank": 10
-      },
-      {
-        "rank": 10,
-        "target": "54B",
-        "name": "유예린",
-        "school": "전북체육고등학교",
-        "rounds": [
-          325,
-          337,
-          321,
-          355
-        ],
-        "total": 1338,
-        "sourceRank": 10
-      },
-      {
-        "rank": 12,
-        "target": "40B",
-        "name": "김지은",
-        "school": "진해여자고등학교",
-        "rounds": [
-          330,
-          344,
-          317,
-          346
-        ],
-        "total": 1337,
-        "sourceRank": 12
-      },
-      {
-        "rank": 13,
-        "target": "31B",
-        "name": "박지율",
-        "school": "대전체육고등학교",
-        "rounds": [
-          327,
-          340,
-          320,
-          349
-        ],
-        "total": 1336,
-        "sourceRank": 13
-      },
-      {
-        "rank": 14,
-        "target": "60A",
-        "name": "한지예",
-        "school": "경기체육고등학교",
-        "rounds": [
-          328,
-          342,
-          322,
-          342
-        ],
-        "total": 1334,
-        "sourceRank": 14
-      },
-      {
-        "rank": 15,
-        "target": "33A",
-        "name": "백예하",
-        "school": "부개고등학교",
-        "rounds": [
-          330,
-          335,
-          317,
-          350
-        ],
-        "total": 1332,
-        "sourceRank": 15
-      },
-      {
-        "rank": 16,
-        "target": "32B",
-        "name": "김민정",
-        "school": "대전체육고등학교",
-        "rounds": [
-          327,
-          335,
-          317,
-          351
-        ],
-        "total": 1330,
-        "sourceRank": 16
-      },
-      {
-        "rank": 17,
-        "target": "38B",
-        "name": "정세리",
-        "school": "진해여자고등학교",
-        "rounds": [
-          331,
-          331,
-          317,
-          350
-        ],
-        "total": 1329,
-        "sourceRank": 17
-      },
-      {
-        "rank": 17,
-        "target": "58A",
-        "name": "최윤서",
-        "school": "경기체육고등학교",
-        "rounds": [
-          321,
-          340,
-          320,
-          348
-        ],
-        "total": 1329,
-        "sourceRank": 17
-      },
-      {
-        "rank": 17,
-        "target": "64B",
-        "name": "구보름",
-        "school": "부산체육고등학교",
-        "rounds": [
-          323,
-          336,
-          326,
-          344
-        ],
-        "total": 1329,
-        "sourceRank": 17
-      },
-      {
-        "rank": 20,
-        "target": "65B",
-        "name": "김예인",
-        "school": "부산체육고등학교",
-        "rounds": [
-          325,
-          335,
-          323,
-          345
-        ],
-        "total": 1328,
-        "sourceRank": 20
-      },
-      {
-        "rank": 21,
-        "target": "24B",
-        "name": "박세빈",
-        "school": "전남체육고등학교",
-        "rounds": [
-          315,
-          339,
-          321,
-          351
-        ],
-        "total": 1326,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "33B",
-        "name": "최은",
-        "school": "서울체육고등학교",
-        "rounds": [
-          326,
-          343,
-          317,
-          339
-        ],
-        "total": 1325,
-        "sourceRank": 22
-      },
-      {
-        "rank": 22,
-        "target": "62A",
-        "name": "양태희",
-        "school": "경기체육고등학교",
-        "rounds": [
-          314,
-          343,
-          322,
-          346
-        ],
-        "total": 1325,
-        "sourceRank": 22
-      },
-      {
-        "rank": 22,
-        "target": "34A",
-        "name": "김아현",
-        "school": "부개고등학교",
-        "rounds": [
-          312,
-          340,
-          325,
-          348
-        ],
-        "total": 1325,
-        "sourceRank": 22
-      },
-      {
-        "rank": 22,
-        "target": "48A",
-        "name": "김예원",
-        "school": "여강고등학교",
-        "rounds": [
-          324,
-          339,
-          320,
-          342
-        ],
-        "total": 1325,
-        "sourceRank": 22
-      },
-      {
-        "rank": 26,
-        "target": "49B",
-        "name": "목지윤",
-        "school": "인일여자고등학교",
-        "rounds": [
-          323,
-          338,
-          316,
-          347
-        ],
-        "total": 1324,
-        "sourceRank": 26
-      },
-      {
-        "rank": 27,
-        "target": "23A",
-        "name": "안현지",
-        "school": "전북펫고등학교",
-        "rounds": [
-          324,
-          329,
-          322,
-          348
-        ],
-        "total": 1323,
-        "sourceRank": 27
-      },
-      {
-        "rank": 27,
-        "target": "16B",
-        "name": "이가영",
-        "school": "예천여자고등학교",
-        "rounds": [
-          324,
-          337,
-          314,
-          348
-        ],
-        "total": 1323,
-        "sourceRank": 27
-      },
-      {
-        "rank": 27,
-        "target": "19B",
-        "name": "장예린",
-        "school": "충북체육고등학교",
-        "rounds": [
-          329,
-          334,
-          317,
-          343
-        ],
-        "total": 1323,
-        "sourceRank": 27
-      },
-      {
-        "rank": 30,
-        "target": "35B",
-        "name": "김지원",
-        "school": "서울체육고등학교",
-        "rounds": [
-          326,
-          330,
-          321,
-          344
-        ],
-        "total": 1321,
-        "sourceRank": 30
-      },
-      {
-        "rank": 31,
-        "target": "42B",
-        "name": "김세아",
-        "school": "울산스포츠과학고등학교",
-        "rounds": [
-          330,
-          331,
-          320,
-          339
-        ],
-        "total": 1320,
-        "sourceRank": 31
-      },
-      {
-        "rank": 32,
-        "target": "39A",
-        "name": "전지현",
-        "school": "광주체육고등학교",
-        "rounds": [
-          322,
-          340,
-          314,
-          343
-        ],
-        "total": 1319,
-        "sourceRank": 32
-      },
-      {
-        "rank": 33,
-        "target": "19A",
-        "name": "신여은",
-        "school": "대구체육고등학교",
-        "rounds": [
-          322,
-          338,
-          313,
-          345
-        ],
-        "total": 1318,
-        "sourceRank": 33
-      },
-      {
-        "rank": 33,
-        "target": "45B",
-        "name": "강은지",
-        "school": "경남체육고등학교",
-        "rounds": [
-          320,
-          336,
-          317,
-          345
-        ],
-        "total": 1318,
-        "sourceRank": 33
-      },
-      {
-        "rank": 35,
-        "target": "43B",
-        "name": "나윤경",
-        "school": "울산스포츠과학고등학교",
-        "rounds": [
-          332,
-          327,
-          318,
-          340
-        ],
-        "total": 1317,
-        "sourceRank": 35
-      },
-      {
-        "rank": 36,
-        "target": "15A",
-        "name": "이채은",
-        "school": "대구체육고등학교",
-        "rounds": [
-          319,
-          336,
-          319,
-          342
-        ],
-        "total": 1316,
-        "sourceRank": 36
-      },
-      {
-        "rank": 36,
-        "target": "63B",
-        "name": "배소윤",
-        "school": "부산체육고등학교",
-        "rounds": [
-          330,
-          329,
-          320,
-          337
-        ],
-        "total": 1316,
-        "sourceRank": 36
-      },
-      {
-        "rank": 36,
-        "target": "41A",
-        "name": "강수정",
-        "school": "광주체육고등학교",
-        "rounds": [
-          324,
-          324,
-          322,
-          346
-        ],
-        "total": 1316,
-        "sourceRank": 36
-      },
-      {
-        "rank": 39,
-        "target": "64A",
-        "name": "박지원",
-        "school": "경기체육고등학교",
-        "rounds": [
-          316,
-          339,
-          312,
-          348
-        ],
-        "total": 1315,
-        "sourceRank": 39
-      },
-      {
-        "rank": 40,
-        "target": "49A",
-        "name": "박석영",
-        "school": "여강고등학교",
-        "rounds": [
-          316,
-          336,
-          319,
-          343
-        ],
-        "total": 1314,
-        "sourceRank": 40
-      },
-      {
-        "rank": 40,
-        "target": "30A",
-        "name": "김재이",
-        "school": "홍성여자고등학교",
-        "rounds": [
-          312,
-          332,
-          324,
-          346
-        ],
-        "total": 1314,
-        "sourceRank": 40
-      },
-      {
-        "rank": 42,
-        "target": "53A",
-        "name": "김가을",
-        "school": "강원체육고등학교",
-        "rounds": [
-          317,
-          337,
-          320,
-          338
-        ],
-        "total": 1312,
-        "sourceRank": 42
-      },
-      {
-        "rank": 43,
-        "target": "29B",
-        "name": "김영은",
-        "school": "대전체육고등학교",
-        "rounds": [
-          316,
-          336,
-          315,
-          344
-        ],
-        "total": 1311,
-        "sourceRank": 43
-      },
-      {
-        "rank": 44,
-        "target": "57B",
-        "name": "김나은",
-        "school": "경주여자고등학교",
-        "rounds": [
-          317,
-          334,
-          318,
-          341
-        ],
-        "total": 1310,
-        "sourceRank": 44
-      },
-      {
-        "rank": 45,
-        "target": "20A",
-        "name": "김은지",
-        "school": "대구체육고등학교",
-        "rounds": [
-          318,
-          335,
-          314,
-          338
-        ],
-        "total": 1305,
-        "sourceRank": 45
-      },
-      {
-        "rank": 46,
-        "target": "31A",
-        "name": "정혜정",
-        "school": "성문고등학교",
-        "rounds": [
-          321,
-          331,
-          306,
-          341
-        ],
-        "total": 1299,
-        "sourceRank": 46
-      },
-      {
-        "rank": 46,
-        "target": "57A",
-        "name": "김정빈",
-        "school": "경기체육고등학교",
-        "rounds": [
-          329,
-          329,
-          307,
-          334
-        ],
-        "total": 1299,
-        "sourceRank": 46
-      },
-      {
-        "rank": 48,
-        "target": "61A",
-        "name": "이경현",
-        "school": "경기체육고등학교",
-        "rounds": [
-          317,
-          327,
-          309,
-          342
-        ],
-        "total": 1295,
-        "sourceRank": 48
-      },
-      {
-        "rank": 49,
-        "target": "17A",
-        "name": "이지원",
-        "school": "대구체육고등학교",
-        "rounds": [
-          306,
-          329,
-          311,
-          348
-        ],
-        "total": 1294,
-        "sourceRank": 49
-      },
-      {
-        "rank": 50,
-        "target": "65A",
-        "name": "박선영",
-        "school": "경기체육고등학교",
-        "rounds": [
-          324,
-          322,
-          310,
-          336
-        ],
-        "total": 1292,
-        "sourceRank": 50
-      },
-      {
-        "rank": 51,
-        "target": "40A",
-        "name": "송하린",
-        "school": "광주체육고등학교",
-        "rounds": [
-          320,
-          334,
-          301,
-          336
-        ],
-        "total": 1291,
-        "sourceRank": 51
-      },
-      {
-        "rank": 52,
-        "target": "22A",
-        "name": "나혜빈",
-        "school": "전북펫고등학교",
-        "rounds": [
-          320,
-          326,
-          307,
-          336
-        ],
-        "total": 1289,
-        "sourceRank": 52
-      },
-      {
-        "rank": 52,
-        "target": "18B",
-        "name": "김예원",
-        "school": "예천여자고등학교",
-        "rounds": [
-          306,
-          329,
-          311,
-          343
-        ],
-        "total": 1289,
-        "sourceRank": 52
-      },
-      {
-        "rank": 54,
-        "target": "53B",
-        "name": "배현지",
-        "school": "전북체육고등학교",
-        "rounds": [
-          322,
-          333,
-          301,
-          330
-        ],
-        "total": 1286,
-        "sourceRank": 54
-      },
-      {
-        "rank": 54,
-        "target": "46A",
-        "name": "김혜윤",
-        "school": "여강고등학교",
-        "rounds": [
-          313,
-          322,
-          309,
-          342
-        ],
-        "total": 1286,
-        "sourceRank": 54
-      },
-      {
-        "rank": 56,
-        "target": "18A",
-        "name": "임예율",
-        "school": "대구체육고등학교",
-        "rounds": [
-          299,
-          336,
-          303,
-          347
-        ],
-        "total": 1285,
-        "sourceRank": 56
-      },
-      {
-        "rank": 57,
-        "target": "22B",
-        "name": "강주은",
-        "school": "전남체육고등학교",
-        "rounds": [
-          307,
-          323,
-          313,
-          338
-        ],
-        "total": 1281,
-        "sourceRank": 57
-      },
-      {
-        "rank": 58,
-        "target": "25B",
-        "name": "고민지",
-        "school": "하성고등학교",
-        "rounds": [
-          303,
-          337,
-          292,
-          347
-        ],
-        "total": 1279,
-        "sourceRank": 58
-      },
-      {
-        "rank": 58,
-        "target": "61B",
-        "name": "김정은",
-        "school": "부산체육고등학교",
-        "rounds": [
-          302,
-          332,
-          303,
-          342
-        ],
-        "total": 1279,
-        "sourceRank": 58
-      },
-      {
-        "rank": 60,
-        "target": "52B",
-        "name": "이시우",
-        "school": "인일여자고등학교",
-        "rounds": [
-          316,
-          323,
-          306,
-          333
-        ],
-        "total": 1278,
-        "sourceRank": 60
-      },
-      {
-        "rank": 61,
-        "target": "47A",
-        "name": "한정연",
-        "school": "여강고등학교",
-        "rounds": [
-          322,
-          324,
-          296,
-          335
-        ],
-        "total": 1277,
-        "sourceRank": 61
-      },
-      {
-        "rank": 62,
-        "target": "54A",
-        "name": "박채린",
-        "school": "강원체육고등학교",
-        "rounds": [
-          313,
-          329,
-          301,
-          333
-        ],
-        "total": 1276,
-        "sourceRank": 62
-      },
-      {
-        "rank": 63,
-        "target": "27B",
-        "name": "김수연",
-        "school": "제주양궁클럽",
-        "rounds": [
-          306,
-          318,
-          314,
-          335
-        ],
-        "total": 1273,
-        "sourceRank": 63
-      },
-      {
-        "rank": 64,
-        "target": "28A",
-        "name": "이현주",
-        "school": "성남시체육회",
-        "rounds": [
-          317,
-          314,
-          300,
-          341
-        ],
-        "total": 1272,
-        "sourceRank": 64
-      },
-      {
-        "rank": 65,
-        "target": "32A",
-        "name": "정은정",
-        "school": "성문고등학교",
-        "rounds": [
-          311,
-          309,
-          310,
-          340
-        ],
-        "total": 1270,
-        "sourceRank": 65
-      },
-      {
-        "rank": 65,
-        "target": "42A",
-        "name": "강선우",
-        "school": "광주체육고등학교",
-        "rounds": [
-          309,
-          333,
-          289,
-          339
-        ],
-        "total": 1270,
-        "sourceRank": 65
-      },
-      {
-        "rank": 65,
-        "target": "51B",
-        "name": "김예린",
-        "school": "인일여자고등학교",
-        "rounds": [
-          307,
-          330,
-          295,
-          338
-        ],
-        "total": 1270,
-        "sourceRank": 65
-      },
-      {
-        "rank": 68,
-        "target": "51A",
-        "name": "이다은",
-        "school": "순천여자고등학교",
-        "rounds": [
-          312,
-          329,
-          290,
-          338
-        ],
-        "total": 1269,
-        "sourceRank": 68
-      },
-      {
-        "rank": 69,
-        "target": "44B",
-        "name": "임나연",
-        "school": "울산스포츠과학고등학교",
-        "rounds": [
-          306,
-          318,
-          298,
-          345
-        ],
-        "total": 1267,
-        "sourceRank": 69
-      },
-      {
-        "rank": 69,
-        "target": "60B",
-        "name": "김가은",
-        "school": "부산체육고등학교",
-        "rounds": [
-          312,
-          316,
-          299,
-          340
-        ],
-        "total": 1267,
-        "sourceRank": 69
-      },
-      {
-        "rank": 69,
-        "target": "46B",
-        "name": "이서현",
-        "school": "경남체육고등학교",
-        "rounds": [
-          308,
-          320,
-          310,
-          329
-        ],
-        "total": 1267,
-        "sourceRank": 69
-      },
-      {
-        "rank": 72,
-        "target": "55B",
-        "name": "서지우",
-        "school": "전북체육고등학교",
-        "rounds": [
-          303,
-          318,
-          303,
-          341
-        ],
-        "total": 1265,
-        "sourceRank": 72
-      },
-      {
-        "rank": 73,
-        "target": "58B",
-        "name": "이예슬",
-        "school": "경주여자고등학교",
-        "rounds": [
-          303,
-          325,
-          292,
-          341
-        ],
-        "total": 1261,
-        "sourceRank": 73
-      },
-      {
-        "rank": 74,
-        "target": "36A",
-        "name": "신서영",
-        "school": "부개고등학교",
-        "rounds": [
-          299,
-          329,
-          287,
-          343
-        ],
-        "total": 1258,
-        "sourceRank": 74
-      },
-      {
-        "rank": 75,
-        "target": "52A",
-        "name": "김라함",
-        "school": "강원체육고등학교",
-        "rounds": [
-          299,
-          310,
-          315,
-          331
-        ],
-        "total": 1255,
-        "sourceRank": 75
-      },
-      {
-        "rank": 76,
-        "target": "23B",
-        "name": "이마리",
-        "school": "전남체육고등학교",
-        "rounds": [
-          298,
-          319,
-          299,
-          335
-        ],
-        "total": 1251,
-        "sourceRank": 76
-      },
-      {
-        "rank": 77,
-        "target": "37B",
-        "name": "신혜민",
-        "school": "서울체육고등학교",
-        "rounds": [
-          299,
-          322,
-          290,
-          335
-        ],
-        "total": 1246,
-        "sourceRank": 77
-      },
-      {
-        "rank": 78,
-        "target": "36B",
-        "name": "김서현",
-        "school": "서울체육고등학교",
-        "rounds": [
-          304,
-          313,
-          297,
-          330
-        ],
-        "total": 1244,
-        "sourceRank": 78
-      },
-      {
-        "rank": 79,
-        "target": "38A",
-        "name": "김성령",
-        "school": "광주체육고등학교",
-        "rounds": [
-          304,
-          309,
-          301,
-          327
-        ],
-        "total": 1241,
-        "sourceRank": 79
-      },
-      {
-        "rank": 80,
-        "target": "48B",
-        "name": "윤예서",
-        "school": "인일여자고등학교",
-        "rounds": [
-          295,
-          317,
-          293,
-          334
-        ],
-        "total": 1239,
-        "sourceRank": 80
-      },
-      {
-        "rank": 81,
-        "target": "15B",
-        "name": "정서은",
-        "school": "예천여자고등학교",
-        "rounds": [
-          301,
-          313,
-          290,
-          325
-        ],
-        "total": 1229,
-        "sourceRank": 81
-      },
-      {
-        "rank": 81,
-        "target": "20B",
-        "name": "방초현",
-        "school": "충북체육고등학교",
-        "rounds": [
-          277,
-          315,
-          302,
-          335
-        ],
-        "total": 1229,
-        "sourceRank": 81
-      },
-      {
-        "rank": 83,
-        "target": "26A",
-        "name": "박하율 임실군",
-        "school": "양궁스포츠클럽",
-        "rounds": [
-          303,
-          311,
-          285,
-          329
-        ],
-        "total": 1228,
-        "sourceRank": 83
-      },
-      {
-        "rank": 84,
-        "target": "37A",
-        "name": "박경빈",
-        "school": "부개고등학교",
-        "rounds": [
-          310,
-          314,
-          278,
-          322
-        ],
-        "total": 1224,
-        "sourceRank": 84
-      },
-      {
-        "rank": 85,
-        "target": "55A",
-        "name": "최예원",
-        "school": "강원체육고등학교",
-        "rounds": [
-          290,
-          315,
-          292,
-          325
-        ],
-        "total": 1222,
-        "sourceRank": 85
-      },
-      {
-        "rank": 86,
-        "target": "26B",
-        "name": "정지민",
-        "school": "병천고등학교",
-        "rounds": [
-          297,
-          321,
-          271,
-          332
-        ],
-        "total": 1221,
-        "sourceRank": 86
-      },
-      {
-        "rank": 87,
-        "target": "28B",
-        "name": "김다연",
-        "school": "대전체육고등학교",
-        "rounds": [
-          285,
-          310,
-          286,
-          332
-        ],
-        "total": 1213,
-        "sourceRank": 87
-      },
-      {
-        "rank": 88,
-        "target": "24A",
-        "name": "엄수정",
-        "school": "원주여자고등학교",
-        "rounds": [
-          289,
-          297,
-          287,
-          330
-        ],
-        "total": 1203,
-        "sourceRank": 88
-      },
-      {
-        "rank": 89,
-        "target": "21B",
-        "name": "오선주",
-        "school": "충북체육고등학교",
-        "rounds": [
-          287,
-          300,
-          282,
-          332
-        ],
-        "total": 1201,
-        "sourceRank": 89
-      },
-      {
-        "rank": 90,
-        "target": "47B",
-        "name": "이재흔",
-        "school": "경남체육고등학교",
-        "rounds": [
-          298,
-          293,
-          275,
-          332
-        ],
-        "total": 1198,
-        "sourceRank": 90
-      },
-      {
-        "rank": 91,
-        "target": "56B",
-        "name": "우본희",
-        "school": "전북체육고등학교",
-        "rounds": [
-          277,
-          291,
-          285,
-          334
-        ],
-        "total": 1187,
-        "sourceRank": 91
-      },
-      {
-        "rank": 92,
-        "target": "43A",
-        "name": "홍다은",
-        "school": "광주체육고등학교",
-        "rounds": [
-          275,
-          329,
-          271,
-          308
-        ],
-        "total": 1183,
-        "sourceRank": 92
-      },
-      {
-        "rank": 93,
-        "target": "41B",
-        "name": "김민아",
-        "school": "진해여자고등학교",
-        "rounds": [
-          281,
-          307,
-          274,
-          320
-        ],
-        "total": 1182,
-        "sourceRank": 93
-      },
-      {
-        "rank": 94,
-        "target": "44A",
-        "name": "천예서",
-        "school": "광주체육고등학교",
-        "rounds": [
-          296,
-          304,
-          243,
-          316
-        ],
-        "total": 1159,
-        "sourceRank": 94
-      },
-      {
-        "rank": 95,
-        "target": "27A",
-        "name": "정서윤",
-        "school": "성남시체육회",
-        "rounds": [
-          245,
-          285,
-          286,
-          334
-        ],
-        "total": 1150,
-        "sourceRank": 95
-      },
-      {
-        "rank": 96,
-        "target": "59B",
-        "name": "이지현",
-        "school": "경주여자고등학교",
-        "rounds": [
-          268,
-          282,
-          262,
-          327
-        ],
-        "total": 1139,
-        "sourceRank": 96
-      },
-      {
-        "rank": 97,
-        "target": "45A",
-        "name": "오시연",
-        "school": "여강고등학교",
-        "rounds": [
-          258,
-          300,
-          271,
-          300
-        ],
-        "total": 1129,
-        "sourceRank": 97
-      },
-      {
-        "rank": 98,
-        "target": "56A",
-        "name": "정하은",
-        "school": "강원체육고등학교",
-        "rounds": [
-          269,
-          259,
-          261,
-          315
-        ],
-        "total": 1104,
-        "sourceRank": 98
-      },
-      {
-        "rank": 99,
-        "target": "50B",
-        "name": "이승진",
-        "school": "인일여자고등학교",
-        "rounds": [
-          284,
-          294,
-          222,
-          294
-        ],
-        "total": 1094,
-        "sourceRank": 99
-      },
-      {
-        "rank": 100,
-        "target": "25A",
-        "name": "임지우",
-        "school": "원주여자고등학교",
-        "rounds": [
-          246,
-          276,
-          232,
-          320
-        ],
-        "total": 1074,
-        "sourceRank": 100
-      },
-      {
-        "rank": 101,
-        "target": "50A",
-        "name": "김상은",
-        "school": "순천여자고등학교",
-        "rounds": [
-          233,
-          251,
-          166,
-          272
-        ],
-        "total": 922,
-        "sourceRank": 101
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_univ_boys_2026",
-    "sheetLabel": "종별대회 남자 대학부 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "대학/일반부",
-    "division": "대학부",
-    "gender": "남",
-    "distances": [
-      90,
-      70,
-      50,
-      30
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "36B",
-        "name": "김기범",
-        "school": "계명대학교",
-        "rounds": [
-          318,
-          340,
-          342,
-          357
-        ],
-        "total": 1357,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "40B",
-        "name": "지예찬",
-        "school": "한국체육대학교",
-        "rounds": [
-          302,
-          338,
-          339,
-          357
-        ],
-        "total": 1336,
-        "sourceRank": 2
-      },
-      {
-        "rank": 2,
-        "target": "28B",
-        "name": "김동훈",
-        "school": "국립경국대학교",
-        "rounds": [
-          304,
-          336,
-          338,
-          358
-        ],
-        "total": 1336,
-        "sourceRank": 2
-      },
-      {
-        "rank": 4,
-        "target": "29B",
-        "name": "조윤혁",
-        "school": "국립경국대학교",
-        "rounds": [
-          304,
-          330,
-          344,
-          357
-        ],
-        "total": 1335,
-        "sourceRank": 4
-      },
-      {
-        "rank": 5,
-        "target": "37B",
-        "name": "송지성",
-        "school": "계명대학교",
-        "rounds": [
-          302,
-          334,
-          342,
-          355
-        ],
-        "total": 1333,
-        "sourceRank": 5
-      },
-      {
-        "rank": 5,
-        "target": "41B",
-        "name": "민성욱",
-        "school": "한국체육대학교",
-        "rounds": [
-          309,
-          329,
-          338,
-          357
-        ],
-        "total": 1333,
-        "sourceRank": 5
-      },
-      {
-        "rank": 7,
-        "target": "42C",
-        "name": "조민수",
-        "school": "조선대학교",
-        "rounds": [
-          302,
-          336,
-          339,
-          354
-        ],
-        "total": 1331,
-        "sourceRank": 7
-      },
-      {
-        "rank": 7,
-        "target": "32B",
-        "name": "이주성",
-        "school": "국립경국대학교",
-        "rounds": [
-          307,
-          330,
-          342,
-          352
-        ],
-        "total": 1331,
-        "sourceRank": 7
-      },
-      {
-        "rank": 9,
-        "target": "34A",
-        "name": "최철준",
-        "school": "배재대학교",
-        "rounds": [
-          316,
-          330,
-          344,
-          340
-        ],
-        "total": 1330,
-        "sourceRank": 9
-      },
-      {
-        "rank": 10,
-        "target": "41A",
-        "name": "정호진",
-        "school": "울산대학교",
-        "rounds": [
-          299,
-          335,
-          338,
-          354
-        ],
-        "total": 1326,
-        "sourceRank": 10
-      },
-      {
-        "rank": 11,
-        "target": "35C",
-        "name": "박재형",
-        "school": "경희대학교",
-        "rounds": [
-          309,
-          329,
-          334,
-          351
-        ],
-        "total": 1323,
-        "sourceRank": 11
-      },
-      {
-        "rank": 12,
-        "target": "33C",
-        "name": "김예찬",
-        "school": "경희대학교",
-        "rounds": [
-          312,
-          335,
-          319,
-          352
-        ],
-        "total": 1318,
-        "sourceRank": 12
-      },
-      {
-        "rank": 12,
-        "target": "43B",
-        "name": "김종우",
-        "school": "한국체육대학교",
-        "rounds": [
-          306,
-          325,
-          336,
-          351
-        ],
-        "total": 1318,
-        "sourceRank": 12
-      },
-      {
-        "rank": 14,
-        "target": "42B",
-        "name": "김선혁",
-        "school": "한국체육대학교",
-        "rounds": [
-          302,
-          332,
-          334,
-          346
-        ],
-        "total": 1314,
-        "sourceRank": 14
-      },
-      {
-        "rank": 15,
-        "target": "35B",
-        "name": "신준",
-        "school": "계명대학교",
-        "rounds": [
-          296,
-          329,
-          335,
-          352
-        ],
-        "total": 1312,
-        "sourceRank": 15
-      },
-      {
-        "rank": 15,
-        "target": "43A",
-        "name": "최시후",
-        "school": "울산대학교",
-        "rounds": [
-          312,
-          325,
-          322,
-          353
-        ],
-        "total": 1312,
-        "sourceRank": 15
-      },
-      {
-        "rank": 17,
-        "target": "37C",
-        "name": "윤성환",
-        "school": "경희대학교",
-        "rounds": [
-          297,
-          326,
-          334,
-          354
-        ],
-        "total": 1311,
-        "sourceRank": 17
-      },
-      {
-        "rank": 17,
-        "target": "36A",
-        "name": "최우석",
-        "school": "배재대학교",
-        "rounds": [
-          290,
-          330,
-          336,
-          355
-        ],
-        "total": 1311,
-        "sourceRank": 17
-      },
-      {
-        "rank": 17,
-        "target": "36C",
-        "name": "권태연",
-        "school": "경희대학교",
-        "rounds": [
-          299,
-          330,
-          334,
-          348
-        ],
-        "total": 1311,
-        "sourceRank": 17
-      },
-      {
-        "rank": 17,
-        "target": "34C",
-        "name": "이효범",
-        "school": "경희대학교",
-        "rounds": [
-          300,
-          325,
-          333,
-          353
-        ],
-        "total": 1311,
-        "sourceRank": 17
-      },
-      {
-        "rank": 21,
-        "target": "40C",
-        "name": "정세윤",
-        "school": "인천대학교",
-        "rounds": [
-          289,
-          333,
-          334,
-          354
-        ],
-        "total": 1310,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "34B",
-        "name": "장준하",
-        "school": "계명대학교",
-        "rounds": [
-          288,
-          333,
-          337,
-          350
-        ],
-        "total": 1308,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "33A",
-        "name": "이정한",
-        "school": "배재대학교",
-        "rounds": [
-          290,
-          331,
-          335,
-          351
-        ],
-        "total": 1307,
-        "sourceRank": 23
-      },
-      {
-        "rank": 23,
-        "target": "30C",
-        "name": "고성훈",
-        "school": "서원대학교",
-        "rounds": [
-          297,
-          335,
-          326,
-          349
-        ],
-        "total": 1307,
-        "sourceRank": 23
-      },
-      {
-        "rank": 25,
-        "target": "39B",
-        "name": "구범준",
-        "school": "한국체육대학교",
-        "rounds": [
-          282,
-          330,
-          339,
-          355
-        ],
-        "total": 1306,
-        "sourceRank": 25
-      },
-      {
-        "rank": 25,
-        "target": "38B",
-        "name": "이은재",
-        "school": "한국체육대학교",
-        "rounds": [
-          293,
-          329,
-          330,
-          354
-        ],
-        "total": 1306,
-        "sourceRank": 25
-      },
-      {
-        "rank": 27,
-        "target": "35A",
-        "name": "이건호",
-        "school": "배재대학교",
-        "rounds": [
-          299,
-          332,
-          323,
-          351
-        ],
-        "total": 1305,
-        "sourceRank": 27
-      },
-      {
-        "rank": 28,
-        "target": "32C",
-        "name": "신재원",
-        "school": "서원대학교",
-        "rounds": [
-          291,
-          329,
-          333,
-          351
-        ],
-        "total": 1304,
-        "sourceRank": 28
-      },
-      {
-        "rank": 28,
-        "target": "26B",
-        "name": "강우석",
-        "school": "국립경국대학교",
-        "rounds": [
-          300,
-          329,
-          325,
-          350
-        ],
-        "total": 1304,
-        "sourceRank": 28
-      },
-      {
-        "rank": 30,
-        "target": "27A",
-        "name": "진은석",
-        "school": "상지대학교",
-        "rounds": [
-          294,
-          326,
-          332,
-          351
-        ],
-        "total": 1303,
-        "sourceRank": 30
-      },
-      {
-        "rank": 31,
-        "target": "39C",
-        "name": "조대신",
-        "school": "인천대학교",
-        "rounds": [
-          293,
-          327,
-          333,
-          349
-        ],
-        "total": 1302,
-        "sourceRank": 31
-      },
-      {
-        "rank": 31,
-        "target": "31C",
-        "name": "장은석",
-        "school": "서원대학교",
-        "rounds": [
-          287,
-          328,
-          337,
-          350
-        ],
-        "total": 1302,
-        "sourceRank": 31
-      },
-      {
-        "rank": 33,
-        "target": "30B",
-        "name": "강민서",
-        "school": "국립경국대학교",
-        "rounds": [
-          298,
-          326,
-          327,
-          349
-        ],
-        "total": 1300,
-        "sourceRank": 33
-      },
-      {
-        "rank": 33,
-        "target": "33B",
-        "name": "강민승",
-        "school": "계명대학교",
-        "rounds": [
-          305,
-          319,
-          328,
-          348
-        ],
-        "total": 1300,
-        "sourceRank": 33
-      },
-      {
-        "rank": 35,
-        "target": "46A",
-        "name": "김다니엘",
-        "school": "순천대학교",
-        "rounds": [
-          286,
-          331,
-          329,
-          352
-        ],
-        "total": 1298,
-        "sourceRank": 35
-      },
-      {
-        "rank": 36,
-        "target": "44B",
-        "name": "이찬주",
-        "school": "한국체육대학교",
-        "rounds": [
-          303,
-          321,
-          326,
-          344
-        ],
-        "total": 1294,
-        "sourceRank": 36
-      },
-      {
-        "rank": 37,
-        "target": "45B",
-        "name": "김택중",
-        "school": "한국체육대학교",
-        "rounds": [
-          291,
-          325,
-          323,
-          353
-        ],
-        "total": 1292,
-        "sourceRank": 37
-      },
-      {
-        "rank": 38,
-        "target": "46B",
-        "name": "지호준",
-        "school": "한국체육대학교",
-        "rounds": [
-          294,
-          322,
-          328,
-          347
-        ],
-        "total": 1291,
-        "sourceRank": 38
-      },
-      {
-        "rank": 39,
-        "target": "43C",
-        "name": "최우진",
-        "school": "조선대학교",
-        "rounds": [
-          283,
-          326,
-          327,
-          354
-        ],
-        "total": 1290,
-        "sourceRank": 39
-      },
-      {
-        "rank": 39,
-        "target": "38C",
-        "name": "김동현",
-        "school": "경희대학교",
-        "rounds": [
-          291,
-          331,
-          319,
-          349
-        ],
-        "total": 1290,
-        "sourceRank": 39
-      },
-      {
-        "rank": 41,
-        "target": "45C",
-        "name": "배정원",
-        "school": "조선대학교",
-        "rounds": [
-          291,
-          320,
-          324,
-          354
-        ],
-        "total": 1289,
-        "sourceRank": 41
-      },
-      {
-        "rank": 41,
-        "target": "41C",
-        "name": "박성우",
-        "school": "인천대학교",
-        "rounds": [
-          286,
-          329,
-          329,
-          345
-        ],
-        "total": 1289,
-        "sourceRank": 41
-      },
-      {
-        "rank": 43,
-        "target": "31A",
-        "name": "조승현",
-        "school": "남서울대학교(클)",
-        "rounds": [
-          294,
-          333,
-          314,
-          345
-        ],
-        "total": 1286,
-        "sourceRank": 43
-      },
-      {
-        "rank": 44,
-        "target": "27C",
-        "name": "현상우",
-        "school": "서원대학교",
-        "rounds": [
-          281,
-          319,
-          334,
-          351
-        ],
-        "total": 1285,
-        "sourceRank": 44
-      },
-      {
-        "rank": 45,
-        "target": "44C",
-        "name": "조성철",
-        "school": "조선대학교",
-        "rounds": [
-          291,
-          322,
-          326,
-          341
-        ],
-        "total": 1280,
-        "sourceRank": 45
-      },
-      {
-        "rank": 46,
-        "target": "29C",
-        "name": "황성현",
-        "school": "서원대학교",
-        "rounds": [
-          290,
-          320,
-          322,
-          347
-        ],
-        "total": 1279,
-        "sourceRank": 46
-      },
-      {
-        "rank": 47,
-        "target": "37A",
-        "name": "박훈정",
-        "school": "배재대학교",
-        "rounds": [
-          295,
-          316,
-          316,
-          349
-        ],
-        "total": 1276,
-        "sourceRank": 47
-      },
-      {
-        "rank": 48,
-        "target": "31B",
-        "name": "이승명",
-        "school": "국립경국대학교",
-        "rounds": [
-          282,
-          323,
-          326,
-          344
-        ],
-        "total": 1275,
-        "sourceRank": 48
-      },
-      {
-        "rank": 49,
-        "target": "46C",
-        "name": "전준희",
-        "school": "조선대학교",
-        "rounds": [
-          276,
-          320,
-          330,
-          347
-        ],
-        "total": 1273,
-        "sourceRank": 49
-      },
-      {
-        "rank": 50,
-        "target": "40A",
-        "name": "장우혁",
-        "school": "한일장신대학교",
-        "rounds": [
-          266,
-          326,
-          324,
-          356
-        ],
-        "total": 1272,
-        "sourceRank": 50
-      },
-      {
-        "rank": 50,
-        "target": "26A",
-        "name": "최민재",
-        "school": "상지대학교",
-        "rounds": [
-          291,
-          319,
-          316,
-          346
-        ],
-        "total": 1272,
-        "sourceRank": 50
-      },
-      {
-        "rank": 52,
-        "target": "28C",
-        "name": "송현태",
-        "school": "서원대학교",
-        "rounds": [
-          281,
-          317,
-          321,
-          344
-        ],
-        "total": 1263,
-        "sourceRank": 52
-      },
-      {
-        "rank": 53,
-        "target": "28A",
-        "name": "유정현",
-        "school": "상지대학교",
-        "rounds": [
-          294,
-          315,
-          306,
-          345
-        ],
-        "total": 1260,
-        "sourceRank": 53
-      },
-      {
-        "rank": 53,
-        "target": "27B",
-        "name": "송태건",
-        "school": "국립경국대학교",
-        "rounds": [
-          276,
-          324,
-          319,
-          341
-        ],
-        "total": 1260,
-        "sourceRank": 53
-      },
-      {
-        "rank": 55,
-        "target": "45A",
-        "name": "조율",
-        "school": "순천대학교",
-        "rounds": [
-          287,
-          316,
-          309,
-          341
-        ],
-        "total": 1253,
-        "sourceRank": 55
-      },
-      {
-        "rank": 56,
-        "target": "39A",
-        "name": "박라이",
-        "school": "한일장신대학교",
-        "rounds": [
-          276,
-          317,
-          306,
-          352
-        ],
-        "total": 1251,
-        "sourceRank": 56
-      },
-      {
-        "rank": 57,
-        "target": "29A",
-        "name": "안채빈",
-        "school": "상지대학교",
-        "rounds": [
-          267,
-          300,
-          319,
-          346
-        ],
-        "total": 1232,
-        "sourceRank": 57
-      },
-      {
-        "rank": 58,
-        "target": "38A",
-        "name": "유홍현",
-        "school": "배재대학교",
-        "rounds": [
-          267,
-          303,
-          306,
-          340
-        ],
-        "total": 1216,
-        "sourceRank": 58
-      },
-      {
-        "rank": 59,
-        "target": "44A",
-        "name": "제갈윤",
-        "school": "울산대학교",
-        "rounds": [
-          256,
-          300,
-          315,
-          342
-        ],
-        "total": 1213,
-        "sourceRank": 59
-      },
-      {
-        "rank": 60,
-        "target": "42A",
-        "name": "최승유",
-        "school": "울산대학교",
-        "rounds": [
-          256,
-          311,
-          298,
-          337
-        ],
-        "total": 1202,
-        "sourceRank": 60
-      },
-      {
-        "rank": 61,
-        "target": "30A",
-        "name": "강동한",
-        "school": "상지대학교",
-        "rounds": [
-          253,
-          298,
-          299,
-          321
-        ],
-        "total": 1171,
-        "sourceRank": 61
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_univ_girls_2026",
-    "sheetLabel": "종별대회 여자 대학부 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "대학/일반부",
-    "division": "대학부",
-    "gender": "여",
-    "distances": [
-      70,
-      60,
-      50,
-      30
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "35B",
-        "name": "김서하",
-        "school": "순천대학교",
-        "rounds": [
-          338,
-          344,
-          344,
-          358
-        ],
-        "total": 1384,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "19A",
-        "name": "염혜정",
-        "school": "경희대학교",
-        "rounds": [
-          337,
-          347,
-          339,
-          352
-        ],
-        "total": 1375,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "22B",
-        "name": "최혜미",
-        "school": "동서대학교",
-        "rounds": [
-          344,
-          346,
-          327,
-          356
-        ],
-        "total": 1373,
-        "sourceRank": 3
-      },
-      {
-        "rank": 4,
-        "target": "37A",
-        "name": "유슬하",
-        "school": "계명대학교",
-        "rounds": [
-          340,
-          341,
-          338,
-          351
-        ],
-        "total": 1370,
-        "sourceRank": 4
-      },
-      {
-        "rank": 5,
-        "target": "26B",
-        "name": "이수연",
-        "school": "광주여자대학교",
-        "rounds": [
-          335,
-          343,
-          334,
-          351
-        ],
-        "total": 1363,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "21A",
-        "name": "김미강",
-        "school": "경희대학교",
-        "rounds": [
-          340,
-          335,
-          335,
-          351
-        ],
-        "total": 1361,
-        "sourceRank": 6
-      },
-      {
-        "rank": 7,
-        "target": "32A",
-        "name": "황하정",
-        "school": "한국체육대학교",
-        "rounds": [
-          333,
-          339,
-          335,
-          351
-        ],
-        "total": 1358,
-        "sourceRank": 7
-      },
-      {
-        "rank": 8,
-        "target": "20A",
-        "name": "장미",
-        "school": "경희대학교",
-        "rounds": [
-          322,
-          343,
-          334,
-          353
-        ],
-        "total": 1352,
-        "sourceRank": 8
-      },
-      {
-        "rank": 9,
-        "target": "25B",
-        "name": "박미소",
-        "school": "동서대학교",
-        "rounds": [
-          330,
-          339,
-          331,
-          351
-        ],
-        "total": 1351,
-        "sourceRank": 9
-      },
-      {
-        "rank": 10,
-        "target": "33C",
-        "name": "김수아",
-        "school": "국립경국대학교",
-        "rounds": [
-          328,
-          344,
-          327,
-          350
-        ],
-        "total": 1349,
-        "sourceRank": 10
-      },
-      {
-        "rank": 11,
-        "target": "30A",
-        "name": "조수혜",
-        "school": "한국체육대학교",
-        "rounds": [
-          327,
-          332,
-          335,
-          354
-        ],
-        "total": 1348,
-        "sourceRank": 11
-      },
-      {
-        "rank": 12,
-        "target": "33A",
-        "name": "김은지",
-        "school": "계명대학교",
-        "rounds": [
-          333,
-          345,
-          326,
-          343
-        ],
-        "total": 1347,
-        "sourceRank": 12
-      },
-      {
-        "rank": 13,
-        "target": "20C",
-        "name": "함지윤",
-        "school": "목원대학교",
-        "rounds": [
-          331,
-          337,
-          327,
-          351
-        ],
-        "total": 1346,
-        "sourceRank": 13
-      },
-      {
-        "rank": 13,
-        "target": "26C",
-        "name": "이주예",
-        "school": "인천대학교",
-        "rounds": [
-          330,
-          340,
-          328,
-          348
-        ],
-        "total": 1346,
-        "sourceRank": 13
-      },
-      {
-        "rank": 15,
-        "target": "23A",
-        "name": "원성윤",
-        "school": "경희대학교",
-        "rounds": [
-          337,
-          328,
-          334,
-          346
-        ],
-        "total": 1345,
-        "sourceRank": 15
-      },
-      {
-        "rank": 15,
-        "target": "24B",
-        "name": "윤수희",
-        "school": "동서대학교",
-        "rounds": [
-          327,
-          338,
-          326,
-          354
-        ],
-        "total": 1345,
-        "sourceRank": 15
-      },
-      {
-        "rank": 17,
-        "target": "22A",
-        "name": "강민진",
-        "school": "경희대학교",
-        "rounds": [
-          324,
-          340,
-          334,
-          346
-        ],
-        "total": 1344,
-        "sourceRank": 17
-      },
-      {
-        "rank": 17,
-        "target": "21B",
-        "name": "한주희",
-        "school": "동서대학교",
-        "rounds": [
-          334,
-          339,
-          326,
-          345
-        ],
-        "total": 1344,
-        "sourceRank": 17
-      },
-      {
-        "rank": 19,
-        "target": "29B",
-        "name": "한유진",
-        "school": "광주여자대학교",
-        "rounds": [
-          333,
-          329,
-          327,
-          354
-        ],
-        "total": 1343,
-        "sourceRank": 19
-      },
-      {
-        "rank": 19,
-        "target": "27A",
-        "name": "정승은",
-        "school": "한국체육대학교",
-        "rounds": [
-          325,
-          340,
-          325,
-          353
-        ],
-        "total": 1343,
-        "sourceRank": 19
-      },
-      {
-        "rank": 21,
-        "target": "36A",
-        "name": "연은서",
-        "school": "계명대학교",
-        "rounds": [
-          326,
-          336,
-          330,
-          350
-        ],
-        "total": 1342,
-        "sourceRank": 21
-      },
-      {
-        "rank": 22,
-        "target": "32B",
-        "name": "남지현",
-        "school": "광주여자대학교",
-        "rounds": [
-          335,
-          339,
-          322,
-          345
-        ],
-        "total": 1341,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "31A",
-        "name": "조한이",
-        "school": "한국체육대학교",
-        "rounds": [
-          327,
-          341,
-          329,
-          343
-        ],
-        "total": 1340,
-        "sourceRank": 23
-      },
-      {
-        "rank": 24,
-        "target": "23B",
-        "name": "윤지희",
-        "school": "동서대학교",
-        "rounds": [
-          328,
-          331,
-          334,
-          346
-        ],
-        "total": 1339,
-        "sourceRank": 24
-      },
-      {
-        "rank": 24,
-        "target": "29C",
-        "name": "윤혜림",
-        "school": "창원대학교",
-        "rounds": [
-          330,
-          339,
-          318,
-          352
-        ],
-        "total": 1339,
-        "sourceRank": 24
-      },
-      {
-        "rank": 24,
-        "target": "39B",
-        "name": "김예빈",
-        "school": "원광대학교",
-        "rounds": [
-          334,
-          332,
-          332,
-          341
-        ],
-        "total": 1339,
-        "sourceRank": 24
-      },
-      {
-        "rank": 27,
-        "target": "30C",
-        "name": "박효빈",
-        "school": "창원대학교",
-        "rounds": [
-          334,
-          333,
-          321,
-          350
-        ],
-        "total": 1338,
-        "sourceRank": 27
-      },
-      {
-        "rank": 28,
-        "target": "35A",
-        "name": "신고은",
-        "school": "계명대학교",
-        "rounds": [
-          333,
-          335,
-          321,
-          348
-        ],
-        "total": 1337,
-        "sourceRank": 28
-      },
-      {
-        "rank": 29,
-        "target": "38A",
-        "name": "서희예",
-        "school": "계명대학교",
-        "rounds": [
-          330,
-          332,
-          327,
-          344
-        ],
-        "total": 1333,
-        "sourceRank": 29
-      },
-      {
-        "rank": 30,
-        "target": "33B",
-        "name": "서보은",
-        "school": "순천대학교",
-        "rounds": [
-          321,
-          338,
-          324,
-          349
-        ],
-        "total": 1332,
-        "sourceRank": 30
-      },
-      {
-        "rank": 30,
-        "target": "35C",
-        "name": "배윤진",
-        "school": "국립경국대학교",
-        "rounds": [
-          321,
-          338,
-          328,
-          345
-        ],
-        "total": 1332,
-        "sourceRank": 30
-      },
-      {
-        "rank": 32,
-        "target": "23C",
-        "name": "심민주",
-        "school": "인천대학교",
-        "rounds": [
-          326,
-          338,
-          318,
-          349
-        ],
-        "total": 1331,
-        "sourceRank": 32
-      },
-      {
-        "rank": 33,
-        "target": "36C",
-        "name": "이연우",
-        "school": "국립경국대학교",
-        "rounds": [
-          323,
-          338,
-          324,
-          345
-        ],
-        "total": 1330,
-        "sourceRank": 33
-      },
-      {
-        "rank": 33,
-        "target": "29A",
-        "name": "정다영",
-        "school": "한국체육대학교",
-        "rounds": [
-          324,
-          333,
-          325,
-          348
-        ],
-        "total": 1330,
-        "sourceRank": 33
-      },
-      {
-        "rank": 35,
-        "target": "19C",
-        "name": "김채현",
-        "school": "목원대학교",
-        "rounds": [
-          322,
-          340,
-          320,
-          347
-        ],
-        "total": 1329,
-        "sourceRank": 35
-      },
-      {
-        "rank": 35,
-        "target": "27B",
-        "name": "김하람",
-        "school": "광주여자대학교",
-        "rounds": [
-          321,
-          337,
-          321,
-          350
-        ],
-        "total": 1329,
-        "sourceRank": 35
-      },
-      {
-        "rank": 37,
-        "target": "26A",
-        "name": "안서윤",
-        "school": "한국체육대학교",
-        "rounds": [
-          321,
-          334,
-          320,
-          352
-        ],
-        "total": 1327,
-        "sourceRank": 37
-      },
-      {
-        "rank": 38,
-        "target": "31B",
-        "name": "김하은",
-        "school": "광주여자대학교",
-        "rounds": [
-          329,
-          331,
-          317,
-          349
-        ],
-        "total": 1326,
-        "sourceRank": 38
-      },
-      {
-        "rank": 39,
-        "target": "38B",
-        "name": "박가온",
-        "school": "원광대학교",
-        "rounds": [
-          327,
-          334,
-          318,
-          343
-        ],
-        "total": 1322,
-        "sourceRank": 39
-      },
-      {
-        "rank": 40,
-        "target": "34A",
-        "name": "이수현",
-        "school": "계명대학교",
-        "rounds": [
-          326,
-          331,
-          316,
-          348
-        ],
-        "total": 1321,
-        "sourceRank": 40
-      },
-      {
-        "rank": 40,
-        "target": "40B",
-        "name": "한소혜",
-        "school": "원광대학교",
-        "rounds": [
-          328,
-          341,
-          320,
-          332
-        ],
-        "total": 1321,
-        "sourceRank": 40
-      },
-      {
-        "rank": 42,
-        "target": "21C",
-        "name": "장보슬",
-        "school": "목원대학교",
-        "rounds": [
-          313,
-          336,
-          321,
-          347
-        ],
-        "total": 1317,
-        "sourceRank": 42
-      },
-      {
-        "rank": 43,
-        "target": "28A",
-        "name": "오정아",
-        "school": "한국체육대학교",
-        "rounds": [
-          323,
-          333,
-          318,
-          342
-        ],
-        "total": 1316,
-        "sourceRank": 43
-      },
-      {
-        "rank": 44,
-        "target": "25C",
-        "name": "이채영",
-        "school": "인천대학교",
-        "rounds": [
-          308,
-          336,
-          328,
-          343
-        ],
-        "total": 1315,
-        "sourceRank": 44
-      },
-      {
-        "rank": 45,
-        "target": "22C",
-        "name": "이율아",
-        "school": "목원대학교",
-        "rounds": [
-          310,
-          334,
-          324,
-          346
-        ],
-        "total": 1314,
-        "sourceRank": 45
-      },
-      {
-        "rank": 46,
-        "target": "27C",
-        "name": "이예진",
-        "school": "창원대학교",
-        "rounds": [
-          329,
-          331,
-          305,
-          345
-        ],
-        "total": 1310,
-        "sourceRank": 46
-      },
-      {
-        "rank": 46,
-        "target": "28C",
-        "name": "김보경",
-        "school": "창원대학교",
-        "rounds": [
-          313,
-          338,
-          318,
-          341
-        ],
-        "total": 1310,
-        "sourceRank": 46
-      },
-      {
-        "rank": 46,
-        "target": "37B",
-        "name": "장율리",
-        "school": "순천대학교",
-        "rounds": [
-          317,
-          329,
-          318,
-          346
-        ],
-        "total": 1310,
-        "sourceRank": 46
-      },
-      {
-        "rank": 49,
-        "target": "36B",
-        "name": "김시우",
-        "school": "순천대학교",
-        "rounds": [
-          318,
-          334,
-          311,
-          346
-        ],
-        "total": 1309,
-        "sourceRank": 49
-      },
-      {
-        "rank": 50,
-        "target": "31C",
-        "name": "이다영",
-        "school": "창원대학교",
-        "rounds": [
-          318,
-          334,
-          311,
-          345
-        ],
-        "total": 1308,
-        "sourceRank": 50
-      },
-      {
-        "rank": 50,
-        "target": "24C",
-        "name": "최한별",
-        "school": "인천대학교",
-        "rounds": [
-          326,
-          325,
-          313,
-          344
-        ],
-        "total": 1308,
-        "sourceRank": 50
-      },
-      {
-        "rank": 52,
-        "target": "24A",
-        "name": "박민지",
-        "school": "경희대학교",
-        "rounds": [
-          316,
-          317,
-          324,
-          348
-        ],
-        "total": 1305,
-        "sourceRank": 52
-      },
-      {
-        "rank": 53,
-        "target": "39A",
-        "name": "유수안",
-        "school": "상지대학교",
-        "rounds": [
-          309,
-          327,
-          323,
-          335
-        ],
-        "total": 1294,
-        "sourceRank": 53
-      },
-      {
-        "rank": 54,
-        "target": "37C",
-        "name": "정유정",
-        "school": "국립경국대학교",
-        "rounds": [
-          310,
-          322,
-          322,
-          338
-        ],
-        "total": 1292,
-        "sourceRank": 54
-      },
-      {
-        "rank": 55,
-        "target": "32C",
-        "name": "박채아",
-        "school": "창원대학교",
-        "rounds": [
-          323,
-          323,
-          318,
-          324
-        ],
-        "total": 1288,
-        "sourceRank": 55
-      },
-      {
-        "rank": 56,
-        "target": "34B",
-        "name": "김가은",
-        "school": "순천대학교",
-        "rounds": [
-          318,
-          330,
-          304,
-          331
-        ],
-        "total": 1283,
-        "sourceRank": 56
-      },
-      {
-        "rank": 56,
-        "target": "19B",
-        "name": "박해원",
-        "school": "울산대학교",
-        "rounds": [
-          315,
-          329,
-          303,
-          336
-        ],
-        "total": 1283,
-        "sourceRank": 56
-      },
-      {
-        "rank": 58,
-        "target": "30B",
-        "name": "남가형",
-        "school": "광주여자대학교",
-        "rounds": [
-          305,
-          313,
-          311,
-          347
-        ],
-        "total": 1276,
-        "sourceRank": 58
-      },
-      {
-        "rank": 59,
-        "target": "34C",
-        "name": "신효정",
-        "school": "국립경국대학교",
-        "rounds": [
-          301,
-          321,
-          321,
-          331
-        ],
-        "total": 1274,
-        "sourceRank": 59
-      },
-      {
-        "rank": 60,
-        "target": "40A",
-        "name": "김민솔",
-        "school": "상지대학교",
-        "rounds": [
-          277,
-          316,
-          309,
-          318
-        ],
-        "total": 1220,
-        "sourceRank": 60
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_general_boys_2026",
-    "sheetLabel": "종별대회 남자 일반부 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "대학/일반부",
-    "division": "대학부",
-    "gender": "남",
-    "distances": [
-      90,
-      70,
-      50,
-      30
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "61C",
-        "name": "박성철",
-        "school": "공주시청",
-        "rounds": [
-          328,
-          342,
-          340,
-          358
-        ],
-        "total": 1368,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "55B",
-        "name": "이선재",
-        "school": "국군체육부대",
-        "rounds": [
-          320,
-          340,
-          342,
-          358
-        ],
-        "total": 1360,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "55C",
-        "name": "구대한",
-        "school": "청주시청",
-        "rounds": [
-          316,
-          343,
-          335,
-          359
-        ],
-        "total": 1353,
-        "sourceRank": 3
-      },
-      {
-        "rank": 3,
-        "target": "52C",
-        "name": "김하준",
-        "school": "사상구청",
-        "rounds": [
-          319,
-          339,
-          337,
-          358
-        ],
-        "total": 1353,
-        "sourceRank": 3
-      },
-      {
-        "rank": 5,
-        "target": "58C",
-        "name": "황석민",
-        "school": "울산남구청",
-        "rounds": [
-          314,
-          344,
-          338,
-          356
-        ],
-        "total": 1352,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "58B",
-        "name": "김선우",
-        "school": "코오롱엑스텐보이즈",
-        "rounds": [
-          314,
-          337,
-          341,
-          355
-        ],
-        "total": 1347,
-        "sourceRank": 6
-      },
-      {
-        "rank": 7,
-        "target": "47B",
-        "name": "김법민",
-        "school": "대전시체육회",
-        "rounds": [
-          314,
-          333,
-          344,
-          354
-        ],
-        "total": 1345,
-        "sourceRank": 7
-      },
-      {
-        "rank": 7,
-        "target": "53C",
-        "name": "장채환",
-        "school": "사상구청",
-        "rounds": [
-          316,
-          337,
-          337,
-          355
-        ],
-        "total": 1345,
-        "sourceRank": 7
-      },
-      {
-        "rank": 9,
-        "target": "61B",
-        "name": "최건태",
-        "school": "코오롱엑스텐보이즈",
-        "rounds": [
-          307,
-          336,
-          343,
-          355
-        ],
-        "total": 1341,
-        "sourceRank": 9
-      },
-      {
-        "rank": 9,
-        "target": "53B",
-        "name": "최현택",
-        "school": "국군체육부대",
-        "rounds": [
-          305,
-          343,
-          338,
-          355
-        ],
-        "total": 1341,
-        "sourceRank": 9
-      },
-      {
-        "rank": 9,
-        "target": "55A",
-        "name": "김종호",
-        "school": "인천계양구청",
-        "rounds": [
-          312,
-          337,
-          338,
-          354
-        ],
-        "total": 1341,
-        "sourceRank": 9
-      },
-      {
-        "rank": 9,
-        "target": "47C",
-        "name": "구본찬",
-        "school": "현대제철",
-        "rounds": [
-          308,
-          337,
-          341,
-          355
-        ],
-        "total": 1341,
-        "sourceRank": 9
-      },
-      {
-        "rank": 9,
-        "target": "50A",
-        "name": "이승신",
-        "school": "서울시청",
-        "rounds": [
-          313,
-          340,
-          337,
-          351
-        ],
-        "total": 1341,
-        "sourceRank": 9
-      },
-      {
-        "rank": 14,
-        "target": "62C",
-        "name": "김태민",
-        "school": "공주시청",
-        "rounds": [
-          307,
-          333,
-          342,
-          357
-        ],
-        "total": 1339,
-        "sourceRank": 14
-      },
-      {
-        "rank": 15,
-        "target": "57C",
-        "name": "원종혁",
-        "school": "청주시청",
-        "rounds": [
-          304,
-          343,
-          338,
-          352
-        ],
-        "total": 1337,
-        "sourceRank": 15
-      },
-      {
-        "rank": 16,
-        "target": "56A",
-        "name": "한종혁",
-        "school": "인천계양구청",
-        "rounds": [
-          314,
-          327,
-          338,
-          355
-        ],
-        "total": 1334,
-        "sourceRank": 16
-      },
-      {
-        "rank": 16,
-        "target": "51C",
-        "name": "이승일",
-        "school": "사상구청",
-        "rounds": [
-          314,
-          336,
-          334,
-          350
-        ],
-        "total": 1334,
-        "sourceRank": 16
-      },
-      {
-        "rank": 16,
-        "target": "56B",
-        "name": "이승욱",
-        "school": "국군체육부대",
-        "rounds": [
-          312,
-          332,
-          337,
-          353
-        ],
-        "total": 1334,
-        "sourceRank": 16
-      },
-      {
-        "rank": 19,
-        "target": "56C",
-        "name": "이한샘",
-        "school": "청주시청",
-        "rounds": [
-          302,
-          339,
-          337,
-          355
-        ],
-        "total": 1333,
-        "sourceRank": 19
-      },
-      {
-        "rank": 20,
-        "target": "63A",
-        "name": "박민범",
-        "school": "대구중구청",
-        "rounds": [
-          303,
-          333,
-          339,
-          355
-        ],
-        "total": 1330,
-        "sourceRank": 20
-      },
-      {
-        "rank": 20,
-        "target": "60A",
-        "name": "박은성",
-        "school": "예천군청",
-        "rounds": [
-          306,
-          344,
-          333,
-          347
-        ],
-        "total": 1330,
-        "sourceRank": 20
-      },
-      {
-        "rank": 22,
-        "target": "57A",
-        "name": "김강현",
-        "school": "인천계양구청",
-        "rounds": [
-          302,
-          336,
-          340,
-          351
-        ],
-        "total": 1329,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "63C",
-        "name": "고태경",
-        "school": "공주시청",
-        "rounds": [
-          307,
-          335,
-          333,
-          353
-        ],
-        "total": 1328,
-        "sourceRank": 23
-      },
-      {
-        "rank": 24,
-        "target": "49B",
-        "name": "최재환",
-        "school": "대전시체육회",
-        "rounds": [
-          304,
-          329,
-          340,
-          354
-        ],
-        "total": 1327,
-        "sourceRank": 24
-      },
-      {
-        "rank": 24,
-        "target": "65A",
-        "name": "채진서",
-        "school": "대구중구청",
-        "rounds": [
-          308,
-          327,
-          338,
-          354
-        ],
-        "total": 1327,
-        "sourceRank": 24
-      },
-      {
-        "rank": 24,
-        "target": "51B",
-        "name": "송인준",
-        "school": "국군체육부대",
-        "rounds": [
-          305,
-          335,
-          335,
-          352
-        ],
-        "total": 1327,
-        "sourceRank": 24
-      },
-      {
-        "rank": 24,
-        "target": "59A",
-        "name": "장지호",
-        "school": "예천군청",
-        "rounds": [
-          312,
-          328,
-          331,
-          356
-        ],
-        "total": 1327,
-        "sourceRank": 24
-      },
-      {
-        "rank": 28,
-        "target": "50B",
-        "name": "김정훈",
-        "school": "국군체육부대",
-        "rounds": [
-          302,
-          332,
-          334,
-          358
-        ],
-        "total": 1326,
-        "sourceRank": 28
-      },
-      {
-        "rank": 29,
-        "target": "59B",
-        "name": "김예찬",
-        "school": "코오롱엑스텐보이즈",
-        "rounds": [
-          301,
-          331,
-          336,
-          357
-        ],
-        "total": 1325,
-        "sourceRank": 29
-      },
-      {
-        "rank": 29,
-        "target": "54B",
-        "name": "문균호",
-        "school": "국군체육부대",
-        "rounds": [
-          307,
-          331,
-          332,
-          355
-        ],
-        "total": 1325,
-        "sourceRank": 29
-      },
-      {
-        "rank": 31,
-        "target": "59C",
-        "name": "김민범",
-        "school": "울산남구청",
-        "rounds": [
-          302,
-          338,
-          329,
-          355
-        ],
-        "total": 1324,
-        "sourceRank": 31
-      },
-      {
-        "rank": 31,
-        "target": "61A",
-        "name": "손지원",
-        "school": "예천군청",
-        "rounds": [
-          306,
-          334,
-          331,
-          353
-        ],
-        "total": 1324,
-        "sourceRank": 31
-      },
-      {
-        "rank": 33,
-        "target": "52A",
-        "name": "이동민",
-        "school": "서울시청",
-        "rounds": [
-          308,
-          331,
-          328,
-          354
-        ],
-        "total": 1321,
-        "sourceRank": 33
-      },
-      {
-        "rank": 33,
-        "target": "63B",
-        "name": "이승윤",
-        "school": "광주광역시남구청",
-        "rounds": [
-          311,
-          329,
-          329,
-          352
-        ],
-        "total": 1321,
-        "sourceRank": 33
-      },
-      {
-        "rank": 35,
-        "target": "58A",
-        "name": "강현빈",
-        "school": "인천계양구청",
-        "rounds": [
-          309,
-          323,
-          336,
-          352
-        ],
-        "total": 1320,
-        "sourceRank": 35
-      },
-      {
-        "rank": 36,
-        "target": "57B",
-        "name": "최두희",
-        "school": "국군체육부대",
-        "rounds": [
-          298,
-          336,
-          331,
-          354
-        ],
-        "total": 1319,
-        "sourceRank": 36
-      },
-      {
-        "rank": 36,
-        "target": "50C",
-        "name": "김필중",
-        "school": "현대제철",
-        "rounds": [
-          304,
-          331,
-          333,
-          351
-        ],
-        "total": 1319,
-        "sourceRank": 36
-      },
-      {
-        "rank": 38,
-        "target": "60C",
-        "name": "김민재",
-        "school": "울산남구청",
-        "rounds": [
-          296,
-          332,
-          333,
-          356
-        ],
-        "total": 1317,
-        "sourceRank": 38
-      },
-      {
-        "rank": 39,
-        "target": "49C",
-        "name": "남유빈",
-        "school": "현대제철",
-        "rounds": [
-          301,
-          325,
-          338,
-          352
-        ],
-        "total": 1316,
-        "sourceRank": 39
-      },
-      {
-        "rank": 40,
-        "target": "64C",
-        "name": "이우주",
-        "school": "공주시청",
-        "rounds": [
-          305,
-          329,
-          328,
-          353
-        ],
-        "total": 1315,
-        "sourceRank": 40
-      },
-      {
-        "rank": 41,
-        "target": "49A",
-        "name": "박주영",
-        "school": "서울시청",
-        "rounds": [
-          280,
-          335,
-          340,
-          359
-        ],
-        "total": 1314,
-        "sourceRank": 41
-      },
-      {
-        "rank": 41,
-        "target": "48B",
-        "name": "곽동훈",
-        "school": "대전시체육회",
-        "rounds": [
-          299,
-          332,
-          326,
-          357
-        ],
-        "total": 1314,
-        "sourceRank": 41
-      },
-      {
-        "rank": 43,
-        "target": "48C",
-        "name": "허재우",
-        "school": "현대제철",
-        "rounds": [
-          292,
-          333,
-          335,
-          353
-        ],
-        "total": 1313,
-        "sourceRank": 43
-      },
-      {
-        "rank": 44,
-        "target": "62B",
-        "name": "정태영",
-        "school": "코오롱엑스텐보이즈",
-        "rounds": [
-          285,
-          340,
-          335,
-          351
-        ],
-        "total": 1311,
-        "sourceRank": 44
-      },
-      {
-        "rank": 44,
-        "target": "51A",
-        "name": "서준혁",
-        "school": "서울시청",
-        "rounds": [
-          292,
-          328,
-          336,
-          355
-        ],
-        "total": 1311,
-        "sourceRank": 44
-      },
-      {
-        "rank": 46,
-        "target": "64A",
-        "name": "김민재",
-        "school": "대구중구청",
-        "rounds": [
-          298,
-          329,
-          320,
-          356
-        ],
-        "total": 1303,
-        "sourceRank": 46
-      },
-      {
-        "rank": 47,
-        "target": "62A",
-        "name": "이동영",
-        "school": "예천군청",
-        "rounds": [
-          281,
-          332,
-          338,
-          345
-        ],
-        "total": 1296,
-        "sourceRank": 47
-      },
-      {
-        "rank": 48,
-        "target": "64B",
-        "name": "이진용",
-        "school": "광주광역시남구청",
-        "rounds": [
-          297,
-          324,
-          325,
-          347
-        ],
-        "total": 1293,
-        "sourceRank": 48
-      },
-      {
-        "rank": 49,
-        "target": "47A",
-        "name": "이용빈",
-        "school": "전북원스포츠단(리)",
-        "rounds": [
-          277,
-          334,
-          332,
-          349
-        ],
-        "total": 1292,
-        "sourceRank": 49
-      },
-      {
-        "rank": 49,
-        "target": "65B",
-        "name": "이원주",
-        "school": "광주광역시남구청",
-        "rounds": [
-          286,
-          329,
-          327,
-          350
-        ],
-        "total": 1292,
-        "sourceRank": 49
-      },
-      {
-        "rank": 51,
-        "target": "54A",
-        "name": "박규석",
-        "school": "두산에너빌리티",
-        "rounds": [
-          300,
-          326,
-          316,
-          346
-        ],
-        "total": 1288,
-        "sourceRank": 51
-      },
-      {
-        "rank": 52,
-        "target": "48A",
-        "name": "김민제",
-        "school": "전북원스포츠단(리)",
-        "rounds": [
-          293,
-          311,
-          325,
-          350
-        ],
-        "total": 1279,
-        "sourceRank": 52
-      },
-      {
-        "rank": 53,
-        "target": "53A",
-        "name": "진재왕",
-        "school": "두산에너빌리티",
-        "rounds": [
-          282,
-          324,
-          320,
-          347
-        ],
-        "total": 1273,
-        "sourceRank": 53
-      },
-      {
-        "rank": 54,
-        "target": "65C",
-        "name": "정유찬",
-        "school": "라온양궁클럽(동)",
-        "rounds": [
-          127,
-          185,
-          240,
-          311
-        ],
-        "total": 863,
-        "sourceRank": 54
-      }
-    ]
-  },
-  {
-    "id": "full_jongbyeol_general_girls_2026",
-    "sheetLabel": "종별대회 여자 일반부 전체",
-    "competitionId": "2026_jongbyeol_60",
-    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
-    "date": "2026-05-02",
-    "regionCity": "전국",
-    "bowType": "리커브",
-    "rankingGroup": "대학/일반부",
-    "division": "대학부",
-    "gender": "여",
-    "distances": [
-      70,
-      60,
-      50,
-      30
-    ],
-    "rows": [
-      {
-        "rank": 1,
-        "target": "43C",
-        "name": "안산",
-        "school": "광주은행 텐텐양궁단",
-        "rounds": [
-          343,
-          347,
-          341,
-          353
-        ],
-        "total": 1384,
-        "sourceRank": 1
-      },
-      {
-        "rank": 2,
-        "target": "55C",
-        "name": "손서빈",
-        "school": "여주시청",
-        "rounds": [
-          337,
-          350,
-          343,
-          350
-        ],
-        "total": 1380,
-        "sourceRank": 2
-      },
-      {
-        "rank": 3,
-        "target": "44A",
-        "name": "임시현",
-        "school": "현대모비스",
-        "rounds": [
-          346,
-          350,
-          332,
-          350
-        ],
-        "total": 1378,
-        "sourceRank": 3
-      },
-      {
-        "rank": 4,
-        "target": "41B",
-        "name": "곽예지",
-        "school": "대전시체육회",
-        "rounds": [
-          340,
-          344,
-          341,
-          352
-        ],
-        "total": 1377,
-        "sourceRank": 4
-      },
-      {
-        "rank": 5,
-        "target": "54A",
-        "name": "임하나",
-        "school": "청주시청",
-        "rounds": [
-          342,
-          343,
-          336,
-          354
-        ],
-        "total": 1375,
-        "sourceRank": 5
-      },
-      {
-        "rank": 6,
-        "target": "49B",
-        "name": "박소민",
-        "school": "LH",
-        "rounds": [
-          334,
-          345,
-          339,
-          352
-        ],
-        "total": 1370,
-        "sourceRank": 6
-      },
-      {
-        "rank": 6,
-        "target": "43B",
-        "name": "이가현",
-        "school": "대전시체육회",
-        "rounds": [
-          333,
-          344,
-          341,
-          352
-        ],
-        "total": 1370,
-        "sourceRank": 6
-      },
-      {
-        "rank": 6,
-        "target": "61B",
-        "name": "김수린",
-        "school": "대구서구청",
-        "rounds": [
-          339,
-          345,
-          333,
-          353
-        ],
-        "total": 1370,
-        "sourceRank": 6
-      },
-      {
-        "rank": 9,
-        "target": "49A",
-        "name": "박세은",
-        "school": "부산도시공사",
-        "rounds": [
-          334,
-          348,
-          336,
-          350
-        ],
-        "total": 1368,
-        "sourceRank": 9
-      },
-      {
-        "rank": 10,
-        "target": "53A",
-        "name": "이세현",
-        "school": "청주시청",
-        "rounds": [
-          330,
-          344,
-          336,
-          356
-        ],
-        "total": 1366,
-        "sourceRank": 10
-      },
-      {
-        "rank": 10,
-        "target": "52A",
-        "name": "김소희",
-        "school": "청주시청",
-        "rounds": [
-          339,
-          341,
-          333,
-          353
-        ],
-        "total": 1366,
-        "sourceRank": 10
-      },
-      {
-        "rank": 12,
-        "target": "51A",
-        "name": "박은서",
-        "school": "부산도시공사",
-        "rounds": [
-          333,
-          343,
-          334,
-          354
-        ],
-        "total": 1364,
-        "sourceRank": 12
-      },
-      {
-        "rank": 13,
-        "target": "46A",
-        "name": "유시현",
-        "school": "순천시청",
-        "rounds": [
-          339,
-          343,
-          327,
-          353
-        ],
-        "total": 1362,
-        "sourceRank": 13
-      },
-      {
-        "rank": 14,
-        "target": "47B",
-        "name": "조아름",
-        "school": "현대백화점",
-        "rounds": [
-          339,
-          338,
-          332,
-          352
-        ],
-        "total": 1361,
-        "sourceRank": 14
-      },
-      {
-        "rank": 15,
-        "target": "48B",
-        "name": "김이안",
-        "school": "현대백화점",
-        "rounds": [
-          334,
-          337,
-          333,
-          356
-        ],
-        "total": 1360,
-        "sourceRank": 15
-      },
-      {
-        "rank": 15,
-        "target": "46B",
-        "name": "유수정",
-        "school": "현대백화점",
-        "rounds": [
-          339,
-          345,
-          322,
-          354
-        ],
-        "total": 1360,
-        "sourceRank": 15
-      },
-      {
-        "rank": 17,
-        "target": "41C",
-        "name": "최미선",
-        "school": "광주은행 텐텐양궁단",
-        "rounds": [
-          336,
-          343,
-          334,
-          346
-        ],
-        "total": 1359,
-        "sourceRank": 17
-      },
-      {
-        "rank": 18,
-        "target": "45B",
-        "name": "정다소미",
-        "school": "현대백화점",
-        "rounds": [
-          334,
-          343,
-          332,
-          349
-        ],
-        "total": 1358,
-        "sourceRank": 18
-      },
-      {
-        "rank": 19,
-        "target": "54B",
-        "name": "전훈영",
-        "school": "인천광역시청",
-        "rounds": [
-          333,
-          337,
-          335,
-          352
-        ],
-        "total": 1357,
-        "sourceRank": 19
-      },
-      {
-        "rank": 20,
-        "target": "53B",
-        "name": "홍수남",
-        "school": "인천광역시청",
-        "rounds": [
-          338,
-          333,
-          335,
-          350
-        ],
-        "total": 1356,
-        "sourceRank": 20
-      },
-      {
-        "rank": 20,
-        "target": "61C",
-        "name": "안희연",
-        "school": "창원시청",
-        "rounds": [
-          331,
-          344,
-          329,
-          352
-        ],
-        "total": 1356,
-        "sourceRank": 20
-      },
-      {
-        "rank": 22,
-        "target": "43A",
-        "name": "방현주",
-        "school": "현대모비스",
-        "rounds": [
-          330,
-          341,
-          332,
-          352
-        ],
-        "total": 1355,
-        "sourceRank": 22
-      },
-      {
-        "rank": 23,
-        "target": "51B",
-        "name": "김나리",
-        "school": "서울시양궁협회",
-        "rounds": [
-          334,
-          340,
-          332,
-          347
-        ],
-        "total": 1353,
-        "sourceRank": 23
-      },
-      {
-        "rank": 23,
-        "target": "53C",
-        "name": "한솔",
-        "school": "홍성군청",
-        "rounds": [
-          337,
-          339,
-          327,
-          350
-        ],
-        "total": 1353,
-        "sourceRank": 23
-      },
-      {
-        "rank": 25,
-        "target": "59C",
-        "name": "이나영",
-        "school": "창원시청",
-        "rounds": [
-          332,
-          339,
-          332,
-          349
-        ],
-        "total": 1352,
-        "sourceRank": 25
-      },
-      {
-        "rank": 25,
-        "target": "59B",
-        "name": "최지원",
-        "school": "하이트진로",
-        "rounds": [
-          334,
-          334,
-          336,
-          348
-        ],
-        "total": 1352,
-        "sourceRank": 25
-      },
-      {
-        "rank": 25,
-        "target": "60B",
-        "name": "최예지",
-        "school": "대구서구청",
-        "rounds": [
-          335,
-          343,
-          327,
-          347
-        ],
-        "total": 1352,
-        "sourceRank": 25
-      },
-      {
-        "rank": 25,
-        "target": "55B",
-        "name": "김서영",
-        "school": "인천광역시청",
-        "rounds": [
-          334,
-          345,
-          326,
-          347
-        ],
-        "total": 1352,
-        "sourceRank": 25
-      },
-      {
-        "rank": 29,
-        "target": "42B",
-        "name": "임해진",
-        "school": "대전시체육회",
-        "rounds": [
-          331,
-          341,
-          327,
-          351
-        ],
-        "total": 1350,
-        "sourceRank": 29
-      },
-      {
-        "rank": 29,
-        "target": "58B",
-        "name": "김영은",
-        "school": "하이트진로",
-        "rounds": [
-          326,
-          343,
-          333,
-          348
-        ],
-        "total": 1350,
-        "sourceRank": 29
-      },
-      {
-        "rank": 31,
-        "target": "55A",
-        "name": "박수빈",
-        "school": "청주시청",
-        "rounds": [
-          333,
-          340,
-          328,
-          348
-        ],
-        "total": 1349,
-        "sourceRank": 31
-      },
-      {
-        "rank": 32,
-        "target": "46C",
-        "name": "전인아",
-        "school": "전북도청",
-        "rounds": [
-          333,
-          340,
-          325,
-          350
-        ],
-        "total": 1348,
-        "sourceRank": 32
-      },
-      {
-        "rank": 32,
-        "target": "47A",
-        "name": "탁해윤",
-        "school": "순천시청",
-        "rounds": [
-          337,
-          338,
-          325,
-          348
-        ],
-        "total": 1348,
-        "sourceRank": 32
-      },
-      {
-        "rank": 32,
-        "target": "63A",
-        "name": "김세연",
-        "school": "광주광역시청",
-        "rounds": [
-          324,
-          339,
-          334,
-          351
-        ],
-        "total": 1348,
-        "sourceRank": 32
-      },
-      {
-        "rank": 35,
-        "target": "48A",
-        "name": "남수현",
-        "school": "순천시청",
-        "rounds": [
-          340,
-          337,
-          328,
-          341
-        ],
-        "total": 1346,
-        "sourceRank": 35
-      },
-      {
-        "rank": 35,
-        "target": "49C",
-        "name": "김예후",
-        "school": "전북도청",
-        "rounds": [
-          334,
-          333,
-          331,
-          348
-        ],
-        "total": 1346,
-        "sourceRank": 35
-      },
-      {
-        "rank": 35,
-        "target": "62A",
-        "name": "나민지",
-        "school": "광주광역시청",
-        "rounds": [
-          325,
-          339,
-          332,
-          350
-        ],
-        "total": 1346,
-        "sourceRank": 35
-      },
-      {
-        "rank": 38,
-        "target": "50C",
-        "name": "이은아",
-        "school": "홍성군청",
-        "rounds": [
-          331,
-          346,
-          314,
-          350
-        ],
-        "total": 1341,
-        "sourceRank": 38
-      },
-      {
-        "rank": 38,
-        "target": "47C",
-        "name": "신정화",
-        "school": "전북도청",
-        "rounds": [
-          329,
-          340,
-          324,
-          348
-        ],
-        "total": 1341,
-        "sourceRank": 38
-      },
-      {
-        "rank": 38,
-        "target": "57C",
-        "name": "김아현",
-        "school": "여주시청",
-        "rounds": [
-          335,
-          343,
-          318,
-          345
-        ],
-        "total": 1341,
-        "sourceRank": 38
-      },
-      {
-        "rank": 38,
-        "target": "60A",
-        "name": "이가영",
-        "school": "광주광역시청",
-        "rounds": [
-          329,
-          326,
-          337,
-          349
-        ],
-        "total": 1341,
-        "sourceRank": 38
-      },
-      {
-        "rank": 42,
-        "target": "61A",
-        "name": "정지서",
-        "school": "광주광역시청",
-        "rounds": [
-          330,
-          334,
-          325,
-          349
-        ],
-        "total": 1338,
-        "sourceRank": 42
-      },
-      {
-        "rank": 42,
-        "target": "50A",
-        "name": "조민서",
-        "school": "부산도시공사",
-        "rounds": [
-          328,
-          342,
-          320,
-          348
-        ],
-        "total": 1338,
-        "sourceRank": 42
-      },
-      {
-        "rank": 44,
-        "target": "57A",
-        "name": "조수빈",
-        "school": "예천군청",
-        "rounds": [
-          335,
-          336,
-          322,
-          344
-        ],
-        "total": 1337,
-        "sourceRank": 44
-      },
-      {
-        "rank": 44,
-        "target": "60C",
-        "name": "정다예나",
-        "school": "창원시청",
-        "rounds": [
-          329,
-          344,
-          319,
-          345
-        ],
-        "total": 1337,
-        "sourceRank": 44
-      },
-      {
-        "rank": 44,
-        "target": "54C",
-        "name": "김예림",
-        "school": "여주시청",
-        "rounds": [
-          325,
-          341,
-          324,
-          347
-        ],
-        "total": 1337,
-        "sourceRank": 44
-      },
-      {
-        "rank": 44,
-        "target": "56C",
-        "name": "전완서",
-        "school": "여주시청",
-        "rounds": [
-          325,
-          342,
-          324,
-          346
-        ],
-        "total": 1337,
-        "sourceRank": 44
-      },
-      {
-        "rank": 48,
-        "target": "56B",
-        "name": "최모경",
-        "school": "하이트진로",
-        "rounds": [
-          324,
-          334,
-          327,
-          350
-        ],
-        "total": 1335,
-        "sourceRank": 48
-      },
-      {
-        "rank": 49,
-        "target": "58C",
-        "name": "황재민",
-        "school": "창원시청",
-        "rounds": [
-          329,
-          333,
-          322,
-          350
-        ],
-        "total": 1334,
-        "sourceRank": 49
-      },
-      {
-        "rank": 50,
-        "target": "42C",
-        "name": "곽진영",
-        "school": "광주은행 텐텐양궁단",
-        "rounds": [
-          330,
-          333,
-          329,
-          341
-        ],
-        "total": 1333,
-        "sourceRank": 50
-      },
-      {
-        "rank": 51,
-        "target": "52C",
-        "name": "박소영",
-        "school": "홍성군청",
-        "rounds": [
-          322,
-          337,
-          327,
-          345
-        ],
-        "total": 1331,
-        "sourceRank": 51
-      },
-      {
-        "rank": 52,
-        "target": "63B",
-        "name": "임정민",
-        "school": "대구서구청",
-        "rounds": [
-          322,
-          340,
-          321,
-          345
-        ],
-        "total": 1328,
-        "sourceRank": 52
-      },
-      {
-        "rank": 52,
-        "target": "44B",
-        "name": "신서빈",
-        "school": "대전시체육회",
-        "rounds": [
-          332,
-          328,
-          326,
-          342
-        ],
-        "total": 1328,
-        "sourceRank": 52
-      },
-      {
-        "rank": 54,
-        "target": "59A",
-        "name": "심다정",
-        "school": "예천군청",
-        "rounds": [
-          310,
-          341,
-          325,
-          351
-        ],
-        "total": 1327,
-        "sourceRank": 54
-      },
-      {
-        "rank": 55,
-        "target": "50B",
-        "name": "임두나",
-        "school": "LH",
-        "rounds": [
-          324,
-          334,
-          320,
-          348
-        ],
-        "total": 1326,
-        "sourceRank": 55
-      },
-      {
-        "rank": 56,
-        "target": "58A",
-        "name": "강고은",
-        "school": "예천군청",
-        "rounds": [
-          315,
-          338,
-          325,
-          346
-        ],
-        "total": 1324,
-        "sourceRank": 56
-      },
-      {
-        "rank": 56,
-        "target": "57B",
-        "name": "박나원",
-        "school": "하이트진로",
-        "rounds": [
-          331,
-          327,
-          324,
-          342
-        ],
-        "total": 1324,
-        "sourceRank": 56
-      },
-      {
-        "rank": 58,
-        "target": "48C",
-        "name": "김아영",
-        "school": "전북도청",
-        "rounds": [
-          329,
-          328,
-          318,
-          345
-        ],
-        "total": 1320,
-        "sourceRank": 58
-      },
-      {
-        "rank": 58,
-        "target": "51C",
-        "name": "박재희",
-        "school": "홍성군청",
-        "rounds": [
-          330,
-          333,
-          311,
-          346
-        ],
-        "total": 1320,
-        "sourceRank": 58
-      },
-      {
-        "rank": 58,
-        "target": "56A",
-        "name": "이혜민",
-        "school": "예천군청",
-        "rounds": [
-          322,
-          340,
-          314,
-          344
-        ],
-        "total": 1320,
-        "sourceRank": 58
-      },
-      {
-        "rank": 61,
-        "target": "62B",
-        "name": "주혜빈",
-        "school": "대구서구청",
-        "rounds": [
-          312,
-          337,
-          306,
-          342
-        ],
-        "total": 1297,
-        "sourceRank": 61
-      },
-      {
-        "rank": 62,
-        "target": "44C",
-        "name": "최예진",
-        "school": "광주은행 텐텐양궁단",
-        "rounds": [
-          318,
-          316,
-          302,
-          342
-        ],
-        "total": 1278,
-        "sourceRank": 62
-      },
-      {
-        "rank": 63,
-        "target": "45A",
-        "name": "이은경",
-        "school": "순천시청",
-        "rounds": [
-          26,
-          0,
-          0,
-          0
-        ],
-        "total": 26,
-        "sourceRank": 63
-      }
-    ]
-  }
-];
 
 const SCORE_OPTIONS = ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, "M"];
 const QUICK_SCORE_OPTIONS = ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, "M"];
@@ -17970,34 +214,6 @@ async function fetchSessionWindWeather({ latitude, longitude, sessionDate }) {
     temperature: Number.isFinite(temperature) ? temperature : null,
     windLevel: getWindLevelFromSpeed(windSpeed),
   };
-}
-
-
-
-function notifyGlobalLoading(active, message = "로딩중........") {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("xsession-global-loading", { detail: { active: Boolean(active), message } }));
-}
-
-function useGlobalLoadingBridge(active, message = "로딩중........") {
-  useEffect(() => {
-    if (!active) return undefined;
-    notifyGlobalLoading(true, message);
-    return () => notifyGlobalLoading(false, message);
-  }, [active, message]);
-}
-
-function GlobalLoadingOverlay({ active, message = "로딩중........" }) {
-  if (!active) return null;
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/35 backdrop-blur-[2px]" role="status" aria-live="polite" aria-label={message}>
-      <div className="flex min-w-[220px] flex-col items-center gap-3 rounded-[28px] bg-white px-8 py-7 text-center shadow-2xl ring-1 ring-slate-200">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-700" />
-        <div className="text-lg font-extrabold text-slate-950">{message}</div>
-        <div className="text-xs text-slate-500">자료를 불러오거나 저장하는 중입니다. 완료될 때까지 잠시 기다려주세요.</div>
-      </div>
-    </div>
-  );
 }
 
 function buildDefaultSessionWeather() {
@@ -19687,12 +1903,2537 @@ const OFFICIAL_RESULT_SOURCES = [
 
 // 데이터화된 공식기록 원본. 개인 기록으로 자동 주입하지 않고 공식기록으로만 사용한다.
 // 공식기록은 원본 표에 있는 사실만 보관한다. 2026-04-12 표는 선수 전원 점수까지 반영한다. U-11은 저학년, 일반 초등부 표는 통합으로 기록한다.
+const SAMPLE_SHEETS = [
+  {
+    "id": "suwon_elem_lower_boys_u11_2026",
+    "sheetLabel": "수원시장기 남자초등 U-11 개인전",
+    "competitionId": "2026_suwon_21_gyeonggi_selection_55",
+    "competitionName": "제21회 수원시양궁협회장기 겸 제55회 전국소년체전 경기도대표 최종선발",
+    "date": "2026-04-15",
+    "regionCity": "경기도",
+    "bowType": "리커브",
+    "rankingGroup": "초등부(저학년)",
+    "division": "초등부(저학년)",
+    "gender": "남",
+    "distances": [
+      35,
+      30,
+      25,
+      20
+    ],
+    "rows": [
+      {
+        "rank": 1,
+        "target": "12A",
+        "name": "김영재",
+        "school": "연무초등학교",
+        "rounds": [
+          337,
+          342,
+          342,
+          351
+        ],
+        "total": 1372,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "11C",
+        "name": "유선우",
+        "school": "연무초등학교",
+        "rounds": [
+          313,
+          324,
+          337,
+          345
+        ],
+        "total": 1319,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "11A",
+        "name": "박찬영",
+        "school": "원미초등학교",
+        "rounds": [
+          276,
+          310,
+          291,
+          302
+        ],
+        "total": 1179,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "06B",
+        "name": "박도현",
+        "school": "성포초등학교",
+        "rounds": [
+          269,
+          291,
+          284,
+          329
+        ],
+        "total": 1173,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "10A",
+        "name": "장다준",
+        "school": "하성초등학교",
+        "rounds": [
+          261,
+          231,
+          288,
+          314
+        ],
+        "total": 1094,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "06C",
+        "name": "최우빈",
+        "school": "천현초등학교",
+        "rounds": [
+          239,
+          253,
+          294,
+          300
+        ],
+        "total": 1086,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "07A",
+        "name": "구교준",
+        "school": "천현초등학교",
+        "rounds": [
+          179,
+          222,
+          266,
+          314
+        ],
+        "total": 981,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "05A",
+        "name": "오태준",
+        "school": "성포초등학교",
+        "rounds": [
+          56,
+          0,
+          196,
+          282
+        ],
+        "total": 534,
+        "sourceRank": 8
+      }
+    ]
+  },
+  {
+    "id": "suwon_elem_lower_girls_u11_2026",
+    "sheetLabel": "수원시장기 여자초등 U-11 개인전",
+    "competitionId": "2026_suwon_21_gyeonggi_selection_55",
+    "competitionName": "제21회 수원시양궁협회장기 겸 제55회 전국소년체전 경기도대표 최종선발",
+    "date": "2026-04-15",
+    "regionCity": "경기도",
+    "bowType": "리커브",
+    "rankingGroup": "초등부(저학년)",
+    "division": "초등부(저학년)",
+    "gender": "여",
+    "distances": [
+      35,
+      30,
+      25,
+      20
+    ],
+    "rows": [
+      {
+        "rank": 1,
+        "target": "30C",
+        "name": "황리우",
+        "school": "천현초등학교",
+        "rounds": [
+          305,
+          325,
+          339,
+          343
+        ],
+        "total": 1312,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "19C",
+        "name": "김태리",
+        "school": "하성초등학교",
+        "rounds": [
+          298,
+          311,
+          322,
+          345
+        ],
+        "total": 1276,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "15C",
+        "name": "조유나",
+        "school": "수진초등학교",
+        "rounds": [
+          292,
+          301,
+          319,
+          339
+        ],
+        "total": 1251,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "23C",
+        "name": "장윤혜",
+        "school": "송정초등학교",
+        "rounds": [
+          294,
+          286,
+          320,
+          330
+        ],
+        "total": 1230,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "16A",
+        "name": "김서우",
+        "school": "수진초등학교",
+        "rounds": [
+          262,
+          304,
+          323,
+          338
+        ],
+        "total": 1227,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "29A",
+        "name": "김설",
+        "school": "안양서초등학교",
+        "rounds": [
+          270,
+          301,
+          315,
+          327
+        ],
+        "total": 1213,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "25A",
+        "name": "강민서",
+        "school": "여흥초등학교",
+        "rounds": [
+          272,
+          288,
+          317,
+          325
+        ],
+        "total": 1202,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "30A",
+        "name": "김소율",
+        "school": "타깃280양궁클럽",
+        "rounds": [
+          244,
+          275,
+          307,
+          332
+        ],
+        "total": 1158,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "24A",
+        "name": "홍지수",
+        "school": "송정초등학교",
+        "rounds": [
+          257,
+          288,
+          294,
+          314
+        ],
+        "total": 1153,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "26B",
+        "name": "원율",
+        "school": "여흥초등학교",
+        "rounds": [
+          242,
+          261,
+          308,
+          327
+        ],
+        "total": 1138,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "17B",
+        "name": "송의나",
+        "school": "수진초등학교",
+        "rounds": [
+          246,
+          257,
+          307,
+          325
+        ],
+        "total": 1135,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "31A",
+        "name": "김민채",
+        "school": "천현초등학교",
+        "rounds": [
+          222,
+          236,
+          288,
+          307
+        ],
+        "total": 1053,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "28C",
+        "name": "백가은",
+        "school": "안양서초등학교",
+        "rounds": [
+          238,
+          230,
+          272,
+          302
+        ],
+        "total": 1042,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "20A",
+        "name": "조예늘",
+        "school": "하성초등학교",
+        "rounds": [
+          166,
+          242,
+          292,
+          304
+        ],
+        "total": 1004,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "27C",
+        "name": "박수연",
+        "school": "여흥초등학교",
+        "rounds": [
+          179,
+          245,
+          252,
+          292
+        ],
+        "total": 968,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "24C",
+        "name": "김윤서",
+        "school": "원미초등학교",
+        "rounds": [
+          165,
+          198,
+          258,
+          249
+        ],
+        "total": 870,
+        "sourceRank": 16
+      },
+      {
+        "rank": 17,
+        "target": "32A",
+        "name": "조은서",
+        "school": "안양서초등학교",
+        "rounds": [
+          190,
+          230,
+          218,
+          223
+        ],
+        "total": 861,
+        "sourceRank": 17
+      },
+      {
+        "rank": 18,
+        "target": "28A",
+        "name": "윤이진",
+        "school": "여흥초등학교",
+        "rounds": [
+          157,
+          185,
+          252,
+          267
+        ],
+        "total": 843,
+        "sourceRank": 18
+      },
+      {
+        "rank": 19,
+        "target": "30B",
+        "name": "고은",
+        "school": "안양서초등학교",
+        "rounds": [
+          139,
+          185,
+          252,
+          260
+        ],
+        "total": 829,
+        "sourceRank": 19
+      },
+      {
+        "rank": 20,
+        "target": "32B",
+        "name": "황리안",
+        "school": "천현초등학교",
+        "rounds": [
+          157,
+          205,
+          207,
+          281
+        ],
+        "total": 755,
+        "sourceRank": 20
+      },
+      {
+        "rank": 21,
+        "target": "29B",
+        "name": "김바다",
+        "school": "당정초등학교",
+        "rounds": [
+          112,
+          151,
+          263,
+          312
+        ],
+        "total": 575,
+        "sourceRank": 21
+      },
+      {
+        "rank": 22,
+        "target": "31C",
+        "name": "이주아",
+        "school": "안양서초등학교",
+        "rounds": [
+          55,
+          116,
+          79,
+          106
+        ],
+        "total": 356,
+        "sourceRank": 22
+      }
+    ]
+  },
+  {
+    "id": "suwon_elem_upper_boys_2026",
+    "sheetLabel": "수원시장기 남자초등부 개인전",
+    "competitionId": "2026_suwon_21_gyeonggi_selection_55",
+    "competitionName": "제21회 수원시양궁협회장기 겸 제55회 전국소년체전 경기도대표 최종선발",
+    "date": "2026-04-15",
+    "regionCity": "경기도",
+    "bowType": "리커브",
+    "rankingGroup": "초등부(고학년)",
+    "division": "초등부(고학년)",
+    "gender": "남",
+    "distances": [
+      35,
+      30,
+      25,
+      20
+    ],
+    "rows": [
+      {
+        "rank": 1,
+        "target": "06A",
+        "name": "장은혁",
+        "school": "연무초등학교",
+        "rounds": [
+          333,
+          349,
+          344,
+          357
+        ],
+        "total": 1383,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "12A",
+        "name": "김영재",
+        "school": "연무초등학교",
+        "rounds": [
+          337,
+          342,
+          342,
+          351
+        ],
+        "total": 1372,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "05B",
+        "name": "최강빈",
+        "school": "천현초등학교",
+        "rounds": [
+          339,
+          331,
+          345,
+          354
+        ],
+        "total": 1369,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "04A",
+        "name": "백종준",
+        "school": "천현초등학교",
+        "rounds": [
+          328,
+          329,
+          343,
+          353
+        ],
+        "total": 1353,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "07C",
+        "name": "최수혁",
+        "school": "성포초등학교",
+        "rounds": [
+          326,
+          342,
+          337,
+          347
+        ],
+        "total": 1352,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "09C",
+        "name": "이우석",
+        "school": "하성초등학교",
+        "rounds": [
+          320,
+          338,
+          341,
+          343
+        ],
+        "total": 1342,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "08C",
+        "name": "정선우",
+        "school": "연무초등학교",
+        "rounds": [
+          322,
+          330,
+          344,
+          345
+        ],
+        "total": 1341,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "09B",
+        "name": "김도현",
+        "school": "성포초등학교",
+        "rounds": [
+          335,
+          318,
+          336,
+          340
+        ],
+        "total": 1329,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "10B",
+        "name": "민해시",
+        "school": "연무초등학교",
+        "rounds": [
+          307,
+          315,
+          347,
+          353
+        ],
+        "total": 1322,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "11C",
+        "name": "유선우",
+        "school": "연무초등학교",
+        "rounds": [
+          313,
+          324,
+          337,
+          345
+        ],
+        "total": 1319,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "08A",
+        "name": "김민서",
+        "school": "성포초등학교",
+        "rounds": [
+          316,
+          332,
+          334,
+          345
+        ],
+        "total": 1317,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "09A",
+        "name": "김영민",
+        "school": "연무초등학교",
+        "rounds": [
+          305,
+          319,
+          334,
+          339
+        ],
+        "total": 1297,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "12C",
+        "name": "김태원",
+        "school": "수진초등학교",
+        "rounds": [
+          286,
+          312,
+          323,
+          322
+        ],
+        "total": 1243,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "03C",
+        "name": "전호준",
+        "school": "천현초등학교",
+        "rounds": [
+          279,
+          310,
+          305,
+          319
+        ],
+        "total": 1213,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "04B",
+        "name": "박도을",
+        "school": "당정초등학교",
+        "rounds": [
+          286,
+          282,
+          312,
+          314
+        ],
+        "total": 1194,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "10C",
+        "name": "김민준",
+        "school": "원미초등학교",
+        "rounds": [
+          291,
+          264,
+          310,
+          326
+        ],
+        "total": 1191,
+        "sourceRank": 16
+      },
+      {
+        "rank": 17,
+        "target": "11A",
+        "name": "박찬영",
+        "school": "원미초등학교",
+        "rounds": [
+          276,
+          310,
+          291,
+          302
+        ],
+        "total": 1179,
+        "sourceRank": 17
+      },
+      {
+        "rank": 18,
+        "target": "06B",
+        "name": "박도현",
+        "school": "성포초등학교",
+        "rounds": [
+          269,
+          291,
+          284,
+          329
+        ],
+        "total": 1173,
+        "sourceRank": 18
+      },
+      {
+        "rank": 19,
+        "target": "03A",
+        "name": "김설율",
+        "school": "당정초등학교",
+        "rounds": [
+          240,
+          268,
+          299,
+          307
+        ],
+        "total": 1104,
+        "sourceRank": 19
+      },
+      {
+        "rank": 20,
+        "target": "07B",
+        "name": "권순용",
+        "school": "연무초등학교",
+        "rounds": [
+          254,
+          271,
+          281,
+          304
+        ],
+        "total": 1110,
+        "sourceRank": 20
+      },
+      {
+        "rank": 21,
+        "target": "10A",
+        "name": "장다준",
+        "school": "하성초등학교",
+        "rounds": [
+          261,
+          231,
+          288,
+          314
+        ],
+        "total": 1094,
+        "sourceRank": 21
+      },
+      {
+        "rank": 22,
+        "target": "06C",
+        "name": "최우빈",
+        "school": "천현초등학교",
+        "rounds": [
+          239,
+          253,
+          294,
+          300
+        ],
+        "total": 1086,
+        "sourceRank": 22
+      },
+      {
+        "rank": 23,
+        "target": "07A",
+        "name": "구교준",
+        "school": "천현초등학교",
+        "rounds": [
+          179,
+          222,
+          266,
+          314
+        ],
+        "total": 981,
+        "sourceRank": 23
+      },
+      {
+        "rank": 24,
+        "target": "05A",
+        "name": "오태준",
+        "school": "성포초등학교",
+        "rounds": [
+          56,
+          0,
+          196,
+          282
+        ],
+        "total": 534,
+        "sourceRank": 24
+      },
+      {
+        "rank": 25,
+        "target": "04C",
+        "name": "윤주안",
+        "school": "성포초등학교",
+        "rounds": [
+          0,
+          0,
+          207,
+          277
+        ],
+        "total": 484,
+        "sourceRank": 25
+      }
+    ]
+  },
+  {
+    "id": "suwon_elem_upper_girls_2026",
+    "sheetLabel": "수원시장기 여자초등부 개인전",
+    "competitionId": "2026_suwon_21_gyeonggi_selection_55",
+    "competitionName": "제21회 수원시양궁협회장기 겸 제55회 전국소년체전 경기도대표 최종선발",
+    "date": "2026-04-15",
+    "regionCity": "경기도",
+    "bowType": "리커브",
+    "rankingGroup": "초등부(고학년)",
+    "division": "초등부(고학년)",
+    "gender": "여",
+    "distances": [
+      35,
+      30,
+      25,
+      20
+    ],
+    "rows": [
+      {
+        "rank": 1,
+        "target": "16C",
+        "name": "원서아",
+        "school": "하성초등학교",
+        "rounds": [
+          343,
+          352,
+          346,
+          352
+        ],
+        "total": 1393,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "14A",
+        "name": "조유나",
+        "school": "하성초등학교",
+        "rounds": [
+          325,
+          343,
+          339,
+          354
+        ],
+        "total": 1361,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "15A",
+        "name": "이다연",
+        "school": "송정초등학교",
+        "rounds": [
+          320,
+          341,
+          344,
+          353
+        ],
+        "total": 1358,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "13A",
+        "name": "조유리",
+        "school": "수진초등학교",
+        "rounds": [
+          319,
+          337,
+          350,
+          347
+        ],
+        "total": 1353,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "21C",
+        "name": "최준희",
+        "school": "원미초등학교",
+        "rounds": [
+          318,
+          332,
+          352,
+          351
+        ],
+        "total": 1353,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "20B",
+        "name": "김도희",
+        "school": "원미초등학교",
+        "rounds": [
+          321,
+          336,
+          342,
+          349
+        ],
+        "total": 1348,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "16B",
+        "name": "강민지",
+        "school": "송정초등학교",
+        "rounds": [
+          326,
+          329,
+          342,
+          350
+        ],
+        "total": 1347,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "14C",
+        "name": "김태연",
+        "school": "송정초등학교",
+        "rounds": [
+          318,
+          335,
+          336,
+          351
+        ],
+        "total": 1340,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "15B",
+        "name": "전다은",
+        "school": "하성초등학교",
+        "rounds": [
+          313,
+          331,
+          344,
+          349
+        ],
+        "total": 1337,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "17A",
+        "name": "안은서",
+        "school": "하성초등학교",
+        "rounds": [
+          331,
+          328,
+          332,
+          344
+        ],
+        "total": 1335,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "22A",
+        "name": "곽나영",
+        "school": "원미초등학교",
+        "rounds": [
+          311,
+          326,
+          344,
+          336
+        ],
+        "total": 1317,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "30C",
+        "name": "황리우",
+        "school": "천현초등학교",
+        "rounds": [
+          305,
+          325,
+          339,
+          343
+        ],
+        "total": 1312,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "26C",
+        "name": "손하율",
+        "school": "타깃280양궁클럽",
+        "rounds": [
+          306,
+          329,
+          336,
+          339
+        ],
+        "total": 1310,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "31B",
+        "name": "최수연",
+        "school": "하성초등학교",
+        "rounds": [
+          307,
+          316,
+          339,
+          343
+        ],
+        "total": 1305,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "18A",
+        "name": "김라율",
+        "school": "송정초등학교",
+        "rounds": [
+          301,
+          319,
+          340,
+          342
+        ],
+        "total": 1302,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "20C",
+        "name": "김서우",
+        "school": "수진초등학교",
+        "rounds": [
+          305,
+          314,
+          337,
+          341
+        ],
+        "total": 1297,
+        "sourceRank": 16
+      },
+      {
+        "rank": 17,
+        "target": "27B",
+        "name": "김민지",
+        "school": "타깃280양궁클럽",
+        "rounds": [
+          290,
+          327,
+          332,
+          345
+        ],
+        "total": 1296,
+        "sourceRank": 17
+      },
+      {
+        "rank": 18,
+        "target": "24B",
+        "name": "안수연",
+        "school": "안양서초등학교",
+        "rounds": [
+          309,
+          311,
+          331,
+          344
+        ],
+        "total": 1295,
+        "sourceRank": 18
+      },
+      {
+        "rank": 19,
+        "target": "23B",
+        "name": "차유나",
+        "school": "원미초등학교",
+        "rounds": [
+          310,
+          320,
+          324,
+          337
+        ],
+        "total": 1291,
+        "sourceRank": 19
+      },
+      {
+        "rank": 20,
+        "target": "19B",
+        "name": "신서윤",
+        "school": "송정초등학교",
+        "rounds": [
+          302,
+          324,
+          319,
+          344
+        ],
+        "total": 1289,
+        "sourceRank": 20
+      },
+      {
+        "rank": 21,
+        "target": "25C",
+        "name": "박민서",
+        "school": "안양서초등학교",
+        "rounds": [
+          296,
+          320,
+          329,
+          341
+        ],
+        "total": 1286,
+        "sourceRank": 21
+      },
+      {
+        "rank": 22,
+        "target": "26A",
+        "name": "김지후",
+        "school": "안양서초등학교",
+        "rounds": [
+          302,
+          309,
+          326,
+          342
+        ],
+        "total": 1279,
+        "sourceRank": 22
+      },
+      {
+        "rank": 23,
+        "target": "19C",
+        "name": "김태리",
+        "school": "하성초등학교",
+        "rounds": [
+          298,
+          311,
+          322,
+          345
+        ],
+        "total": 1276,
+        "sourceRank": 23
+      },
+      {
+        "rank": 24,
+        "target": "15C",
+        "name": "조유나",
+        "school": "수진초등학교",
+        "rounds": [
+          292,
+          301,
+          319,
+          339
+        ],
+        "total": 1251,
+        "sourceRank": 24
+      },
+      {
+        "rank": 25,
+        "target": "21A",
+        "name": "박수연",
+        "school": "수원시양궁협회",
+        "rounds": [
+          297,
+          220,
+          316,
+          307
+        ],
+        "total": 1240,
+        "sourceRank": 25
+      },
+      {
+        "rank": 26,
+        "target": "13C",
+        "name": "오연희",
+        "school": "하성초등학교",
+        "rounds": [
+          280,
+          302,
+          311,
+          337
+        ],
+        "total": 1230,
+        "sourceRank": 26
+      },
+      {
+        "rank": 27,
+        "target": "23C",
+        "name": "장윤혜",
+        "school": "송정초등학교",
+        "rounds": [
+          294,
+          286,
+          320,
+          330
+        ],
+        "total": 1230,
+        "sourceRank": 27
+      },
+      {
+        "rank": 28,
+        "target": "27B",
+        "name": "장서하",
+        "school": "안양서초등학교",
+        "rounds": [
+          286,
+          293,
+          326,
+          324
+        ],
+        "total": 1229,
+        "sourceRank": 28
+      },
+      {
+        "rank": 29,
+        "target": "16A",
+        "name": "김서우",
+        "school": "수진초등학교",
+        "rounds": [
+          262,
+          304,
+          323,
+          338
+        ],
+        "total": 1227,
+        "sourceRank": 29
+      },
+      {
+        "rank": 30,
+        "target": "17C",
+        "name": "김윤하",
+        "school": "송정초등학교",
+        "rounds": [
+          293,
+          290,
+          311,
+          325
+        ],
+        "total": 1219,
+        "sourceRank": 30
+      },
+      {
+        "rank": 31,
+        "target": "18B",
+        "name": "양서연",
+        "school": "하성초등학교",
+        "rounds": [
+          281,
+          299,
+          314,
+          324
+        ],
+        "total": 1218,
+        "sourceRank": 31
+      },
+      {
+        "rank": 32,
+        "target": "29A",
+        "name": "김설",
+        "school": "안양서초등학교",
+        "rounds": [
+          270,
+          301,
+          315,
+          327
+        ],
+        "total": 1213,
+        "sourceRank": 32
+      },
+      {
+        "rank": 33,
+        "target": "25A",
+        "name": "강민서",
+        "school": "여흥초등학교",
+        "rounds": [
+          272,
+          288,
+          317,
+          325
+        ],
+        "total": 1202,
+        "sourceRank": 33
+      },
+      {
+        "rank": 34,
+        "target": "29C",
+        "name": "유채인",
+        "school": "타깃280양궁클럽",
+        "rounds": [
+          284,
+          295,
+          297,
+          314
+        ],
+        "total": 1190,
+        "sourceRank": 34
+      },
+      {
+        "rank": 35,
+        "target": "32C",
+        "name": "박채원",
+        "school": "부천시양궁협회",
+        "rounds": [
+          271,
+          285,
+          308,
+          318
+        ],
+        "total": 1182,
+        "sourceRank": 35
+      },
+      {
+        "rank": 36,
+        "target": "22B",
+        "name": "박현우",
+        "school": "송정초등학교",
+        "rounds": [
+          263,
+          284,
+          313,
+          317
+        ],
+        "total": 1177,
+        "sourceRank": 36
+      },
+      {
+        "rank": 37,
+        "target": "25B",
+        "name": "김태은",
+        "school": "타깃280양궁클럽",
+        "rounds": [
+          239,
+          279,
+          333,
+          326
+        ],
+        "total": 1177,
+        "sourceRank": 37
+      },
+      {
+        "rank": 38,
+        "target": "30A",
+        "name": "김소율",
+        "school": "타깃280양궁클럽",
+        "rounds": [
+          244,
+          275,
+          307,
+          332
+        ],
+        "total": 1158,
+        "sourceRank": 38
+      },
+      {
+        "rank": 39,
+        "target": "24A",
+        "name": "홍지수",
+        "school": "송정초등학교",
+        "rounds": [
+          257,
+          288,
+          294,
+          314
+        ],
+        "total": 1153,
+        "sourceRank": 39
+      },
+      {
+        "rank": 40,
+        "target": "28B",
+        "name": "강하빈",
+        "school": "타깃280양궁클럽",
+        "rounds": [
+          270,
+          280,
+          278,
+          317
+        ],
+        "total": 1145,
+        "sourceRank": 40
+      },
+      {
+        "rank": 41,
+        "target": "26B",
+        "name": "원율",
+        "school": "여흥초등학교",
+        "rounds": [
+          242,
+          261,
+          308,
+          327
+        ],
+        "total": 1138,
+        "sourceRank": 41
+      },
+      {
+        "rank": 42,
+        "target": "17B",
+        "name": "송의나",
+        "school": "수진초등학교",
+        "rounds": [
+          246,
+          257,
+          307,
+          325
+        ],
+        "total": 1135,
+        "sourceRank": 42
+      },
+      {
+        "rank": 43,
+        "target": "21B",
+        "name": "김라윤",
+        "school": "하성초등학교",
+        "rounds": [
+          238,
+          248,
+          293,
+          311
+        ],
+        "total": 1128,
+        "sourceRank": 43
+      },
+      {
+        "rank": 44,
+        "target": "14B",
+        "name": "송하영",
+        "school": "수진초등학교",
+        "rounds": [
+          243,
+          248,
+          300,
+          331
+        ],
+        "total": 1122,
+        "sourceRank": 44
+      },
+      {
+        "rank": 45,
+        "target": "19A",
+        "name": "한지안",
+        "school": "원미초등학교",
+        "rounds": [
+          234,
+          249,
+          300,
+          307
+        ],
+        "total": 1090,
+        "sourceRank": 45
+      },
+      {
+        "rank": 46,
+        "target": "31A",
+        "name": "김민채",
+        "school": "천현초등학교",
+        "rounds": [
+          222,
+          236,
+          288,
+          307
+        ],
+        "total": 1053,
+        "sourceRank": 46
+      },
+      {
+        "rank": 47,
+        "target": "28C",
+        "name": "백가은",
+        "school": "안양서초등학교",
+        "rounds": [
+          238,
+          230,
+          272,
+          302
+        ],
+        "total": 1042,
+        "sourceRank": 47
+      },
+      {
+        "rank": 48,
+        "target": "33A",
+        "name": "최서",
+        "school": "의정부초등학교",
+        "rounds": [
+          231,
+          240,
+          252,
+          293
+        ],
+        "total": 1016,
+        "sourceRank": 48
+      },
+      {
+        "rank": 49,
+        "target": "20A",
+        "name": "조예늘",
+        "school": "하성초등학교",
+        "rounds": [
+          166,
+          242,
+          292,
+          304
+        ],
+        "total": 1004,
+        "sourceRank": 49
+      },
+      {
+        "rank": 50,
+        "target": "27C",
+        "name": "박수연",
+        "school": "여흥초등학교",
+        "rounds": [
+          179,
+          245,
+          252,
+          292
+        ],
+        "total": 968,
+        "sourceRank": 50
+      },
+      {
+        "rank": 51,
+        "target": "24C",
+        "name": "김윤서",
+        "school": "원미초등학교",
+        "rounds": [
+          165,
+          198,
+          258,
+          249
+        ],
+        "total": 870,
+        "sourceRank": 51
+      },
+      {
+        "rank": 52,
+        "target": "32A",
+        "name": "조은서",
+        "school": "안양서초등학교",
+        "rounds": [
+          190,
+          230,
+          218,
+          223
+        ],
+        "total": 861,
+        "sourceRank": 52
+      },
+      {
+        "rank": 53,
+        "target": "28A",
+        "name": "윤이진",
+        "school": "여흥초등학교",
+        "rounds": [
+          157,
+          185,
+          252,
+          267
+        ],
+        "total": 843,
+        "sourceRank": 53
+      },
+      {
+        "rank": 54,
+        "target": "30B",
+        "name": "고은",
+        "school": "안양서초등학교",
+        "rounds": [
+          139,
+          185,
+          252,
+          260
+        ],
+        "total": 829,
+        "sourceRank": 54
+      },
+      {
+        "rank": 55,
+        "target": "32B",
+        "name": "황리안",
+        "school": "천현초등학교",
+        "rounds": [
+          157,
+          205,
+          207,
+          281
+        ],
+        "total": 755,
+        "sourceRank": 55
+      },
+      {
+        "rank": 56,
+        "target": "29B",
+        "name": "김바다",
+        "school": "당정초등학교",
+        "rounds": [
+          112,
+          151,
+          263,
+          312
+        ],
+        "total": 575,
+        "sourceRank": 56
+      },
+      {
+        "rank": 57,
+        "target": "31C",
+        "name": "이주아",
+        "school": "안양서초등학교",
+        "rounds": [
+          55,
+          116,
+          79,
+          106
+        ],
+        "total": 356,
+        "sourceRank": 57
+      }
+    ]
+  },
+  {
+    "id": "suwon_middle_boys_2026",
+    "sheetLabel": "수원시장기 남자중등부 개인전",
+    "competitionId": "2026_suwon_21_gyeonggi_selection_55",
+    "competitionName": "제21회 수원시양궁협회장기 겸 제55회 전국소년체전 경기도대표 최종선발",
+    "date": "2026-04-15",
+    "regionCity": "경기도",
+    "bowType": "리커브",
+    "rankingGroup": "중등부",
+    "division": "중등부",
+    "gender": "남",
+    "distances": [
+      60,
+      50,
+      40,
+      30
+    ],
+    "rows": [
+      {
+        "rank": 1,
+        "target": "16B",
+        "name": "안은찬",
+        "school": "성포중학교",
+        "rounds": [
+          338,
+          322,
+          347,
+          357
+        ],
+        "total": 1364,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "20B",
+        "name": "이한지",
+        "school": "신장중학교",
+        "rounds": [
+          328,
+          313,
+          345,
+          346
+        ],
+        "total": 1332,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "17A",
+        "name": "이주완",
+        "school": "원천중학교",
+        "rounds": [
+          318,
+          329,
+          337,
+          346
+        ],
+        "total": 1330,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "18B",
+        "name": "안준서",
+        "school": "원천중학교",
+        "rounds": [
+          319,
+          327,
+          331,
+          348
+        ],
+        "total": 1325,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "21B",
+        "name": "황태민",
+        "school": "하성중학교",
+        "rounds": [
+          342,
+          303,
+          334,
+          341
+        ],
+        "total": 1320,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "17B",
+        "name": "손우주",
+        "school": "수원시양궁협회",
+        "rounds": [
+          324,
+          308,
+          331,
+          350
+        ],
+        "total": 1313,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "20C",
+        "name": "서은민",
+        "school": "성포중학교",
+        "rounds": [
+          328,
+          297,
+          333,
+          348
+        ],
+        "total": 1306,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "16C",
+        "name": "정준영",
+        "school": "원천중학교",
+        "rounds": [
+          319,
+          302,
+          337,
+          345
+        ],
+        "total": 1303,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "17C",
+        "name": "홍지훈",
+        "school": "성포중학교",
+        "rounds": [
+          307,
+          319,
+          331,
+          341
+        ],
+        "total": 1298,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "19A",
+        "name": "강민국",
+        "school": "신장중학교",
+        "rounds": [
+          310,
+          320,
+          320,
+          348
+        ],
+        "total": 1298,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "18A",
+        "name": "박민교",
+        "school": "성포중학교",
+        "rounds": [
+          317,
+          304,
+          333,
+          341
+        ],
+        "total": 1295,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "15A",
+        "name": "김준혁",
+        "school": "성포중학교",
+        "rounds": [
+          320,
+          295,
+          336,
+          343
+        ],
+        "total": 1294,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "16A",
+        "name": "최준혁",
+        "school": "부천남중학교",
+        "rounds": [
+          316,
+          299,
+          322,
+          340
+        ],
+        "total": 1277,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "15B",
+        "name": "진민오",
+        "school": "원천중학교",
+        "rounds": [
+          318,
+          297,
+          317,
+          335
+        ],
+        "total": 1267,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "19C",
+        "name": "정태준",
+        "school": "원천중학교",
+        "rounds": [
+          312,
+          298,
+          314,
+          334
+        ],
+        "total": 1258,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "18C",
+        "name": "김보형",
+        "school": "수원시양궁협회",
+        "rounds": [
+          310,
+          264,
+          312,
+          328
+        ],
+        "total": 1214,
+        "sourceRank": 16
+      },
+      {
+        "rank": 17,
+        "target": "21A",
+        "name": "장지호",
+        "school": "성포중학교",
+        "rounds": [
+          305,
+          260,
+          302,
+          333
+        ],
+        "total": 1200,
+        "sourceRank": 17
+      },
+      {
+        "rank": 18,
+        "target": "19B",
+        "name": "황시윤",
+        "school": "성포중학교",
+        "rounds": [
+          295,
+          272,
+          299,
+          323
+        ],
+        "total": 1189,
+        "sourceRank": 18
+      },
+      {
+        "rank": 19,
+        "target": "15C",
+        "name": "강재석",
+        "school": "부천남중학교",
+        "rounds": [
+          295,
+          263,
+          307,
+          311
+        ],
+        "total": 1176,
+        "sourceRank": 19
+      },
+      {
+        "rank": 20,
+        "target": "20A",
+        "name": "원동우",
+        "school": "하성중학교",
+        "rounds": [
+          275,
+          256,
+          306,
+          324
+        ],
+        "total": 1161,
+        "sourceRank": 20
+      },
+      {
+        "rank": 21,
+        "target": "14C",
+        "name": "오채훈",
+        "school": "성포중학교",
+        "rounds": [
+          281,
+          220,
+          299,
+          321
+        ],
+        "total": 1151,
+        "sourceRank": 21
+      },
+      {
+        "rank": 22,
+        "target": "14A",
+        "name": "양혜종",
+        "school": "플랜비스포츠",
+        "rounds": [
+          298,
+          236,
+          275,
+          308
+        ],
+        "total": 1117,
+        "sourceRank": 22
+      },
+      {
+        "rank": 23,
+        "target": "21C",
+        "name": "이천희",
+        "school": "신장중학교",
+        "rounds": [
+          296,
+          224,
+          284,
+          308
+        ],
+        "total": 1112,
+        "sourceRank": 23
+      },
+      {
+        "rank": 24,
+        "target": "14B",
+        "name": "차준",
+        "school": "부천남중학교",
+        "rounds": [
+          224,
+          205,
+          287,
+          304
+        ],
+        "total": 1020,
+        "sourceRank": 24
+      }
+    ]
+  },
+  {
+    "id": "suwon_middle_girls_2026",
+    "sheetLabel": "수원시장기 여자중등부 개인전",
+    "competitionId": "2026_suwon_21_gyeonggi_selection_55",
+    "competitionName": "제21회 수원시양궁협회장기 겸 제55회 전국소년체전 경기도대표 최종선발",
+    "date": "2026-04-15",
+    "regionCity": "경기도",
+    "bowType": "리커브",
+    "rankingGroup": "중등부",
+    "division": "중등부",
+    "gender": "여",
+    "distances": [
+      60,
+      50,
+      40,
+      30
+    ],
+    "rows": [
+      {
+        "rank": 1,
+        "target": "28A",
+        "name": "장여진",
+        "school": "여흥중학교",
+        "rounds": [
+          331,
+          324,
+          339,
+          351
+        ],
+        "total": 1345,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "28B",
+        "name": "김주은",
+        "school": "창용중학교",
+        "rounds": [
+          331,
+          326,
+          331,
+          349
+        ],
+        "total": 1337,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "24A",
+        "name": "김이아",
+        "school": "창용중학교",
+        "rounds": [
+          324,
+          305,
+          335,
+          352
+        ],
+        "total": 1316,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "26C",
+        "name": "박예주",
+        "school": "창용중학교",
+        "rounds": [
+          322,
+          313,
+          334,
+          344
+        ],
+        "total": 1313,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "30C",
+        "name": "윤도경",
+        "school": "여흥중학교",
+        "rounds": [
+          313,
+          315,
+          338,
+          347
+        ],
+        "total": 1313,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "23C",
+        "name": "안지현",
+        "school": "창용중학교",
+        "rounds": [
+          327,
+          306,
+          331,
+          345
+        ],
+        "total": 1309,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "29C",
+        "name": "주예인",
+        "school": "창용중학교",
+        "rounds": [
+          329,
+          299,
+          335,
+          344
+        ],
+        "total": 1307,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "27A",
+        "name": "최서진",
+        "school": "창용중학교",
+        "rounds": [
+          316,
+          306,
+          330,
+          344
+        ],
+        "total": 1296,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "23A",
+        "name": "윤소미",
+        "school": "신장중학교",
+        "rounds": [
+          316,
+          290,
+          341,
+          339
+        ],
+        "total": 1286,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "27B",
+        "name": "권수연",
+        "school": "상도중학교",
+        "rounds": [
+          328,
+          272,
+          338,
+          348
+        ],
+        "total": 1286,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "26B",
+        "name": "하정아",
+        "school": "하성중학교",
+        "rounds": [
+          317,
+          301,
+          321,
+          341
+        ],
+        "total": 1280,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "31A",
+        "name": "김보현",
+        "school": "여흥중학교",
+        "rounds": [
+          310,
+          311,
+          317,
+          341
+        ],
+        "total": 1279,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "22C",
+        "name": "이인솔",
+        "school": "신장중학교",
+        "rounds": [
+          317,
+          290,
+          328,
+          342
+        ],
+        "total": 1277,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "22A",
+        "name": "이가은",
+        "school": "수원시양궁협회",
+        "rounds": [
+          315,
+          296,
+          322,
+          335
+        ],
+        "total": 1268,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "34B",
+        "name": "황채빈",
+        "school": "창용중학교",
+        "rounds": [
+          312,
+          296,
+          323,
+          337
+        ],
+        "total": 1268,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "25B",
+        "name": "최수연",
+        "school": "창용중학교",
+        "rounds": [
+          307,
+          298,
+          324,
+          337
+        ],
+        "total": 1266,
+        "sourceRank": 16
+      },
+      {
+        "rank": 17,
+        "target": "31B",
+        "name": "한서은",
+        "school": "창용중학교",
+        "rounds": [
+          296,
+          308,
+          323,
+          334
+        ],
+        "total": 1261,
+        "sourceRank": 17
+      },
+      {
+        "rank": 18,
+        "target": "20B",
+        "name": "이수빈",
+        "school": "안양서중학교",
+        "rounds": [
+          302,
+          288,
+          328,
+          337
+        ],
+        "total": 1255,
+        "sourceRank": 18
+      },
+      {
+        "rank": 19,
+        "target": "33A",
+        "name": "김정음",
+        "school": "창용중학교",
+        "rounds": [
+          300,
+          292,
+          315,
+          346
+        ],
+        "total": 1253,
+        "sourceRank": 19
+      },
+      {
+        "rank": 20,
+        "target": "29B",
+        "name": "유수진",
+        "school": "여흥중학교",
+        "rounds": [
+          304,
+          285,
+          312,
+          339
+        ],
+        "total": 1240,
+        "sourceRank": 20
+      },
+      {
+        "rank": 21,
+        "target": "24C",
+        "name": "유하은",
+        "school": "하성중학교",
+        "rounds": [
+          308,
+          284,
+          317,
+          328
+        ],
+        "total": 1237,
+        "sourceRank": 21
+      },
+      {
+        "rank": 22,
+        "target": "26A",
+        "name": "유하원",
+        "school": "상도중학교",
+        "rounds": [
+          291,
+          289,
+          318,
+          334
+        ],
+        "total": 1232,
+        "sourceRank": 22
+      },
+      {
+        "rank": 23,
+        "target": "30A",
+        "name": "이소연",
+        "school": "창용중학교",
+        "rounds": [
+          292,
+          272,
+          312,
+          345
+        ],
+        "total": 1221,
+        "sourceRank": 23
+      },
+      {
+        "rank": 24,
+        "target": "25C",
+        "name": "김하늘",
+        "school": "상도중학교",
+        "rounds": [
+          274,
+          265,
+          316,
+          330
+        ],
+        "total": 1185,
+        "sourceRank": 24
+      },
+      {
+        "rank": 25,
+        "target": "28C",
+        "name": "소리아",
+        "school": "상도중학교",
+        "rounds": [
+          287,
+          269,
+          272,
+          325
+        ],
+        "total": 1153,
+        "sourceRank": 25
+      },
+      {
+        "rank": 26,
+        "target": "24B",
+        "name": "최우솔",
+        "school": "상도중학교",
+        "rounds": [
+          279,
+          260,
+          306,
+          319
+        ],
+        "total": 1164,
+        "sourceRank": 26
+      },
+      {
+        "rank": 27,
+        "target": "25A",
+        "name": "석지우",
+        "school": "하성중학교",
+        "rounds": [
+          289,
+          255,
+          286,
+          322
+        ],
+        "total": 1152,
+        "sourceRank": 27
+      },
+      {
+        "rank": 28,
+        "target": "32C",
+        "name": "윤이나",
+        "school": "창용중학교",
+        "rounds": [
+          289,
+          225,
+          291,
+          282
+        ],
+        "total": 1120,
+        "sourceRank": 28
+      },
+      {
+        "rank": 29,
+        "target": "34A",
+        "name": "한솔이",
+        "school": "여흥중학교",
+        "rounds": [
+          292,
+          215,
+          300,
+          322
+        ],
+        "total": 1120,
+        "sourceRank": 29
+      },
+      {
+        "rank": 30,
+        "target": "33C",
+        "name": "고나연",
+        "school": "여흥중학교",
+        "rounds": [
+          268,
+          227,
+          305,
+          316
+        ],
+        "total": 1116,
+        "sourceRank": 30
+      },
+      {
+        "rank": 31,
+        "target": "27C",
+        "name": "김지율",
+        "school": "여흥중학교",
+        "rounds": [
+          282,
+          243,
+          291,
+          325
+        ],
+        "total": 1101,
+        "sourceRank": 31
+      },
+      {
+        "rank": 32,
+        "target": "31C",
+        "name": "김현혜",
+        "school": "안양서중학교",
+        "rounds": [
+          254,
+          222,
+          278,
+          318
+        ],
+        "total": 1072,
+        "sourceRank": 32
+      },
+      {
+        "rank": 33,
+        "target": "29A",
+        "name": "김세아",
+        "school": "안양서중학교",
+        "rounds": [
+          265,
+          323,
+          271,
+          320
+        ],
+        "total": 1059,
+        "sourceRank": 33
+      },
+      {
+        "rank": 34,
+        "target": "32B",
+        "name": "김하은",
+        "school": "여흥중학교",
+        "rounds": [
+          120,
+          58,
+          234,
+          249
+        ],
+        "total": 661,
+        "sourceRank": 34
+      },
+      {
+        "rank": 35,
+        "target": "33B",
+        "name": "최아영",
+        "school": "창용중학교",
+        "rounds": [
+          0,
+          0,
+          212,
+          293
+        ],
+        "total": 505,
+        "sourceRank": 35
+      },
+      {
+        "rank": 36,
+        "target": "34C",
+        "name": "권세연",
+        "school": "원장중학교",
+        "rounds": [
+          0,
+          0,
+          203,
+          255
+        ],
+        "total": 458,
+        "sourceRank": 36
+      }
+    ]
+  }
+];
 
-
-
-// 운영 화면에서 로컬 샘플 공식기록은 사용하지 않는다.
-// 공식 대회 데이터는 Admin 업로드 후 Firestore ranking_entries 기준으로만 검색/표시한다.
-const SAMPLE_SHEETS = [];
 
 const SCHOOL_NAME_ALIASES = {
   "천현초": "하남천현초등학교",
@@ -20307,64 +5048,6 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
   }
 }
 
-
-function buildLocalOfficialRankingEntriesFromSampleSheets({ rankingType, rankingFilters, currentUser, fullLoad = false } = {}) {
-  const { rankingGroup, gender } = getRankingQueryTarget(rankingFilters || {}, currentUser || {}, { useProfileFallback: !fullLoad });
-  const distances = getRankingQueryDistances(rankingType || "distance", rankingFilters || {}, rankingGroup);
-  const dateFilter = rankingFilters?.dateFilter || "all";
-  const customDate = rankingFilters?.customDate || "";
-  const entries = [];
-
-  SAMPLE_SHEETS.forEach((sheet) => {
-    (sheet.rows || []).forEach((sourceRow) => {
-      const row = withCanonicalSchool(sourceRow);
-      if (row.rosterOnly) return;
-      const userId = makeSampleUserId(row.name, row.school);
-      (sheet.distances || []).forEach((distance, idx) => {
-        const score = Number(row.rounds?.[idx]);
-        if (!Number.isFinite(score)) return;
-        const entry = normalizeRankingEntryData(
-          `${sheet.competitionId || sheet.id}_${userId}_${distance}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
-          {
-            entryId: `${sheet.competitionId || sheet.id}_${userId}_${distance}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
-            sessionId: `${sheet.id}_${userId}`,
-            userId,
-            name: row.name,
-            groupName: row.school,
-            schoolName: row.school,
-            regionCity: row.regionCity || sheet.regionCity || "전국",
-            division: row.division || sheet.division || "",
-            gender: row.gender || sheet.gender || "남",
-            bowType: row.bowType || sheet.bowType || "리커브",
-            rankingGroup: sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender),
-            sourceType: "official_local_sample",
-            isSampleData: true,
-            isOfficialRecord: true,
-            competitionId: sheet.competitionId || sheet.id,
-            competitionName: sheet.competitionName || sheet.sheetLabel || "대회 결과_샘플",
-            sessionDate: sheet.date || getCurrentLocalDateString(),
-            date: sheet.date || getCurrentLocalDateString(),
-            distance: Number(distance),
-            score,
-            totalScore: score,
-            arrows: 36,
-            sourceRank: row.sourceRank || row.rank || null,
-          }
-        );
-        if (rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate })) {
-          entries.push(entry);
-        }
-      });
-    });
-  });
-
-  return entries.sort((a, b) => {
-    const scoreDiff = (Number(b.score) || 0) - (Number(a.score) || 0);
-    if (scoreDiff !== 0) return scoreDiff;
-    return String(b.sessionDate || b.date || "").localeCompare(String(a.sessionDate || a.date || ""));
-  });
-}
-
 function buildUsersFromRankingEntries(entries = []) {
   const map = new Map();
   entries.forEach((entry) => {
@@ -20451,7 +5134,7 @@ async function upsertOfficialCompetitionSheetToRankingEntries(db, sheet) {
   return count;
 }
 
-async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = OFFICIAL_COMPETITION_SHEETS) {
+async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMPLE_SHEETS) {
   if (!db) throw new Error("Firestore DB 연결이 준비되지 않았다.");
 
   const writes = [];
@@ -21858,7 +6541,6 @@ function SessionEditor({
   const [isOnline, setIsOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
   const [venueSuggesting, setVenueSuggesting] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState(false);
-  useGlobalLoadingBridge(weatherLoading, "바람 정보를 불러오는 중........");
   const [weatherError, setWeatherError] = useState("");
   const [nearbyVenues, setNearbyVenues] = useState([]);
   const userSchoolVenue = useMemo(() => getUserSchoolVenue(currentUser), [currentUser]);
@@ -23365,7 +8047,6 @@ function RoutinePage({ appServices, currentUser, routines = [], sessions = [], o
   });
   const [newItemLabel, setNewItemLabel] = useState("");
   const [saving, setSaving] = useState(false);
-  useGlobalLoadingBridge(saving, "루틴을 저장하는 중........");
   const [notice, setNotice] = useState(savedTodayRoutine ? "오늘 저장된 루틴을 불러왔다. 필요하면 체크 상태를 수정한 뒤 다시 저장하면 된다." : "");
 
   useEffect(() => {
@@ -23999,7 +8680,6 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const [officialResultsOpen, setOfficialResultsOpen] = useState(false);
   const [remoteRankingEntries, setRemoteRankingEntries] = useState([]);
   const [remoteRankingLoading, setRemoteRankingLoading] = useState(false);
-  useGlobalLoadingBridge(remoteRankingLoading, "랭킹 자료를 불러오는 중........");
   const [remoteRankingNotice, setRemoteRankingNotice] = useState("");
   const initialRankingAppliedRef = useRef(false);
 
@@ -24037,19 +8717,16 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         if (cancelled) return;
         setRemoteRankingEntries(entries);
         if (rankingSearchMode) {
-          const schoolLabel = appliedRankingFilters?.groupName && appliedRankingFilters.groupName !== "all" ? ` · 학교/소속: ${appliedRankingFilters.groupName}` : "";
-          setRemoteRankingNotice(entries.length
-            ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다${schoolLabel}. 학교/소속은 표기 차이를 정규화해 앱 내부에서 필터링합니다.`
-            : `검색 조건에 맞는 Firestore 공식기록이 없습니다${schoolLabel}. 현재 화면에 사용자 기록만 보이면, 해당 학교/소속의 공식 대회 기록이 ranking_entries에 없거나 선택한 거리/구분/성별 조건과 맞지 않는 상태입니다.`);
+          setRemoteRankingNotice(entries.length ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다. 학교/소속은 표기 차이를 정규화해 앱 내부에서 필터링합니다.` : "검색 조건에 맞는 Firestore 공식기록이 없습니다. 사용자 기록은 별도로 함께 표시되며, 공식기록은 ranking_entries 업로드 수와 필터 조건을 확인하세요.");
         } else {
-          setRemoteRankingNotice(entries.length ? "첫 화면은 내 프로필 기준 공식기록 일부만 가볍게 불러옵니다. 조건 변경 후 검색을 누르면 전체 조건 데이터를 조회합니다." : "조건에 맞는 Firestore 공식기록이 없으면 사용자 기록만 표시됩니다. Admin에서 공식 데이터 업로드 상태를 확인하세요.");
+          setRemoteRankingNotice(entries.length ? "첫 화면은 내 프로필 기준 공식기록 일부만 가볍게 불러옵니다. 조건 변경 후 검색을 누르면 전체 조건 데이터를 조회합니다." : "조건에 맞는 Firestore 공식기록이 없으면 사용자 기록만 표시됩니다.");
         }
       })
       .catch((error) => {
         if (cancelled) return;
         console.warn("ranking_entries query failed", error);
         setRemoteRankingEntries([]);
-        setRemoteRankingNotice("ranking_entries 인덱스/권한 문제가 있으면 공식기록을 불러오지 못합니다.");
+        setRemoteRankingNotice("ranking_entries 인덱스/권한이 없으면 공식기록을 불러올 수 없습니다.");
       })
       .finally(() => {
         if (!cancelled) setRemoteRankingLoading(false);
@@ -24057,23 +8734,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return () => { cancelled = true; };
   }, [appServices?.db, hideOfficialRecords, rankingType, appliedRankingFilters, rankingSearchMode, currentUser?.id, currentUser?.division, currentUser?.gender, currentUserId]);
 
-  const localOfficialRankingEntries = useMemo(() => {
-    // 공식기록은 Firestore ranking_entries를 단일 기준으로 사용한다.
-    // 로컬 데이터는 Admin 업로드용 원본으로만 유지하고, 랭킹 검색 결과에는 합치지 않는다.
-    return [];
-  }, []);
-
-  const combinedOfficialRankingEntries = useMemo(() => {
-    const map = new Map();
-    [...remoteRankingEntries, ...localOfficialRankingEntries].forEach((entry) => {
-      const key = entry.entryId || entry.id || `${entry.name}_${entry.groupName}_${entry.distance}_${entry.score}_${entry.sessionDate}`;
-      map.set(key, entry);
-    });
-    return Array.from(map.values());
-  }, [remoteRankingEntries, localOfficialRankingEntries]);
-
-  const remoteUsers = useMemo(() => buildUsersFromRankingEntries(combinedOfficialRankingEntries), [combinedOfficialRankingEntries]);
-  const remoteSessions = useMemo(() => buildSessionsFromRankingEntries(combinedOfficialRankingEntries), [combinedOfficialRankingEntries]);
+  const remoteUsers = useMemo(() => buildUsersFromRankingEntries(remoteRankingEntries), [remoteRankingEntries]);
+  const remoteSessions = useMemo(() => buildSessionsFromRankingEntries(remoteRankingEntries), [remoteRankingEntries]);
 
   const rankingUsers = useMemo(() => {
     const sourceUsers = hideOfficialRecords ? users : [...users, ...remoteUsers];
@@ -24266,22 +8928,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [appliedRankingFilters, hideOfficialRecords]);
 
   const runRankingSearch = useCallback(() => {
-    // 학교/소속 입력칸에 값을 적고 별도 '적용'을 누르지 않아도 검색 버튼에서 자동 반영한다.
-    // 기존 구조는 학교 입력값이 rankingFilters.groupName으로 커밋되지 않은 상태에서 검색될 수 있어
-    // 사용자가 선택한 학교 조건과 실제 검색 조건이 달라지는 문제가 있었다.
-    const committedSchool = String(schoolSearchInput || "").trim();
-    const nextFilters = {
-      ...rankingFilters,
-      groupName: committedSchool || "all",
-    };
-    setRankingFilters(nextFilters);
-    setAppliedRankingFilters(nextFilters);
+    setAppliedRankingFilters({ ...rankingFilters });
     setRankingSearchMode(true);
     setShowAllRankings(true);
-    setRemoteRankingNotice(committedSchool
-      ? `${committedSchool} 학교/소속 조건까지 포함해 Firestore 공식기록을 불러오는 중입니다.`
-      : "검색 조건 기준으로 Firestore 공식기록을 불러오는 중입니다.");
-  }, [rankingFilters, schoolSearchInput]);
+    setRemoteRankingNotice("검색 조건 기준으로 Firestore 공식기록을 불러오는 중입니다.");
+  }, [rankingFilters]);
 
   const resetToProfileRanking = useCallback(() => {
     const nextRankingGroup = getRankingGroup(currentUser?.division || "", currentUser?.gender || "남") || "all";
@@ -26665,7 +11316,6 @@ function XStagePage({ appServices, stageRefreshKey = 0, briefRefreshKey = 0 }) {
   const [news, setNews] = useState([]);
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
-  useGlobalLoadingBridge(loading, "X-Stage 자료를 불러오는 중........");
 
   useEffect(() => {
     let alive = true;
@@ -26785,7 +11435,6 @@ function XStagePage({ appServices, stageRefreshKey = 0, briefRefreshKey = 0 }) {
 function XBriefPage({ appServices, briefRefreshKey = 0 }) {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
-  useGlobalLoadingBridge(loading, "X-Brief 자료를 불러오는 중........");
 
   useEffect(() => {
     let alive = true;
@@ -26878,7 +11527,6 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
   const [rankingUploadMessage, setRankingUploadMessage] = useState("");
   const [rankingMigrationLoading, setRankingMigrationLoading] = useState(false);
   const [rankingMigrationMessage, setRankingMigrationMessage] = useState("");
-  useGlobalLoadingBridge(adminPublishedLoading || rankingUploadLoading || rankingMigrationLoading || Boolean(deletingPublishedId), "관리자 자료를 처리하는 중........");
 
   useEffect(() => {
     try {
@@ -27154,13 +11802,13 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       return;
     }
 
-    const ok = window.confirm("종별대회 공식기록 전체 데이터를 Firestore ranking_entries에 업로드할까? 같은 entryId는 덮어써서 중복 저장되지 않는다.");
+    const ok = window.confirm("공식 대회 기록 업로드용 데이터를 Firestore ranking_entries에 업로드할까? 같은 entryId는 덮어써서 중복 저장되지 않는다.");
     if (!ok) return;
 
     try {
       setRankingUploadLoading(true);
       setRankingUploadMessage("업로드 중...");
-      const result = await upsertOfficialCompetitionSheetsToRankingEntries(appServices.db, OFFICIAL_COMPETITION_SHEETS);
+      const result = await upsertOfficialCompetitionSheetsToRankingEntries(appServices.db, SAMPLE_SHEETS);
       const message = `업로드 완료: ${result.sheetCount}개 부문 / ${result.writeCount}개 거리 기록`;
       setRankingUploadMessage(message);
       alert(message);
@@ -27260,13 +11908,13 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
         <CardHeader>
           <CardTitle className="text-xl">Firestore 공식 랭킹 전체 업로드</CardTitle>
           <DialogDescription>
-            App.jsx에는 로컬 공식 원본은 업로드용으로만 유지하고, 실제 랭킹은 Firestore <b>ranking_entries</b>에서 조건별로 불러오는 구조다.
+            샘플 데이터는 제거하고, 공식 개인전 기록만 Firestore <b>ranking_entries</b>에 업로드해 조건별로 불러오는 구조다.
           </DialogDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
           <div className="min-w-0 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-            <div className="font-semibold text-slate-900">종별대회 기록_전체 업로드용</div>
-            <div className="mt-1">현재 파일에 포함된 업로드용 종별대회 공식기록 {OFFICIAL_COMPETITION_SHEETS.length}개 부문을 Firestore ranking_entries에 업로드한다.</div>
+            <div className="font-semibold text-slate-900">공식 개인전 기록 업로드용</div>
+            <div className="mt-1">현재 파일에 포함된 공식 개인전 기록 {SAMPLE_SHEETS.length}개 부문을 Firestore ranking_entries에 업로드한다.</div>
             <div className="mt-1">동일 entryId는 merge 저장되므로 같은 자료를 다시 눌러도 중복으로 늘어나지 않는다.</div>
             {rankingUploadMessage ? <div className="mt-2 font-semibold text-blue-700">{rankingUploadMessage}</div> : null}
           </div>
@@ -27785,22 +12433,9 @@ function XSessionApp() {
   const [officialClaims, setOfficialClaims] = useState(() => readOfficialClaimsFromStorage());
   const [reviewedUserIds, setReviewedUserIds] = useState(() => getStoredReviewedUserIds());
   const pendingProfileRef = useRef(null);
-  const [globalLoadingCount, setGlobalLoadingCount] = useState(0);
-  const [globalLoadingMessage, setGlobalLoadingMessage] = useState("로딩중........");
 
 
   const authTimeoutRef = useRef(null);
-
-
-  useEffect(() => {
-    function handleGlobalLoading(event) {
-      const detail = event.detail || {};
-      setGlobalLoadingCount((prev) => Math.max(0, prev + (detail.active ? 1 : -1)));
-      if (detail.active && detail.message) setGlobalLoadingMessage(detail.message);
-    }
-    window.addEventListener("xsession-global-loading", handleGlobalLoading);
-    return () => window.removeEventListener("xsession-global-loading", handleGlobalLoading);
-  }, []);
 
   useEffect(() => {
     writeOfficialClaimsToStorage(officialClaims);
@@ -28755,12 +13390,9 @@ function XSessionApp() {
   // does not remain at 1 after all new signups have been reviewed.
   const adminAlertCount = unreviewedUserCount;
   const adminEmailGuard = isAdminEmail;
-  const rootOperationLoading = globalLoadingCount > 0 || Boolean(authLoading) || Boolean(sessionsLoading) || Boolean(sessionSaving) || Boolean(profileSaving);
-  const rootOperationMessage = globalLoadingMessage || (sessionSaving ? "세션을 저장하는 중........" : profileSaving ? "프로필을 저장하는 중........" : sessionsLoading ? "자료를 불러오는 중........" : authLoading ? "인증 상태 확인 중........" : "로딩중........");
 
   return (
     <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_right,_rgba(185,28,28,0.12),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      <GlobalLoadingOverlay active={rootOperationLoading} message={rootOperationMessage} />
       {currentUser ? <DesktopAppSidebar user={currentUser} activeTab={ui.activeTab} setActiveTab={(tab) => setUi((prev) => ({ ...prev, activeTab: normalizeAppTab(tab, prev.activeTab) }))} onLogout={handleLogout} isAdminUser={isAdminUser} adminAlertCount={adminAlertCount} /> : null}
       <div className={`flex w-full flex-col ${currentUser ? "gap-3 md:gap-6 lg:pl-[220px] xl:pl-[240px]" : "gap-0"}`}>
         {currentUser ? <div className="lg:hidden"><Hero activeTab={ui.activeTab} /></div> : null}
