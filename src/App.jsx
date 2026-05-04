@@ -920,6 +920,37 @@ function formatProfileDivisionLabel(value) {
   return raw;
 }
 
+function hasExactSchoolGrade(value) {
+  const raw = String(value || "").trim();
+  return /^(초등|중등|고등)[1-6]$/.test(raw);
+}
+
+function getDivisionFromRankingGroup(rankingGroup = "", gender = "") {
+  const group = String(rankingGroup || "").trim();
+  if (group === "초등부(저학년)") return "초등부(저학년)";
+  if (group === "초등부(고학년)") return "초등부(고학년)";
+  if (group === "초등부(통합)") return "초등부(통합)";
+  if (group === "중등부") return "중등부";
+  if (group === "고등부" || group === "고등부(남)" || group === "고등부(여)") return "고등부";
+  if (group === "대학/일반부(남)" || group === "대학/일반부(여)") return "대학/일반부";
+  if (group === "대학/일반부") return "대학/일반부";
+  return group || "-";
+}
+
+function formatRankingDivisionLabel(item = {}) {
+  // 사용자 기록은 실제 프로필 학년을 우선 표시한다.
+  if (!item.isSampleData && !item.isOfficialRecord && !item.isOfficialRecordUser && item.sourceType !== "competition_result") {
+    return formatProfileDivisionLabel(item.division || item.rankingGroup || "");
+  }
+
+  // 공식 대회 결과는 PDF에 없는 학년을 임의로 만들지 않는다.
+  // 정확한 학년이 원본에 있을 때만 학년을 표시하고, 없으면 부문/구분만 표시한다.
+  if (hasExactSchoolGrade(item.division)) {
+    return formatProfileDivisionLabel(item.division);
+  }
+  return getDivisionFromRankingGroup(item.rankingGroup || item.category || item.divisionGroup, item.gender);
+}
+
 function formatGroupDisplayName(value) {
   const raw = String(value || "").trim();
   if (!raw) return "-";
@@ -1883,7 +1914,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "초등부(저학년)",
-    "division": "초등1",
+    "division": "초등부(저학년)",
     "gender": "남",
     "distances": [
       35,
@@ -2631,7 +2662,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "초등부(고학년)",
-    "division": "초등5",
+    "division": "초등부(고학년)",
     "gender": "남",
     "distances": [
       35,
@@ -4919,7 +4950,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "초등부(저학년)",
-    "division": "초등1",
+    "division": "초등부(저학년)",
     "gender": "여",
     "distances": [
       35,
@@ -5611,7 +5642,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "초등부(고학년)",
-    "division": "초등5",
+    "division": "초등부(고학년)",
     "gender": "여",
     "distances": [
       35,
@@ -8207,7 +8238,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "중등부",
-    "division": "중등1",
+    "division": "중등부",
     "gender": "남",
     "distances": [
       60,
@@ -10467,7 +10498,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "중등부",
-    "division": "중등1",
+    "division": "중등부",
     "gender": "여",
     "distances": [
       60,
@@ -13483,7 +13514,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "고등부(남)",
-    "division": "고등1",
+    "division": "고등부",
     "gender": "남",
     "distances": [
       90,
@@ -14791,7 +14822,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "고등부(여)",
-    "division": "고등1",
+    "division": "고등부",
     "gender": "여",
     "distances": [
       70,
@@ -16225,7 +16256,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "대학/일반부",
-    "division": "대학/일반부",
+    "division": "대학부",
     "gender": "남",
     "distances": [
       90,
@@ -17099,7 +17130,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "대학/일반부",
-    "division": "대학/일반부",
+    "division": "대학부",
     "gender": "여",
     "distances": [
       70,
@@ -17959,7 +17990,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "대학/일반부",
-    "division": "대학/일반부",
+    "division": "대학부",
     "gender": "남",
     "distances": [
       90,
@@ -18735,7 +18766,7 @@ const SAMPLE_SHEETS = [
     "regionCity": "전국",
     "bowType": "리커브",
     "rankingGroup": "대학/일반부",
-    "division": "대학/일반부",
+    "division": "대학부",
     "gender": "여",
     "distances": [
       70,
@@ -19668,7 +19699,7 @@ function buildPermanentSampleUsers() {
     sheet.rows.forEach((sourceRow) => {
       const row = withCanonicalSchool(sourceRow);
       // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
-      const assignedDivision = row.division || sheet.division;
+      const assignedDivision = normalizeOfficialDivisionForDisplay(row.division || sheet.division, sheet.rankingGroup);
       const id = makeSampleUserId(row.name, row.school);
       if (!map.has(id)) {
         map.set(id, {
@@ -19705,7 +19736,7 @@ function buildPermanentSampleSessions() {
         // 이름/소속만 확인된 선수명단 행은 공식 선수 데이터로만 보관하고 랭킹 점수 산정에는 넣지 않는다.
         if (row.rosterOnly) return null;
         // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
-        const assignedDivision = row.division || sheet.division;
+        const assignedDivision = normalizeOfficialDivisionForDisplay(row.division || sheet.division, sheet.rankingGroup);
         const userId = makeSampleUserId(row.name, row.school);
         const dedupeKey = `${userId}__${sheet.date}__${sheet.id}`;
         if (seen.has(dedupeKey)) return null;
@@ -20090,12 +20121,28 @@ function getRankingQueryDistances(rankingType, rankingFilters = {}, rankingGroup
 }
 
 
+function normalizeOfficialDivisionForDisplay(rawDivision = "", rankingGroup = "") {
+  const division = String(rawDivision || "").trim();
+  const group = String(rankingGroup || "").trim();
+
+  // 사용자가 직접 입력한 프로필 학년은 그대로 살린다. 공식 대회 결과에만 아래 정규화를 적용한다.
+  if (group === "초등부(저학년)" && /^초등[1-4]$/.test(division)) return "초등부(저학년)";
+  if (group === "초등부(고학년)" && /^초등[5-6]$/.test(division)) return "초등부(고학년)";
+  if (group === "중등부" && /^중등[1-3]$/.test(division)) return "중등부";
+  if ((group === "고등부(남)" || group === "고등부(여)" || group === "고등부") && /^고등[1-3]$/.test(division)) return "고등부";
+  if (!division || division === "초1" || division === "초등1") return getDivisionFromRankingGroup(group);
+  return division || getDivisionFromRankingGroup(group);
+}
+
 function normalizeRankingEntryData(docId, raw = {}) {
   const name = raw.name || raw.playerName || raw.player || "공식기록";
   const groupName = getCanonicalSchoolName(raw.groupName || raw.schoolName || raw.school || raw.team || "");
   const rankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || getRankingGroup(raw.division, raw.gender);
   const score = Number(raw.score ?? raw.totalScore ?? raw.total ?? 0);
   const sessionDate = raw.sessionDate || raw.date || raw.competitionDate || "";
+  const sourceType = raw.sourceType || "";
+  const isOfficialLike = raw.isSampleData || raw.isOfficialRecord || sourceType === "competition_result" || sourceType === "official_sample" || raw.competitionId;
+  const normalizedDivision = isOfficialLike ? normalizeOfficialDivisionForDisplay(raw.division || "", rankingGroup) : (raw.division || "");
   return {
     id: docId,
     ...raw,
@@ -20113,7 +20160,7 @@ function normalizeRankingEntryData(docId, raw = {}) {
     sessionDate,
     date: sessionDate,
     regionCity: raw.regionCity || raw.region || "전국",
-    division: raw.division || "",
+    division: normalizedDivision,
     bowType: raw.bowType || "리커브",
     arrows: Number(raw.arrows || 36),
   };
@@ -20308,7 +20355,7 @@ async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMP
             groupName: row.school,
             schoolName: row.school,
             regionCity: row.regionCity || sheet.regionCity || "전국",
-            division: row.division || sheet.division || "",
+            division: normalizeOfficialDivisionForDisplay(row.division || sheet.division || "", sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender)),
             gender: row.gender || sheet.gender || "남",
             bowType: row.bowType || sheet.bowType || "리커브",
             rankingGroup: sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender),
@@ -20339,6 +20386,40 @@ async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMP
   }
 
   return { sheetCount: (sheets || []).length, writeCount: writes.length };
+}
+
+async function migrateRankingEntryDivisionLabels(db) {
+  if (!db) return { checked: 0, updated: 0 };
+  const snap = await getDocs(query(collection(db, "ranking_entries"), limit(5000)));
+  const updates = [];
+
+  (snap.docs || []).forEach((docSnap) => {
+    const raw = docSnap.data() || {};
+    const rankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || getRankingGroup(raw.division, raw.gender);
+    const normalizedDivision = normalizeOfficialDivisionForDisplay(raw.division || "", rankingGroup);
+    const canonicalSchool = getCanonicalSchoolName(raw.groupName || raw.schoolName || raw.school || raw.team || "");
+
+    const patch = {};
+    if (normalizedDivision && normalizedDivision !== raw.division) patch.division = normalizedDivision;
+    if (canonicalSchool && canonicalSchool !== raw.groupName) patch.groupName = canonicalSchool;
+    if (canonicalSchool && canonicalSchool !== raw.schoolName) patch.schoolName = canonicalSchool;
+    if (rankingGroup && rankingGroup !== raw.rankingGroup) patch.rankingGroup = rankingGroup;
+    if (Object.keys(patch).length) {
+      patch.updatedAt = serverTimestamp();
+      updates.push({ id: docSnap.id, patch });
+    }
+  });
+
+  const chunkSize = 450;
+  for (let i = 0; i < updates.length; i += chunkSize) {
+    const batch = writeBatch(db);
+    updates.slice(i, i + chunkSize).forEach((item) => {
+      batch.set(doc(db, "ranking_entries", item.id), item.patch, { merge: true });
+    });
+    await batch.commit();
+  }
+
+  return { checked: snap.size || 0, updated: updates.length };
 }
 
 // Firestore 추천 인덱스
@@ -24435,8 +24516,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                           )}
                           <div className="min-w-0 truncate text-[11px] text-slate-500">
                             {(rankingType === "distance" || rankingType === "weeklyDistance")
-                              ? `${item.regionCity || "-"} · ${item.gender || "-"} · ${formatGroupDisplayName(item.groupName)} · ${formatProfileDivisionLabel(item.division)}`
-                              : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${item.gender || "-"} · ${formatProfileDivisionLabel(item.division)}`}
+                              ? `${item.regionCity || "-"} · ${item.gender || "-"} · ${formatGroupDisplayName(item.groupName)} · ${formatRankingDivisionLabel(item)}`
+                              : `${formatGroupDisplayName(item.groupName)} · ${item.regionCity || "-"} · ${item.gender || "-"} · ${formatRankingDivisionLabel(item)}`}
                           </div>
                         </div>
                       </div>
@@ -26624,6 +26705,8 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
   const [selectedApprovedClaim, setSelectedApprovedClaim] = useState(null);
   const [rankingUploadLoading, setRankingUploadLoading] = useState(false);
   const [rankingUploadMessage, setRankingUploadMessage] = useState("");
+  const [rankingMigrationLoading, setRankingMigrationLoading] = useState(false);
+  const [rankingMigrationMessage, setRankingMigrationMessage] = useState("");
 
   useEffect(() => {
     try {
@@ -26919,6 +27002,30 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
     }
   }
 
+  async function migrateOfficialRankingDivisionData() {
+    if (!appServices?.db) {
+      alert("DB 연결이 준비되지 않았다.");
+      return;
+    }
+    const ok = window.confirm("기존 ranking_entries의 임의 학년값을 원본 대회 부문 기준으로 정규화할까? 예: 초등1 → 초등부(저학년), 초등5 → 초등부(고학년)");
+    if (!ok) return;
+    try {
+      setRankingMigrationLoading(true);
+      setRankingMigrationMessage("정규화 중...");
+      const result = await migrateRankingEntryDivisionLabels(appServices.db);
+      const message = `정규화 완료: ${result.checked}건 확인 / ${result.updated}건 수정`;
+      setRankingMigrationMessage(message);
+      alert(message);
+      await onRefresh?.();
+    } catch (error) {
+      const message = error?.message || "랭킹 데이터 정규화에 실패했다.";
+      setRankingMigrationMessage(message);
+      alert(message);
+    } finally {
+      setRankingMigrationLoading(false);
+    }
+  }
+
   async function deleteUserData(user) {
     if (!appServices?.db) {
       alert("DB 연결이 준비되지 않았다.");
@@ -26991,15 +27098,28 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
             <div className="mt-1">동일 entryId는 merge 저장되므로 같은 자료를 다시 눌러도 중복으로 늘어나지 않는다.</div>
             {rankingUploadMessage ? <div className="mt-2 font-semibold text-blue-700">{rankingUploadMessage}</div> : null}
           </div>
-          <Button
-            type="button"
-            className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800"
-            onClick={uploadOfficialRankingSamples}
-            disabled={rankingUploadLoading}
-          >
-            {rankingUploadLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2 h-4 w-4" />}
-            Firestore 업로드
-          </Button>
+          <div className="grid gap-2">
+            <Button
+              type="button"
+              className="rounded-2xl bg-slate-900 text-white hover:bg-slate-800"
+              onClick={uploadOfficialRankingSamples}
+              disabled={rankingUploadLoading}
+            >
+              {rankingUploadLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Archive className="mr-2 h-4 w-4" />}
+              Firestore 업로드
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl"
+              onClick={migrateOfficialRankingDivisionData}
+              disabled={rankingMigrationLoading}
+            >
+              {rankingMigrationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              기존 랭킹 학년/부문 정규화
+            </Button>
+            {rankingMigrationMessage ? <div className="text-xs font-semibold text-blue-700">{rankingMigrationMessage}</div> : null}
+          </div>
         </CardContent>
       </Card>
 
