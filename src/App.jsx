@@ -20301,6 +20301,64 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
   }
 }
 
+
+function buildLocalOfficialRankingEntriesFromSampleSheets({ rankingType, rankingFilters, currentUser, fullLoad = false } = {}) {
+  const { rankingGroup, gender } = getRankingQueryTarget(rankingFilters || {}, currentUser || {}, { useProfileFallback: !fullLoad });
+  const distances = getRankingQueryDistances(rankingType || "distance", rankingFilters || {}, rankingGroup);
+  const dateFilter = rankingFilters?.dateFilter || "all";
+  const customDate = rankingFilters?.customDate || "";
+  const entries = [];
+
+  SAMPLE_SHEETS.forEach((sheet) => {
+    (sheet.rows || []).forEach((sourceRow) => {
+      const row = withCanonicalSchool(sourceRow);
+      if (row.rosterOnly) return;
+      const userId = makeSampleUserId(row.name, row.school);
+      (sheet.distances || []).forEach((distance, idx) => {
+        const score = Number(row.rounds?.[idx]);
+        if (!Number.isFinite(score)) return;
+        const entry = normalizeRankingEntryData(
+          `${sheet.competitionId || sheet.id}_${userId}_${distance}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
+          {
+            entryId: `${sheet.competitionId || sheet.id}_${userId}_${distance}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
+            sessionId: `${sheet.id}_${userId}`,
+            userId,
+            name: row.name,
+            groupName: row.school,
+            schoolName: row.school,
+            regionCity: row.regionCity || sheet.regionCity || "전국",
+            division: row.division || sheet.division || "",
+            gender: row.gender || sheet.gender || "남",
+            bowType: row.bowType || sheet.bowType || "리커브",
+            rankingGroup: sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender),
+            sourceType: "official_local_sample",
+            isSampleData: true,
+            isOfficialRecord: true,
+            competitionId: sheet.competitionId || sheet.id,
+            competitionName: sheet.competitionName || sheet.sheetLabel || "대회 결과_샘플",
+            sessionDate: sheet.date || getCurrentLocalDateString(),
+            date: sheet.date || getCurrentLocalDateString(),
+            distance: Number(distance),
+            score,
+            totalScore: score,
+            arrows: 36,
+            sourceRank: row.sourceRank || row.rank || null,
+          }
+        );
+        if (rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate })) {
+          entries.push(entry);
+        }
+      });
+    });
+  });
+
+  return entries.sort((a, b) => {
+    const scoreDiff = (Number(b.score) || 0) - (Number(a.score) || 0);
+    if (scoreDiff !== 0) return scoreDiff;
+    return String(b.sessionDate || b.date || "").localeCompare(String(a.sessionDate || a.date || ""));
+  });
+}
+
 function buildUsersFromRankingEntries(entries = []) {
   const map = new Map();
   entries.forEach((entry) => {
@@ -23973,7 +24031,10 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         if (cancelled) return;
         setRemoteRankingEntries(entries);
         if (rankingSearchMode) {
-          setRemoteRankingNotice(entries.length ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다. 학교/소속은 표기 차이를 정규화해 앱 내부에서 필터링합니다.` : "검색 조건에 맞는 Firestore 공식기록이 없습니다. 사용자 기록은 별도로 함께 표시되며, 공식기록은 ranking_entries 업로드 수와 필터 조건을 확인하세요.");
+          const schoolLabel = appliedRankingFilters?.groupName && appliedRankingFilters.groupName !== "all" ? ` · 학교/소속: ${appliedRankingFilters.groupName}` : "";
+          setRemoteRankingNotice(entries.length
+            ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다${schoolLabel}. 학교/소속은 표기 차이를 정규화해 앱 내부에서 필터링합니다.`
+            : `검색 조건에 맞는 Firestore 공식기록이 없습니다${schoolLabel}. 현재 화면에 사용자 기록만 보이면, 해당 학교/소속의 공식 대회 기록이 ranking_entries에 없거나 선택한 거리/구분/성별 조건과 맞지 않는 상태입니다.`);
         } else {
           setRemoteRankingNotice(entries.length ? "첫 화면은 내 프로필 기준 공식기록 일부만 가볍게 불러옵니다. 조건 변경 후 검색을 누르면 전체 조건 데이터를 조회합니다." : "조건에 맞는 Firestore 공식기록이 없으면 개발용 샘플만 표시됩니다.");
         }
@@ -23990,8 +24051,27 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return () => { cancelled = true; };
   }, [appServices?.db, hideOfficialRecords, rankingType, appliedRankingFilters, rankingSearchMode, currentUser?.id, currentUser?.division, currentUser?.gender, currentUserId]);
 
-  const remoteUsers = useMemo(() => buildUsersFromRankingEntries(remoteRankingEntries), [remoteRankingEntries]);
-  const remoteSessions = useMemo(() => buildSessionsFromRankingEntries(remoteRankingEntries), [remoteRankingEntries]);
+  const localOfficialRankingEntries = useMemo(() => {
+    if (hideOfficialRecords) return [];
+    return buildLocalOfficialRankingEntriesFromSampleSheets({
+      rankingType,
+      rankingFilters: appliedRankingFilters,
+      currentUser,
+      fullLoad: rankingSearchMode,
+    });
+  }, [hideOfficialRecords, rankingType, appliedRankingFilters, currentUser, rankingSearchMode]);
+
+  const combinedOfficialRankingEntries = useMemo(() => {
+    const map = new Map();
+    [...remoteRankingEntries, ...localOfficialRankingEntries].forEach((entry) => {
+      const key = entry.entryId || entry.id || `${entry.name}_${entry.groupName}_${entry.distance}_${entry.score}_${entry.sessionDate}`;
+      map.set(key, entry);
+    });
+    return Array.from(map.values());
+  }, [remoteRankingEntries, localOfficialRankingEntries]);
+
+  const remoteUsers = useMemo(() => buildUsersFromRankingEntries(combinedOfficialRankingEntries), [combinedOfficialRankingEntries]);
+  const remoteSessions = useMemo(() => buildSessionsFromRankingEntries(combinedOfficialRankingEntries), [combinedOfficialRankingEntries]);
 
   const rankingUsers = useMemo(() => {
     const sourceUsers = hideOfficialRecords ? users : [...users, ...remoteUsers];
@@ -24184,11 +24264,22 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [appliedRankingFilters, hideOfficialRecords]);
 
   const runRankingSearch = useCallback(() => {
-    setAppliedRankingFilters({ ...rankingFilters });
+    // 학교/소속 입력칸에 값을 적고 별도 '적용'을 누르지 않아도 검색 버튼에서 자동 반영한다.
+    // 기존 구조는 학교 입력값이 rankingFilters.groupName으로 커밋되지 않은 상태에서 검색될 수 있어
+    // 사용자가 선택한 학교 조건과 실제 검색 조건이 달라지는 문제가 있었다.
+    const committedSchool = String(schoolSearchInput || "").trim();
+    const nextFilters = {
+      ...rankingFilters,
+      groupName: committedSchool || "all",
+    };
+    setRankingFilters(nextFilters);
+    setAppliedRankingFilters(nextFilters);
     setRankingSearchMode(true);
     setShowAllRankings(true);
-    setRemoteRankingNotice("검색 조건 기준으로 Firestore 공식기록을 불러오는 중입니다.");
-  }, [rankingFilters]);
+    setRemoteRankingNotice(committedSchool
+      ? `${committedSchool} 학교/소속 조건까지 포함해 Firestore 공식기록을 불러오는 중입니다.`
+      : "검색 조건 기준으로 Firestore 공식기록을 불러오는 중입니다.");
+  }, [rankingFilters, schoolSearchInput]);
 
   const resetToProfileRanking = useCallback(() => {
     const nextRankingGroup = getRankingGroup(currentUser?.division || "", currentUser?.gender || "남") || "all";
