@@ -75,7 +75,6 @@ import {
   deleteUser,
 } from "firebase/auth";
 import {
-import { OFFICIAL_COMPETITION_SHEETS } from "./officialCompetitionSheets";
   getFirestore,
   doc,
   setDoc,
@@ -92,6 +91,7 @@ import { OFFICIAL_COMPETITION_SHEETS } from "./officialCompetitionSheets";
   writeBatch,
   limit,
 } from "firebase/firestore";
+import { OFFICIAL_COMPETITION_SHEETS } from "./officialCompetitionSheets";
 
 const SCORE_OPTIONS = ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, "M"];
 const QUICK_SCORE_OPTIONS = ["X", 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, "M"];
