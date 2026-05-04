@@ -4441,6 +4441,12 @@ const SCHOOL_NAME_ALIASES = {
   "하남천현초": "하남천현초등학교",
   "안양서초": "안양서초등학교",
   "안양서초교": "안양서초등학교",
+  // 공식 데이터 기준: 하성초/김포 하성초/김포하성초는 모두 같은 학교로 통일한다.
+  "하성초": "김포하성초등학교",
+  "하성초등학교": "김포하성초등학교",
+  "김포하성초": "김포하성초등학교",
+  "김포 하성초": "김포하성초등학교",
+  "김포 하성초등학교": "김포하성초등학교",
 };
 
 function normalizeSchoolKey(value) {
@@ -5612,6 +5618,19 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
       const userDivision = user.division || "";
       const userGender = user.gender || "남";
       const profileRankingGroup = getRankingGroup(userDivision, userGender);
+      const selectedRankingGroup = rankingFilters.rankingGroup || "all";
+      // 초등 저학년/고학년은 엄격히 분리한다.
+      // 사용자의 실제 프로필 학년(예: 초4)은 고학년 검색에 섞이면 안 된다.
+      // 공식 기록은 division/rankingGroup 기준으로 이미 정규화되어 있으므로 동일 규칙을 적용한다.
+      if (
+        selectedRankingGroup &&
+        selectedRankingGroup !== "all" &&
+        selectedRankingGroup !== "초등부(통합)" &&
+        profileRankingGroup &&
+        !rankingGroupMatchesFilter(selectedRankingGroup, profileRankingGroup)
+      ) {
+        return null;
+      }
 
       if (!schoolFilterMatches(rankingFilters.groupName, user.groupName)) {
         return null;
@@ -5734,6 +5753,19 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
       const userDivision = user.division || "";
       const userGender = user.gender || "남";
       const profileRankingGroup = getRankingGroup(userDivision, userGender);
+      const selectedRankingGroup = rankingFilters.rankingGroup || "all";
+      // 초등 저학년/고학년은 엄격히 분리한다.
+      // 사용자의 실제 프로필 학년(예: 초4)은 고학년 검색에 섞이면 안 된다.
+      // 공식 기록은 division/rankingGroup 기준으로 이미 정규화되어 있으므로 동일 규칙을 적용한다.
+      if (
+        selectedRankingGroup &&
+        selectedRankingGroup !== "all" &&
+        selectedRankingGroup !== "초등부(통합)" &&
+        profileRankingGroup &&
+        !rankingGroupMatchesFilter(selectedRankingGroup, profileRankingGroup)
+      ) {
+        return null;
+      }
 
       if (!schoolFilterMatches(rankingFilters.groupName, user.groupName)) {
         return null;
@@ -8771,7 +8803,16 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return Array.from(map.values());
   }, [rankingUsers, rankingSessions, hideOfficialRecords]);
   const sortKoreanOptions = useCallback((items) => [...items].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b), "ko-KR")), []);
-  const groupOptions = useMemo(() => sortKoreanOptions(Array.from(new Set(effectiveRankingUsers.map((u) => u.groupName).filter(Boolean)))), [effectiveRankingUsers, sortKoreanOptions]);
+  const groupOptions = useMemo(() => {
+    const map = new Map();
+    effectiveRankingUsers.forEach((u) => {
+      const canonical = getCanonicalSchoolName(u.groupName || u.schoolName || u.school || "");
+      if (!canonical) return;
+      const key = normalizeSchoolSearchKey(canonical);
+      if (!map.has(key)) map.set(key, canonical);
+    });
+    return sortKoreanOptions(Array.from(map.values()));
+  }, [effectiveRankingUsers, sortKoreanOptions]);
   const commitSchoolFilter = useCallback((value) => {
     const trimmed = String(value || "").trim();
     setRankingFilters((prev) => ({ ...prev, groupName: trimmed || "all" }));
