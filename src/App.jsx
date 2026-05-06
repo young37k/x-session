@@ -141,6 +141,47 @@ const ARCHERY_VENUES = [
   { id: "default_custom", name: "내 장소 직접 등록", region: "직접 등록", latitude: null, longitude: null, type: "사용자 등록" },
 ];
 
+function normalizeVenueNameKey(value) {
+  return String(value || "")
+    .replace(/\s+/g, "")
+    .replace(/[()·ㆍ.,_-]/g, "")
+    .replace(/초등학교/g, "초")
+    .replace(/중학교/g, "중")
+    .replace(/고등학교/g, "고")
+    .toLowerCase();
+}
+
+const SCHOOL_LOCATION_PRESETS = {
+  [normalizeVenueNameKey("안양서초등학교")]: { latitude: 37.3902, longitude: 126.9506, region: "경기 안양" },
+  [normalizeVenueNameKey("김포하성초등학교")]: { latitude: 37.7188, longitude: 126.6315, region: "경기 김포" },
+  [normalizeVenueNameKey("하남천현초등학교")]: { latitude: 37.5399, longitude: 127.2147, region: "경기 하남" },
+  [normalizeVenueNameKey("성포초등학교")]: { latitude: 37.3237, longitude: 126.8468, region: "경기 안산" },
+  [normalizeVenueNameKey("연무초등학교")]: { latitude: 36.1290, longitude: 127.0982, region: "충남 논산" },
+  [normalizeVenueNameKey("예천초등학교")]: { latitude: 36.6541, longitude: 128.4551, region: "경북 예천" },
+  [normalizeVenueNameKey("예천동부초등학교")]: { latitude: 36.6559, longitude: 128.4646, region: "경북 예천" },
+  [normalizeVenueNameKey("인천부평서초등학교")]: { latitude: 37.5096, longitude: 126.7215, region: "인천 부평" },
+  [normalizeVenueNameKey("인천계산초등학교")]: { latitude: 37.5383, longitude: 126.7245, region: "인천 계양" },
+  [normalizeVenueNameKey("인천용현남초등학교")]: { latitude: 37.4487, longitude: 126.6499, region: "인천 미추홀" },
+  [normalizeVenueNameKey("서울인헌초등학교")]: { latitude: 37.4745, longitude: 126.9659, region: "서울 관악" },
+  [normalizeVenueNameKey("서울방이초등학교")]: { latitude: 37.5115, longitude: 127.1160, region: "서울 송파" },
+  [normalizeVenueNameKey("대구송현초등학교")]: { latitude: 35.8317, longitude: 128.5517, region: "대구 달서" },
+  [normalizeVenueNameKey("대전태평초등학교")]: { latitude: 36.3252, longitude: 127.3977, region: "대전 중구" },
+  [normalizeVenueNameKey("홍남초등학교")]: { latitude: 36.6006, longitude: 126.6622, region: "충남 홍성" },
+  [normalizeVenueNameKey("용암초등학교")]: { latitude: 36.6069, longitude: 127.5057, region: "충북 청주" },
+  [normalizeVenueNameKey("하성중학교")]: { latitude: 37.7194, longitude: 126.6328, region: "경기 김포" },
+  [normalizeVenueNameKey("안양서중학교")]: { latitude: 37.3920, longitude: 126.9514, region: "경기 안양" },
+  [normalizeVenueNameKey("성포중학교")]: { latitude: 37.3224, longitude: 126.8435, region: "경기 안산" },
+};
+
+function getKnownSchoolLocation(name) {
+  const key = normalizeVenueNameKey(name);
+  if (!key) return null;
+  if (SCHOOL_LOCATION_PRESETS[key]) return SCHOOL_LOCATION_PRESETS[key];
+  const aliasKey = Object.keys(SCHOOL_LOCATION_PRESETS).find((item) => item.includes(key) || key.includes(item));
+  return aliasKey ? SCHOOL_LOCATION_PRESETS[aliasKey] : null;
+}
+
+
 function readCustomWeatherVenues() {
   if (typeof window === "undefined") return [];
   try {
@@ -284,12 +325,15 @@ function getUserSchoolVenue(currentUser) {
   if (!schoolName || schoolName === "all") return null;
   const latitude = Number(currentUser?.schoolLatitude ?? currentUser?.schoolLat ?? currentUser?.venueLatitude ?? currentUser?.latitude);
   const longitude = Number(currentUser?.schoolLongitude ?? currentUser?.schoolLng ?? currentUser?.venueLongitude ?? currentUser?.longitude);
+  const known = getKnownSchoolLocation(schoolName);
+  const finalLatitude = Number.isFinite(latitude) ? latitude : known?.latitude;
+  const finalLongitude = Number.isFinite(longitude) ? longitude : known?.longitude;
   return {
     id: "user_school_home",
     name: schoolName,
-    region: Number.isFinite(latitude) && Number.isFinite(longitude) ? "프로필 학교 위치" : "소속 학교/훈련장 위치 미등록",
-    latitude: Number.isFinite(latitude) ? latitude : null,
-    longitude: Number.isFinite(longitude) ? longitude : null,
+    region: Number.isFinite(finalLatitude) && Number.isFinite(finalLongitude) ? (known?.region || "프로필 학교 위치") : "소속 학교/훈련장 위치 미등록",
+    latitude: Number.isFinite(finalLatitude) ? finalLatitude : null,
+    longitude: Number.isFinite(finalLongitude) ? finalLongitude : null,
     isUserSchool: true,
     type: "학교",
   };
@@ -22161,13 +22205,36 @@ function SessionEditor({
   }
 
   function registerCurrentLocationVenue({ asSchool = false } = {}) {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setWeatherError("이 브라우저에서는 현재 위치 등록을 사용할 수 없습니다.");
-      return;
-    }
     const name = String(customVenueName || (asSchool ? userSchoolVenue?.name : "내 훈련장")).trim();
     if (!name) {
       setWeatherError("등록할 장소 이름을 먼저 입력하세요.");
+      return;
+    }
+    if (asSchool) {
+      const known = getKnownSchoolLocation(name) || (userSchoolVenue?.latitude && userSchoolVenue?.longitude ? userSchoolVenue : null);
+      if (known?.latitude && known?.longitude) {
+        const venue = {
+          id: "registered_school_location",
+          name,
+          region: known.region || "등록한 학교 위치",
+          latitude: Number(known.latitude),
+          longitude: Number(known.longitude),
+          type: "학교",
+          registeredAt: new Date().toISOString(),
+        };
+        const nextVenues = [venue, ...customVenues.filter((item) => item.id !== venue.id && item.name !== venue.name)].slice(0, 30);
+        setCustomVenues(nextVenues);
+        writeCustomWeatherVenues(nextVenues);
+        setCustomVenueName("");
+        applyVenueToSession(venue);
+        setWeatherError("학교 위치가 등록되었습니다. 이 위치 기준으로 바람을 조회할 수 있습니다.");
+        return;
+      }
+      setWeatherError("해당 학교의 좌표가 아직 등록되어 있지 않습니다. 학교명을 확인하거나 내 위치 등록으로 현재 위치를 저장하세요.");
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setWeatherError("이 브라우저에서는 현재 위치 등록을 사용할 수 없습니다.");
       return;
     }
     setCustomVenueSaving(true);
@@ -22191,7 +22258,7 @@ function SessionEditor({
         setCustomVenueSaving(false);
       },
       () => {
-        setWeatherError("위치 권한이 거부되어 장소를 등록하지 못했습니다.");
+        setWeatherError("브라우저 위치 권한이 차단되어 현재 위치를 등록하지 못했습니다. 브라우저 설정에서 위치 권한을 허용한 뒤 다시 시도하세요.");
         setCustomVenueSaving(false);
       },
       { enableHighAccuracy: true, timeout: 9000, maximumAge: 1000 * 60 * 5 }
@@ -22468,26 +22535,21 @@ function SessionEditor({
                 <Label className="block text-sm font-semibold xl:w-24 xl:shrink-0 xl:pt-3">장소/바람</Label>
                 <div className="w-full min-w-0 space-y-2 rounded-3xl border border-slate-200 bg-slate-50/70 p-3">
                   <div className="grid grid-cols-1 gap-2 xl:grid-cols-[1fr_auto_auto]">
-                    <Select
+                    <select
+                      className="h-11 w-full min-w-0 rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                       value={session.weather?.venueId || buildDefaultSessionWeatherForUser(currentUser).venueId}
-                      onValueChange={(venueId) => {
+                      onChange={(event) => {
+                        const venueId = event.target.value;
                         const venue = venueOptions.find((item) => item.id === venueId) || venueOptions[0] || ARCHERY_VENUES[0];
                         applyVenueToSession(venue);
                       }}
                     >
-                      <SelectTrigger className="h-11 w-full min-w-0 bg-white">
-                        <SelectValue placeholder="경기장/훈련장 선택">
-                          {(venueOptions.find((item) => item.id === (session.weather?.venueId || buildDefaultSessionWeatherForUser(currentUser).venueId))?.name) || session.weather?.venueName || "경기장/훈련장 선택"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {venueOptions.map((venue) => (
-                          <SelectItem key={venue.id} value={venue.id}>
-                            {venue.name} · {venue.region}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      {venueOptions.map((venue) => (
+                        <option key={venue.id} value={venue.id}>
+                          {venue.name} · {venue.region}
+                        </option>
+                      ))}
+                    </select>
                     <Button type="button" variant="outline" className="h-11 rounded-2xl bg-white" onClick={recommendNearbyVenues} disabled={venueSuggesting}>
                       {venueSuggesting ? "추천 중..." : "내 주변 추천"}
                     </Button>
