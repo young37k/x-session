@@ -115,14 +115,55 @@ const DIVISION_OPTIONS = [
 const GENDER_OPTIONS = ["남", "여"];
 
 
+const CUSTOM_VENUE_STORAGE_KEY = "elbowshot_custom_weather_venues_v1";
+
 const ARCHERY_VENUES = [
-  { id: "yecheon_jinho", name: "예천진호국제양궁장", region: "경북 예천", latitude: 36.6579, longitude: 128.4524 },
-  { id: "jincheon_national", name: "진천 국가대표선수촌 양궁장", region: "충북 진천", latitude: 36.8676, longitude: 127.4349 },
-  { id: "gwangju_international", name: "광주국제양궁장", region: "광주", latitude: 35.1467, longitude: 126.8690 },
-  { id: "mokdong", name: "목동종합운동장 양궁장", region: "서울", latitude: 37.5305, longitude: 126.8817 },
-  { id: "anyang", name: "안양 양궁장", region: "경기 안양", latitude: 37.3943, longitude: 126.9568 },
-  { id: "default_school", name: "학교/훈련장 직접 지정", region: "직접 입력", latitude: null, longitude: null },
+  { id: "yecheon_jinho", name: "예천진호국제양궁장", region: "경북 예천", latitude: 36.6579, longitude: 128.4524, type: "국제/전국대회 경기장" },
+  { id: "jincheon_national", name: "진천 국가대표선수촌 양궁장", region: "충북 진천", latitude: 36.8676, longitude: 127.4349, type: "국가대표 훈련장" },
+  { id: "gwangju_international", name: "광주국제양궁장", region: "광주", latitude: 35.1467, longitude: 126.8690, type: "국제/전국대회 경기장" },
+  { id: "kim_su_nyeong", name: "청주 김수녕양궁장", region: "충북 청주", latitude: 36.6389, longitude: 127.4896, type: "국제/전국대회 경기장" },
+  { id: "incheon_gyeyang", name: "인천계양아시아드양궁장", region: "인천 계양", latitude: 37.5332, longitude: 126.7377, type: "국제/전국대회 경기장" },
+  { id: "ulsan_munsu", name: "울산문수국제양궁장", region: "울산 남구", latitude: 35.5313, longitude: 129.2723, type: "국제/전국대회 경기장" },
+  { id: "jinju_stadium", name: "진주종합경기장 양궁장", region: "경남 진주", latitude: 35.1786, longitude: 128.1076, type: "전국대회 경기장" },
+  { id: "mokdong", name: "목동종합운동장 양궁장", region: "서울 양천", latitude: 37.5305, longitude: 126.8817, type: "국내 경기장" },
+  { id: "anyang", name: "안양양궁장", region: "경기 안양", latitude: 37.3943, longitude: 126.9568, type: "국내 경기장" },
+  { id: "suwon", name: "수원양궁장", region: "경기 수원", latitude: 37.2867, longitude: 127.0345, type: "국내 경기장" },
+  { id: "yongin", name: "용인양궁장", region: "경기 용인", latitude: 37.2411, longitude: 127.1776, type: "국내 경기장" },
+  { id: "ansan", name: "안산양궁장", region: "경기 안산", latitude: 37.3219, longitude: 126.8309, type: "국내 경기장" },
+  { id: "wonju", name: "원주양궁장", region: "강원 원주", latitude: 37.3422, longitude: 127.9202, type: "국내 경기장" },
+  { id: "daejeon", name: "대전양궁장", region: "대전", latitude: 36.3504, longitude: 127.3845, type: "국내 경기장" },
+  { id: "jeonju", name: "전주양궁장", region: "전북 전주", latitude: 35.8242, longitude: 127.1480, type: "국내 경기장" },
+  { id: "sunchang", name: "순창공설운동장 양궁장", region: "전북 순창", latitude: 35.3745, longitude: 127.1376, type: "국내 경기장" },
+  { id: "gwangyang", name: "광양공설운동장 양궁장", region: "전남 광양", latitude: 34.9407, longitude: 127.6959, type: "국내 경기장" },
+  { id: "busan", name: "부산강서체육공원 양궁장", region: "부산 강서", latitude: 35.2090, longitude: 128.9824, type: "국내 경기장" },
+  { id: "daegu", name: "대구양궁장", region: "대구", latitude: 35.8714, longitude: 128.6014, type: "국내 경기장" },
+  { id: "school_profile", name: "프로필 학교/소속 위치", region: "프로필 기준", latitude: null, longitude: null, type: "학교" },
+  { id: "default_custom", name: "내 장소 직접 등록", region: "직접 등록", latitude: null, longitude: null, type: "사용자 등록" },
 ];
+
+function readCustomWeatherVenues() {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CUSTOM_VENUE_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((item) => item?.id && item?.name) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCustomWeatherVenues(venues) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CUSTOM_VENUE_STORAGE_KEY, JSON.stringify(Array.isArray(venues) ? venues : []));
+  } catch {
+    // ignore storage failure
+  }
+}
+
+function makeCustomVenueId(name) {
+  return `custom_${String(name || "venue").replace(/[^0-9a-zA-Z가-힣]+/g, "_").slice(0, 30)}_${Date.now()}`;
+}
 
 function toRadians(value) {
   return (Number(value) * Math.PI) / 180;
@@ -241,13 +282,16 @@ function getUserSchoolVenue(currentUser) {
     ""
   ).trim();
   if (!schoolName || schoolName === "all") return null;
+  const latitude = Number(currentUser?.schoolLatitude ?? currentUser?.schoolLat ?? currentUser?.venueLatitude ?? currentUser?.latitude);
+  const longitude = Number(currentUser?.schoolLongitude ?? currentUser?.schoolLng ?? currentUser?.venueLongitude ?? currentUser?.longitude);
   return {
     id: "user_school_home",
     name: schoolName,
-    region: "소속 학교/훈련장",
-    latitude: null,
-    longitude: null,
+    region: Number.isFinite(latitude) && Number.isFinite(longitude) ? "프로필 학교 위치" : "소속 학교/훈련장 위치 미등록",
+    latitude: Number.isFinite(latitude) ? latitude : null,
+    longitude: Number.isFinite(longitude) ? longitude : null,
     isUserSchool: true,
+    type: "학교",
   };
 }
 
@@ -21616,11 +21660,21 @@ function SessionEditor({
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState("");
   const [nearbyVenues, setNearbyVenues] = useState([]);
+  const [customVenues, setCustomVenues] = useState(() => readCustomWeatherVenues());
+  const [customVenueName, setCustomVenueName] = useState("");
+  const [customVenueSaving, setCustomVenueSaving] = useState(false);
   const userSchoolVenue = useMemo(() => getUserSchoolVenue(currentUser), [currentUser]);
   const venueOptions = useMemo(() => {
-    if (!userSchoolVenue) return ARCHERY_VENUES;
-    return [userSchoolVenue, ...ARCHERY_VENUES.filter((venue) => venue.id !== userSchoolVenue.id)];
-  }, [userSchoolVenue]);
+    const builtIn = userSchoolVenue ? [userSchoolVenue, ...ARCHERY_VENUES.filter((venue) => venue.id !== userSchoolVenue.id && venue.id !== "school_profile")] : ARCHERY_VENUES;
+    const merged = [...builtIn, ...customVenues];
+    const seen = new Set();
+    return merged.filter((venue) => {
+      const key = venue.id || venue.name;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [customVenues, userSchoolVenue]);
 
   useEffect(() => {
     if (!userSchoolVenue) return;
@@ -22093,16 +22147,55 @@ function SessionEditor({
     patchSession((prev) => ({
       ...prev,
       weather: {
-        ...(prev.weather || buildDefaultSessionWeather()),
+        ...(prev.weather || buildDefaultSessionWeatherForUser(currentUser)),
         venueId: venue.id,
         venueName: venue.name,
         region: venue.region,
-        latitude: venue.latitude,
-        longitude: venue.longitude,
+        latitude: Number.isFinite(Number(venue.latitude)) ? Number(venue.latitude) : null,
+        longitude: Number.isFinite(Number(venue.longitude)) ? Number(venue.longitude) : null,
+        type: venue.type || "경기장",
         auto: null,
       },
     }));
     setWeatherError("");
+  }
+
+  function registerCurrentLocationVenue({ asSchool = false } = {}) {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setWeatherError("이 브라우저에서는 현재 위치 등록을 사용할 수 없습니다.");
+      return;
+    }
+    const name = String(customVenueName || (asSchool ? userSchoolVenue?.name : "내 훈련장")).trim();
+    if (!name) {
+      setWeatherError("등록할 장소 이름을 먼저 입력하세요.");
+      return;
+    }
+    setCustomVenueSaving(true);
+    setWeatherError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const venue = {
+          id: asSchool ? "registered_school_location" : makeCustomVenueId(name),
+          name,
+          region: asSchool ? "등록한 학교 위치" : "사용자 등록 위치",
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          type: asSchool ? "학교" : "사용자 등록",
+          registeredAt: new Date().toISOString(),
+        };
+        const nextVenues = [venue, ...customVenues.filter((item) => item.id !== venue.id && item.name !== venue.name)].slice(0, 30);
+        setCustomVenues(nextVenues);
+        writeCustomWeatherVenues(nextVenues);
+        setCustomVenueName("");
+        applyVenueToSession(venue);
+        setCustomVenueSaving(false);
+      },
+      () => {
+        setWeatherError("위치 권한이 거부되어 장소를 등록하지 못했습니다.");
+        setCustomVenueSaving(false);
+      },
+      { enableHighAccuracy: true, timeout: 9000, maximumAge: 1000 * 60 * 5 }
+    );
   }
 
   function recommendNearbyVenues() {
@@ -22134,7 +22227,7 @@ function SessionEditor({
   async function refreshAutoWeather() {
     const weather = session.weather || buildDefaultSessionWeather();
     if (!weather.latitude || !weather.longitude) {
-      setWeatherError("경기장 위치 좌표가 없어 바람 정보를 자동 조회할 수 없습니다.");
+      setWeatherError("선택한 장소의 좌표가 없습니다. 학교/클럽 위치를 한 번 등록하거나 좌표가 있는 경기장을 선택하세요.");
       return;
     }
     setWeatherLoading(true);
@@ -22383,7 +22476,9 @@ function SessionEditor({
                       }}
                     >
                       <SelectTrigger className="h-11 w-full min-w-0 bg-white">
-                        <SelectValue placeholder="경기장/훈련장 선택" />
+                        <SelectValue placeholder="경기장/훈련장 선택">
+                          {(venueOptions.find((item) => item.id === (session.weather?.venueId || buildDefaultSessionWeatherForUser(currentUser).venueId))?.name) || session.weather?.venueName || "경기장/훈련장 선택"}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {venueOptions.map((venue) => (
@@ -22399,6 +22494,21 @@ function SessionEditor({
                     <Button type="button" className="h-11 rounded-2xl bg-blue-900 text-white hover:bg-blue-800" onClick={refreshAutoWeather} disabled={weatherLoading}>
                       {weatherLoading ? "조회 중..." : "바람 자동조회"}
                     </Button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 rounded-2xl border border-slate-200 bg-white p-2 xl:grid-cols-[1fr_auto_auto]">
+                    <Input
+                      className="h-10 rounded-xl bg-white text-sm"
+                      value={customVenueName}
+                      onChange={(e) => setCustomVenueName(e.target.value)}
+                      placeholder="학교/클럽/개인 훈련장 이름 등록"
+                    />
+                    <Button type="button" variant="outline" className="h-10 rounded-xl bg-white text-slate-700" onClick={() => registerCurrentLocationVenue({ asSchool: true })} disabled={customVenueSaving}>
+                      학교 위치 등록
+                    </Button>
+                    <Button type="button" variant="outline" className="h-10 rounded-xl bg-white text-slate-700" onClick={() => registerCurrentLocationVenue({ asSchool: false })} disabled={customVenueSaving}>
+                      내 위치 등록
+                    </Button>
+                    <div className="text-[11px] text-slate-500 xl:col-span-3">학교는 프로필 학교명을 기준으로, 동호회/클럽은 입력한 이름과 현재 위치를 저장해 다음부터 바로 선택할 수 있습니다.</div>
                   </div>
                   {nearbyVenues.length > 0 && (
                     <div className="flex flex-wrap gap-2 text-xs">
@@ -22416,7 +22526,7 @@ function SessionEditor({
                   )}
                   <div className="grid grid-cols-1 gap-2 xl:grid-cols-[1fr_1fr]">
                     <div className="rounded-2xl bg-white px-3 py-2 text-xs text-slate-700">
-                      <div className="font-bold text-slate-900">자동 기상 기준</div>
+                      <div className="font-bold text-slate-900">자동 기상 기준 · {session.weather?.venueName || "장소 미선택"}</div>
                       {session.weather?.auto ? (
                         <div>
                           풍속 {session.weather.auto.windSpeed ?? "-"}m/s · {session.weather.auto.windDirectionLabel || "-"}풍 · 돌풍 {session.weather.auto.windGust ?? "-"}m/s · 기준 {session.weather.auto.observedTime || "-"}
