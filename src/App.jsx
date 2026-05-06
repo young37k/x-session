@@ -23761,6 +23761,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const [remoteRankingCursorStack, setRemoteRankingCursorStack] = useState([null]);
   const [remoteRankingNextCursor, setRemoteRankingNextCursor] = useState(null);
   const [remoteRankingHasMore, setRemoteRankingHasMore] = useState(false);
+  const [showRankingQuickNav, setShowRankingQuickNav] = useState(false);
+  const rankingListTopRef = useRef(null);
   const initialRankingAppliedRef = useRef(false);
 
   useEffect(() => {
@@ -23807,7 +23809,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
           setRemoteRankingHasMore(false);
         }
         if (rankingSearchMode) {
-          setRemoteRankingNotice(entries.length ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다. 현재 ${remoteRankingPage}페이지이며, 다음 페이지는 버튼으로 추가 조회합니다.` : "검색 조건에 맞는 Firestore 공식기록이 없습니다. 조건/업로드 수/인덱스를 확인하세요.");
+          setRemoteRankingNotice(entries.length ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다.` : "검색 조건에 맞는 Firestore 공식기록이 없습니다. 조건/업로드 수/인덱스를 확인하세요.");
         } else {
           setRemoteRankingNotice(entries.length ? "첫 화면은 내 프로필 기준 공식기록 일부만 가볍게 불러옵니다. 조건 변경 후 검색을 누르면 서버 조건 쿼리로 빠르게 조회합니다." : "조건에 맞는 Firestore 공식기록이 없으면 사용자 기록만 표시됩니다.");
         }
@@ -23980,6 +23982,42 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const hasMoreRankings = activeRankings.length > visibleRankings.length;
 
   const myRank = activeRankings.find((item) => item.userId === currentUserId);
+
+  useEffect(() => {
+    const handleRankingScroll = () => {
+      setShowRankingQuickNav(activeRankings.length > 20 && window.scrollY > 700);
+    };
+    handleRankingScroll();
+    window.addEventListener("scroll", handleRankingScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleRankingScroll);
+  }, [activeRankings.length]);
+
+  const scrollToRankingTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const scrollToTop10 = useCallback(() => {
+    rankingListTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const scrollToMyRank = useCallback(() => {
+    const move = () => {
+      const target = document.querySelector('[data-my-ranking-card="true"]');
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("ring-2", "ring-blue-400", "ring-offset-2");
+        window.setTimeout(() => target.classList.remove("ring-2", "ring-blue-400", "ring-offset-2"), 1800);
+      } else {
+        rankingListTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    };
+    if (myRank && !visibleRankings.some((item) => item.userId === currentUserId)) {
+      setShowAllRankings(true);
+      window.setTimeout(move, 80);
+      return;
+    }
+    move();
+  }, [currentUserId, myRank, visibleRankings]);
 
   const myRankingGroup = myRank?.rankingGroup || getRankingGroup(currentUser?.division, currentUser?.gender) || rankingFilters.rankingGroup;
   const myRequiredDistances = myRank?.requiredDistances?.length
@@ -24403,7 +24441,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               </div>
             ) : (
               <div className="grid gap-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                <div ref={rankingListTopRef} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-600 scroll-mt-24">
                   {isAdminUser ? (
                     <span>
                       {showAllRankings
@@ -24411,32 +24449,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                         : `상위 ${Math.min(50, activeRankings.length).toLocaleString()}명 표시 중 · 전체 ${activeRankings.length.toLocaleString()}명`}
                     </span>
                   ) : (
-                    <span>{rankingSearchMode ? `랭킹 결과 · ${remoteRankingPage}페이지` : "랭킹 결과"}</span>
+                    <span>랭킹 결과</span>
                   )}
                   <div className="flex flex-wrap items-center gap-2">
-                    {rankingSearchMode ? (
-                      <>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-8 rounded-xl px-3 text-xs"
-                          onClick={goPrevRankingPage}
-                          disabled={remoteRankingLoading || remoteRankingPage <= 1}
-                        >
-                          이전
-                        </Button>
-                        <span className="text-xs font-semibold text-slate-700">{remoteRankingPage}페이지</span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-8 rounded-xl px-3 text-xs"
-                          onClick={goNextRankingPage}
-                          disabled={remoteRankingLoading || !remoteRankingHasMore}
-                        >
-                          다음
-                        </Button>
-                      </>
-                    ) : null}
                     {activeRankings.length > 50 ? (
                       <Button
                         type="button"
@@ -24452,7 +24467,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                 {visibleRankings.map((item) => (
                   <div
                     key={`${rankingType}_${item.userId}_${item.distance || item.distanceLabel || "total"}`}
-                    className={`rounded-2xl border px-3 py-2 ${
+                    data-my-ranking-card={item.userId === currentUserId ? "true" : undefined}
+                    className={`rounded-2xl border px-3 py-2 transition ${
                       item.userId === currentUserId
                         ? "border-blue-300 bg-blue-50"
                         : item.rank <= 3
@@ -24580,6 +24596,34 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
           </div>
         </CardContent>
       </Card>
+      {showRankingQuickNav && (
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+14px)] z-50 pointer-events-none px-4">
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+            <Button
+              type="button"
+              className="pointer-events-auto h-11 rounded-full bg-slate-900/95 px-4 text-xs font-bold text-white shadow-xl backdrop-blur"
+              onClick={scrollToMyRank}
+            >
+              내 순위 찾기
+            </Button>
+            <Button
+              type="button"
+              className="pointer-events-auto h-11 rounded-full bg-blue-700/95 px-4 text-xs font-bold text-white shadow-xl backdrop-blur"
+              onClick={scrollToTop10}
+            >
+              TOP10
+            </Button>
+            <Button
+              type="button"
+              className="pointer-events-auto h-11 w-11 rounded-full bg-slate-900/95 p-0 text-lg font-black text-white shadow-xl backdrop-blur"
+              onClick={scrollToRankingTop}
+              aria-label="최상단으로 이동"
+            >
+              ↑
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
