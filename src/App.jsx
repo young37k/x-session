@@ -23726,7 +23726,7 @@ function StatCard({ title, value, sub, icon: Icon, tone }) {
 }
 
 
-function RankingBoard({ users, sessions, currentUser, currentUserId, officialClaims = [], onRequestOfficialClaim, appServices = null }) {
+function RankingBoard({ users, sessions, currentUser, currentUserId, officialClaims = [], onRequestOfficialClaim, appServices = null, isAdminUser = false }) {
   const initialRankingGroup = getRankingGroup(currentUser?.division || "", currentUser?.gender || "남") || "all";
   const initialGender = currentUser?.gender || "all";
   const [rankingType, setRankingType] = useState("total");
@@ -23897,6 +23897,22 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     });
     return ids.size;
   }, [rankingSessions]);
+
+  const officialRankingCount = useMemo(() => {
+    const ids = new Set();
+    effectiveRankingUsers.forEach((user) => {
+      if (user?.isSampleData || user?.isOfficialRecordUser || user?.sourceType === "official") ids.add(user.id);
+    });
+    return ids.size;
+  }, [effectiveRankingUsers]);
+
+  const userRankingCount = useMemo(() => {
+    const ids = new Set();
+    effectiveRankingUsers.forEach((user) => {
+      if (!user?.isSampleData && !user?.isOfficialRecordUser && user?.id) ids.add(user.id);
+    });
+    return ids.size;
+  }, [effectiveRankingUsers]);
   const usersById = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
   const requestableOfficialUserIds = useMemo(() => {
     if (!currentUser) return new Set();
@@ -24165,9 +24181,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Medal className="h-5 w-5 text-red-600" /> X-Ranking
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-              공식/사용자 기록 {registeredUserCount.toLocaleString()}명
-            </span>
+            {isAdminUser ? (
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                공식기록 {officialRankingCount.toLocaleString()}명 / 사용자기록 {userRankingCount.toLocaleString()}명
+              </span>
+            ) : null}
             <label className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-900">
               <input
                 type="checkbox"
@@ -24177,11 +24195,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               />
               공식기록 제거 후 보기
             </label>
-            {!hideOfficialRecords && (
+            {isAdminUser && !hideOfficialRecords ? (
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                 {remoteRankingLoading ? "Firestore 랭킹 불러오는 중" : rankingSearchMode ? `검색결과 ${remoteRankingEntries.length.toLocaleString()}건 · ${remoteRankingPage}p` : `Firestore ${remoteRankingEntries.length}건`}
               </span>
-            )}
+            ) : null}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -24386,11 +24404,15 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             ) : (
               <div className="grid gap-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-600">
-                  <span>
-                    {showAllRankings
-                      ? `전체 ${activeRankings.length.toLocaleString()}명 표시 중`
-                      : `상위 ${Math.min(50, activeRankings.length).toLocaleString()}명 표시 중 · 전체 ${activeRankings.length.toLocaleString()}명`}
-                  </span>
+                  {isAdminUser ? (
+                    <span>
+                      {showAllRankings
+                        ? `전체 ${activeRankings.length.toLocaleString()}명 표시 중`
+                        : `상위 ${Math.min(50, activeRankings.length).toLocaleString()}명 표시 중 · 전체 ${activeRankings.length.toLocaleString()}명`}
+                    </span>
+                  ) : (
+                    <span>{rankingSearchMode ? `랭킹 결과 · ${remoteRankingPage}페이지` : "랭킹 결과"}</span>
+                  )}
                   <div className="flex flex-wrap items-center gap-2">
                     {rankingSearchMode ? (
                       <>
@@ -28780,7 +28802,7 @@ function XSessionApp() {
                 />
               )}
               {ui.activeTab === "dashboard" && <Dashboard sessions={mySessions} routines={myRoutines} currentUser={currentUser} loading={sessionsLoading} onEditSession={handleEditSession} onStartSession={() => setUi((prev) => ({ ...prev, activeTab: "record" }))} />}
-              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} appServices={appServices} />}
+              {ui.activeTab === "ranking" && <RankingBoard users={usersForDisplay} sessions={sessionsForDisplay} currentUser={currentUser} currentUserId={currentUser.id} officialClaims={officialClaims} onRequestOfficialClaim={handleRequestOfficialClaim} appServices={appServices} isAdminUser={isAdminUser} />}
               {ui.activeTab === "analysis" && <AnalysisBoard currentUser={currentUser} users={usersForDisplay} sessions={sessionsForDisplay} routines={myRoutines} appServices={appServices} onRoutineSaved={async (savedRoutine) => {
                 setRoutines((prev) => {
                   const withoutSame = prev.filter((routine) => routine.id !== savedRoutine.id);
