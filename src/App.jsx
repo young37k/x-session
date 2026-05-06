@@ -5142,6 +5142,9 @@ async function upsertOfficialCompetitionSheetToRankingEntries(db, sheet) {
         bowType: row.bowType || sheet.bowType || "리커브",
         rankingGroup: sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender),
         sourceType: "competition_result",
+        isOfficial: true,
+        latestOnly: true,
+        officialBatchId: sheet.competitionId || sheet.id,
         competitionId: sheet.competitionId || sheet.id,
         competitionName: sheet.competitionName || sheet.sheetLabel || "대회 결과",
         sessionDate: sheet.date || getCurrentLocalDateString(),
@@ -5187,6 +5190,9 @@ async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMP
             bowType: row.bowType || sheet.bowType || "리커브",
             rankingGroup: sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender),
             sourceType: "competition_result",
+            isOfficial: true,
+            latestOnly: true,
+            officialBatchId: sheet.competitionId || sheet.id,
             competitionId: sheet.competitionId || sheet.id,
             competitionName: sheet.competitionName || sheet.sheetLabel || "대회 결과",
             sessionDate: sheet.date || getCurrentLocalDateString(),
@@ -5376,6 +5382,185 @@ function buildOfficialEntriesFromUploadRows(rows = [], fallback = {}) {
   return normalizedRows;
 }
 
+
+
+function guessCompetitionInfoFromPdfText(text = "") {
+  const compact = String(text || "").replace(/\s+/g, " ");
+  const competitionName = (compact.match(/제\s*\d+\s*회[^\n]{0,80}?(?:선발|대회|선수권|경기결과)/)?.[0] || "PDF 공식 업로드 기록")
+    .replace(/\s+/g, " ")
+    .trim();
+  const gender = /여자/.test(compact) ? "여" : "남자".test(compact) ? "남" : "남";
+  let division = "";
+  if (/U\s*-?\s*11|저학년/.test(compact)) division = "초등부(저학년)";
+  else if (/초등부/.test(compact)) division = "초등부(고학년)";
+  else if (/중등부|중학/.test(compact)) division = "중등부";
+  else if (/고등부/.test(compact)) division = "고등부";
+  else if (/대학/.test(compact)) division = "대학부";
+  else if (/일반/.test(compact)) division = "일반부";
+  const distances = [];
+  [90, 70, 60, 50, 40, 35, 30, 25, 20].forEach((m) => {
+    if (new RegExp(`${m}\\s*M`, "i").test(compact)) distances.push(m);
+  });
+  return { competitionName, gender, division, distances };
+}
+
+function parseOfficialRankingPdfText(text = "", fileName = "official_pdf") {
+  const rawText = String(text || "").replace(/\u00a0/g, " ");
+  const info = guessCompetitionInfoFromPdfText(rawText);
+  const distances = info.distances.length ? info.distances : [35, 30, 25, 20];
+  const rows = [];
+  const lines = rawText
+    .split(/\r?\n/)
+    .map((line) => line.replace(/,/g, "").replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  // 1차: 일반적인 표 행. 예: 1 12A 김영재 연무초등학교 337 / 1 342 / 1 342 / 1 351 / 1 1372 / 1
+  const schoolEnd = "(?:초등학교|중학교|고등학교|대학교|여자고등학교|체육고등학교|스포츠클럽|클럽|시청|구청|군청|협회|체육회|부대|텐텐양궁단|도시공사|모비스|백화점|진로|LH)";
+  const rowRegex = new RegExp(`^(\\d{1,3})\\s+([0-9A-Z가-힣-]+)\\s+([가-힣]{2,5})\\s+(.+?${schoolEnd})\\s+(.*)$`);
+
+  for (const line of lines) {
+    if (/단체|합산|엔트리수|참가선수|순위\s+소속/.test(line)) continue;
+    const m = line.match(rowRegex);
+    if (!m) continue;
+    const [, rank, target, name, schoolName, tail] = m;
+    const nums = (tail.match(/\b\d{1,4}\b/g) || []).map(Number).filter((n) => Number.isFinite(n));
+    if (nums.length < distances.length) continue;
+    const row = {
+      sourceFileName: fileName,
+      순위: rank,
+      타겟: target,
+      선수명: name,
+      소속: schoolName,
+      대회명: info.competitionName,
+      구분: info.division,
+      성별: info.gender,
+    };
+    distances.forEach((d, idx) => {
+      // 점수/RANK가 반복될 때는 짝수 인덱스가 점수인 경우가 많다.
+      row[`${d}m`] = nums[idx * 2] ?? nums[idx] ?? "";
+    });
+    const totalCandidate = nums.length >= distances.length * 2 + 1 ? nums[distances.length * 2] : nums[nums.length - 2] || nums[nums.length - 1];
+    row["총점"] = totalCandidate || "";
+    rows.push(row);
+  }
+
+  if (rows.length) return rows;
+
+  // 2차 fallback: 줄이 잘게 쪼개진 텍스트 PDF를 위해 전체 숫자/한글 흐름에서 최소 파싱 시도.
+  const joined = lines.join(" ");
+  const chunks = joined.split(/\s(?=\d{1,3}\s+[0-9A-Z]{2,4}\s+[가-힣]{2,5}\s)/g);
+  for (const chunk of chunks) {
+    const m = chunk.match(rowRegex);
+    if (!m) continue;
+    const [, rank, target, name, schoolName, tail] = m;
+    const nums = (tail.match(/\b\d{1,4}\b/g) || []).map(Number).filter((n) => Number.isFinite(n));
+    if (nums.length < distances.length) continue;
+    const row = { sourceFileName: fileName, 순위: rank, 타겟: target, 선수명: name, 소속: schoolName, 대회명: info.competitionName, 구분: info.division, 성별: info.gender };
+    distances.forEach((d, idx) => { row[`${d}m`] = nums[idx * 2] ?? nums[idx] ?? ""; });
+    row["총점"] = nums.length >= distances.length * 2 + 1 ? nums[distances.length * 2] : nums[nums.length - 1] || "";
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+async function loadPdfJsFromCdn() {
+  if (typeof window === "undefined") throw new Error("브라우저 환경에서만 PDF 분석을 지원한다.");
+  if (window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-pdfjs="true"]');
+    if (existing) {
+      existing.addEventListener("load", resolve, { once: true });
+      existing.addEventListener("error", reject, { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    script.async = true;
+    script.dataset.pdfjs = "true";
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("PDF 분석 라이브러리를 불러오지 못했다. 네트워크 상태를 확인해줘."));
+    document.head.appendChild(script);
+  });
+  if (!window.pdfjsLib) throw new Error("PDF 분석 라이브러리 초기화에 실패했다.");
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  return window.pdfjsLib;
+}
+
+async function extractTextFromPdfFile(file) {
+  const pdfjsLib = await loadPdfJsFromCdn();
+  const data = new Uint8Array(await file.arrayBuffer());
+  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  const pages = [];
+  for (let pageNo = 1; pageNo <= pdf.numPages; pageNo += 1) {
+    const page = await pdf.getPage(pageNo);
+    const content = await page.getTextContent();
+    const items = (content.items || [])
+      .map((item) => ({ str: item.str || "", x: item.transform?.[4] || 0, y: item.transform?.[5] || 0 }))
+      .filter((item) => item.str.trim());
+    const groups = new Map();
+    items.forEach((item) => {
+      const y = Math.round(item.y / 4) * 4;
+      if (!groups.has(y)) groups.set(y, []);
+      groups.get(y).push(item);
+    });
+    const pageLines = Array.from(groups.entries())
+      .sort((a, b) => b[0] - a[0])
+      .map(([, rowItems]) => rowItems.sort((a, b) => a.x - b.x).map((item) => item.str).join(" "));
+    pages.push(pageLines.join("\n"));
+  }
+  return pages.join("\n");
+}
+
+
+async function deleteExistingOfficialRankingEntries(db, options = {}) {
+  if (!db) throw new Error("Firestore DB 연결이 준비되지 않았다.");
+  const officialSourceTypes = [
+    "competition_result",
+    "official_upload",
+    "pdf_official_extracted",
+    "web_confirmed_official_record",
+    "official_sample",
+    "official_record_sample",
+  ];
+  const targets = new Map();
+
+  async function collectRepeated(factory, maxLoops = 20) {
+    for (let loop = 0; loop < maxLoops; loop += 1) {
+      const snap = await getDocs(factory());
+      if (!snap.docs?.length) break;
+      (snap.docs || []).forEach((docSnap) => targets.set(docSnap.id, docSnap.ref));
+      if (snap.docs.length < 500) break;
+    }
+  }
+
+  await collectRepeated(() => query(collection(db, "ranking_entries"), where("isOfficial", "==", true), limit(500)));
+  for (let i = 0; i < officialSourceTypes.length; i += 10) {
+    const chunk = officialSourceTypes.slice(i, i + 10);
+    await collectRepeated(() => query(collection(db, "ranking_entries"), where("sourceType", "in", chunk), limit(500)));
+  }
+
+  const refs = Array.from(targets.values());
+  for (let i = 0; i < refs.length; i += 450) {
+    const batch = writeBatch(db);
+    refs.slice(i, i + 450).forEach((ref) => batch.delete(ref));
+    await batch.commit();
+  }
+
+  if (options.batchId) {
+    await setDoc(doc(db, "official_ranking_meta", "current"), {
+      activeBatchId: options.batchId,
+      competitionName: options.competitionName || "최신 공식대회",
+      competitionDate: options.competitionDate || getCurrentLocalDateString(),
+      replacedOfficialCount: refs.length,
+      updatedAt: serverTimestamp(),
+      mode: "latest_only",
+    }, { merge: true });
+  }
+
+  return refs.length;
+}
+
 async function upsertOfficialUploadRowsToRankingEntries(db, rows = [], fallback = {}) {
   if (!db) throw new Error("Firestore DB 연결이 준비되지 않았다.");
   const entries = buildOfficialEntriesFromUploadRows(rows, fallback);
@@ -5385,7 +5570,7 @@ async function upsertOfficialUploadRowsToRankingEntries(db, rows = [], fallback 
   for (let i = 0; i < entries.length; i += chunkSize) {
     const batch = writeBatch(db);
     entries.slice(i, i + chunkSize).forEach((entry) => {
-      batch.set(doc(db, "ranking_entries", entry.entryId), entry, { merge: true });
+      batch.set(doc(db, "ranking_entries", entry.entryId), { ...entry, isOfficial: true, officialBatchId: fallback.officialBatchId || fallback.fileName || "latest_official", sourceType: entry.sourceType || "official_upload", latestOnly: true }, { merge: true });
     });
     await batch.commit();
   }
@@ -7513,19 +7698,21 @@ function SessionEditor({
             )}
 
             <div className="grid gap-3">
-              <div className="grid gap-2 xl:flex xl:items-center xl:gap-3">
-                <Label className="text-sm font-semibold xl:w-24 xl:shrink-0">날짜</Label>
-                <Input
-                  className="h-11 w-full xl:flex-1"
-                  type="date"
-                  value={session.sessionDate}
-                  onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value, weather: { ...(prev.weather || buildDefaultSessionWeatherForUser(currentUser)), auto: null } }))}
-                />
+              <div className="grid w-full grid-cols-1 gap-2 xl:grid-cols-[6rem_minmax(0,1fr)] xl:items-center xl:gap-3">
+                <Label className="block text-sm font-semibold xl:w-24 xl:shrink-0">날짜</Label>
+                <div className="w-full min-w-0">
+                  <Input
+                    className="h-11 w-full min-w-0 rounded-2xl bg-white text-center text-base tabular-nums xl:text-left"
+                    type="date"
+                    value={session.sessionDate}
+                    onChange={(e) => patchSession((prev) => ({ ...prev, sessionDate: e.target.value, weather: { ...(prev.weather || buildDefaultSessionWeatherForUser(currentUser)), auto: null } }))}
+                  />
+                </div>
               </div>
 
-              <div className="grid gap-2 xl:flex xl:items-start xl:gap-3">
-                <Label className="text-sm font-semibold xl:w-24 xl:shrink-0 xl:pt-3">장소/바람</Label>
-                <div className="w-full space-y-2 rounded-3xl border border-slate-200 bg-slate-50/70 p-3 xl:flex-1">
+              <div className="grid w-full grid-cols-1 gap-2 xl:grid-cols-[6rem_minmax(0,1fr)] xl:items-start xl:gap-3">
+                <Label className="block text-sm font-semibold xl:w-24 xl:shrink-0 xl:pt-3">장소/바람</Label>
+                <div className="w-full min-w-0 space-y-2 rounded-3xl border border-slate-200 bg-slate-50/70 p-3">
                   <div className="grid grid-cols-1 gap-2 xl:grid-cols-[1fr_auto_auto]">
                     <Select
                       value={session.weather?.venueId || buildDefaultSessionWeatherForUser(currentUser).venueId}
@@ -7534,7 +7721,7 @@ function SessionEditor({
                         applyVenueToSession(venue);
                       }}
                     >
-                      <SelectTrigger className="h-11 bg-white">
+                      <SelectTrigger className="h-11 w-full min-w-0 bg-white">
                         <SelectValue placeholder="경기장/훈련장 선택" />
                       </SelectTrigger>
                       <SelectContent>
@@ -12112,14 +12299,20 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       return;
     }
 
-    const ok = window.confirm("공식 대회 기록 업로드용 데이터를 Firestore ranking_entries에 업로드할까? 같은 entryId는 덮어써서 중복 저장되지 않는다.");
+    const ok = window.confirm("공식 기록은 최신 대회 1개만 유지된다. 기존 공식기록을 삭제하고 이번 공식 데이터로 교체할까? 사용자 개인 기록은 삭제되지 않는다.");
     if (!ok) return;
 
     try {
       setRankingUploadLoading(true);
-      setRankingUploadMessage("업로드 중...");
+      setRankingUploadMessage("기존 공식기록을 삭제하는 중........");
+      const deletedCount = await deleteExistingOfficialRankingEntries(appServices.db, {
+        batchId: "bundled_official_latest",
+        competitionName: "앱 내 공식 업로드 데이터",
+        competitionDate: getCurrentLocalDateString(),
+      });
+      setRankingUploadMessage("새 공식기록을 등록하는 중........");
       const result = await upsertOfficialCompetitionSheetsToRankingEntries(appServices.db, SAMPLE_SHEETS);
-      const message = `업로드 완료: ${result.sheetCount}개 부문 / ${result.writeCount}개 거리 기록`;
+      const message = `공식기록 교체 완료: 기존 ${deletedCount.toLocaleString()}건 삭제 / ${result.sheetCount}개 부문 / ${result.writeCount.toLocaleString()}개 거리 기록 등록`;
       setRankingUploadMessage(message);
       alert(message);
       await onRefresh?.();
@@ -12165,19 +12358,32 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
     if (!file) return;
 
     const ext = String(file.name || "").split(".").pop()?.toLowerCase();
-    if (!["csv", "tsv", "txt", "json"].includes(ext || "")) {
-      setOfficialUploadFileMessage("현재 관리자 자동 업로드는 CSV/TSV/JSON만 지원한다. 엑셀은 CSV로 저장해서 올려줘.");
+    if (!["csv", "tsv", "txt", "json", "pdf"].includes(ext || "")) {
+      setOfficialUploadFileMessage("지원 형식은 PDF/CSV/TSV/JSON이다. 엑셀은 CSV로 저장하거나 PDF 원본을 올려줘.");
       return;
     }
 
     try {
-      const text = await file.text();
-      const rows = parseOfficialRankingUploadText(text, file.name);
+      setOfficialUploadFileMessage(ext === "pdf" ? "PDF에서 표 텍스트를 분석하는 중........" : "파일을 분석하는 중........");
+      let rows = [];
+      if (ext === "pdf") {
+        const pdfText = await extractTextFromPdfFile(file);
+        if (!pdfText || pdfText.replace(/\s+/g, "").length < 50) {
+          throw new Error("PDF에서 텍스트를 읽지 못했다. 스캔/사진형 PDF라면 엑셀 또는 CSV로 변환해서 올려줘.");
+        }
+        rows = parseOfficialRankingPdfText(pdfText, file.name);
+        if (!rows.length) {
+          throw new Error("PDF 텍스트는 읽었지만 표를 자동 변환하지 못했다. 미리보기 없이 바로 등록하지 않고, CSV/엑셀 변환본을 사용해줘.");
+        }
+      } else {
+        const text = await file.text();
+        rows = parseOfficialRankingUploadText(text, file.name);
+      }
       const fallback = { fileName: file.name };
       const previewEntries = buildOfficialEntriesFromUploadRows(rows, fallback);
       setOfficialUploadRows(rows);
       setOfficialUploadPreview(previewEntries.slice(0, 8));
-      setOfficialUploadFileMessage(`파일 분석 완료: 원본 ${rows.length.toLocaleString()}행 / 업로드 예정 ${previewEntries.length.toLocaleString()}개 거리 기록`);
+      setOfficialUploadFileMessage(`파일 분석 완료: 원본 ${rows.length.toLocaleString()}행 / 업로드 예정 ${previewEntries.length.toLocaleString()}개 거리 기록. 미리보기 확인 후 등록해줘.`);
     } catch (error) {
       setOfficialUploadFileMessage(error?.message || "파일 분석에 실패했다.");
     }
@@ -12189,17 +12395,25 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       return;
     }
     if (!officialUploadRows.length) {
-      alert("먼저 파일 찾기로 CSV/JSON 파일을 선택해줘.");
+      alert("먼저 파일 찾기로 PDF/CSV/JSON 파일을 선택해줘.");
       return;
     }
-    const ok = window.confirm("선택한 공식 기록 파일을 ranking_entries에 등록할까? 같은 entryId는 merge 저장되어 중복 증가하지 않는다.");
+    const ok = window.confirm("공식 기록은 최신 대회 1개만 유지된다. 기존 공식기록을 삭제하고 선택한 파일의 공식기록으로 교체할까? 사용자 개인 기록은 삭제되지 않는다.");
     if (!ok) return;
 
     try {
       setOfficialUploadRegisterLoading(true);
-      setOfficialUploadFileMessage("공식 기록을 Firestore에 등록하는 중........");
-      const result = await upsertOfficialUploadRowsToRankingEntries(appServices.db, officialUploadRows, { fileName: officialUploadFile?.name || "official_upload" });
-      const message = `등록 완료: ${result.competitionCount}개 대회 / ${result.writeCount.toLocaleString()}개 거리 기록`;
+      setOfficialUploadFileMessage("기존 공식기록을 삭제하는 중........");
+      const fileName = officialUploadFile?.name || "official_upload";
+      const officialBatchId = `official_${Date.now()}_${String(fileName).replace(/[^a-zA-Z0-9가-힣_-]/g, "_")}`;
+      const deletedCount = await deleteExistingOfficialRankingEntries(appServices.db, {
+        batchId: officialBatchId,
+        competitionName: fileName,
+        competitionDate: getCurrentLocalDateString(),
+      });
+      setOfficialUploadFileMessage("새 공식기록을 Firestore에 등록하는 중........");
+      const result = await upsertOfficialUploadRowsToRankingEntries(appServices.db, officialUploadRows, { fileName, officialBatchId });
+      const message = `공식기록 교체 완료: 기존 ${deletedCount.toLocaleString()}건 삭제 / ${result.competitionCount}개 대회 / ${result.writeCount.toLocaleString()}개 거리 기록 등록`;
       setOfficialUploadFileMessage(message);
       alert(message);
       await onRefresh?.();
@@ -12274,15 +12488,15 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
         <CardHeader>
           <CardTitle className="text-xl">공식 기록 파일 업로드</CardTitle>
           <DialogDescription>
-            앞으로 공식 대회 기록은 App.jsx에 직접 넣지 않고, 관리자에서 파일을 선택한 뒤 <b>등록</b>해서 Firestore <b>ranking_entries</b>에 저장한다.
+            앞으로 공식 대회 기록은 관리자에서 파일을 선택한 뒤 <b>등록</b>한다. 등록 시 기존 공식기록은 삭제되고, <b>가장 최신 공식대회 데이터만</b> Firestore <b>ranking_entries</b>에 남는다. 사용자 개인 기록은 삭제되지 않는다.
           </DialogDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
             <div className="font-semibold">업로드 파일 형식</div>
-            <div className="mt-1">CSV/TSV/JSON 지원. 엑셀은 <b>CSV로 저장</b>해서 올려줘.</div>
+            <div className="mt-1">PDF/CSV/TSV/JSON 지원. PDF는 텍스트형 PDF만 자동 분석되며, 스캔형 PDF는 CSV/엑셀 변환본을 사용해줘.</div>
             <div className="mt-1">권장 헤더: 대회명, 날짜, 구분, 성별, 선수명, 소속, 20m, 25m, 30m, 35m, 40m, 50m, 60m, 70m, 90m, 총점</div>
-            <div className="mt-1">개인전만 등록하고 단체전은 파일에서 제외하는 것이 가장 안전하다.</div>
+            <div className="mt-1">개인전만 등록하고 단체전은 파일에서 제외한다. 공식기록은 최신 파일 기준으로 교체되며, 이전 공식대회에 출전하지 않은 선수는 공식랭킹에서 사라진다.</div>
           </div>
 
           <div className="grid gap-3 rounded-2xl bg-slate-50 p-4 md:grid-cols-[1fr_auto] md:items-end">
@@ -12290,7 +12504,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
               <Label className="text-sm font-semibold text-slate-700">파일 찾기</Label>
               <Input
                 type="file"
-                accept=".csv,.tsv,.txt,.json"
+                accept=".pdf,.csv,.tsv,.txt,.json"
                 className="mt-2 rounded-2xl bg-white"
                 onChange={handleOfficialUploadFileChange}
               />
