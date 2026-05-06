@@ -23985,12 +23985,26 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
   useEffect(() => {
     const handleRankingScroll = () => {
-      setShowRankingQuickNav(activeRankings.length > 20 && window.scrollY > 700);
+      if (activeRankings.length <= 20) {
+        setShowRankingQuickNav(false);
+        return;
+      }
+      const twentiethCard = document.querySelector('[data-ranking-index="20"]');
+      if (!twentiethCard) {
+        setShowRankingQuickNav(false);
+        return;
+      }
+      const rect = twentiethCard.getBoundingClientRect();
+      setShowRankingQuickNav(rect.top < window.innerHeight * 0.82);
     };
     handleRankingScroll();
     window.addEventListener("scroll", handleRankingScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleRankingScroll);
-  }, [activeRankings.length]);
+    window.addEventListener("resize", handleRankingScroll);
+    return () => {
+      window.removeEventListener("scroll", handleRankingScroll);
+      window.removeEventListener("resize", handleRankingScroll);
+    };
+  }, [activeRankings.length, visibleRankings.length]);
 
   const scrollToRankingTop = useCallback(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -24464,9 +24478,10 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                     ) : null}
                   </div>
                 </div>
-                {visibleRankings.map((item) => (
+                {visibleRankings.map((item, index) => (
                   <div
                     key={`${rankingType}_${item.userId}_${item.distance || item.distanceLabel || "total"}`}
+                    data-ranking-index={index + 1}
                     data-my-ranking-card={item.userId === currentUserId ? "true" : undefined}
                     className={`rounded-2xl border px-3 py-2 transition ${
                       item.userId === currentUserId
@@ -24598,24 +24613,27 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
       </Card>
       {showRankingQuickNav && (
         <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+14px)] z-50 pointer-events-none px-4">
-          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
             <Button
               type="button"
-              className="pointer-events-auto h-11 rounded-full bg-slate-900/95 px-4 text-xs font-bold text-white shadow-xl backdrop-blur"
+              variant="outline"
+              className="pointer-events-auto h-10 rounded-full border-slate-200 bg-white/95 px-4 text-xs font-semibold text-slate-500 shadow-sm backdrop-blur hover:bg-white hover:text-slate-700"
               onClick={scrollToMyRank}
             >
               내 순위 찾기
             </Button>
             <Button
               type="button"
-              className="pointer-events-auto h-11 rounded-full bg-blue-700/95 px-4 text-xs font-bold text-white shadow-xl backdrop-blur"
+              variant="outline"
+              className="pointer-events-auto h-10 rounded-full border-slate-200 bg-white/95 px-4 text-xs font-semibold text-slate-500 shadow-sm backdrop-blur hover:bg-white hover:text-slate-700"
               onClick={scrollToTop10}
             >
               TOP10
             </Button>
             <Button
               type="button"
-              className="pointer-events-auto h-11 w-11 rounded-full bg-slate-900/95 p-0 text-lg font-black text-white shadow-xl backdrop-blur"
+              variant="outline"
+              className="pointer-events-auto h-10 w-10 rounded-full border-slate-200 bg-white/95 p-0 text-base font-semibold text-slate-500 shadow-sm backdrop-blur hover:bg-white hover:text-slate-700"
               onClick={scrollToRankingTop}
               aria-label="최상단으로 이동"
             >
