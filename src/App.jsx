@@ -22203,45 +22203,47 @@ function SessionEditor({
 
   function registerCurrentLocationVenue() {
     const selectedCustom = customVenues.find((item) => item.id === session.weather?.venueId);
-    const name = String(customVenueName || selectedCustom?.name || "내 훈련장").trim();
+    const currentWeather = session.weather || buildDefaultSessionWeatherForUser(currentUser);
+    const name = String(customVenueName || selectedCustom?.name || currentWeather?.venueName || "내 훈련장").trim();
     if (!name) {
       setWeatherError("등록할 장소 이름을 먼저 입력하세요.");
       return;
     }
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setWeatherError("이 브라우저에서는 현재 위치 등록을 사용할 수 없습니다.");
+
+    const sourceVenue = venueOptions.find((item) => item.id === currentWeather?.venueId) || currentWeather;
+    const latitude = Number(sourceVenue?.latitude ?? currentWeather?.latitude);
+    const longitude = Number(sourceVenue?.longitude ?? currentWeather?.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      setWeatherError("좌표가 있는 경기장 또는 프로필 학교 위치를 먼저 선택한 뒤 등록하세요. 위치 권한 요청 없이 선택한 장소 좌표를 저장합니다.");
       return;
     }
+
     setCustomVenueSaving(true);
     setWeatherError("");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const existingByName = customVenues.find((item) => normalizeVenueNameKey(item.name) === normalizeVenueNameKey(name));
-        const venueId = selectedCustom?.id || existingByName?.id || makeCustomVenueId(name);
-        const venue = {
-          id: venueId,
-          name,
-          region: "사용자 등록 위치",
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          type: "사용자 등록",
-          registeredAt: selectedCustom?.registeredAt || existingByName?.registeredAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        const nextVenues = [venue, ...customVenues.filter((item) => item.id !== venue.id && normalizeVenueNameKey(item.name) !== normalizeVenueNameKey(name))].slice(0, 30);
-        setCustomVenues(nextVenues);
-        writeCustomWeatherVenues(nextVenues);
-        setCustomVenueName("");
-        applyVenueToSession(venue);
-        setWeatherError(selectedCustom || existingByName ? "등록 위치가 수정되었습니다. 이 위치 기준으로 바람을 조회할 수 있습니다." : "내 위치가 등록되었습니다. 다음부터 장소 목록에서 바로 선택할 수 있습니다.");
-        setCustomVenueSaving(false);
-      },
-      () => {
-        setWeatherError("브라우저 위치 권한이 차단되어 현재 위치를 등록하지 못했습니다. iPhone/브라우저 설정에서 위치 권한을 허용한 뒤 다시 시도하세요.");
-        setCustomVenueSaving(false);
-      },
-      { enableHighAccuracy: true, timeout: 9000, maximumAge: 1000 * 60 * 5 }
-    );
+    try {
+      const existingByName = customVenues.find((item) => normalizeVenueNameKey(item.name) === normalizeVenueNameKey(name));
+      const venueId = selectedCustom?.id || existingByName?.id || makeCustomVenueId(name);
+      const venue = {
+        id: venueId,
+        name,
+        region: sourceVenue?.region || currentWeather?.region || "사용자 등록 위치",
+        latitude,
+        longitude,
+        type: "사용자 등록",
+        registeredAt: selectedCustom?.registeredAt || existingByName?.registeredAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const nextVenues = [venue, ...customVenues.filter((item) => item.id !== venue.id && normalizeVenueNameKey(item.name) !== normalizeVenueNameKey(name))].slice(0, 30);
+      setCustomVenues(nextVenues);
+      writeCustomWeatherVenues(nextVenues);
+      setCustomVenueName("");
+      applyVenueToSession(venue);
+      setWeatherError(selectedCustom || existingByName ? "등록 위치가 수정되었습니다. 선택한 장소 좌표 기준으로 바람을 조회합니다." : "위치가 등록되었습니다. 다음부터 장소 목록에서 바로 선택할 수 있습니다.");
+    } catch {
+      setWeatherError("위치 등록 중 오류가 발생했습니다. 다시 시도하세요.");
+    } finally {
+      setCustomVenueSaving(false);
+    }
   }
 
   function deleteSelectedCustomVenue() {
@@ -22528,15 +22530,15 @@ function SessionEditor({
                       className="h-10 rounded-xl bg-white text-sm"
                       value={customVenueName}
                       onChange={(e) => setCustomVenueName(e.target.value)}
-                      placeholder="학교/클럽/개인 훈련장 이름 등록"
+                      placeholder="학교/경기장/클럽 이름 등록"
                     />
                     <Button type="button" variant="outline" className="h-10 rounded-xl bg-white text-slate-700" onClick={registerCurrentLocationVenue} disabled={customVenueSaving}>
-                      {customVenueSaving ? "등록 중..." : "내 위치 등록/수정"}
+                      {customVenueSaving ? "등록 중..." : "위치 등록/수정"}
                     </Button>
                     <Button type="button" variant="outline" className="h-10 rounded-xl bg-white text-red-600" onClick={deleteSelectedCustomVenue} disabled={customVenueSaving}>
                       선택 위치 삭제
                     </Button>
-                    <div className="text-[11px] text-slate-500 xl:col-span-3">학교 위치는 프로필 학교/소속 위치를 선택해 사용하고, 클럽/동호회/개인 훈련장은 이름을 입력한 뒤 내 위치 등록/수정으로 저장하세요.</div>
+                    <div className="text-[11px] text-slate-500 xl:col-span-3">학교 위치는 프로필 학교/소속 위치를 선택해 사용하고, 클럽/동호회/개인 훈련장은 이름을 입력한 뒤 위치 등록/수정으로 저장하세요.</div>
                   </div>
                   <div className="grid grid-cols-1 gap-2 xl:grid-cols-[1fr_1fr]">
                     <div className="rounded-2xl bg-white px-3 py-2 text-xs text-slate-700">
