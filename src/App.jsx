@@ -1130,8 +1130,38 @@ function getOfficialSheetRankingGroup(sheet = {}, row = {}) {
   return getRankingGroup(division, gender) || sheet.rankingGroup || division;
 }
 
+function getRankingGroupWhereValues(rankingGroup, gender = "all") {
+  const group = String(rankingGroup || "").trim();
+  const g = String(gender || "all").trim();
+  if (!group || group === "all") return [];
+
+  const withGender = (base) => {
+    if (g === "남" || g === "여") return [`${base}(${g})`, base];
+    return [base, `${base}(남)`, `${base}(여)`];
+  };
+
+  if (group === "초등부(통합)") return ["초등부(저학년)", "초등부(고학년)", "초등부(통합)"];
+  if (group === "고등부") return withGender("고등부");
+
+  // 핵심 보정: 과거 Firestore에는 대학부/일반부가 '대학/일반부'로 저장된 문서가 남아 있을 수 있다.
+  // 서버 쿼리 단계에서 둘을 모두 후보로 가져온 뒤, 앱 내부에서 sheetLabel/sourceFile 기준으로 다시 분리한다.
+  if (group === "대학부") return [...withGender("대학부"), ...withGender("대학/일반부")].slice(0, 10);
+  if (group === "일반부") return [...withGender("일반부"), ...withGender("대학/일반부")].slice(0, 10);
+  if (group === "대학/일반부") return [...withGender("대학부"), ...withGender("일반부"), ...withGender("대학/일반부")].slice(0, 10);
+
+  return [group];
+}
+
+function applyRankingGroupConstraints(constraints, rankingGroup, gender = "all") {
+  const values = Array.from(new Set(getRankingGroupWhereValues(rankingGroup, gender).filter(Boolean)));
+  if (!values.length) return constraints;
+  if (values.length === 1) constraints.push(where("rankingGroup", "==", values[0]));
+  else constraints.push(where("rankingGroup", "in", values.slice(0, 10)));
+  return constraints;
+}
+
 function shouldUseRankingGroupWhere(rankingGroup) {
-  return !["초등부(통합)", "고등부", "대학부", "일반부", "대학/일반부"].includes(String(rankingGroup || ""));
+  return String(rankingGroup || "").trim() !== "" && String(rankingGroup || "").trim() !== "all";
 }
 
 function normalizeSessionShape(session, profile = null) {
@@ -19717,7 +19747,8 @@ function normalizeRankingEntryData(docId, raw = {}) {
 }
 
 function rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }) {
-  if (rankingGroup && rankingGroup !== "all" && !rankingGroupMatchesFilter(rankingGroup, entry.rankingGroup)) return false;
+  const effectiveGroup = entry.rankingGroup || getRankingGroup(entry.division, entry.gender);
+  if (rankingGroup && rankingGroup !== "all" && !rankingGroupMatchesFilter(rankingGroup, effectiveGroup)) return false;
   if (gender && gender !== "all" && String(entry.gender || "") !== String(gender)) return false;
   if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all" && String(entry.regionCity || "") !== String(rankingFilters.regionCity)) return false;
   if (rankingFilters?.groupName && rankingFilters.groupName !== "all" && !schoolNameMatchesFilter(entry.groupName || entry.schoolName || entry.school || "", rankingFilters.groupName)) return false;
@@ -19734,7 +19765,7 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
   const customDate = rankingFilters?.customDate || "";
   const baseConstraints = [];
 
-  if (rankingGroup && rankingGroup !== "all" && shouldUseRankingGroupWhere(rankingGroup)) baseConstraints.push(where("rankingGroup", "==", rankingGroup));
+  if (rankingGroup && rankingGroup !== "all" && shouldUseRankingGroupWhere(rankingGroup)) applyRankingGroupConstraints(baseConstraints, rankingGroup, gender);
   if (gender && gender !== "all") baseConstraints.push(where("gender", "==", gender));
   if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all") baseConstraints.push(where("regionCity", "==", rankingFilters.regionCity));
 
@@ -19782,7 +19813,7 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
     });
 
     const ownConstraints = [where("userId", "==", currentUserId || "__none__")];
-    if (rankingGroup && rankingGroup !== "all" && shouldUseRankingGroupWhere(rankingGroup)) ownConstraints.push(where("rankingGroup", "==", rankingGroup));
+    if (rankingGroup && rankingGroup !== "all" && shouldUseRankingGroupWhere(rankingGroup)) applyRankingGroupConstraints(ownConstraints, rankingGroup, gender);
     if (gender && gender !== "all") ownConstraints.push(where("gender", "==", gender));
     if (distances.length === 1) ownConstraints.push(where("distance", "==", Number(distances[0])));
     ownConstraints.push(limit(40));
@@ -19803,13 +19834,44 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
     });
     return Array.from(map.values()).sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
   } catch (error) {
-    console.warn("ranking_entries strict query failed; fallback to smaller client filtering", error);
-    const snap = await getDocs(query(collection(db, "ranking_entries"), limit(600)));
-    return (snap.docs || [])
-      .map((docSnap) => normalizeRankingEntryData(docSnap.id, docSnap.data()))
-      .filter((entry) => rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }))
+    console.warn("ranking_entries strict query failed; fallback to group-based client filtering", error);
+
+    // 인덱스가 아직 없거나 과거 업로드본의 rankingGroup 값이 섞인 경우에도
+    // 대학부/일반부가 0명으로 보이지 않도록 후보 그룹별로 안전하게 조회한다.
+    const groupValues = getRankingGroupWhereValues(rankingGroup, gender);
+    const fallbackQueries = [];
+
+    if (groupValues.length) {
+      groupValues.slice(0, 10).forEach((groupValue) => {
+        const constraints = [where("rankingGroup", "==", groupValue)];
+        if (gender && gender !== "all") constraints.push(where("gender", "==", gender));
+        if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all") constraints.push(where("regionCity", "==", rankingFilters.regionCity));
+        if (distances.length === 1) constraints.push(where("distance", "==", Number(distances[0])));
+        constraints.push(limit(1000));
+        fallbackQueries.push(getDocs(query(collection(db, "ranking_entries"), ...constraints)));
+      });
+    } else {
+      const constraints = [];
+      if (gender && gender !== "all") constraints.push(where("gender", "==", gender));
+      if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all") constraints.push(where("regionCity", "==", rankingFilters.regionCity));
+      if (distances.length === 1) constraints.push(where("distance", "==", Number(distances[0])));
+      constraints.push(limit(2000));
+      fallbackQueries.push(getDocs(query(collection(db, "ranking_entries"), ...constraints)));
+    }
+
+    const snaps = await Promise.all(fallbackQueries);
+    const map = new Map();
+    snaps.forEach((snap) => {
+      (snap.docs || []).forEach((docSnap) => {
+        const entry = normalizeRankingEntryData(docSnap.id, docSnap.data());
+        if (!rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate })) return;
+        map.set(entry.entryId || docSnap.id, entry);
+      });
+    });
+
+    return Array.from(map.values())
       .sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0))
-      .slice(0, 120);
+      .slice(0, 500);
   }
 }
 
