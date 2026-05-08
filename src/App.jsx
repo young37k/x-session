@@ -19642,18 +19642,57 @@ function normalizeOfficialDivisionForDisplay(rawDivision = "", rankingGroup = ""
   return division || getDivisionFromRankingGroup(group);
 }
 
+
+function inferAdultOfficialDivisionFromEntry(raw = {}, docId = "") {
+  const haystack = [
+    docId,
+    raw.entryId,
+    raw.sessionId,
+    raw.officialBatchId,
+    raw.competitionId,
+    raw.sheetLabel,
+    raw.fileName,
+    raw.sourceFile,
+    raw.sourceTitle,
+    raw.description,
+    raw.memo,
+    raw.division,
+    raw.rankingGroup,
+    raw.category,
+  ].filter(Boolean).join(" ").replace(/\s+/g, "");
+
+  if (/일반부/.test(haystack)) return "일반부";
+  if (/대학부/.test(haystack)) return "대학부";
+
+  // 대한양궁협회 파일 코드 기준 보정:
+  // AR04 = 대학부, AR05 = 일반부. 기존 Firestore에 대학/일반부로 저장된 문서도 읽을 때 분리한다.
+  const lower = haystack.toLowerCase();
+  if (/ar0?4[wm]/i.test(lower) || /ar04m01q|ar04w01q/i.test(lower)) return "대학부";
+  if (/ar0?5[wm]/i.test(lower) || /ar05m01q|ar05w01q/i.test(lower)) return "일반부";
+
+  return "";
+}
+
 function normalizeRankingEntryData(docId, raw = {}) {
   const name = raw.name || raw.playerName || raw.player || "공식기록";
   const groupName = getCanonicalSchoolName(raw.groupName || raw.schoolName || raw.school || raw.team || "");
-  let rankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || getRankingGroup(raw.division, raw.gender);
-  if (rankingGroup === "대학/일반부" && (raw.division === "대학부" || raw.division === "일반부")) {
+  const sourceType = raw.sourceType || "";
+  const isOfficialLike = raw.isSampleData || raw.isOfficialRecord || sourceType === "competition_result" || sourceType === "official_sample" || raw.competitionId || raw.isOfficial;
+  const inferredAdultDivision = isOfficialLike ? inferAdultOfficialDivisionFromEntry(raw, docId) : "";
+  const effectiveDivision = inferredAdultDivision || raw.division || "";
+  let rankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || getRankingGroup(effectiveDivision, raw.gender);
+
+  // 과거 업로드본은 대학부/일반부가 모두 '대학/일반부'로 저장된 경우가 있다.
+  // 읽는 순간 sheet/file 코드 기준으로 다시 분리해서 필터와 랭킹이 정상 작동하게 한다.
+  if (inferredAdultDivision) {
+    rankingGroup = getRankingGroup(inferredAdultDivision, raw.gender) || rankingGroup;
+  } else if (rankingGroup === "대학/일반부" && (raw.division === "대학부" || raw.division === "일반부")) {
     rankingGroup = getRankingGroup(raw.division, raw.gender) || rankingGroup;
   }
+
   const score = Number(raw.score ?? raw.totalScore ?? raw.total ?? 0);
   const sessionDate = raw.sessionDate || raw.date || raw.competitionDate || "";
-  const sourceType = raw.sourceType || "";
-  const isOfficialLike = raw.isSampleData || raw.isOfficialRecord || sourceType === "competition_result" || sourceType === "official_sample" || raw.competitionId;
-  const normalizedDivision = isOfficialLike ? normalizeOfficialDivisionForDisplay(raw.division || "", rankingGroup) : (raw.division || "");
+  const normalizedDivision = isOfficialLike ? normalizeOfficialDivisionForDisplay(effectiveDivision, rankingGroup) : (raw.division || "");
   return {
     id: docId,
     ...raw,
@@ -19833,10 +19872,10 @@ async function upsertOfficialCompetitionSheetToRankingEntries(db, sheet) {
     (sheet.distances || []).forEach((distance, idx) => {
       const score = Number(row.rounds?.[idx]);
       if (!Number.isFinite(score)) return;
-      const entryId = `${sheet.competitionId || sheet.id}_${userId}_${distance}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
+      const entryId = `${sheet.id || sheet.competitionId}_${userId}_${distance}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
       batch.set(doc(db, "ranking_entries", entryId), {
         entryId,
-        sessionId: `${sheet.id}_${userId}`,
+        sessionId: `${sheet.id || sheet.competitionId}_${userId}`,
         userId,
         name: row.name,
         groupName: row.school,
@@ -19850,7 +19889,10 @@ async function upsertOfficialCompetitionSheetToRankingEntries(db, sheet) {
         latestOnly: true,
         officialBatchId: sheet.competitionId || sheet.id,
         competitionId: sheet.competitionId || sheet.id,
+        sourceSheetId: sheet.id || "",
         competitionName: sheet.competitionName || sheet.sheetLabel || "대회 결과",
+        sheetLabel: sheet.sheetLabel || "",
+        sourceFile: sheet.fileName || sheet.id || "",
         sessionDate: sheet.date || getCurrentLocalDateString(),
         distance: Number(distance),
         score,
@@ -19879,12 +19921,12 @@ async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMP
       (sheet.distances || []).forEach((distance, idx) => {
         const score = Number(row.rounds?.[idx]);
         if (!Number.isFinite(score)) return;
-        const entryId = `${sheet.competitionId || sheet.id}_${userId}_${Number(distance)}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
+        const entryId = `${sheet.id || sheet.competitionId}_${userId}_${Number(distance)}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
         writes.push({
           entryId,
           payload: {
             entryId,
-            sessionId: `${sheet.id}_${userId}`,
+            sessionId: `${sheet.id || sheet.competitionId}_${userId}`,
             userId,
             name: row.name,
             playerName: row.name,
@@ -19900,7 +19942,10 @@ async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMP
             latestOnly: true,
             officialBatchId: sheet.competitionId || sheet.id,
             competitionId: sheet.competitionId || sheet.id,
+            sourceSheetId: sheet.id || "",
             competitionName: sheet.competitionName || sheet.sheetLabel || "대회 결과",
+            sheetLabel: sheet.sheetLabel || "",
+            sourceFile: sheet.fileName || sheet.id || "",
             sessionDate: sheet.date || getCurrentLocalDateString(),
             date: sheet.date || getCurrentLocalDateString(),
             distance: Number(distance),
