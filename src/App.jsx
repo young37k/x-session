@@ -19969,11 +19969,41 @@ async function upsertOfficialCompetitionSheetToRankingEntries(db, sheet) {
   return count;
 }
 
+
+function normalizeOfficialCompetitionSheetForUpload(sheet = {}) {
+  const text = `${sheet.id || ""} ${sheet.sheetLabel || ""} ${sheet.fileName || ""} ${sheet.division || ""}`.replace(/\s+/g, "");
+  const gender = sheet.gender || (/여자|W01Q|AR01W|AR02W|AR03W|AR04W|AR05W/i.test(text) ? "여" : "남");
+  let division = sheet.division || "";
+  if (/AR0?4|대학부/i.test(text)) division = "대학부";
+  else if (/AR0?5|일반부/i.test(text)) division = "일반부";
+  else if (/AR0?3|고등부/i.test(text)) division = "고등부";
+  else if (/AR0?2|중학부|중등부/i.test(text)) division = "중등부";
+  else if (/U-?10|1~4|저학년/i.test(text)) division = "초등부(저학년)";
+  else if (/U-?12|5~6|고학년/i.test(text)) division = "초등부(고학년)";
+
+  const rankingGroup = getRankingGroup(division, gender) || sheet.rankingGroup || division;
+  return {
+    ...sheet,
+    gender,
+    division,
+    rankingGroup,
+    sourceSheetId: sheet.sourceSheetId || sheet.id || "",
+  };
+}
+
+function getOfficialDivisionCounts(entries = []) {
+  return entries.reduce((acc, entry) => {
+    const key = entry?.payload?.rankingGroup || entry?.rankingGroup || "미분류";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
 async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMPLE_SHEETS) {
   if (!db) throw new Error("Firestore DB 연결이 준비되지 않았다.");
 
   const writes = [];
-  (sheets || []).forEach((sheet) => {
+  (sheets || []).map(normalizeOfficialCompetitionSheetForUpload).forEach((sheet) => {
     if (!sheet?.rows?.length) return;
     sheet.rows.forEach((sourceRow) => {
       const row = withCanonicalSchool(sourceRow);
@@ -20031,7 +20061,7 @@ async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMP
     await batch.commit();
   }
 
-  return { sheetCount: (sheets || []).length, writeCount: writes.length };
+  return { sheetCount: (sheets || []).length, writeCount: writes.length, divisionCounts: getOfficialDivisionCounts(writes) };
 }
 
 
@@ -27318,7 +27348,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       });
       setRankingUploadMessage("새 공식기록을 등록하는 중........");
       const result = await upsertOfficialCompetitionSheetsToRankingEntries(appServices.db, SAMPLE_SHEETS);
-      const message = `공식기록 교체 완료: 기존 ${deletedCount.toLocaleString()}건 삭제 / ${result.sheetCount}개 부문 / ${result.writeCount.toLocaleString()}개 거리 기록 등록`;
+      const message = `공식기록 교체 완료: 기존 ${deletedCount.toLocaleString()}건 삭제 / ${result.sheetCount}개 부문 / ${result.writeCount.toLocaleString()}개 거리 기록 등록${result.divisionCounts ? `\n구분별: ${Object.entries(result.divisionCounts).map(([k, v]) => `${k} ${Number(v).toLocaleString()}개`).join(" / ")}` : ""}`;
       setRankingUploadMessage(message);
       alert(message);
       await onRefresh?.();
