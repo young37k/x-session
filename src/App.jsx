@@ -385,7 +385,8 @@ const RANKING_GROUP_OPTIONS = [
   "중등부",
   "고등부",
   "대학부",
-  "일반부"
+  "일반부",
+  "대학/일반부"
 ];
 const DISTANCE_OPTIONS = [18, 20, 25, 30, 35, 40, 50, 60, 70, 90];
 
@@ -411,8 +412,16 @@ const RANKING_GROUP_DISTANCE_RULES = {
   "초등부(고학년)": [35, 30, 25, 20],
   "초등부(통합)": [35, 30, 25, 20],
   "중등부": [60, 50, 40, 30],
+  "고등부": [90, 70, 50, 30],
   "고등부(남)": [90, 70, 50, 30],
   "고등부(여)": [70, 60, 50, 30],
+  "대학부": [90, 70, 50, 30],
+  "일반부": [90, 70, 50, 30],
+  "대학/일반부": [90, 70, 50, 30],
+  "대학부(남)": [90, 70, 50, 30],
+  "대학부(여)": [70, 60, 50, 30],
+  "일반부(남)": [90, 70, 50, 30],
+  "일반부(여)": [70, 60, 50, 30],
   "대학/일반부(남)": [90, 70, 50, 30],
   "대학/일반부(여)": [70, 60, 50, 30]
 };
@@ -1013,6 +1022,7 @@ function normalizeDivisionLabel(value, context = {}) {
   if (lower.includes("ar04")) return "대학부";
   if (lower.includes("ar05")) return "일반부";
 
+  if (raw.includes("대학/일반부") || raw.includes("대학일반부") || raw.includes("대학및일반부")) return "대학/일반부";
   if (raw.includes("일반부") || raw.includes("일반")) return "일반부";
   if (raw.includes("대학부") || raw.includes("대학")) return "대학부";
   if (raw.includes("고등부") || raw.includes("고등")) return "고등부";
@@ -1040,6 +1050,7 @@ function canonicalRankingGroup(value, context = {}) {
   if (d === "고등부") return "고등부";
   if (d === "대학부") return "대학부";
   if (d === "일반부") return "일반부";
+  if (d === "대학/일반부") return "대학/일반부";
   return d;
 }
 
@@ -1076,6 +1087,7 @@ function formatProfileDivisionLabel(value) {
   if (high) return `고${high[1]}`;
   if (raw === "대학부") return "대학부";
   if (raw === "일반부") return "일반부";
+  if (raw === "대학/일반부") return "대학/일반부";
   return raw;
 }
 
@@ -1094,7 +1106,7 @@ function getDivisionFromRankingGroup(rankingGroup = "", gender = "") {
   if (group === "대학부" || group === "대학부(남)" || group === "대학부(여)") return "대학부";
   if (group === "일반부" || group === "일반부(남)" || group === "일반부(여)") return "일반부";
   if (group === "대학/일반부(남)" || group === "대학/일반부(여)" || group === "대학/일반부") {
-    return normalizeDivisionLabel(group, { sheetLabel: group });
+    return "대학/일반부";
   }
   return canonicalRankingGroup(group) || "-";
 }
@@ -1140,27 +1152,31 @@ function getRankingGroup(division, gender) {
   if (/^고등[1-3]$/.test(d)) return "고등부";
   if (d === "대학부") return "대학부";
   if (d === "일반부") return "일반부";
+  if (d === "대학/일반부") return "대학/일반부";
   return canonicalRankingGroup(d);
 }
 
 function rankingGroupMatchesFilter(selectedGroup, actualGroup) {
   if (!selectedGroup || selectedGroup === "all") return true;
-  if (selectedGroup === "초등부(통합)") {
-    return actualGroup === "초등부(통합)" || actualGroup === "초등부(저학년)" || actualGroup === "초등부(고학년)";
+  const selected = canonicalRankingGroup(selectedGroup);
+  const actual = canonicalRankingGroup(actualGroup);
+
+  if (selected === "초등부(통합)") {
+    return actual === "초등부(통합)" || actual === "초등부(저학년)" || actual === "초등부(고학년)";
   }
-  if (selectedGroup === "고등부") {
-    return actualGroup === "고등부" || actualGroup === "고등부(남)" || actualGroup === "고등부(여)";
+  if (selected === "대학/일반부") {
+    return actual === "대학부" || actual === "일반부" || actual === "대학/일반부" || actual === "대학부(남)" || actual === "대학부(여)" || actual === "일반부(남)" || actual === "일반부(여)";
   }
-  if (selectedGroup === "대학부") {
-    return actualGroup === "대학부" || actualGroup === "대학부(남)" || actualGroup === "대학부(여)" || actualGroup === "대학/일반부(남)" || actualGroup === "대학/일반부(여)" || actualGroup === "대학/일반부";
+  if (selected === "고등부") {
+    return actual === "고등부" || actual === "고등부(남)" || actual === "고등부(여)";
   }
-  if (selectedGroup === "일반부") {
-    return actualGroup === "일반부" || actualGroup === "일반부(남)" || actualGroup === "일반부(여)" || actualGroup === "대학/일반부(남)" || actualGroup === "대학/일반부(여)" || actualGroup === "대학/일반부";
+  if (selected === "대학부") {
+    return actual === "대학부" || actual === "대학부(남)" || actual === "대학부(여)";
   }
-  if (selectedGroup === "대학/일반부") {
-    return actualGroup === "대학부" || actualGroup === "일반부" || actualGroup === "대학/일반부(남)" || actualGroup === "대학/일반부(여)" || actualGroup === "대학/일반부";
+  if (selected === "일반부") {
+    return actual === "일반부" || actual === "일반부(남)" || actual === "일반부(여)";
   }
-  return canonicalRankingGroup(actualGroup) === canonicalRankingGroup(selectedGroup);
+  return actual === selected;
 }
 
 function schoolFilterMatches(selectedGroupName, actualGroupName) {
@@ -1171,8 +1187,15 @@ function schoolFilterMatches(selectedGroupName, actualGroupName) {
 }
 
 
-function getRequiredDistancesForRankingGroup(rankingGroup) {
-  return RANKING_GROUP_DISTANCE_RULES[rankingGroup] || [];
+function getRequiredDistancesForRankingGroup(rankingGroup, gender = "남") {
+  const group = canonicalRankingGroup(rankingGroup);
+  const g = String(gender || "남").trim();
+  const genderKey = `${group}(${g})`;
+  if (RANKING_GROUP_DISTANCE_RULES[genderKey]) return RANKING_GROUP_DISTANCE_RULES[genderKey];
+  if (group === "고등부" || group === "대학부" || group === "일반부" || group === "대학/일반부") {
+    return g === "여" ? [70, 60, 50, 30] : [90, 70, 50, 30];
+  }
+  return RANKING_GROUP_DISTANCE_RULES[group] || RANKING_GROUP_DISTANCE_RULES[rankingGroup] || [];
 }
 
 function normalizeSessionShape(session, profile = null) {
@@ -19659,10 +19682,10 @@ function getRankingQueryTarget(rankingFilters = {}, currentUser = null, options 
   return { rankingGroup, gender };
 }
 
-function getRankingQueryDistances(rankingType, rankingFilters = {}, rankingGroup = "") {
+function getRankingQueryDistances(rankingType, rankingFilters = {}, rankingGroup = "", gender = "남") {
   const selected = rankingFilters.distance;
   if (selected && selected !== "all") return [Number(selected)].filter(Boolean);
-  const required = getRequiredDistancesForRankingGroup(rankingGroup);
+  const required = getRequiredDistancesForRankingGroup(rankingGroup, gender);
   if (rankingType === "total" || rankingType === "weeklyTotal") return required;
   return required.length ? required : [];
 }
@@ -19684,7 +19707,7 @@ function normalizeOfficialDivisionForDisplay(rawDivision = "", rankingGroup = ""
 function normalizeRankingEntryData(docId, raw = {}) {
   const name = raw.name || raw.playerName || raw.player || "공식기록";
   const groupName = getCanonicalSchoolName(raw.groupName || raw.schoolName || raw.school || raw.team || "");
-  const rankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || getRankingGroup(raw.division, raw.gender);
+  const rankingGroup = canonicalRankingGroup(raw.rankingGroup || raw.category || raw.divisionGroup || raw.division || getRankingGroup(raw.division, raw.gender), raw);
   const score = Number(raw.score ?? raw.totalScore ?? raw.total ?? 0);
   const sessionDate = raw.sessionDate || raw.date || raw.competitionDate || "";
   const sourceType = raw.sourceType || "";
@@ -19726,12 +19749,12 @@ function rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilter
 async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, currentUser, currentUserId, fullLoad = false, pageSize = 120, pageCursor = null }) {
   if (!db) return fullLoad ? { entries: [], nextCursor: null, hasMore: false, rawCount: 0 } : [];
   const { rankingGroup, gender } = getRankingQueryTarget(rankingFilters, currentUser, { useProfileFallback: !fullLoad });
-  const distances = getRankingQueryDistances(rankingType, rankingFilters, rankingGroup);
+  const distances = getRankingQueryDistances(rankingType, rankingFilters, rankingGroup, gender);
   const dateFilter = rankingFilters?.dateFilter || "all";
   const customDate = rankingFilters?.customDate || "";
   const baseConstraints = [];
 
-  if (rankingGroup && rankingGroup !== "all") baseConstraints.push(where("rankingGroup", "==", rankingGroup));
+  if (rankingGroup && rankingGroup !== "all" && rankingGroup !== "대학/일반부" && rankingGroup !== "초등부(통합)") baseConstraints.push(where("rankingGroup", "==", rankingGroup));
   if (gender && gender !== "all") baseConstraints.push(where("gender", "==", gender));
   if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all") baseConstraints.push(where("regionCity", "==", rankingFilters.regionCity));
 
@@ -19801,7 +19824,7 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
     return Array.from(map.values()).sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
   } catch (error) {
     console.warn("ranking_entries strict query failed; fallback to smaller client filtering", error);
-    const snap = await getDocs(query(collection(db, "ranking_entries"), limit(600)));
+    const snap = await getDocs(query(collection(db, "ranking_entries"), limit(5000)));
     return (snap.docs || [])
       .map((docSnap) => normalizeRankingEntryData(docSnap.id, docSnap.data()))
       .filter((entry) => rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }))
@@ -20438,7 +20461,7 @@ async function migrateRankingEntryDivisionLabels(db) {
 
   (snap.docs || []).forEach((docSnap) => {
     const raw = docSnap.data() || {};
-    const rankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || getRankingGroup(raw.division, raw.gender);
+    const rankingGroup = canonicalRankingGroup(raw.rankingGroup || raw.category || raw.divisionGroup || raw.division || getRankingGroup(raw.division, raw.gender), raw);
     const normalizedDivision = normalizeOfficialDivisionForDisplay(raw.division || "", rankingGroup);
     const canonicalSchool = getCanonicalSchoolName(raw.groupName || raw.schoolName || raw.school || raw.team || "");
 
@@ -20901,7 +20924,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
       if (isAllDistance) {
         const validAttempts = attempts.filter((attempt) => {
           const group = attempt.rankingGroup || profileRankingGroup;
-          const requiredDistances = getRequiredDistancesForRankingGroup(group);
+          const requiredDistances = getRequiredDistancesForRankingGroup(group, userGender);
           // 사용자 기록은 프로필/세션 구분값이 비어 있어도 거리 랭킹에는 반드시 노출한다.
           // 공식기록은 기존 부문별 필수 거리 기준을 유지한다.
           if (!requiredDistances.length) return !user.isSampleData;
@@ -20942,7 +20965,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         .filter((attempt) => String(attempt.distance) === String(selectedDistance))
         .filter((attempt) => {
           const group = attempt.rankingGroup || profileRankingGroup;
-          const requiredDistances = getRequiredDistancesForRankingGroup(group);
+          const requiredDistances = getRequiredDistancesForRankingGroup(group, userGender);
           if (!requiredDistances.length) return !user.isSampleData;
           return requiredDistances.includes(Number(attempt.distance));
         });
@@ -21035,7 +21058,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
       );
 
       for (const candidateGroup of candidateGroups) {
-        const requiredDistances = getRequiredDistancesForRankingGroup(candidateGroup);
+        const requiredDistances = getRequiredDistancesForRankingGroup(candidateGroup, userGender);
         if (!requiredDistances.length) continue;
 
         const attempts = allAttempts.filter((attempt) => (attempt.rankingGroup || candidateGroup) === candidateGroup);
