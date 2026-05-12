@@ -278,16 +278,12 @@ function getEffectiveWindLevel(session) {
 }
 
 function normalizeOfficialDivision(division) {
-  if (division === "초등1" || division === "초등2" || division === "초등3" || division === "초등4") {
-    return "초등부(저학년)";
-  }
-  if (division === "초등5" || division === "초등6") {
-    return "초등부(고학년)";
-  }
-  if (division === "중등1" || division === "중등2" || division === "중등3") {
-    return "중등부";
-  }
-  return division || "";
+  const normalized = normalizeDivisionLabel(division);
+  if (/^초등[1-4]$/.test(normalized)) return "초등부(저학년)";
+  if (/^초등[5-6]$/.test(normalized)) return "초등부(고학년)";
+  if (/^중등[1-3]$/.test(normalized)) return "중등부";
+  if (/^고등[1-3]$/.test(normalized)) return "고등부";
+  return normalized || "";
 }
 
 const RANKING_GROUP_OPTIONS = [
@@ -903,11 +899,33 @@ function getModeLabel(mode) {
 function normalizeDivisionLabel(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
-  return raw.replace(/\s+/g, "").replace(/학년$/,"");
+
+  const compact = raw
+    .replace(/\s+/g, "")
+    .replace(/[（）]/g, (mark) => (mark === "（" ? "(" : ")"))
+    .replace(/학년$/g, "");
+
+  if (/^초등부\((저학년|고학년|통합)\)$/.test(compact)) return compact;
+  if (compact === "초등저학년" || compact === "초등부저학년") return "초등부(저학년)";
+  if (compact === "초등고학년" || compact === "초등부고학년") return "초등부(고학년)";
+  if (compact === "초등통합" || compact === "초등부통합") return "초등부(통합)";
+  if (compact === "중등부") return "중등부";
+  if (compact === "고등부") return "고등부";
+  if (compact === "대학부") return "대학부";
+  if (compact === "일반부") return "일반부";
+
+  const elementary = compact.match(/^초(?:등)?([1-6])(?:학년)?$/);
+  if (elementary) return `초등${elementary[1]}`;
+  const middle = compact.match(/^중(?:등)?([1-3])(?:학년)?$/);
+  if (middle) return `중등${middle[1]}`;
+  const high = compact.match(/^고(?:등)?([1-3])(?:학년)?$/);
+  if (high) return `고등${high[1]}`;
+
+  return compact;
 }
 
 function formatProfileDivisionLabel(value) {
-  const raw = String(value || "").trim();
+  const raw = normalizeDivisionLabel(value);
   if (!raw) return "-";
   const elementary = raw.match(/^초등(\d)$/);
   if (elementary) return `초${elementary[1]}`;
@@ -921,8 +939,23 @@ function formatProfileDivisionLabel(value) {
 }
 
 function hasExactSchoolGrade(value) {
-  const raw = String(value || "").trim();
-  return /^(초등|중등|고등)[1-6]$/.test(raw);
+  const raw = normalizeDivisionLabel(value);
+  return /^(초등[1-6]|중등[1-3]|고등[1-3])$/.test(raw);
+}
+
+function isExplicitRankingDivision(value) {
+  const rawText = String(value || "").replace(/\s+/g, "");
+  const raw = normalizeDivisionLabel(value);
+  if (/초등/.test(rawText) && /(U-?10|U-?11|1~4학년|1-4학년|1～4학년|5~6학년|5-6학년|5～6학년|저학년|고학년|통합)/i.test(rawText)) return true;
+  return hasExactSchoolGrade(raw) || [
+    "초등부(저학년)",
+    "초등부(고학년)",
+    "초등부(통합)",
+    "중등부",
+    "고등부",
+    "대학부",
+    "일반부",
+  ].includes(raw);
 }
 
 function getDivisionFromRankingGroup(rankingGroup = "", gender = "") {
@@ -964,20 +997,42 @@ function formatGroupDisplayName(value) {
 }
 
 function getRankingGroup(division, gender) {
-  if (division === "초등부(저학년)") return "초등부(저학년)";
-  if (division === "초등부(고학년)") return "초등부(고학년)";
-  if (division === "초등부(통합)") return "초등부(통합)";
-  if (division === "중등부") return "중등부";
+  const rawText = String(division || "").trim();
+  const d = normalizeDivisionLabel(rawText);
+  const compact = rawText.replace(/\s+/g, "");
+  const g = String(gender || "남").trim() === "여" ? "여" : "남";
 
-  const d = String(division || "").trim();
-  const g = String(gender || "남").trim();
+  if (d === "초등부(저학년)") return "초등부(저학년)";
+  if (d === "초등부(고학년)") return "초등부(고학년)";
+  if (d === "초등부(통합)") return "초등부(통합)";
+  if (d === "중등부") return "중등부";
+
   if (/^초등[1-4]$/.test(d)) return "초등부(저학년)";
   if (/^초등[5-6]$/.test(d)) return "초등부(고학년)";
   if (/^중등[1-3]$/.test(d)) return "중등부";
   if (d === "고등부") return g === "여" ? "고등부(여)" : "고등부(남)";
   if (/^고등[1-3]$/.test(d)) return g === "여" ? "고등부(여)" : "고등부(남)";
   if (d === "대학부" || d === "일반부") return g === "여" ? "대학/일반부(여)" : "대학/일반부(남)";
+
+  // 공식 대회 원문에 포함된 연령/학년 표기도 안전하게 흡수한다.
+  // U-10/U-11 또는 1~4학년 표기는 초등 저학년으로 본다.
+  if (/초등/.test(compact) && /(U-?10|U-?11|1~4학년|1-4학년|1～4학년)/i.test(compact)) return "초등부(저학년)";
+  if (/초등/.test(compact) && /(5~6학년|5-6학년|5～6학년|고학년)/.test(compact)) return "초등부(고학년)";
+  if (/초등/.test(compact) && /(12세이하|초등부개인|초등부단체|초등부통합|통합)/.test(compact)) return "초등부(통합)";
+  if (/중등|중학교/.test(compact)) return "중등부";
+  if (/고등|고등학교/.test(compact)) return g === "여" ? "고등부(여)" : "고등부(남)";
+
   return "";
+}
+
+function resolveRankingGroup(division, gender, fallbackGroup = "") {
+  const explicitGroup = String(fallbackGroup || "").trim();
+  const derivedGroup = getRankingGroup(division, gender);
+
+  // 학년/부문이 명시되어 있으면 기존 Firestore rankingGroup 값보다 학년 계산 결과를 우선한다.
+  // 예: division="초4", rankingGroup="초등부(고학년)" 같은 오염 데이터를 초등부(저학년)으로 바로잡는다.
+  if (derivedGroup && isExplicitRankingDivision(division)) return derivedGroup;
+  return explicitGroup || derivedGroup || "";
 }
 
 function rankingGroupMatchesFilter(selectedGroup, actualGroup) {
@@ -20076,10 +20131,10 @@ function buildRankingEntriesFromSession(session, user = null) {
     name: profile.name || normalized.name || "",
     groupName: getCanonicalSchoolName(profile.groupName || normalized.groupName || normalized.clubName || ""),
     regionCity: profile.regionCity || normalized.regionCity || "전국",
-    division: normalized.division || profile.division || "",
+    division: normalizeDivisionLabel(normalized.division || profile.division || ""),
     gender: normalized.gender || profile.gender || "남",
     bowType: normalized.bowType || profile.bowType || "리커브",
-    rankingGroup: getRankingGroup(normalized.division || profile.division, normalized.gender || profile.gender),
+    rankingGroup: resolveRankingGroup(normalized.division || profile.division, normalized.gender || profile.gender),
     sourceType: normalized.isSampleData ? "official_sample" : "user_session",
     competitionId: normalized.competitionId || "",
     competitionName: normalized.competitionName || "",
@@ -20149,27 +20204,30 @@ function getRankingQueryDistances(rankingType, rankingFilters = {}, rankingGroup
 
 
 function normalizeOfficialDivisionForDisplay(rawDivision = "", rankingGroup = "") {
-  const division = String(rawDivision || "").trim();
+  const rawText = String(rawDivision || "").trim();
+  const division = normalizeDivisionLabel(rawText);
   const group = String(rankingGroup || "").trim();
 
-  // 사용자가 직접 입력한 프로필 학년은 그대로 살린다. 공식 대회 결과에만 아래 정규화를 적용한다.
-  if (group === "초등부(저학년)" && /^초등[1-4]$/.test(division)) return "초등부(저학년)";
-  if (group === "초등부(고학년)" && /^초등[5-6]$/.test(division)) return "초등부(고학년)";
-  if (group === "중등부" && /^중등[1-3]$/.test(division)) return "중등부";
-  if ((group === "고등부(남)" || group === "고등부(여)" || group === "고등부") && /^고등[1-3]$/.test(division)) return "고등부";
-  if (!division || division === "초1" || division === "초등1") return getDivisionFromRankingGroup(group);
+  // 원본 또는 Firestore에 정확한 학년이 있으면 표시 학년은 유지한다.
+  // 단, rankingGroup 판정은 resolveRankingGroup에서 별도로 바로잡는다.
+  if (hasExactSchoolGrade(division)) return division;
+
+  const inferredGroup = getRankingGroup(rawText) || group;
+  if (inferredGroup) return getDivisionFromRankingGroup(inferredGroup);
+  if (group) return getDivisionFromRankingGroup(group);
   return division || getDivisionFromRankingGroup(group);
 }
 
 function normalizeRankingEntryData(docId, raw = {}) {
   const name = raw.name || raw.playerName || raw.player || "공식기록";
   const groupName = getCanonicalSchoolName(raw.groupName || raw.schoolName || raw.school || raw.team || "");
-  const rankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || getRankingGroup(raw.division, raw.gender);
+  const rawRankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || "";
+  const rankingGroup = resolveRankingGroup(raw.division, raw.gender, rawRankingGroup);
   const score = Number(raw.score ?? raw.totalScore ?? raw.total ?? 0);
   const sessionDate = raw.sessionDate || raw.date || raw.competitionDate || "";
   const sourceType = raw.sourceType || "";
   const isOfficialLike = raw.isSampleData || raw.isOfficialRecord || sourceType === "competition_result" || sourceType === "official_sample" || raw.competitionId;
-  const normalizedDivision = isOfficialLike ? normalizeOfficialDivisionForDisplay(raw.division || "", rankingGroup) : (raw.division || "");
+  const normalizedDivision = isOfficialLike ? normalizeOfficialDivisionForDisplay(raw.division || "", rankingGroup) : normalizeDivisionLabel(raw.division || "");
   return {
     id: docId,
     ...raw,
@@ -20193,6 +20251,15 @@ function normalizeRankingEntryData(docId, raw = {}) {
   };
 }
 
+function getRankingGroupQueryValues(rankingGroup = "") {
+  const group = String(rankingGroup || "").trim();
+  if (!group || group === "all") return [];
+  if (group === "초등부(저학년)" || group === "초등부(고학년)" || group === "초등부(통합)") return ["초등부(저학년)", "초등부(고학년)", "초등부(통합)"];
+  if (group === "고등부") return ["고등부", "고등부(남)", "고등부(여)"];
+  if (group === "대학/일반부") return ["대학/일반부", "대학/일반부(남)", "대학/일반부(여)"];
+  return [group];
+}
+
 function rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }) {
   if (rankingGroup && rankingGroup !== "all" && !rankingGroupMatchesFilter(rankingGroup, entry.rankingGroup)) return false;
   if (gender && gender !== "all" && String(entry.gender || "") !== String(gender)) return false;
@@ -20211,38 +20278,82 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
   const customDate = rankingFilters?.customDate || "";
   const baseConstraints = [];
 
-  // 검색 버튼을 누른 경우에는 조건 전체를 기준으로 넓게 불러온 뒤 앱 내부에서 최종 필터링한다.
-  // 초기 화면은 가볍게 유지하고, 사용자가 명시적으로 검색할 때만 대량 공식기록을 읽는다.
+  // 검색 버튼을 누른 경우에도 전체 컬렉션을 무조건 읽지 않는다.
+  // 가능한 조건은 Firestore에서 먼저 줄이고, 학교/소속 표기 차이만 앱 내부에서 후처리한다.
   if (fullLoad) {
-    const snap = await getDocs(query(collection(db, "ranking_entries"), limit(5000)));
-    return (snap.docs || [])
-      .map((docSnap) => normalizeRankingEntryData(docSnap.id, docSnap.data()))
-      .filter((entry) => rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }))
-      .sort((a, b) => {
+    try {
+      const rankingGroupValues = getRankingGroupQueryValues(rankingGroup);
+      const groupValues = rankingGroupValues.length ? rankingGroupValues : [null];
+      const distanceValues = distances.length ? distances : [null];
+      const hasServerFilter = Boolean(rankingGroupValues.length || distances.length || (gender && gender !== "all") || (rankingFilters?.regionCity && rankingFilters.regionCity !== "all"));
+      const perQueryLimit = distances.length ? 700 : (hasServerFilter ? 1800 : 5000);
+      const queryPromises = [];
+
+      groupValues.forEach((groupValue) => {
+        distanceValues.forEach((distance) => {
+          const constraints = [];
+          if (groupValue) constraints.push(where("rankingGroup", "==", groupValue));
+          if (gender && gender !== "all") constraints.push(where("gender", "==", gender));
+          if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all") constraints.push(where("regionCity", "==", rankingFilters.regionCity));
+          if (distance) constraints.push(where("distance", "==", Number(distance)));
+          constraints.push(orderBy("score", "desc"));
+          constraints.push(orderBy("sessionDate", "desc"));
+          constraints.push(limit(perQueryLimit));
+          queryPromises.push(getDocs(query(collection(db, "ranking_entries"), ...constraints)));
+        });
+      });
+
+      const snaps = await Promise.all(queryPromises);
+      const map = new Map();
+      snaps.forEach((snap) => {
+        (snap.docs || []).forEach((docSnap) => {
+          const entry = normalizeRankingEntryData(docSnap.id, docSnap.data());
+          if (!rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate })) return;
+          map.set(entry.entryId || docSnap.id, entry);
+        });
+      });
+
+      return Array.from(map.values()).sort((a, b) => {
         const scoreDiff = (Number(b.score) || 0) - (Number(a.score) || 0);
         if (scoreDiff !== 0) return scoreDiff;
         return String(b.sessionDate || b.date || "").localeCompare(String(a.sessionDate || a.date || ""));
       });
+    } catch (error) {
+      console.warn("ranking_entries full search query failed; fallback to bounded client filtering", error);
+      const hasServerFilter = Boolean(getRankingGroupQueryValues(rankingGroup).length || distances.length || (gender && gender !== "all") || (rankingFilters?.regionCity && rankingFilters.regionCity !== "all"));
+      const snap = await getDocs(query(collection(db, "ranking_entries"), limit(hasServerFilter ? 1800 : 5000)));
+      return (snap.docs || [])
+        .map((docSnap) => normalizeRankingEntryData(docSnap.id, docSnap.data()))
+        .filter((entry) => rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }))
+        .sort((a, b) => {
+          const scoreDiff = (Number(b.score) || 0) - (Number(a.score) || 0);
+          if (scoreDiff !== 0) return scoreDiff;
+          return String(b.sessionDate || b.date || "").localeCompare(String(a.sessionDate || a.date || ""));
+        });
+    }
   }
 
-  if (rankingGroup && rankingGroup !== "all") baseConstraints.push(where("rankingGroup", "==", rankingGroup));
   if (gender && gender !== "all") baseConstraints.push(where("gender", "==", gender));
   if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all") baseConstraints.push(where("regionCity", "==", rankingFilters.regionCity));
   // 학교/소속은 대회 자료마다 축약 표기가 달라질 수 있어 서버 where 대신 클라이언트 정규화 필터로 처리한다.
   // 예: 안양서초, 안양서초등학교, 하남천현초/천현초 등.
 
   try {
-    const distanceQueries = (distances.length ? distances : [null]).map((distance) => {
-      const constraints = [...baseConstraints];
-      if (distance) constraints.push(where("distance", "==", Number(distance)));
-      constraints.push(orderBy("score", "desc"));
-      constraints.push(orderBy("sessionDate", "desc"));
-      constraints.push(limit(80));
-      return getDocs(query(collection(db, "ranking_entries"), ...constraints));
-    });
+    const rankingGroupValues = getRankingGroupQueryValues(rankingGroup);
+    const groupValues = rankingGroupValues.length ? rankingGroupValues : [null];
+    const distanceQueries = groupValues.flatMap((groupValue) =>
+      (distances.length ? distances : [null]).map((distance) => {
+        const constraints = [...baseConstraints];
+        if (groupValue) constraints.push(where("rankingGroup", "==", groupValue));
+        if (distance) constraints.push(where("distance", "==", Number(distance)));
+        constraints.push(orderBy("score", "desc"));
+        constraints.push(orderBy("sessionDate", "desc"));
+        constraints.push(limit(80));
+        return getDocs(query(collection(db, "ranking_entries"), ...constraints));
+      })
+    );
 
     const ownConstraints = [where("userId", "==", currentUserId || "__none__")];
-    if (rankingGroup && rankingGroup !== "all") ownConstraints.push(where("rankingGroup", "==", rankingGroup));
     if (gender && gender !== "all") ownConstraints.push(where("gender", "==", gender));
     if (distances.length === 1) ownConstraints.push(where("distance", "==", Number(distances[0])));
     ownConstraints.push(limit(40));
@@ -20338,10 +20449,10 @@ async function upsertOfficialCompetitionSheetToRankingEntries(db, sheet) {
         name: row.name,
         groupName: row.school,
         regionCity: row.regionCity || sheet.regionCity || "전국",
-        division: row.division || sheet.division || "",
+        division: normalizeOfficialDivisionForDisplay(row.division || sheet.division || "", resolveRankingGroup(row.division || sheet.division, row.gender || sheet.gender, sheet.rankingGroup)),
         gender: row.gender || sheet.gender || "남",
         bowType: row.bowType || sheet.bowType || "리커브",
-        rankingGroup: sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender),
+        rankingGroup: resolveRankingGroup(row.division || sheet.division, row.gender || sheet.gender, sheet.rankingGroup),
         sourceType: "competition_result",
         competitionId: sheet.competitionId || sheet.id,
         competitionName: sheet.competitionName || sheet.sheetLabel || "대회 결과",
@@ -20383,10 +20494,10 @@ async function upsertOfficialCompetitionSheetsToRankingEntries(db, sheets = SAMP
             groupName: row.school,
             schoolName: row.school,
             regionCity: row.regionCity || sheet.regionCity || "전국",
-            division: normalizeOfficialDivisionForDisplay(row.division || sheet.division || "", sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender)),
+            division: normalizeOfficialDivisionForDisplay(row.division || sheet.division || "", resolveRankingGroup(row.division || sheet.division, row.gender || sheet.gender, sheet.rankingGroup)),
             gender: row.gender || sheet.gender || "남",
             bowType: row.bowType || sheet.bowType || "리커브",
-            rankingGroup: sheet.rankingGroup || getRankingGroup(row.division || sheet.division, row.gender || sheet.gender),
+            rankingGroup: resolveRankingGroup(row.division || sheet.division, row.gender || sheet.gender, sheet.rankingGroup),
             sourceType: "competition_result",
             competitionId: sheet.competitionId || sheet.id,
             competitionName: sheet.competitionName || sheet.sheetLabel || "대회 결과",
@@ -20423,7 +20534,7 @@ async function migrateRankingEntryDivisionLabels(db) {
 
   (snap.docs || []).forEach((docSnap) => {
     const raw = docSnap.data() || {};
-    const rankingGroup = raw.rankingGroup || raw.category || raw.divisionGroup || getRankingGroup(raw.division, raw.gender);
+    const rankingGroup = resolveRankingGroup(raw.division, raw.gender, raw.rankingGroup || raw.category || raw.divisionGroup || "");
     const normalizedDivision = normalizeOfficialDivisionForDisplay(raw.division || "", rankingGroup);
     const canonicalSchool = getCanonicalSchoolName(raw.groupName || raw.schoolName || raw.school || raw.team || "");
 
@@ -20827,8 +20938,32 @@ function getQualifiedDistanceAttempts(session) {
   }];
 }
 
+function buildQualifiedAttemptsByUserId(sessions = []) {
+  const map = new Map();
+  (sessions || []).forEach((session) => {
+    if (!session?.userId) return;
+    const attempts = getQualifiedDistanceAttempts(session);
+    if (!attempts.length) return;
+    const bucket = map.get(session.userId) || [];
+    attempts.forEach((attempt) => {
+      bucket.push({ ...attempt, userId: session.userId });
+    });
+    map.set(session.userId, bucket);
+  });
+  return map;
+}
+
+function getUserQualifiedAttempts(user, sessions = [], attemptsByUserId = null) {
+  if (attemptsByUserId instanceof Map) {
+    return attemptsByUserId.get(user?.id) || [];
+  }
+  return (sessions || [])
+    .filter((session) => session.userId === user?.id)
+    .flatMap((session) => getQualifiedDistanceAttempts(session));
+}
+
 function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {}) {
-  const { weekly = false } = options;
+  const { weekly = false, attemptsByUserId = null } = options;
   const selectedDistance = rankingFilters.distance || "all";
   const isAllDistance = !selectedDistance || selectedDistance === "all";
 
@@ -20856,9 +20991,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         return null;
       }
 
-      const allAttempts = sessions
-        .filter((session) => session.userId === user.id)
-        .flatMap((session) => getQualifiedDistanceAttempts(session))
+      const allAttempts = getUserQualifiedAttempts(user, sessions, attemptsByUserId)
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
         .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
 
@@ -20952,7 +21085,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
 }
 
 function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) {
-  const { weekly = false } = options;
+  const { weekly = false, attemptsByUserId = null } = options;
 
   return users
     .map((user) => {
@@ -20978,9 +21111,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         return null;
       }
 
-      const allAttempts = sessions
-        .filter((session) => session.userId === user.id)
-        .flatMap((session) => getQualifiedDistanceAttempts(session))
+      const allAttempts = getUserQualifiedAttempts(user, sessions, attemptsByUserId)
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
         .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
 
@@ -23978,6 +24109,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     const allowedUserIds = new Set(rankingUsers.map((user) => user.id));
     return dedupedSessions.filter((session) => allowedUserIds.has(session.userId));
   }, [sessions, remoteSessions, rankingUsers, hideOfficialRecords]);
+  const qualifiedAttemptsByUserId = useMemo(() => buildQualifiedAttemptsByUserId(rankingSessions), [rankingSessions]);
   const effectiveRankingUsers = useMemo(() => {
     if (!hideOfficialRecords) return rankingUsers;
     const map = new Map(rankingUsers.map((user) => [user.id, user]));
@@ -24012,13 +24144,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
   const regionOptions = useMemo(() => sortKoreanOptions(REGION_OPTIONS), [sortKoreanOptions]);
   const rankingGroupOptions = useMemo(() => RANKING_GROUP_OPTIONS, []);
-  const registeredUserCount = useMemo(() => {
-    const ids = new Set();
-    rankingSessions.forEach((session) => {
-      if (getQualifiedDistanceAttempts(session).length) ids.add(session.userId);
-    });
-    return ids.size;
-  }, [rankingSessions]);
+  const registeredUserCount = useMemo(() => qualifiedAttemptsByUserId.size, [qualifiedAttemptsByUserId]);
   const usersById = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
   const requestableOfficialUserIds = useMemo(() => {
     if (!currentUser) return new Set();
@@ -24037,50 +24163,21 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return map;
   }, [officialClaims, currentUserId]);
 
-  const distanceRankings = useMemo(() => {
-    const items = buildDistanceRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly: false });
+  const activeRankings = useMemo(() => {
+    const weekly = rankingType === "weeklyDistance" || rankingType === "weeklyTotal";
+    const distanceMode = rankingType === "distance" || rankingType === "weeklyDistance";
+    const items = distanceMode
+      ? buildDistanceRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly, attemptsByUserId: qualifiedAttemptsByUserId })
+      : buildTotalRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly, attemptsByUserId: qualifiedAttemptsByUserId });
+
     items.sort((a, b) => {
-      if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
+      const bScore = distanceMode ? b.bestScore : b.totalScore;
+      const aScore = distanceMode ? a.bestScore : a.totalScore;
+      if (bScore !== aScore) return bScore - aScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [effectiveRankingUsers, rankingSessions, appliedRankingFilters]);
-
-  const totalRankings = useMemo(() => {
-    const items = buildTotalRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly: false });
-    items.sort((a, b) => {
-      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-      return String(b.latestDate).localeCompare(String(a.latestDate));
-    });
-    return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [effectiveRankingUsers, rankingSessions, appliedRankingFilters]);
-
-  const weeklyDistanceRankings = useMemo(() => {
-    const items = buildDistanceRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly: true });
-    items.sort((a, b) => {
-      if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
-      return String(b.latestDate).localeCompare(String(a.latestDate));
-    });
-    return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [effectiveRankingUsers, rankingSessions, appliedRankingFilters]);
-
-  const weeklyTotalRankings = useMemo(() => {
-    const items = buildTotalRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly: true });
-    items.sort((a, b) => {
-      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-      return String(b.latestDate).localeCompare(String(a.latestDate));
-    });
-    return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [effectiveRankingUsers, rankingSessions, appliedRankingFilters]);
-
-  const activeRankings =
-    rankingType === "distance"
-      ? distanceRankings
-      : rankingType === "total"
-        ? totalRankings
-        : rankingType === "weeklyDistance"
-          ? weeklyDistanceRankings
-          : weeklyTotalRankings;
+  }, [rankingType, effectiveRankingUsers, rankingSessions, appliedRankingFilters, qualifiedAttemptsByUserId]);
 
   const visibleRankings = showAllRankings ? activeRankings : activeRankings.slice(0, 50);
   const hasMoreRankings = activeRankings.length > visibleRankings.length;
@@ -24103,7 +24200,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
           distance: String(distance),
           rankingGroup: myRankingGroup || appliedRankingFilters.rankingGroup || "all",
         },
-        { weekly }
+        { weekly, attemptsByUserId: qualifiedAttemptsByUserId }
       );
       items.sort((a, b) => {
         if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
@@ -24119,7 +24216,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         qualifiedSessions: mine?.qualifiedSessions || 0,
       };
     });
-  }, [currentUserId, myRequiredDistances, rankingType, effectiveRankingUsers, rankingSessions, appliedRankingFilters, myRankingGroup]);
+  }, [currentUserId, myRequiredDistances, rankingType, effectiveRankingUsers, rankingSessions, appliedRankingFilters, myRankingGroup, qualifiedAttemptsByUserId]);
 
   const rankingGuide =
     rankingType === "distance"
