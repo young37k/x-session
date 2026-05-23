@@ -19682,22 +19682,61 @@ function getClaimedUidFromVerifiedRecord(record = {}) {
   return record.claimedByUid || record.uid || record.userId || record.requesterUid || "";
 }
 
+function getVerifiedBestPublicUserId(record = {}) {
+  return record.publicAthleteId
+    || record.officialSampleUserId
+    || record.sampleUserId
+    || record.officialAthleteKey
+    || record.id
+    || getClaimedUidFromVerifiedRecord(record)
+    || "";
+}
+
+function sanitizeVerifiedBestRecordForPublicRanking(record = {}) {
+  const officialSampleUserId = record.officialSampleUserId || record.sampleUserId || record.officialAthleteKey || "";
+  const publicAthleteId = record.publicAthleteId || officialSampleUserId || record.officialClaimId || "verified_athlete";
+  return {
+    publicAthleteId,
+    officialSampleUserId,
+    sampleUserId: officialSampleUserId,
+    officialAthleteKey: record.officialAthleteKey || officialSampleUserId,
+    officialClaimId: record.officialClaimId || "",
+    name: record.name || record.playerName || "인증선수",
+    playerName: record.playerName || record.name || "인증선수",
+    groupName: getCanonicalSchoolName(record.groupName || record.schoolName || ""),
+    schoolName: getCanonicalSchoolName(record.schoolName || record.groupName || ""),
+    division: record.division || getDivisionFromRankingGroup(record.rankingGroup, record.gender),
+    gender: normalizeGenderValue(record.gender, "남"),
+    rankingGroup: record.rankingGroup || getRankingGroup(record.division || "", record.gender || "남"),
+    regionCity: record.regionCity || record.region || "전국",
+    bowType: record.bowType || "리커브",
+    bestDistanceScores: record.bestDistanceScores || {},
+    bestDistanceDates: record.bestDistanceDates || {},
+    bestTotalScore: Number(record.bestTotalScore || 0),
+    bestTotalDate: record.bestTotalDate || "",
+    bestTotalDistanceScores: record.bestTotalDistanceScores || {},
+    sourceType: "verified_user_best",
+    label: "인증선수 · 개인 거리별 최고기록",
+    totalLabel: "인증선수 · 개인 종합 최고기록",
+    updatedAtClient: record.updatedAtClient || new Date().toISOString(),
+  };
+}
+
 function normalizeVerifiedBestRecordData(docId, raw = {}) {
-  const claimedByUid = getClaimedUidFromVerifiedRecord(raw);
+  const idSeed = { id: docId, ...raw };
+  const publicUserId = getVerifiedBestPublicUserId(idSeed);
   const name = raw.name || raw.requesterName || raw.officialName || "인증선수";
   const groupName = getCanonicalSchoolName(raw.groupName || raw.schoolName || raw.school || raw.officialGroup || raw.requesterGroup || "");
   const gender = normalizeGenderValue(raw.gender, "남");
   const rankingGroup = resolveRankingGroup(raw.division || raw.rankingGroup, gender, raw.rankingGroup || "");
   const bestDistanceScores = raw.bestDistanceScores && typeof raw.bestDistanceScores === "object" ? raw.bestDistanceScores : {};
-  const bestDistanceSourceSessionIds = raw.bestDistanceSourceSessionIds && typeof raw.bestDistanceSourceSessionIds === "object" ? raw.bestDistanceSourceSessionIds : {};
   const bestDistanceDates = raw.bestDistanceDates && typeof raw.bestDistanceDates === "object" ? raw.bestDistanceDates : {};
   const bestTotalDistanceScores = raw.bestTotalDistanceScores && typeof raw.bestTotalDistanceScores === "object" ? raw.bestTotalDistanceScores : {};
   return {
     id: docId,
-    ...raw,
-    uid: claimedByUid,
-    userId: claimedByUid,
-    claimedByUid,
+    publicAthleteId: publicUserId,
+    uid: publicUserId,
+    userId: publicUserId,
     name,
     playerName: name,
     groupName,
@@ -19707,17 +19746,18 @@ function normalizeVerifiedBestRecordData(docId, raw = {}) {
     division: normalizeOfficialDivisionForDisplay(raw.division || rankingGroup, rankingGroup),
     regionCity: raw.regionCity || raw.region || "전국",
     bowType: raw.bowType || "리커브",
-    officialSampleUserId: raw.officialSampleUserId || raw.sampleUserId || "",
-    officialAthleteKey: raw.officialAthleteKey || raw.sampleUserId || "",
+    officialSampleUserId: raw.officialSampleUserId || raw.sampleUserId || raw.officialAthleteKey || "",
+    sampleUserId: raw.officialSampleUserId || raw.sampleUserId || raw.officialAthleteKey || "",
+    officialAthleteKey: raw.officialAthleteKey || raw.officialSampleUserId || raw.sampleUserId || "",
+    officialClaimId: raw.officialClaimId || "",
     bestDistanceScores,
-    bestDistanceSourceSessionIds,
     bestDistanceDates,
     bestTotalScore: Number(raw.bestTotalScore || 0),
-    bestTotalSessionId: raw.bestTotalSessionId || "",
     bestTotalDate: raw.bestTotalDate || raw.sessionDate || raw.date || "",
     bestTotalDistanceScores,
     sourceType: "verified_user_best",
     label: raw.label || "인증선수 · 개인 거리별 최고기록",
+    totalLabel: raw.totalLabel || "인증선수 · 개인 종합 최고기록",
   };
 }
 
@@ -19727,7 +19767,7 @@ async function fetchVerifiedBestRecordsForView(db, { maxLoad = 3000 } = {}) {
     const snap = await getDocs(query(collection(db, "verified_best_records"), limit(maxLoad)));
     return (snap.docs || [])
       .map((docSnap) => normalizeVerifiedBestRecordData(docSnap.id, docSnap.data()))
-      .filter((record) => record.claimedByUid && record.rankingGroup)
+      .filter((record) => getVerifiedBestPublicUserId(record) && record.rankingGroup)
       .sort((a, b) => {
         const totalDiff = (Number(b.bestTotalScore) || 0) - (Number(a.bestTotalScore) || 0);
         if (totalDiff !== 0) return totalDiff;
@@ -19838,17 +19878,18 @@ async function upsertVerifiedBestRecordForAthlete(db, sessions = [], user = {}, 
   const record = buildVerifiedBestRecordFromSessions(sessions, user, claim);
   if (!record) return null;
   const recordId = getVerifiedBestRecordId(claim, user);
+  const publicRecord = sanitizeVerifiedBestRecordForPublicRanking(record);
   await setDoc(doc(db, "verified_best_records", recordId), {
-    ...record,
+    ...publicRecord,
     updatedAt: serverTimestamp(),
-  }, { merge: true });
-  return { id: recordId, ...record };
+  });
+  return { id: recordId, ...publicRecord };
 }
 
 function buildUsersFromVerifiedBestRecords(records = []) {
   const map = new Map();
   records.forEach((record) => {
-    const uid = getClaimedUidFromVerifiedRecord(record);
+    const uid = getVerifiedBestPublicUserId(record);
     if (!uid || map.has(uid)) return;
     map.set(uid, {
       id: uid,
@@ -19874,7 +19915,7 @@ function buildUsersFromVerifiedBestRecords(records = []) {
 function buildSessionsFromVerifiedBestRecords(records = []) {
   const sessions = [];
   records.forEach((record) => {
-    const uid = getClaimedUidFromVerifiedRecord(record);
+    const uid = getVerifiedBestPublicUserId(record);
     if (!uid) return;
     const gender = normalizeGenderValue(record.gender, "남");
     const rankingGroup = resolveRankingGroup(record.division || record.rankingGroup, gender, record.rankingGroup || "");
@@ -23983,6 +24024,20 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return map;
   }, [officialClaims, currentUserId]);
 
+  const currentApprovedClaim = useMemo(() => {
+    const claimPool = [
+      ...(officialClaims || []),
+      currentUser?.latestOfficialClaim?.status === "approved" ? currentUser.latestOfficialClaim : null,
+    ].filter(Boolean);
+    return getApprovedClaimForUid(claimPool, currentUserId);
+  }, [officialClaims, currentUser?.latestOfficialClaim, currentUserId]);
+
+  const currentRankingUserIds = useMemo(() => new Set([
+    currentUserId,
+    currentApprovedClaim?.sampleUserId,
+    currentApprovedClaim?.officialSampleUserId,
+  ].filter(Boolean)), [currentUserId, currentApprovedClaim]);
+
   const activeRankings = useMemo(() => {
     const weekly = rankingType === "weeklyDistance" || rankingType === "weeklyTotal";
     const distanceMode = rankingType === "distance" || rankingType === "weeklyDistance";
@@ -24002,8 +24057,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const visibleRankings = showAllRankings ? activeRankings : activeRankings.slice(0, 50);
   const hasMoreRankings = activeRankings.length > visibleRankings.length;
 
-  const myRank = activeRankings.find((item) => item.userId === currentUserId);
-  const myRankIsVisible = Boolean(myRank && visibleRankings.some((item) => item.userId === currentUserId));
+  const myRank = activeRankings.find((item) => currentRankingUserIds.has(item.userId));
+  const myRankIsVisible = Boolean(myRank && visibleRankings.some((item) => currentRankingUserIds.has(item.userId)));
 
   const scrollToPageTop = useCallback(() => {
     if (typeof window === "undefined") return;
@@ -24044,7 +24099,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     ? myRank.requiredDistances
     : getRequiredDistancesForRankingGroup(myRankingGroup, currentUser?.gender || myRank?.gender || "");
   const myDistanceRankRows = useMemo(() => {
-    if (!currentUserId || !myRequiredDistances.length) return [];
+    if (!currentRankingUserIds.size || !myRequiredDistances.length) return [];
     const weekly = rankingType === "weeklyDistance" || rankingType === "weeklyTotal";
     return myRequiredDistances.map((distance) => {
       const items = buildDistanceRankings(
@@ -24062,7 +24117,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         return String(b.latestDate).localeCompare(String(a.latestDate));
       });
       const ranked = items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-      const mine = ranked.find((item) => item.userId === currentUserId);
+      const mine = ranked.find((item) => currentRankingUserIds.has(item.userId));
       return {
         distance,
         rank: mine?.rank || null,
@@ -24071,7 +24126,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         qualifiedSessions: mine?.qualifiedSessions || 0,
       };
     });
-  }, [currentUserId, myRequiredDistances, rankingType, effectiveRankingUsers, rankingSessions, appliedRankingFilters, myRankingGroup, qualifiedAttemptsByUserId]);
+  }, [currentRankingUserIds, myRequiredDistances, rankingType, effectiveRankingUsers, rankingSessions, appliedRankingFilters, myRankingGroup, qualifiedAttemptsByUserId]);
 
   const rankingGuide =
     rankingType === "distance"
@@ -24478,9 +24533,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                 {visibleRankings.map((item) => (
                   <div
                     key={`${rankingType}_${item.userId}_${item.distance || item.distanceLabel || "total"}`}
-                    id={item.userId === currentUserId ? "ranking-my-row" : undefined}
+                    id={currentRankingUserIds.has(item.userId) ? "ranking-my-row" : undefined}
                     className={`rounded-2xl border px-3 py-2 ${
-                      item.userId === currentUserId
+                      currentRankingUserIds.has(item.userId)
                         ? "border-blue-300 bg-blue-50"
                         : item.rank <= 3
                           ? "border-amber-300 bg-amber-50"
@@ -24514,7 +24569,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                           {item.verifiedAthlete && item.sourceType !== "verified_user_best" && (
                             <Badge className="h-5 rounded-full bg-emerald-600 px-2 text-[10px] text-white">인증 선수</Badge>
                           )}
-                          {item.userId === currentUserId && (
+                          {currentRankingUserIds.has(item.userId) && (
                             <Badge className="h-5 rounded-full bg-blue-900 px-2 text-[10px] text-white">나</Badge>
                           )}
                           <div className="min-w-0 truncate text-[11px] text-slate-500">
@@ -28255,7 +28310,7 @@ function XSessionApp() {
         console.warn("ranking_entries user-session sync failed", rankingEntryError);
       }
       try {
-        const approvedClaim = getApprovedClaimForUid(officialClaims, currentUser?.id);
+        const approvedClaim = getApprovedClaimForUid([...(officialClaims || []), currentUser?.latestOfficialClaim].filter(Boolean), currentUser?.id);
         if (approvedClaim) {
           const ownCompletedSessions = [
             savedPreviewSession,
@@ -28599,7 +28654,7 @@ function XSessionApp() {
 
   useEffect(() => {
     if (!USE_VERIFIED_BEST_RECORDS || !appServices?.db || !currentUser?.id) return;
-    const approvedClaim = getApprovedClaimForUid(officialClaims, currentUser.id);
+    const approvedClaim = getApprovedClaimForUid([...(officialClaims || []), currentUser?.latestOfficialClaim].filter(Boolean), currentUser.id);
     if (!approvedClaim) return;
     const ownCompletedSessions = (sessions || []).filter(
       (session) => session.userId === currentUser.id && (session.isComplete || session.status === "completed")
@@ -28617,7 +28672,7 @@ function XSessionApp() {
     verifiedBestSyncKeyRef.current = syncKey;
     upsertVerifiedBestRecordForAthlete(appServices.db, ownCompletedSessions, currentUser, approvedClaim)
       .catch((error) => console.warn("verified_best_records auto sync failed", error));
-  }, [appServices?.db, currentUser?.id, currentUser?.name, currentUser?.groupName, currentUser?.gender, currentUser?.division, sessions, officialClaims]);
+  }, [appServices?.db, currentUser?.id, currentUser?.name, currentUser?.groupName, currentUser?.gender, currentUser?.division, currentUser?.latestOfficialClaim, sessions, officialClaims]);
 
   const sampleUsers = useMemo(() => buildPermanentSampleUsers(), []);
   const permanentSampleSessions = useMemo(() => buildPermanentSampleSessions(), []);
@@ -28628,13 +28683,9 @@ function XSessionApp() {
       ...users
         .map((user) => user.latestOfficialClaim)
         .filter((claim) => claim?.status === "approved" && claim.sampleUserId),
-    ];
+      currentUser?.latestOfficialClaim?.status === "approved" ? currentUser.latestOfficialClaim : null,
+    ].filter(Boolean);
 
-    const approvedBySampleUserId = new Map(
-      approvedClaims
-        .filter((claim) => claim.sampleUserId && (claim.claimedByUid || claim.requesterUid))
-        .map((claim) => [claim.sampleUserId, { ...claim, claimedByUid: claim.claimedByUid || claim.requesterUid }])
-    );
     const verifiedUidSet = new Set(
       approvedClaims
         .filter((claim) => claim.status === "approved" && (claim.claimedByUid || claim.requesterUid))
@@ -28653,47 +28704,26 @@ function XSessionApp() {
         }]
       : [];
     ensuredCurrentUser.forEach((user) => existingIds.add(user.id));
-    const extra = sampleUsers
-      .filter((u) => !approvedBySampleUserId.has(u.id))
-      .filter((u) => !existingIds.has(u.id));
-    return [...realUsersWithVerification, ...ensuredCurrentUser, ...extra];
+
+    // 공식 원본은 여기에서 삭제하지 않는다.
+    // 랭킹 화면에서 verified_best_records가 있는 공식행만 1줄 대체 처리한다.
+    const extraOfficialUsers = sampleUsers.filter((u) => !existingIds.has(u.id));
+    return [...realUsersWithVerification, ...ensuredCurrentUser, ...extraOfficialUsers];
   }, [users, sampleUsers, officialClaims, currentUser]);
 
   const sessionsForDisplay = useMemo(() => {
-    const approvedClaims = [
-      ...(officialClaims || []),
-      ...users
-        .map((user) => user.latestOfficialClaim)
-        .filter((claim) => claim?.status === "approved" && claim.sampleUserId),
-    ];
-
-    const approvedBySampleUserId = new Map(
-      approvedClaims
-        .filter((claim) => claim.sampleUserId && (claim.claimedByUid || claim.requesterUid))
-        .map((claim) => [claim.sampleUserId, { ...claim, claimedByUid: claim.claimedByUid || claim.requesterUid }])
-    );
     const existingIds = new Set(sessions.map((s) => s.id));
     const merged = [...sessions];
 
+    // 공식 원본 세션은 UID로 바꾸지 않고 그대로 유지한다.
+    // 인증선수 개인 최고기록은 verified_best_records 공개 캐시로만 랭킹에 합쳐진다.
     permanentSampleSessions.forEach((s) => {
       if (existingIds.has(s.id)) return;
-      const approvedClaim = approvedBySampleUserId.get(s.userId);
-      if (approvedClaim) {
-        merged.push({
-          ...s,
-          userId: approvedClaim.claimedByUid,
-          originalOfficialUserId: s.userId,
-          claimedByUid: approvedClaim.claimedByUid,
-          officialRecord: false,
-          isSampleData: false,
-        });
-      } else {
-        merged.push(s);
-      }
+      merged.push(s);
     });
 
     return merged;
-  }, [sessions, permanentSampleSessions, officialClaims, users]);
+  }, [sessions, permanentSampleSessions]);
 
   const mySessions = useMemo(
     () => sessions.filter((s) => s.userId === authUser?.uid),
