@@ -20854,7 +20854,8 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         qualifiedSessions: filteredAttempts.length,
         latestDate: best.sessionDate || "",
         isSampleData: Boolean(user.isSampleData),
-        sourceType: user.isSampleData ? "official" : "user",
+        sourceType: user.sourceType === "verified_user_best" ? "verified_user_best" : (user.isSampleData ? "official" : "user"),
+        recordLabel: user.sourceType === "verified_user_best" ? "인증선수 · 개인 거리별 최고기록" : "",
         claimedByUid: user.claimedByUid || "",
         verifiedAthlete: Boolean(user.verifiedAthlete),
       };
@@ -24557,9 +24558,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                       <div className="min-w-0">
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                           <div className="truncate text-sm font-semibold">{item.name}</div>
-                          {item.sourceType === "verified_user_best" ? (
+                          {item.sourceType === "verified_user_best" || item.recordLabel ? (
                             <Badge className="h-5 rounded-full bg-emerald-700 px-2 text-[10px] text-white">
-                              {rankingType === "distance" || rankingType === "weeklyDistance" ? "인증선수 · 개인 거리별 최고기록" : "인증선수 · 개인 종합 최고기록"}
+                              {item.recordLabel || (rankingType === "distance" || rankingType === "weeklyDistance" ? "인증선수 · 개인 거리별 최고기록" : "인증선수 · 개인 종합 최고기록")}
                             </Badge>
                           ) : item.isSampleData ? (
                             <Badge className="h-5 rounded-full bg-slate-900 px-2 text-[10px] text-white">공식기록</Badge>
