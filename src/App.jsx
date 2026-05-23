@@ -27133,6 +27133,8 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
   const [rankingUploadMessage, setRankingUploadMessage] = useState("");
   const [rankingMigrationLoading, setRankingMigrationLoading] = useState(false);
   const [rankingMigrationMessage, setRankingMigrationMessage] = useState("");
+  const [verifiedBestSyncLoading, setVerifiedBestSyncLoading] = useState(false);
+  const [verifiedBestSyncMessage, setVerifiedBestSyncMessage] = useState("");
 
   useEffect(() => {
     try {
@@ -27452,6 +27454,138 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
     }
   }
 
+  async function syncApprovedVerifiedBestRecords() {
+    if (!appServices?.db) {
+      alert("DB 연결이 준비되지 않았다.");
+      return;
+    }
+    const ok = window.confirm(
+      "승인 완료된 공식기록 연결을 official_claims 컬렉션에 보정하고, 인증선수 개인 최고기록을 verified_best_records에 재생성할까?"
+    );
+    if (!ok) return;
+
+    try {
+      setVerifiedBestSyncLoading(true);
+      setVerifiedBestSyncMessage("인증선수 최고기록 재동기화 중...");
+
+      const claimMap = new Map();
+      (mergedOfficialClaims || [])
+        .filter((claim) => claim?.status === "approved" && (claim.claimedByUid || claim.requesterUid) && getOfficialSampleIdFromClaim(claim))
+        .forEach((claim) => {
+          const requesterUid = claim.requesterUid || claim.claimedByUid || "";
+          const sampleUserId = getOfficialSampleIdFromClaim(claim);
+          const id = claim.id || getOfficialClaimId({ sampleUserId, requesterUid });
+          claimMap.set(id, {
+            ...claim,
+            id,
+            sampleUserId,
+            officialSampleUserId: sampleUserId,
+            officialAthleteKey: sampleUserId,
+            requesterUid,
+            claimedByUid: claim.claimedByUid || requesterUid,
+            status: "approved",
+          });
+        });
+
+      realUsers.forEach((user) => {
+        const sampleUserId = user.officialClaimSampleUserId || getOfficialSampleIdFromClaim(user.latestOfficialClaim || {});
+        if (!user.verifiedAthlete || !sampleUserId) return;
+        const latest = user.latestOfficialClaim || {};
+        const id = latest.id || getOfficialClaimId({ sampleUserId, requesterUid: user.id });
+        if (claimMap.has(id)) return;
+        claimMap.set(id, {
+          ...latest,
+          id,
+          sampleUserId,
+          officialSampleUserId: sampleUserId,
+          officialAthleteKey: sampleUserId,
+          requesterUid: user.id,
+          claimedByUid: user.id,
+          requesterEmail: user.email || latest.requesterEmail || "",
+          requesterName: user.name || latest.requesterName || latest.officialName || "",
+          requesterGroup: user.groupName || latest.requesterGroup || latest.officialGroup || "",
+          officialName: latest.officialName || user.name || "",
+          officialGroup: latest.officialGroup || user.groupName || "",
+          gender: latest.gender || user.gender || "남",
+          rankingGroup: latest.rankingGroup || getRankingGroup(user.division || "", user.gender || "남"),
+          status: "approved",
+          approvedAt: user.officialClaimApprovedAt || latest.approvedAt || new Date().toISOString(),
+          approvedBy: latest.approvedBy || currentUser?.email || "",
+        });
+      });
+
+      const approvedClaimsToSync = Array.from(claimMap.values());
+      if (!approvedClaimsToSync.length) {
+        setVerifiedBestSyncMessage("재동기화할 승인 기록이 없다. 먼저 공식기록 연결 요청을 승인해야 한다.");
+        alert("재동기화할 승인 기록이 없다.");
+        return;
+      }
+
+      let claimSynced = 0;
+      let bestSynced = 0;
+      let skippedNoSession = 0;
+
+      for (const claim of approvedClaimsToSync) {
+        const uid = claim.claimedByUid || claim.requesterUid;
+        if (!uid) continue;
+        const targetUser = realUsers.find((user) => user.id === uid) || users.find((user) => user.id === uid) || {
+          id: uid,
+          name: claim.requesterName || claim.officialName || "인증선수",
+          groupName: claim.requesterGroup || claim.officialGroup || "",
+          gender: claim.gender || "남",
+          division: claim.rankingGroup || "",
+          bowType: "리커브",
+          regionCity: "전국",
+        };
+        const normalizedClaim = {
+          ...claim,
+          requesterUid: uid,
+          claimedByUid: uid,
+          sampleUserId: getOfficialSampleIdFromClaim(claim),
+          officialSampleUserId: getOfficialSampleIdFromClaim(claim),
+          officialAthleteKey: getOfficialSampleIdFromClaim(claim),
+          status: "approved",
+          approvedAt: claim.approvedAt || new Date().toISOString(),
+          approvedBy: claim.approvedBy || currentUser?.email || "",
+        };
+
+        await setDoc(doc(appServices.db, "official_claims", normalizedClaim.id), {
+          ...normalizedClaim,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        claimSynced += 1;
+
+        await setDoc(doc(appServices.db, "users", uid), {
+          verifiedAthlete: true,
+          officialClaimApprovedAt: normalizedClaim.approvedAt,
+          officialClaimSampleUserId: normalizedClaim.sampleUserId,
+          latestOfficialClaim: normalizedClaim,
+          officialClaimRequests: [],
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+
+        const targetSessions = realSessions.filter((session) => session.userId === uid);
+        if (!targetSessions.length) {
+          skippedNoSession += 1;
+          continue;
+        }
+        const result = await upsertVerifiedBestRecordForAthlete(appServices.db, targetSessions, targetUser, normalizedClaim);
+        if (result) bestSynced += 1;
+      }
+
+      const message = `재동기화 완료: official_claims ${claimSynced}건 / verified_best_records ${bestSynced}건 생성·갱신${skippedNoSession ? ` / 기록 없음 ${skippedNoSession}건` : ""}`;
+      setVerifiedBestSyncMessage(message);
+      alert(message);
+      await onRefresh?.();
+    } catch (error) {
+      const message = error?.message || "인증선수 최고기록 재동기화에 실패했다. Firestore Rules를 확인해라.";
+      setVerifiedBestSyncMessage(message);
+      alert(message);
+    } finally {
+      setVerifiedBestSyncLoading(false);
+    }
+  }
+
   async function deleteUserData(user) {
     if (!appServices?.db) {
       alert("DB 연결이 준비되지 않았다.");
@@ -27552,8 +27686,27 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
       <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl">공식 기록 연결 요청</CardTitle>
+          <DialogDescription>
+            승인된 공식기록 연결을 Firestore official_claims에 보정하고, 공개 랭킹용 verified_best_records를 재생성할 수 있다.
+          </DialogDescription>
         </CardHeader>
         <CardContent className="grid gap-3 min-w-0">
+          <div className="grid gap-2 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <div className="font-semibold">인증선수 최고기록 재동기화</div>
+              <div className="mt-1 text-xs">official_claims 또는 verified_best_records 컬렉션이 없을 때 승인 완료 기록을 기준으로 다시 생성한다.</div>
+              {verifiedBestSyncMessage ? <div className="mt-2 text-xs font-semibold text-blue-700">{verifiedBestSyncMessage}</div> : null}
+            </div>
+            <Button
+              type="button"
+              className="rounded-2xl bg-blue-900 hover:bg-blue-800"
+              onClick={syncApprovedVerifiedBestRecords}
+              disabled={verifiedBestSyncLoading}
+            >
+              {verifiedBestSyncLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              재동기화
+            </Button>
+          </div>
           {pendingOfficialClaims.length === 0 ? (
             <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-500">
               대기 중인 공식 기록 연결 요청이 없다.
