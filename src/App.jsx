@@ -1216,8 +1216,10 @@ function buildTestRecordSheets(userId) {
 
 const ENABLE_OFFICIAL_RECORDS = true;
 // 공식기록은 앱 내장 SAMPLE_SHEETS 기준으로 즉시 계산한다.
-// Firestore ranking_entries는 개인 기록 저장 보조 용도로만 유지하고, 화면 조회 경로에서는 사용하지 않는다.
+// Firestore ranking_entries는 사용자 직접입력 기록을 모든 사용자 랭킹에 공유하는 보조 인덱스로만 사용한다.
+// 공식기록은 ranking_entries에서 다시 불러오지 않아 중복 표시를 막는다.
 const USE_FIRESTORE_RANKING_ENTRIES = false;
+const USE_FIRESTORE_USER_RANKING_ENTRIES = true;
 
 // 데이터화된 공식기록 원본. 개인 기록으로 자동 주입하지 않고 공식기록으로만 사용한다.
 // 2026 제60회 전국 남여 양궁 종별선수권 대회 12개 개인전 PDF를 반영한다.
@@ -19515,10 +19517,30 @@ async function upsertRankingEntriesForSession(db, session, user = null) {
   const batch = writeBatch(db);
   entries.forEach((entry) => {
     const ref = doc(db, "ranking_entries", entry.entryId);
-    batch.set(ref, entry, { merge: true });
+    batch.set(ref, {
+      ...entry,
+      sourceType: "user_session",
+      isUserRecord: true,
+      isSampleData: false,
+      isOfficialRecord: false,
+      officialRecord: false,
+    }, { merge: true });
   });
   await batch.commit();
   return entries;
+}
+
+async function deleteRankingEntriesForSession(db, sessionId) {
+  if (!db || !sessionId) return;
+  try {
+    const snap = await getDocs(query(collection(db, "ranking_entries"), where("sessionId", "==", sessionId)));
+    if (!snap.docs?.length) return;
+    const batch = writeBatch(db);
+    snap.docs.forEach((docSnap) => batch.delete(doc(db, "ranking_entries", docSnap.id)));
+    await batch.commit();
+  } catch (error) {
+    console.warn("ranking_entries cleanup failed", error);
+  }
 }
 
 function getRankingQueryTarget(rankingFilters = {}, currentUser = null, options = {}) {
@@ -19629,6 +19651,46 @@ function rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilter
   if (Array.isArray(distances) && distances.length && !distances.includes(Number(entry.distance))) return false;
   if (!isWithinDateFilter(entry.sessionDate || entry.date, dateFilter, customDate)) return false;
   return true;
+}
+
+function isUserRankingEntry(entry = {}) {
+  const sourceType = String(entry.sourceType || "").trim();
+  if (sourceType === "user_session" || sourceType === "user_distance_record") return true;
+  if (entry.isUserRecord === true || entry.officialRecord === false) return true;
+  if (entry.isSampleData || entry.isOfficialRecord || entry.competitionId) return false;
+  if (sourceType === "competition_result" || sourceType === "official_sample" || sourceType === "pdf_official_extracted") return false;
+  return false;
+}
+
+async function fetchUserRankingEntriesForView(db, { maxLoad = 5000 } = {}) {
+  if (!db) return [];
+
+  const normalizeDocs = (snap) => (snap.docs || [])
+    .map((docSnap) => normalizeRankingEntryData(docSnap.id, docSnap.data()))
+    .filter(isUserRankingEntry)
+    .sort((a, b) => {
+      const scoreDiff = (Number(b.score) || 0) - (Number(a.score) || 0);
+      if (scoreDiff !== 0) return scoreDiff;
+      return String(b.sessionDate || b.date || "").localeCompare(String(a.sessionDate || a.date || ""));
+    });
+
+  try {
+    const snap = await getDocs(query(
+      collection(db, "ranking_entries"),
+      where("sourceType", "==", "user_session"),
+      limit(maxLoad)
+    ));
+    return normalizeDocs(snap);
+  } catch (error) {
+    console.warn("user ranking_entries filtered query failed; fallback to bounded scan", error);
+    try {
+      const snap = await getDocs(query(collection(db, "ranking_entries"), limit(maxLoad)));
+      return normalizeDocs(snap);
+    } catch (fallbackError) {
+      console.warn("user ranking_entries fallback query failed", fallbackError);
+      return [];
+    }
+  }
 }
 
 async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, currentUser, currentUserId, fullLoad = false }) {
@@ -19748,22 +19810,23 @@ async function fetchRankingEntriesForView(db, { rankingType, rankingFilters, cur
 function buildUsersFromRankingEntries(entries = []) {
   const map = new Map();
   entries.forEach((entry) => {
+    const userEntry = isUserRankingEntry(entry);
     const id = entry.userId || makeSampleUserId(entry.name, entry.groupName);
     if (map.has(id)) return;
     map.set(id, {
       id,
       uid: id,
-      name: entry.name || "공식기록",
-      email: `${id}@ranking.local`,
+      name: entry.name || (userEntry ? "사용자" : "공식기록"),
+      email: `${id}@${userEntry ? "user-ranking" : "ranking"}.local`,
       groupName: getCanonicalSchoolName(entry.groupName || entry.school || ""),
       clubName: getCanonicalSchoolName(entry.groupName || entry.school || ""),
       regionCity: entry.regionCity || "전국",
       division: entry.division || "",
       gender: entry.gender || "남",
       bowType: entry.bowType || "리커브",
-      isSampleData: true,
-      isOfficialRecordUser: true,
-      sourceType: entry.sourceType || "official_firestore",
+      isSampleData: !userEntry,
+      isOfficialRecordUser: !userEntry,
+      sourceType: entry.sourceType || (userEntry ? "user_session" : "official_firestore"),
     });
   });
   return Array.from(map.values());
@@ -19771,14 +19834,18 @@ function buildUsersFromRankingEntries(entries = []) {
 
 function buildSessionsFromRankingEntries(entries = []) {
   return entries.map((entry) => {
+    const userEntry = isUserRankingEntry(entry);
     const userId = entry.userId || makeSampleUserId(entry.name, entry.groupName);
     const distance = Number(entry.distance) || 0;
     const score = Number(entry.score) || 0;
     const arrows = Number(entry.arrows) || 36;
-    return buildSampleDistanceSession({
+    const stableSessionId = entry.sessionId || entry.originalSessionId || `${entry.entryId || userId}_${distance}`;
+    const session = buildSampleDistanceSession({
       userId,
       date: entry.sessionDate || getCurrentLocalDateString(),
-      title: `${entry.competitionName || "공식기록"} · ${entry.name || "선수"}`.trim(),
+      title: userEntry
+        ? `${entry.name || "사용자"} · 개인 거리기록`
+        : `${entry.competitionName || "공식기록"} · ${entry.name || "선수"}`.trim(),
       division: entry.division || "",
       gender: entry.gender || "남",
       regionCity: entry.regionCity || "전국",
@@ -19789,6 +19856,17 @@ function buildSessionsFromRankingEntries(entries = []) {
       arrowsPerDistance: arrows,
       rounds: [{ distance, total: score }],
     });
+    return {
+      ...session,
+      id: entry.entryId || `${stableSessionId}_${distance}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
+      sessionId: stableSessionId,
+      originalSessionId: stableSessionId,
+      sourceEntryId: entry.entryId || "",
+      sourceType: entry.sourceType || (userEntry ? "user_session" : "official_firestore"),
+      isSampleData: !userEntry,
+      isOfficialRecord: !userEntry,
+      officialRecord: !userEntry,
+    };
   });
 }
 
@@ -23403,6 +23481,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const [remoteRankingEntries, setRemoteRankingEntries] = useState([]);
   const [remoteRankingLoading, setRemoteRankingLoading] = useState(false);
   const [remoteRankingNotice, setRemoteRankingNotice] = useState("");
+  const [rankingSearchBusy, setRankingSearchBusy] = useState(false);
   const initialRankingAppliedRef = useRef(false);
   const pendingMyRankScrollRef = useRef(false);
 
@@ -23422,66 +23501,72 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [currentUser?.id, currentUser?.division, currentUser?.gender]);
 
   useEffect(() => {
-    if (!ENABLE_OFFICIAL_RECORDS || hideOfficialRecords || !USE_FIRESTORE_RANKING_ENTRIES || !appServices?.db) {
+    if (!USE_FIRESTORE_USER_RANKING_ENTRIES || !appServices?.db) {
       setRemoteRankingEntries([]);
       setRemoteRankingLoading(false);
-      if (!ENABLE_OFFICIAL_RECORDS) {
-        setRemoteRankingNotice("공식/샘플 기록은 초기화 상태입니다. 현재 랭킹은 개인 기록만 표시합니다.");
-      } else if (hideOfficialRecords) {
-        setRemoteRankingNotice("");
-      } else {
-        setRemoteRankingNotice(`공식기록 ${SAMPLE_SHEETS.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0).toLocaleString()}건은 앱 내장 데이터 기준으로 즉시 계산합니다.`);
-      }
+      setRemoteRankingNotice(
+        ENABLE_OFFICIAL_RECORDS
+          ? `공식기록 ${SAMPLE_SHEETS.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0).toLocaleString()}건은 앱 내장 데이터 기준으로 즉시 계산합니다.`
+          : "공식/샘플 기록은 초기화 상태입니다. 현재 랭킹은 개인 기록만 표시합니다."
+      );
       return;
     }
+
     let cancelled = false;
     setRemoteRankingLoading(true);
-    fetchRankingEntriesForView(appServices.db, {
-      rankingType,
-      rankingFilters: appliedRankingFilters,
-      currentUser,
-      currentUserId,
-      fullLoad: rankingSearchMode,
-    })
+    setRemoteRankingNotice("사용자 직접입력 랭킹 기록을 검색중입니다.");
+
+    fetchUserRankingEntriesForView(appServices.db, { maxLoad: 5000 })
       .then((entries) => {
         if (cancelled) return;
         setRemoteRankingEntries(entries);
-        if (rankingSearchMode) {
-          setRemoteRankingNotice(entries.length ? `검색 조건 기준 Firestore 공식기록 ${entries.length.toLocaleString()}건을 불러왔습니다. 학교/소속은 표기 차이를 정규화해 앱 내부에서 필터링합니다.` : "검색 조건에 맞는 Firestore 공식기록이 없습니다. 사용자 기록은 별도로 함께 표시되며, 공식기록은 ranking_entries 업로드 수와 필터 조건을 확인하세요.");
-        } else {
-          setRemoteRankingNotice(entries.length ? "첫 화면은 내 프로필 기준 공식기록 일부만 가볍게 불러옵니다. 조건 변경 후 검색을 누르면 전체 조건 데이터를 조회합니다." : "조건에 맞는 Firestore 공식기록이 없으면 개발용 샘플만 표시됩니다.");
-        }
+        const officialCount = ENABLE_OFFICIAL_RECORDS
+          ? SAMPLE_SHEETS.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0)
+          : 0;
+        setRemoteRankingNotice(
+          `${ENABLE_OFFICIAL_RECORDS ? `공식기록 ${officialCount.toLocaleString()}건은 앱 내장 데이터로 계산하고, ` : ""}사용자 직접입력 기록 ${entries.length.toLocaleString()}건을 Firestore 랭킹 인덱스에서 함께 반영합니다.`
+        );
       })
       .catch((error) => {
         if (cancelled) return;
-        console.warn("ranking_entries query failed", error);
+        console.warn("user ranking_entries query failed", error);
         setRemoteRankingEntries([]);
-        setRemoteRankingNotice("ranking_entries 인덱스/권한이 없으면 개발용 샘플만 표시됩니다.");
+        setRemoteRankingNotice("사용자 직접입력 랭킹 인덱스를 불러오지 못했습니다. Firestore ranking_entries 권한을 확인하세요.");
       })
       .finally(() => {
         if (!cancelled) setRemoteRankingLoading(false);
       });
+
     return () => { cancelled = true; };
-  }, [appServices?.db, hideOfficialRecords, rankingType, appliedRankingFilters, rankingSearchMode, currentUser?.id, currentUser?.division, currentUser?.gender, currentUserId]);
+  }, [appServices?.db]);
 
   const remoteUsers = useMemo(() => buildUsersFromRankingEntries(remoteRankingEntries), [remoteRankingEntries]);
   const remoteSessions = useMemo(() => buildSessionsFromRankingEntries(remoteRankingEntries), [remoteRankingEntries]);
 
   const rankingUsers = useMemo(() => {
-    const sourceUsers = hideOfficialRecords ? users : [...users, ...remoteUsers];
+    const sourceUsers = [...users, ...remoteUsers];
     const dedupedUsers = Array.from(new Map(sourceUsers.map((user) => [user.id, user])).values());
     const base = hideOfficialRecords ? dedupedUsers.filter((user) => !user.isSampleData && !user.isOfficialRecordUser) : dedupedUsers;
-    if (hideOfficialRecords && currentUser?.id && !base.some((user) => user.id === currentUser.id)) {
+    if (currentUser?.id && !base.some((user) => user.id === currentUser.id)) {
       return [...base, currentUser];
     }
     return base;
   }, [users, remoteUsers, hideOfficialRecords, currentUser]);
   const rankingSessions = useMemo(() => {
-    const sourceSessions = hideOfficialRecords ? sessions : [...sessions, ...remoteSessions];
-    const dedupedSessions = Array.from(new Map(sourceSessions.map((session) => [session.id, session])).values());
+    const sessionMap = new Map();
+    const addSession = (session) => {
+      if (!session) return;
+      const stableKey = session.originalSessionId || session.sessionId || session.id;
+      const mapKey = stableKey || session.id || uid("ranking_session");
+      if (sessionMap.has(mapKey)) return;
+      sessionMap.set(mapKey, session);
+    };
+    sessions.forEach(addSession);
+    remoteSessions.forEach(addSession);
+    const dedupedSessions = Array.from(sessionMap.values());
     if (!hideOfficialRecords) return dedupedSessions;
     const allowedUserIds = new Set(rankingUsers.map((user) => user.id));
-    return dedupedSessions.filter((session) => allowedUserIds.has(session.userId));
+    return dedupedSessions.filter((session) => allowedUserIds.has(session.userId) && !session.isSampleData && !session.isOfficialRecord);
   }, [sessions, remoteSessions, rankingUsers, hideOfficialRecords]);
   const qualifiedAttemptsByUserId = useMemo(() => buildQualifiedAttemptsByUserId(rankingSessions), [rankingSessions]);
   const effectiveRankingUsers = useMemo(() => {
@@ -23659,6 +23744,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [appliedRankingFilters, hideOfficialRecords]);
 
   const runRankingSearch = useCallback(() => {
+    setRankingSearchBusy(true);
     setAppliedRankingFilters({ ...rankingFilters });
     setRankingSearchMode(true);
     // 검색을 눌러도 목록은 항상 상위 50명부터 가볍게 표시한다.
@@ -23666,10 +23752,15 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     setShowAllRankings(false);
     setRemoteRankingNotice(
       ENABLE_OFFICIAL_RECORDS
-        ? `공식기록 ${SAMPLE_SHEETS.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0).toLocaleString()}건은 앱 내장 데이터 기준으로 계산합니다. 검색 후에도 상위 50명만 먼저 표시하고, 전체 목록은 전체 보기 버튼으로 불러옵니다.`
-        : "공식/샘플 기록은 초기화 상태입니다. 현재 랭킹은 개인 기록만 표시합니다."
+        ? `공식기록 ${SAMPLE_SHEETS.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0).toLocaleString()}건과 사용자 직접입력 기록 ${remoteRankingEntries.length.toLocaleString()}건을 함께 계산합니다. 검색 후에도 상위 50명만 먼저 표시하고, 전체 목록은 전체 보기 버튼으로 불러옵니다.`
+        : `사용자 직접입력 기록 ${remoteRankingEntries.length.toLocaleString()}건을 기준으로 계산합니다.`
     );
-  }, [rankingFilters]);
+    if (typeof window !== "undefined") {
+      window.setTimeout(() => setRankingSearchBusy(false), 350);
+    } else {
+      setRankingSearchBusy(false);
+    }
+  }, [rankingFilters, remoteRankingEntries.length]);
 
   const resetToProfileRanking = useCallback(() => {
     const nextRankingGroup = getRankingGroup(currentUser?.division || "", currentUser?.gender || "남") || "all";
@@ -23687,6 +23778,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     setRankingSearchMode(false);
     setShowAllRankings(false);
   }, [currentUser?.division, currentUser?.gender]);
+
+  const rankingBusy = remoteRankingLoading || rankingSearchBusy;
 
   return (
     <>
@@ -23796,7 +23889,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             </label>
             {!hideOfficialRecords && (
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                {remoteRankingLoading ? "Firestore 랭킹 불러오는 중" : rankingSearchMode ? `검색결과 ${remoteRankingEntries.length.toLocaleString()}건` : `Firestore ${remoteRankingEntries.length}건`}
+                {rankingBusy ? "검색중" : `사용자기록 ${remoteRankingEntries.length.toLocaleString()}건 포함`}
               </span>
             )}
           </CardTitle>
@@ -23973,15 +24066,17 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               <Label className="w-16 shrink-0 text-sm">검색</Label>
               <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
                 <div className="rounded-xl bg-blue-50 px-3 py-2 text-[11px] leading-relaxed text-blue-900">
-                  조건을 바꾼 뒤 <b>검색</b>을 눌러도 목록은 상위 50명만 먼저 표시합니다. 전체 목록은 <b>전체 보기</b>를 눌렀을 때만 펼칩니다.
+                  조건을 바꾼 뒤 <b>검색</b>을 누르면 공식기록과 사용자 직접입력 기록을 함께 계산합니다. 검색 중에는 버튼에 <b>검색중</b>으로 표시합니다.
                 </div>
                 <Button
                   type="button"
                   className="h-10 rounded-xl px-5 text-sm font-bold"
                   onClick={runRankingSearch}
-                  disabled={remoteRankingLoading}
+                  disabled={rankingBusy}
                 >
-                  {remoteRankingLoading ? "검색 중" : "검색"}
+                  {rankingBusy ? (
+                    <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> 검색중</span>
+                  ) : "검색"}
                 </Button>
                 <Button
                   type="button"
@@ -23998,7 +24093,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
           <div className="mt-4">
             {activeRankings.length === 0 ? (
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                현재 조건에서 랭킹에 반영된 기록이 없다.
+                {rankingBusy ? "검색중입니다. 공식기록과 사용자 직접입력 기록을 계산하고 있습니다." : "현재 조건에서 랭킹에 반영된 기록이 없다."}
               </div>
             ) : (
               <div className="grid gap-3">
@@ -24185,11 +24280,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         type="button"
         className="h-11 rounded-full bg-blue-900 px-4 text-xs font-bold text-white shadow-2xl hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
         onClick={scrollToMyRank}
-        disabled={!myRank}
+        disabled={!myRank || rankingBusy}
         aria-label="내 순위 위치로 이동"
-        title={myRank ? `내 순위 #${myRank.rank}로 이동` : "현재 조건에서 내 순위가 없습니다"}
+        title={rankingBusy ? "검색중입니다" : myRank ? `내 순위 #${myRank.rank}로 이동` : "현재 조건에서 내 순위가 없습니다"}
       >
-        내 순위 #{myRank?.rank || "-"}
+        {rankingBusy ? "검색중" : `내 순위 #${myRank?.rank || "-"}`}
       </Button>
     </div>
     </>
@@ -27280,17 +27375,21 @@ function XSessionApp() {
     setSessionsLoading(true);
     try {
       const activeUid = getAuth()?.currentUser?.uid || "";
+      let loadedUsersForRankingSync = [];
+      let loadedSessionsForRankingSync = [];
 
       try {
         const usersSnap = await getDocs(collection(db, "users"));
-        setUsers(usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data())));
+        loadedUsersForRankingSync = usersSnap.docs.map((snap) => fromFirestoreProfile(snap.id, snap.data()));
+        setUsers(loadedUsersForRankingSync);
       } catch (userError) {
         console.warn("User list could not be loaded. Falling back to current user only.", userError);
         if (activeUid) {
           try {
             const ownUserSnap = await getDoc(doc(db, "users", activeUid));
             if (ownUserSnap.exists()) {
-              setUsers([fromFirestoreProfile(activeUid, ownUserSnap.data())]);
+              loadedUsersForRankingSync = [fromFirestoreProfile(activeUid, ownUserSnap.data())];
+              setUsers(loadedUsersForRankingSync);
             }
           } catch (ownUserError) {
             console.warn("Current user profile could not be loaded.", ownUserError);
@@ -27300,13 +27399,15 @@ function XSessionApp() {
 
       try {
         const sessionsSnap = await getDocs(query(collection(db, "sessions"), orderBy("sessionDate", "desc")));
-        setSessions(sessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
+        loadedSessionsForRankingSync = sessionsSnap.docs.map((snap) => fromFirestoreSession(snap));
+        setSessions(loadedSessionsForRankingSync);
       } catch (sessionError) {
         console.warn("Full session list could not be loaded. Falling back to current user's sessions.", sessionError);
         if (activeUid) {
           try {
             const ownSessionsSnap = await getDocs(query(collection(db, "sessions"), where("userId", "==", activeUid)));
-            setSessions(ownSessionsSnap.docs.map((snap) => fromFirestoreSession(snap)));
+            loadedSessionsForRankingSync = ownSessionsSnap.docs.map((snap) => fromFirestoreSession(snap));
+            setSessions(loadedSessionsForRankingSync);
           } catch (ownSessionError) {
             console.warn("Current user's sessions could not be loaded.", ownSessionError);
             // 데이터 권한 오류는 사용자에게 원문 경고를 노출하지 않는다. 저장/랭킹 조건 안내는 화면별 문구에서 처리한다.
@@ -27341,6 +27442,20 @@ function XSessionApp() {
         if (loadedClaims.length) setOfficialClaims(loadedClaims);
       } catch (claimError) {
         console.warn("Official claim data could not be loaded. Falling back to local/profile storage.", claimError);
+      }
+
+      try {
+        if (activeUid && loadedSessionsForRankingSync.length) {
+          const profileById = new Map(loadedUsersForRankingSync.map((user) => [user.id, user]));
+          const ownCompletedSessions = loadedSessionsForRankingSync
+            .filter((session) => session.userId === activeUid && session.isComplete && session.mode === "cumulative")
+            .slice(0, 80);
+          for (const session of ownCompletedSessions) {
+            await upsertRankingEntriesForSession(db, session, profileById.get(session.userId) || null);
+          }
+        }
+      } catch (rankingSyncError) {
+        console.warn("Existing user sessions could not be synced to ranking_entries.", rankingSyncError);
       }
 
       setGlobalError("");
@@ -27767,6 +27882,11 @@ function XSessionApp() {
         updatedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       };
+      try {
+        await upsertRankingEntriesForSession(appServices.db, savedPreviewSession, currentUser);
+      } catch (rankingEntryError) {
+        console.warn("ranking_entries user-session sync failed", rankingEntryError);
+      }
       setSessions((prev) => {
         const withoutExisting = prev.filter((session) => session.id !== savedSessionId);
         return [savedPreviewSession, ...withoutExisting];
@@ -27807,6 +27927,7 @@ function XSessionApp() {
     if (!appServices?.db || !editingSessionId || !authUser || !profile) return;
     try {
       await deleteDoc(doc(appServices.db, "sessions", editingSessionId));
+      await deleteRankingEntriesForSession(appServices.db, editingSessionId);
       setEditingSessionId(null);
       setDraftSession(normalizeSessionShape(createNewSession(profile, "cumulative"), profile));
       clearDraftFromLocal(authUser.uid);
