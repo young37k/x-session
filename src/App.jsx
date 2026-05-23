@@ -23625,10 +23625,12 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const runRankingSearch = useCallback(() => {
     setAppliedRankingFilters({ ...rankingFilters });
     setRankingSearchMode(true);
-    setShowAllRankings(true);
+    // 검색을 눌러도 목록은 항상 상위 50명부터 가볍게 표시한다.
+    // 전체 목록은 사용자가 명시적으로 "전체 보기"를 눌렀을 때만 펼친다.
+    setShowAllRankings(false);
     setRemoteRankingNotice(
       ENABLE_OFFICIAL_RECORDS
-        ? `공식기록 ${SAMPLE_SHEETS.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0).toLocaleString()}건은 앱 내장 데이터 기준으로 즉시 계산합니다.`
+        ? `공식기록 ${SAMPLE_SHEETS.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0).toLocaleString()}건은 앱 내장 데이터 기준으로 계산합니다. 검색 후에도 상위 50명만 먼저 표시하고, 전체 목록은 전체 보기 버튼으로 불러옵니다.`
         : "공식/샘플 기록은 초기화 상태입니다. 현재 랭킹은 개인 기록만 표시합니다."
     );
   }, [rankingFilters]);
@@ -23934,7 +23936,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               <Label className="w-16 shrink-0 text-sm">검색</Label>
               <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-[1fr_auto_auto]">
                 <div className="rounded-xl bg-blue-50 px-3 py-2 text-[11px] leading-relaxed text-blue-900">
-                  조건을 바꾼 뒤 <b>검색</b>을 눌러야 Firestore 공식 결과를 전체 조건 기준으로 불러옵니다. 첫 화면은 내 프로필 기준 일부만 가볍게 표시합니다.
+                  조건을 바꾼 뒤 <b>검색</b>을 눌러도 목록은 상위 50명만 먼저 표시합니다. 전체 목록은 <b>전체 보기</b>를 눌렀을 때만 펼칩니다.
                 </div>
                 <Button
                   type="button"
@@ -23974,7 +23976,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                       type="button"
                       variant="outline"
                       className="h-8 rounded-xl px-3 text-xs"
-                      onClick={() => setShowAllRankings((prev) => !prev)}
+                      onClick={() => setShowAllRankings(!showAllRankings)}
                     >
                       {showAllRankings ? "상위 50명만 보기" : "전체 보기"}
                     </Button>
