@@ -566,6 +566,8 @@ function getInitialTabByRole(role) {
 const ADMIN_EMAILS = ["theyoung37k@gmail.com"];
 const ADMIN_STORAGE_KEY = "elbowshot_admin_emails";
 const ADMIN_REVIEWED_USERS_KEY = "elbowshot_admin_reviewed_users";
+const ADMIN_REVIEW_STATE_COLLECTION = "admin_review_state";
+const ADMIN_REVIEWED_USERS_DOC_ID = "reviewed_users";
 
 const OFFICIAL_CLAIM_STORAGE_KEY = "elbowshot_official_claim_requests";
 
@@ -874,6 +876,40 @@ function writeStoredReviewedUserIds(ids = []) {
     localStorage.setItem(ADMIN_REVIEWED_USERS_KEY, JSON.stringify(Array.from(new Set(ids))));
   } catch {
     // ignore
+  }
+}
+
+function normalizeReviewedUserIds(ids = []) {
+  return Array.from(new Set((ids || []).map((item) => String(item || "").trim()).filter(Boolean)));
+}
+
+async function readReviewedUserIdsFromFirestore(db) {
+  if (!db) return [];
+  try {
+    const snap = await getDoc(doc(db, ADMIN_REVIEW_STATE_COLLECTION, ADMIN_REVIEWED_USERS_DOC_ID));
+    if (!snap.exists()) return [];
+    const data = snap.data() || {};
+    return normalizeReviewedUserIds(data.userIds || data.reviewedUserIds || []);
+  } catch (error) {
+    console.warn("Admin reviewed user sync read failed.", error);
+    return [];
+  }
+}
+
+async function writeReviewedUserIdsToFirestore(db, ids = [], adminEmail = "") {
+  if (!db) return false;
+  try {
+    const userIds = normalizeReviewedUserIds(ids);
+    await setDoc(doc(db, ADMIN_REVIEW_STATE_COLLECTION, ADMIN_REVIEWED_USERS_DOC_ID), {
+      userIds,
+      reviewedUserIds: userIds,
+      updatedAt: serverTimestamp(),
+      updatedBy: adminEmail || "",
+    }, { merge: true });
+    return true;
+  } catch (error) {
+    console.warn("Admin reviewed user sync write failed.", error);
+    return false;
   }
 }
 
@@ -27838,6 +27874,7 @@ function AdminPanel({ currentUser, users, sessions, appServices, officialClaims 
         <CardContent className="grid gap-4 min-w-0">
           <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             비밀번호는 표시하지 않는다. 이름을 더블 클릭하면 자세한 정보를 볼 수 있다. 가입자 삭제는 프로필 문서와 저장 기록을 삭제한다.
+            가입자 확인 상태는 Firestore에 동기화되어 PC와 모바일에서 동일하게 유지된다.
           </div>
           <div className="grid gap-2 md:max-w-md">
             <Label>이름 검색</Label>
@@ -28216,16 +28253,24 @@ function XSessionApp() {
 
   const markUserReviewed = useCallback((userId) => {
     if (!userId) return;
-    setReviewedUserIds((prev) => Array.from(new Set([...prev, userId])));
-  }, []);
+    setReviewedUserIds((prev) => {
+      const next = normalizeReviewedUserIds([...prev, userId]);
+      writeReviewedUserIdsToFirestore(appServices?.db, next, profile?.email || "");
+      return next;
+    });
+  }, [appServices?.db, profile?.email]);
 
   const markAllUsersReviewed = useCallback((userIds = []) => {
     const allExistingUserIds = (users || [])
       .filter((user) => !user.isSampleData && !isAdminEmail(user.email))
       .map((user) => user.id)
       .filter(Boolean);
-    setReviewedUserIds((prev) => Array.from(new Set([...prev, ...allExistingUserIds, ...userIds.filter(Boolean)])));
-  }, [users]);
+    setReviewedUserIds((prev) => {
+      const next = normalizeReviewedUserIds([...prev, ...allExistingUserIds, ...userIds.filter(Boolean)]);
+      writeReviewedUserIdsToFirestore(appServices?.db, next, profile?.email || "");
+      return next;
+    });
+  }, [appServices?.db, profile?.email, users]);
 
 
   useEffect(() => {
@@ -28332,6 +28377,22 @@ function XSessionApp() {
         if (loadedClaims.length) setOfficialClaims(loadedClaims);
       } catch (claimError) {
         console.warn("Official claim data could not be loaded. Falling back to local/profile storage.", claimError);
+      }
+
+      try {
+        const activeEmail = getAuth()?.currentUser?.email || profile?.email || "";
+        if (isAdminEmail(activeEmail)) {
+          const remoteReviewedIds = await readReviewedUserIdsFromFirestore(db);
+          const localReviewedIds = getStoredReviewedUserIds();
+          const mergedReviewedIds = normalizeReviewedUserIds([...remoteReviewedIds, ...localReviewedIds]);
+          setReviewedUserIds(mergedReviewedIds);
+          writeStoredReviewedUserIds(mergedReviewedIds);
+          if (mergedReviewedIds.length !== remoteReviewedIds.length) {
+            await writeReviewedUserIdsToFirestore(db, mergedReviewedIds, activeEmail);
+          }
+        }
+      } catch (reviewSyncError) {
+        console.warn("Admin reviewed user sync failed. Falling back to local reviewed state.", reviewSyncError);
       }
 
       try {
