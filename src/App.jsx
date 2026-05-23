@@ -23404,6 +23404,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const [remoteRankingLoading, setRemoteRankingLoading] = useState(false);
   const [remoteRankingNotice, setRemoteRankingNotice] = useState("");
   const initialRankingAppliedRef = useRef(false);
+  const pendingMyRankScrollRef = useRef(false);
 
   useEffect(() => {
     if (initialRankingAppliedRef.current || !currentUser?.id) return;
@@ -23556,6 +23557,41 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const hasMoreRankings = activeRankings.length > visibleRankings.length;
 
   const myRank = activeRankings.find((item) => item.userId === currentUserId);
+  const myRankIsVisible = Boolean(myRank && visibleRankings.some((item) => item.userId === currentUserId));
+
+  const scrollToPageTop = useCallback(() => {
+    if (typeof window === "undefined") return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const scrollToMyRank = useCallback(() => {
+    if (!myRank) return;
+    pendingMyRankScrollRef.current = true;
+    if (!myRankIsVisible) {
+      setShowAllRankings(true);
+      return;
+    }
+    const target = typeof document !== "undefined"
+      ? document.getElementById("ranking-my-row") || document.getElementById("ranking-my-summary")
+      : null;
+    if (target) {
+      pendingMyRankScrollRef.current = false;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [myRank, myRankIsVisible]);
+
+  useEffect(() => {
+    if (!pendingMyRankScrollRef.current || !myRank) return;
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+    const timer = window.setTimeout(() => {
+      const target = document.getElementById("ranking-my-row") || document.getElementById("ranking-my-summary");
+      if (target) {
+        pendingMyRankScrollRef.current = false;
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [showAllRankings, visibleRankings, myRank]);
 
   const myRankingGroup = myRank?.rankingGroup || getRankingGroup(currentUser?.division, currentUser?.gender) || rankingFilters.rankingGroup;
   const myRequiredDistances = myRank?.requiredDistances?.length
@@ -23653,6 +23689,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [currentUser?.division, currentUser?.gender]);
 
   return (
+    <>
     <div className="grid gap-4 lg:grid-cols-[0.72fr_1.28fr]">
       <div className="grid gap-4">
         <Card className="w-full max-w-full overflow-hidden rounded-[28px] border-0 bg-white shadow-xl">
@@ -23668,7 +23705,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             </div>
             {myRank ? (
               <div className="space-y-4">
-                <div className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-5 text-white shadow-lg">
+                <div id="ranking-my-summary" className="rounded-3xl bg-gradient-to-br from-blue-900 to-red-700 p-5 text-white shadow-lg">
                   <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
                       <div className="text-xs font-semibold uppercase tracking-wide opacity-75">
@@ -23985,6 +24022,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                 {visibleRankings.map((item) => (
                   <div
                     key={`${rankingType}_${item.userId}_${item.distance || item.distanceLabel || "total"}`}
+                    id={item.userId === currentUserId ? "ranking-my-row" : undefined}
                     className={`rounded-2xl border px-3 py-2 ${
                       item.userId === currentUserId
                         ? "border-blue-300 bg-blue-50"
@@ -24129,6 +24167,32 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         </CardContent>
       </Card>
     </div>
+
+    <div className="fixed bottom-4 left-1/2 z-[9998] -translate-x-1/2 sm:bottom-6">
+      <Button
+        type="button"
+        variant="outline"
+        className="h-11 rounded-full border-slate-200 bg-white/95 px-4 text-xs font-bold text-slate-800 shadow-2xl backdrop-blur hover:bg-slate-50"
+        onClick={scrollToPageTop}
+        aria-label="페이지 제일 위로 이동"
+      >
+        ↑ 위로
+      </Button>
+    </div>
+
+    <div className="fixed bottom-4 right-4 z-[9998] sm:bottom-6 sm:right-6">
+      <Button
+        type="button"
+        className="h-11 rounded-full bg-blue-900 px-4 text-xs font-bold text-white shadow-2xl hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+        onClick={scrollToMyRank}
+        disabled={!myRank}
+        aria-label="내 순위 위치로 이동"
+        title={myRank ? `내 순위 #${myRank.rank}로 이동` : "현재 조건에서 내 순위가 없습니다"}
+      >
+        내 순위 #{myRank?.rank || "-"}
+      </Button>
+    </div>
+    </>
   );
 }
 
