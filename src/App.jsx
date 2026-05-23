@@ -19665,16 +19665,20 @@ function isUserRankingEntry(entry = {}) {
   return false;
 }
 
+function getOfficialSampleIdFromClaim(claim = {}) {
+  return claim?.sampleUserId || claim?.officialSampleUserId || claim?.officialAthleteKey || "";
+}
+
 function getApprovedClaimForUid(officialClaims = [], uid = "") {
   if (!uid) return null;
   return (officialClaims || []).find((claim) => {
     const claimedUid = claim?.claimedByUid || claim?.requesterUid || "";
-    return claim?.status === "approved" && claimedUid === uid && claim?.sampleUserId;
+    return claim?.status === "approved" && claimedUid === uid && getOfficialSampleIdFromClaim(claim);
   }) || null;
 }
 
 function getVerifiedBestRecordId(claim = {}, user = {}) {
-  const raw = claim.sampleUserId || claim.officialAthleteKey || `${user.id || user.uid || claim.requesterUid || "unknown"}_${claim.rankingGroup || "ranking"}`;
+  const raw = getOfficialSampleIdFromClaim(claim) || `${user.id || user.uid || claim.requesterUid || "unknown"}_${claim.rankingGroup || "ranking"}`;
   return `verified_best_${raw}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
 }
 
@@ -19690,6 +19694,43 @@ function getVerifiedBestPublicUserId(record = {}) {
     || record.id
     || getClaimedUidFromVerifiedRecord(record)
     || "";
+}
+
+function isVerifiedBestSource(entity = {}) {
+  return entity?.sourceType === "verified_user_best"
+    || entity?.recordLabel === "인증선수 · 개인 거리별 최고기록"
+    || entity?.totalLabel === "인증선수 · 개인 종합 최고기록";
+}
+
+function isOfficialRankingUser(user = {}) {
+  return Boolean(
+    user?.isSampleData
+    || user?.isOfficialRecordUser
+    || user?.officialRecord
+    || user?.isOfficialRecord
+    || user?.sourceType === "official_sample"
+    || user?.sourceType === "competition_result"
+    || user?.competitionId
+  );
+}
+
+function isOfficialRankingSession(session = {}) {
+  return Boolean(
+    session?.isSampleData
+    || session?.isOfficialRecord
+    || session?.officialRecord
+    || session?.sourceType === "official_sample"
+    || session?.sourceType === "competition_result"
+    || session?.competitionId
+  );
+}
+
+function getRankingRecordLabelForItem(item = {}, rankingType = "total") {
+  if (item.recordLabel) return item.recordLabel;
+  if (item.sourceType !== "verified_user_best") return "";
+  return rankingType === "distance" || rankingType === "weeklyDistance"
+    ? "인증선수 · 개인 거리별 최고기록"
+    : "인증선수 · 개인 종합 최고기록";
 }
 
 function sanitizeVerifiedBestRecordForPublicRanking(record = {}) {
@@ -19793,7 +19834,8 @@ function getSessionDistanceRoundMap(session = {}) {
 
 function buildVerifiedBestRecordFromSessions(sessions = [], user = {}, claim = {}) {
   const uid = user?.id || user?.uid || claim.claimedByUid || claim.requesterUid || "";
-  if (!uid || !claim?.sampleUserId) return null;
+  const claimSampleUserId = getOfficialSampleIdFromClaim(claim);
+  if (!uid || !claimSampleUserId) return null;
   const gender = normalizeGenderValue(claim.gender || user.gender, "남");
   const rankingGroup = resolveRankingGroup(claim.rankingGroup || user.division, gender, claim.rankingGroup || getRankingGroup(user.division, gender));
   const requiredDistances = getRequiredDistancesForRankingGroup(rankingGroup, gender);
@@ -19846,9 +19888,9 @@ function buildVerifiedBestRecordFromSessions(sessions = [], user = {}, claim = {
     uid,
     userId: uid,
     claimedByUid: uid,
-    officialSampleUserId: claim.sampleUserId,
-    sampleUserId: claim.sampleUserId,
-    officialAthleteKey: claim.sampleUserId,
+    officialSampleUserId: claimSampleUserId,
+    sampleUserId: claimSampleUserId,
+    officialAthleteKey: claimSampleUserId,
     officialClaimId: claim.id || "",
     name,
     playerName: name,
@@ -19874,7 +19916,7 @@ function buildVerifiedBestRecordFromSessions(sessions = [], user = {}, claim = {
 }
 
 async function upsertVerifiedBestRecordForAthlete(db, sessions = [], user = {}, claim = {}) {
-  if (!db || !user?.id || !claim?.sampleUserId || claim.status !== "approved") return null;
+  if (!db || !user?.id || !getOfficialSampleIdFromClaim(claim) || claim.status !== "approved") return null;
   const record = buildVerifiedBestRecordFromSessions(sessions, user, claim);
   if (!record) return null;
   const recordId = getVerifiedBestRecordId(claim, user);
@@ -20688,6 +20730,11 @@ function getQualifiedDistanceAttempts(session) {
         rankingGroup: resolveRankingGroup(session.division, session.gender, session.rankingGroup),
         groupName: session.groupName || "",
         regionCity: session.regionCity || "",
+        sourceType: session.sourceType || "",
+        recordLabel: session.recordLabel || "",
+        totalLabel: session.totalLabel || "",
+        verifiedAthlete: Boolean(session.verifiedAthlete),
+        isSampleData: Boolean(session.isSampleData),
       }))
       .filter((item) => item.distance > 0 && item.score >= 0 && item.score <= 360);
   }
@@ -20712,6 +20759,11 @@ function getQualifiedDistanceAttempts(session) {
     rankingGroup: getRankingGroup(session.division, session.gender),
     groupName: session.groupName || "",
     regionCity: session.regionCity || "",
+    sourceType: session.sourceType || "",
+    recordLabel: session.recordLabel || "",
+    totalLabel: session.totalLabel || "",
+    verifiedAthlete: Boolean(session.verifiedAthlete),
+    isSampleData: Boolean(session.isSampleData),
   }];
 }
 
@@ -20799,6 +20851,8 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
 
         const best = validAttempts[0];
         const displayRankingGroup = profileRankingGroup || best.rankingGroup || "-";
+        const verifiedBestItem = isVerifiedBestSource(user) || isVerifiedBestSource(best);
+        const officialItem = !verifiedBestItem && (isOfficialRankingUser(user) || best.isSampleData);
 
         return {
           userId: user.id,
@@ -20814,10 +20868,10 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
           qualifiedSessions: validAttempts.length,
           latestDate: best.sessionDate || "",
           isSampleData: Boolean(user.isSampleData),
-          sourceType: user.sourceType === "verified_user_best" ? "verified_user_best" : (user.isSampleData ? "official" : "user"),
-          recordLabel: user.sourceType === "verified_user_best" ? "인증선수 · 개인 거리별 최고기록" : "",
+          sourceType: verifiedBestItem ? "verified_user_best" : (officialItem ? "official" : "user"),
+          recordLabel: verifiedBestItem ? "인증선수 · 개인 거리별 최고기록" : "",
           claimedByUid: user.claimedByUid || "",
-          verifiedAthlete: Boolean(user.verifiedAthlete),
+          verifiedAthlete: Boolean(user.verifiedAthlete || best.verifiedAthlete || verifiedBestItem),
         };
       }
 
@@ -20839,6 +20893,8 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
 
       const best = filteredAttempts[0];
       const displayRankingGroup = profileRankingGroup || best.rankingGroup || "-";
+      const verifiedBestItem = isVerifiedBestSource(user) || isVerifiedBestSource(best);
+      const officialItem = !verifiedBestItem && (isOfficialRankingUser(user) || best.isSampleData);
 
       return {
         userId: user.id,
@@ -20854,10 +20910,10 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         qualifiedSessions: filteredAttempts.length,
         latestDate: best.sessionDate || "",
         isSampleData: Boolean(user.isSampleData),
-        sourceType: user.sourceType === "verified_user_best" ? "verified_user_best" : (user.isSampleData ? "official" : "user"),
-        recordLabel: user.sourceType === "verified_user_best" ? "인증선수 · 개인 거리별 최고기록" : "",
+        sourceType: verifiedBestItem ? "verified_user_best" : (officialItem ? "official" : "user"),
+        recordLabel: verifiedBestItem ? "인증선수 · 개인 거리별 최고기록" : "",
         claimedByUid: user.claimedByUid || "",
-        verifiedAthlete: Boolean(user.verifiedAthlete),
+        verifiedAthlete: Boolean(user.verifiedAthlete || best.verifiedAthlete || verifiedBestItem),
       };
     })
     .filter(Boolean);
@@ -20944,6 +21000,9 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         // 거리별 개인 최고점들을 서로 다른 날짜에서 합산하지 않는다.
         if ((user.isSampleData || user.isOfficialRecordUser || user.verifiedAthlete || user.sourceType === "verified_user_best") && strictSessionTotals.length) {
           const bestStrict = strictSessionTotals[0];
+          const strictAttempts = Object.values(bestStrict.byDistance || {});
+          const verifiedBestItem = isVerifiedBestSource(user) || isVerifiedBestSource(bestStrict.session) || strictAttempts.some((attempt) => isVerifiedBestSource(attempt));
+          const officialItem = !verifiedBestItem && (isOfficialRankingUser(user) || isOfficialRankingSession(bestStrict.session) || strictAttempts.some((attempt) => attempt.isSampleData));
           return {
             userId: user.id,
             name: getDisplayName(user),
@@ -20957,10 +21016,10 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
             totalScore: bestStrict.totalScore,
             latestDate: bestStrict.latestDate || "",
             isSampleData: Boolean(user.isSampleData),
-            sourceType: user.sourceType === "verified_user_best" ? "verified_user_best" : (user.isSampleData ? "official" : "user"),
-            recordLabel: user.sourceType === "verified_user_best" ? "인증선수 · 개인 종합 최고기록" : "",
+            sourceType: verifiedBestItem ? "verified_user_best" : (officialItem ? "official" : "user"),
+            recordLabel: verifiedBestItem ? "인증선수 · 개인 종합 최고기록" : "",
             claimedByUid: user.claimedByUid || "",
-            verifiedAthlete: Boolean(user.verifiedAthlete),
+            verifiedAthlete: Boolean(user.verifiedAthlete || bestStrict.session?.verifiedAthlete || verifiedBestItem),
           };
         }
 
@@ -20982,6 +21041,10 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
           0
         );
 
+        const distanceAttempts = Object.values(bestByDistance || {});
+        const verifiedBestItem = isVerifiedBestSource(user) || distanceAttempts.some((attempt) => isVerifiedBestSource(attempt));
+        const officialItem = !verifiedBestItem && (isOfficialRankingUser(user) || distanceAttempts.some((attempt) => attempt.isSampleData));
+
         return {
           userId: user.id,
           name: getDisplayName(user),
@@ -21000,10 +21063,10 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
             .sort()
             .slice(-1)[0],
           isSampleData: Boolean(user.isSampleData),
-          sourceType: user.sourceType === "verified_user_best" ? "verified_user_best" : (user.isSampleData ? "official" : "user"),
-          recordLabel: user.sourceType === "verified_user_best" ? "인증선수 · 개인 종합 최고기록" : "",
+          sourceType: verifiedBestItem ? "verified_user_best" : (officialItem ? "official" : "user"),
+          recordLabel: verifiedBestItem ? "인증선수 · 개인 종합 최고기록" : "",
           claimedByUid: user.claimedByUid || "",
-          verifiedAthlete: Boolean(user.verifiedAthlete),
+          verifiedAthlete: Boolean(user.verifiedAthlete || verifiedBestItem),
         };
       }
 
@@ -21047,6 +21110,215 @@ function getDistancePerformance(sessions) {
       avgArrow: item.arrows ? Number((item.score / item.arrows).toFixed(2)) : 0,
     }))
     .sort((a, b) => a.distance - b.distance);
+}
+
+
+function buildTargetScoreAnalysis(sessions = [], user = {}, filters = {}) {
+  const completed = (sessions || []).filter((session) => session && (session.isComplete || session.status === "completed"));
+  if (!completed.length) {
+    return {
+      available: false,
+      reason: "기록을 저장하면 다음 목표점수 분석이 표시됩니다.",
+      rows: [],
+      bestTotalScore: 0,
+      targetScore: 0,
+      growthGap: 0,
+    };
+  }
+
+  const gender = normalizeGenderValue(filters.gender || user?.gender, "남");
+  const selectedGroup = filters.rankingGroup && filters.rankingGroup !== "all"
+    ? filters.rankingGroup
+    : (getRankingGroup(user?.division || "", gender) || "");
+  const groups = selectedGroup
+    ? [selectedGroup]
+    : Array.from(new Set(completed.map((session) => resolveRankingGroup(session.division || user?.division || "", session.gender || gender, session.rankingGroup || "")).filter(Boolean)));
+
+  const candidateAnalyses = groups.map((rankingGroup) => {
+    const requiredDistances = getRequiredDistancesForRankingGroup(rankingGroup, gender);
+    if (!requiredDistances.length) return null;
+
+    const sessionTotals = completed
+      .map((session) => {
+        const sessionGender = normalizeGenderValue(session.gender || gender, gender);
+        if (sessionGender !== gender) return null;
+        const sessionGroup = resolveRankingGroup(session.division || rankingGroup, sessionGender, session.rankingGroup || rankingGroup);
+        if (sessionGroup && rankingGroup && sessionGroup !== rankingGroup) return null;
+        const attempts = getQualifiedDistanceAttempts(session);
+        const byDistance = {};
+        requiredDistances.forEach((distance) => {
+          const candidates = attempts
+            .filter((attempt) => String(attempt.distance) === String(distance))
+            .sort((a, b) => {
+              if ((Number(b.score) || 0) !== (Number(a.score) || 0)) return (Number(b.score) || 0) - (Number(a.score) || 0);
+              return String(b.sessionDate || "").localeCompare(String(a.sessionDate || ""));
+            });
+          if (candidates.length) byDistance[distance] = candidates[0];
+        });
+        if (requiredDistances.some((distance) => !byDistance[distance])) return null;
+        const totalScore = requiredDistances.reduce((sum, distance) => sum + (Number(byDistance[distance]?.score) || 0), 0);
+        const latestDate = requiredDistances.map((distance) => byDistance[distance]?.sessionDate || "").sort().slice(-1)[0] || "";
+        return { session, rankingGroup, requiredDistances, byDistance, totalScore, latestDate };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        if ((b.totalScore || 0) !== (a.totalScore || 0)) return (b.totalScore || 0) - (a.totalScore || 0);
+        return String(b.latestDate || "").localeCompare(String(a.latestDate || ""));
+      });
+
+    const bestByDistance = {};
+    completed.forEach((session) => {
+      const sessionGender = normalizeGenderValue(session.gender || gender, gender);
+      if (sessionGender !== gender) return;
+      const sessionGroup = resolveRankingGroup(session.division || rankingGroup, sessionGender, session.rankingGroup || rankingGroup);
+      if (sessionGroup && rankingGroup && sessionGroup !== rankingGroup) return;
+      getQualifiedDistanceAttempts(session).forEach((attempt) => {
+        const distance = Number(attempt.distance);
+        if (!requiredDistances.includes(distance)) return;
+        const score = Number(attempt.score) || 0;
+        const existing = bestByDistance[distance];
+        if (!existing || score > existing.score || (score === existing.score && String(attempt.sessionDate || "").localeCompare(String(existing.sessionDate || "")) > 0)) {
+          bestByDistance[distance] = { ...attempt, score };
+        }
+      });
+    });
+
+    if (!sessionTotals.length || requiredDistances.some((distance) => !bestByDistance[distance])) {
+      return {
+        available: false,
+        rankingGroup,
+        requiredDistances,
+        reason: "필수 4거리 종합기록과 거리별 최고기록이 모두 쌓이면 다음 목표점수를 계산합니다.",
+        rows: [],
+        bestTotalScore: sessionTotals[0]?.totalScore || 0,
+        targetScore: 0,
+        growthGap: 0,
+      };
+    }
+
+    const bestTotal = sessionTotals[0];
+    const targetScore = requiredDistances.reduce((sum, distance) => sum + (Number(bestByDistance[distance]?.score) || 0), 0);
+    const rows = requiredDistances.map((distance) => {
+      const totalScore = Number(bestTotal.byDistance[distance]?.score) || 0;
+      const bestDistanceScore = Number(bestByDistance[distance]?.score) || 0;
+      return {
+        distance,
+        totalScore,
+        bestDistanceScore,
+        gap: bestDistanceScore - totalScore,
+        bestDate: bestByDistance[distance]?.sessionDate || "",
+      };
+    });
+
+    return {
+      available: true,
+      rankingGroup,
+      requiredDistances,
+      bestTotalScore: bestTotal.totalScore || 0,
+      bestTotalDate: bestTotal.latestDate || "",
+      targetScore,
+      growthGap: targetScore - (bestTotal.totalScore || 0),
+      rows,
+      reason: "거리별 개인 최고점은 서로 다른 컨디션에서 나온 실제 기록입니다. 종합랭킹 점수와 구분해 다음 목표점수로 사용합니다.",
+    };
+  }).filter(Boolean);
+
+  const available = candidateAnalyses.filter((item) => item.available).sort((a, b) => (b.targetScore || 0) - (a.targetScore || 0));
+  if (available.length) return available[0];
+  return candidateAnalyses[0] || {
+    available: false,
+    reason: "분석 가능한 거리기반 기록이 부족합니다.",
+    rows: [],
+    bestTotalScore: 0,
+    targetScore: 0,
+    growthGap: 0,
+  };
+}
+
+
+function TargetScoreAnalysisCard({ analysis, compact = false }) {
+  const data = analysis || {};
+  const rows = Array.isArray(data.rows) ? data.rows : [];
+  const hasAnalysis = Boolean(data.available && rows.length);
+  const growthGap = Number(data.growthGap || 0);
+  return (
+    <section className={`rounded-[24px] border border-blue-100 bg-blue-50/70 ${compact ? "p-4" : "p-5"}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-base font-black text-blue-950">다음 목표점수</div>
+          <div className="mt-1 text-xs leading-5 text-blue-800">
+            4거리 종합 최고기록과 거리별 개인 최고점을 비교해 성장 가능 점수를 계산합니다.
+          </div>
+        </div>
+        <Badge className="rounded-full bg-blue-900 px-3 py-1 text-white">거리별 최고점 기준</Badge>
+      </div>
+
+      {hasAnalysis ? (
+        <>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-2xl bg-white p-3">
+              <div className="text-[11px] font-semibold text-slate-500">현재 최고 종합점수</div>
+              <div className="mt-1 text-2xl font-black text-slate-950">{Number(data.bestTotalScore || 0).toFixed(0)}점</div>
+            </div>
+            <div className="rounded-2xl bg-white p-3">
+              <div className="text-[11px] font-semibold text-slate-500">거리별 최고점 합계</div>
+              <div className="mt-1 text-2xl font-black text-blue-700">{Number(data.targetScore || 0).toFixed(0)}점</div>
+            </div>
+            <div className="rounded-2xl bg-white p-3">
+              <div className="text-[11px] font-semibold text-slate-500">성장 가능 점수</div>
+              <div className={`mt-1 text-2xl font-black ${growthGap > 0 ? "text-emerald-600" : "text-slate-700"}`}>
+                {growthGap > 0 ? "+" : ""}{growthGap.toFixed(0)}점
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-2xl bg-white p-3 text-sm leading-6 text-slate-700">
+            현재 최고 종합점수는 <b>{Number(data.bestTotalScore || 0).toFixed(0)}점</b>입니다. 거리별 개인 최고점을 합치면 <b>{Number(data.targetScore || 0).toFixed(0)}점</b>까지 도전할 수 있습니다.
+            {growthGap > 0 ? ` 즉, 이미 각 거리에서 만든 점수를 기준으로 ${growthGap.toFixed(0)}점의 성장 여지가 있습니다.` : " 현재는 종합 최고기록과 거리별 최고점 합계가 거의 같습니다."}
+          </div>
+
+          <div className="mt-3 overflow-x-auto rounded-2xl bg-white">
+            <table className="w-full min-w-[440px] text-sm">
+              <thead>
+                <tr className="border-b bg-slate-50 text-left text-xs text-slate-500">
+                  <th className="px-3 py-2">거리</th>
+                  <th className="px-3 py-2">종합 최고기록 당시</th>
+                  <th className="px-3 py-2">거리별 개인 최고점</th>
+                  <th className="px-3 py-2">차이</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.distance} className="border-b last:border-0">
+                    <td className="px-3 py-2 font-black">{row.distance}m</td>
+                    <td className="px-3 py-2">{Number(row.totalScore || 0).toFixed(0)}점</td>
+                    <td className="px-3 py-2 font-semibold text-blue-700">{Number(row.bestDistanceScore || 0).toFixed(0)}점</td>
+                    <td className={`px-3 py-2 font-black ${Number(row.gap || 0) > 0 ? "text-emerald-600" : "text-slate-500"}`}>
+                      {Number(row.gap || 0) > 0 ? "+" : ""}{Number(row.gap || 0).toFixed(0)}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-blue-50/70 font-black">
+                  <td className="px-3 py-2">합계</td>
+                  <td className="px-3 py-2">{Number(data.bestTotalScore || 0).toFixed(0)}점</td>
+                  <td className="px-3 py-2 text-blue-700">{Number(data.targetScore || 0).toFixed(0)}점</td>
+                  <td className="px-3 py-2 text-emerald-600">{growthGap > 0 ? "+" : ""}{growthGap.toFixed(0)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-3 rounded-2xl bg-white/70 p-3 text-[11px] leading-5 text-blue-900">
+            거리별 최고점 합계는 공식 종합랭킹 점수가 아니라, 선수가 각 거리에서 실제로 기록한 최고점을 기준으로 잡은 다음 목표점수입니다. 종합랭킹은 기존처럼 같은 세션 안의 4거리 합계만 사용합니다.
+          </div>
+        </>
+      ) : (
+        <div className="mt-4 rounded-2xl bg-white p-4 text-sm leading-6 text-slate-600">
+          {data.reason || "필수 4거리 기록이 쌓이면 현재 최고점과 다음 목표점수를 자동으로 계산합니다."}
+        </div>
+      )}
+    </section>
+  );
 }
 
 function getWeakZoneInsight(sessions) {
@@ -23936,23 +24208,51 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return () => { cancelled = true; };
   }, [appServices?.db]);
 
-  const remoteUsers = useMemo(() => buildUsersFromVerifiedBestRecords(remoteRankingEntries), [remoteRankingEntries]);
-  const remoteSessions = useMemo(() => buildSessionsFromVerifiedBestRecords(remoteRankingEntries), [remoteRankingEntries]);
+  const currentApprovedClaim = useMemo(() => {
+    const claimPool = [
+      ...(officialClaims || []),
+      currentUser?.latestOfficialClaim?.status === "approved" ? currentUser.latestOfficialClaim : null,
+    ].filter(Boolean);
+    return getApprovedClaimForUid(claimPool, currentUserId);
+  }, [officialClaims, currentUser?.latestOfficialClaim, currentUserId]);
+
+  const localVerifiedBestRecord = useMemo(() => {
+    if (!getOfficialSampleIdFromClaim(currentApprovedClaim) || !currentUser?.id) return null;
+    const rawRecord = buildVerifiedBestRecordFromSessions(sessions, currentUser, currentApprovedClaim);
+    if (!rawRecord) return null;
+    const recordId = getVerifiedBestRecordId(currentApprovedClaim, currentUser);
+    return normalizeVerifiedBestRecordData(recordId, sanitizeVerifiedBestRecordForPublicRanking(rawRecord));
+  }, [sessions, currentUser, currentApprovedClaim]);
+
+  const verifiedBestRecordsForRanking = useMemo(() => {
+    const map = new Map();
+    (remoteRankingEntries || []).forEach((record) => {
+      const key = record.officialSampleUserId || record.sampleUserId || record.publicAthleteId || record.id;
+      if (!key) return;
+      map.set(key, record);
+    });
+    if (localVerifiedBestRecord) {
+      const key = localVerifiedBestRecord.officialSampleUserId || localVerifiedBestRecord.sampleUserId || localVerifiedBestRecord.publicAthleteId || localVerifiedBestRecord.id;
+      if (key) map.set(key, localVerifiedBestRecord);
+    }
+    return Array.from(map.values());
+  }, [remoteRankingEntries, localVerifiedBestRecord]);
+
+  const remoteUsers = useMemo(() => buildUsersFromVerifiedBestRecords(verifiedBestRecordsForRanking), [verifiedBestRecordsForRanking]);
+  const remoteSessions = useMemo(() => buildSessionsFromVerifiedBestRecords(verifiedBestRecordsForRanking), [verifiedBestRecordsForRanking]);
 
   const verifiedOfficialSampleIds = useMemo(
-    () => new Set((remoteRankingEntries || []).map((record) => record.officialSampleUserId || record.sampleUserId).filter(Boolean)),
-    [remoteRankingEntries]
+    () => new Set((verifiedBestRecordsForRanking || []).map((record) => record.officialSampleUserId || record.sampleUserId).filter(Boolean)),
+    [verifiedBestRecordsForRanking]
   );
 
   const rankingUsers = useMemo(() => {
-    const sourceUsers = [...users.filter((user) => !verifiedOfficialSampleIds.has(user.id)), ...remoteUsers];
+    const publicBaseUsers = users.filter((user) => isOfficialRankingUser(user) && !verifiedOfficialSampleIds.has(user.id));
+    const sourceUsers = [...publicBaseUsers, ...remoteUsers];
     const dedupedUsers = Array.from(new Map(sourceUsers.map((user) => [user.id, user])).values());
-    const base = hideOfficialRecords ? dedupedUsers.filter((user) => !user.isSampleData && !user.isOfficialRecordUser) : dedupedUsers;
-    if (currentUser?.id && !base.some((user) => user.id === currentUser.id)) {
-      return [...base, currentUser];
-    }
-    return base;
-  }, [users, remoteUsers, hideOfficialRecords, currentUser, verifiedOfficialSampleIds]);
+    if (!hideOfficialRecords) return dedupedUsers;
+    return dedupedUsers.filter((user) => user.sourceType === "verified_user_best");
+  }, [users, remoteUsers, hideOfficialRecords, verifiedOfficialSampleIds]);
   const rankingSessions = useMemo(() => {
     const sessionMap = new Map();
     const addSession = (session) => {
@@ -23964,12 +24264,14 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
       if (sessionMap.has(mapKey)) return;
       sessionMap.set(mapKey, session);
     };
-    sessions.filter((session) => !verifiedOfficialSampleIds.has(session.userId)).forEach(addSession);
+    sessions
+      .filter((session) => isOfficialRankingSession(session) && !verifiedOfficialSampleIds.has(session.userId))
+      .forEach(addSession);
     remoteSessions.forEach(addSession);
     const dedupedSessions = Array.from(sessionMap.values());
     if (!hideOfficialRecords) return dedupedSessions;
     const allowedUserIds = new Set(rankingUsers.map((user) => user.id));
-    return dedupedSessions.filter((session) => allowedUserIds.has(session.userId) && !session.isSampleData && !session.isOfficialRecord);
+    return dedupedSessions.filter((session) => allowedUserIds.has(session.userId) && session.sourceType === "verified_user_best");
   }, [sessions, remoteSessions, rankingUsers, hideOfficialRecords, verifiedOfficialSampleIds]);
   const qualifiedAttemptsByUserId = useMemo(() => buildQualifiedAttemptsByUserId(rankingSessions), [rankingSessions]);
   const effectiveRankingUsers = useMemo(() => {
@@ -24025,17 +24327,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return map;
   }, [officialClaims, currentUserId]);
 
-  const currentApprovedClaim = useMemo(() => {
-    const claimPool = [
-      ...(officialClaims || []),
-      currentUser?.latestOfficialClaim?.status === "approved" ? currentUser.latestOfficialClaim : null,
-    ].filter(Boolean);
-    return getApprovedClaimForUid(claimPool, currentUserId);
-  }, [officialClaims, currentUser?.latestOfficialClaim, currentUserId]);
-
   const currentRankingUserIds = useMemo(() => new Set([
     currentUserId,
-    currentApprovedClaim?.sampleUserId,
+    getOfficialSampleIdFromClaim(currentApprovedClaim),
     currentApprovedClaim?.officialSampleUserId,
   ].filter(Boolean)), [currentUserId, currentApprovedClaim]);
 
@@ -24129,6 +24423,14 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     });
   }, [currentRankingUserIds, myRequiredDistances, rankingType, effectiveRankingUsers, rankingSessions, appliedRankingFilters, myRankingGroup, qualifiedAttemptsByUserId]);
 
+  const myTargetScoreAnalysis = useMemo(() => {
+    const mineSessions = (sessions || []).filter((session) => session?.userId === currentUserId && (session.isComplete || session.status === "completed"));
+    return buildTargetScoreAnalysis(mineSessions, currentUser, {
+      rankingGroup: myRankingGroup || rankingFilters.rankingGroup,
+      gender: currentUser?.gender || myRank?.gender || "남",
+    });
+  }, [sessions, currentUserId, currentUser, myRankingGroup, rankingFilters.rankingGroup, myRank?.gender]);
+
   const rankingGuide =
     rankingType === "distance"
       ? rankingFilters.distance === "all"
@@ -24169,15 +24471,15 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     setShowAllRankings(false);
     setRemoteRankingNotice(
       ENABLE_OFFICIAL_RECORDS
-        ? `공식기록 ${SAMPLE_SHEETS.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0).toLocaleString()}건과 인증선수 개인 최고기록 ${remoteRankingEntries.length.toLocaleString()}건을 함께 계산합니다. 검색 후에도 상위 50명만 먼저 표시하고, 전체 목록은 전체 보기 버튼으로 불러옵니다.`
-        : `인증선수 개인 최고기록 ${remoteRankingEntries.length.toLocaleString()}건을 기준으로 계산합니다.`
+        ? `공식기록 ${SAMPLE_SHEETS.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0).toLocaleString()}건과 인증선수 개인 최고기록 ${verifiedBestRecordsForRanking.length.toLocaleString()}건을 함께 계산합니다. 검색 후에도 상위 50명만 먼저 표시하고, 전체 목록은 전체 보기 버튼으로 불러옵니다.`
+        : `인증선수 개인 최고기록 ${verifiedBestRecordsForRanking.length.toLocaleString()}건을 기준으로 계산합니다.`
     );
     if (typeof window !== "undefined") {
       window.setTimeout(() => setRankingSearchBusy(false), 350);
     } else {
       setRankingSearchBusy(false);
     }
-  }, [rankingFilters, remoteRankingEntries.length]);
+  }, [rankingFilters, verifiedBestRecordsForRanking.length]);
 
   const resetToProfileRanking = useCallback(() => {
     const nextRankingGroup = getRankingGroup(currentUser?.division || "", currentUser?.gender || "남") || "all";
@@ -24269,6 +24571,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                     </div>
                   </div>
                 ) : null}
+
+                <TargetScoreAnalysisCard analysis={myTargetScoreAnalysis} compact />
               </div>
             ) : (
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
@@ -24306,7 +24610,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
             </label>
             {!hideOfficialRecords && (
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                {rankingBusy ? "검색중" : `인증선수 최고기록 ${remoteRankingEntries.length.toLocaleString()}건 포함`}
+                {rankingBusy ? "검색중" : `인증선수 최고기록 ${verifiedBestRecordsForRanking.length.toLocaleString()}건 포함`}
               </span>
             )}
           </CardTitle>
@@ -24558,11 +24862,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                       <div className="min-w-0">
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                           <div className="truncate text-sm font-semibold">{item.name}</div>
-                          {item.sourceType === "verified_user_best" || item.recordLabel ? (
+                          {getRankingRecordLabelForItem(item, rankingType) ? (
                             <Badge className="h-5 rounded-full bg-emerald-700 px-2 text-[10px] text-white">
-                              {item.recordLabel || (rankingType === "distance" || rankingType === "weeklyDistance" ? "인증선수 · 개인 거리별 최고기록" : "인증선수 · 개인 종합 최고기록")}
+                              {getRankingRecordLabelForItem(item, rankingType)}
                             </Badge>
-                          ) : item.isSampleData ? (
+                          ) : item.isSampleData || item.sourceType === "official" ? (
                             <Badge className="h-5 rounded-full bg-slate-900 px-2 text-[10px] text-white">공식기록</Badge>
                           ) : (
                             <Badge variant="outline" className="h-5 rounded-full px-2 text-[10px]">사용자계정</Badge>
@@ -25615,6 +25919,10 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
 
   const analytics = useMemo(() => buildAnalyticsData(filteredMine, period, matchType), [filteredMine, period, matchType]);
   const distancePerformance = useMemo(() => getDistancePerformance(filteredMine), [filteredMine]);
+  const targetScoreAnalysis = useMemo(
+    () => buildTargetScoreAnalysis(filteredMine, currentUser, requiredFilters),
+    [filteredMine, currentUser, requiredFilters]
+  );
   const trend = useMemo(() => getTrendInsight(filteredMine), [filteredMine]);
   const parentGrowthSummary = useMemo(() => buildParentGrowthSummary(filteredMine), [filteredMine]);
   const lateSetDropInsight = useMemo(() => buildLateSetDropInsight(filteredMine), [filteredMine]);
@@ -25889,6 +26197,8 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
           </CardContent>
         </Card>
 
+        <TargetScoreAnalysisCard analysis={targetScoreAnalysis} compact />
+
         <Card className="rounded-[24px] border-0 bg-white shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">점수 트렌드</CardTitle>
@@ -25952,6 +26262,8 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                 </div>
               ))}
             </div>
+
+            <TargetScoreAnalysisCard analysis={targetScoreAnalysis} compact />
 
             <div className="grid gap-4 md:grid-cols-2">
               <section className="rounded-[24px] bg-slate-50 p-4">
@@ -26119,6 +26431,10 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                     <div className="mt-2 text-xs text-slate-500">{sub}</div>
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-4">
+                <TargetScoreAnalysisCard analysis={targetScoreAnalysis} />
               </div>
 
               <div className="mt-4 grid gap-4">
