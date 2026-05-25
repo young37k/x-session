@@ -1104,7 +1104,7 @@ function rankingGroupMatchesFilter(selectedGroup, actualGroup) {
     return actualGroup === "중등부" || actualGroup === "중학부";
   }
   if (selectedGroup === "고등부") {
-    return actualGroup === "고등부(남)" || actualGroup === "고등부(여)";
+    return actualGroup === "고등부" || actualGroup === "고등부(남)" || actualGroup === "고등부(여)";
   }
   if (selectedGroup === "대학/일반부") {
     return actualGroup === "대학/일반부" || actualGroup === "대학/일반부(남)" || actualGroup === "대학/일반부(여)";
