@@ -21114,7 +21114,8 @@ function buildPermanentSampleUsers() {
       const row = withCanonicalSchool(sourceRow);
       // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
       const assignedDivision = normalizeOfficialDivisionForDisplay(row.division || sheet.division, sheet.rankingGroup);
-      const id = makeSampleUserId(row.name, row.school);
+      const sampleBowType = row.bowType || sheet.bowType || "리커브";
+      const id = makeSampleUserId(`${sampleBowType}_${row.name}`, row.school);
       if (!map.has(id)) {
         map.set(id, {
           id,
@@ -21127,7 +21128,7 @@ function buildPermanentSampleUsers() {
           division: assignedDivision,
           gender: normalizeGenderValue(row.gender || sheet.gender, "남"),
           regionCity: row.regionCity || sheet.regionCity || "경기도",
-          bowType: row.bowType || sheet.bowType || "리커브",
+          bowType: sampleBowType,
           avatar: "",
           photoURL: "",
           photoPath: "",
@@ -21151,7 +21152,8 @@ function buildPermanentSampleSessions() {
         if (row.rosterOnly) return null;
         // 공식 결과는 임의 학년 분산을 하지 않는다. 각 표의 대표 division만 사용한다.
         const assignedDivision = normalizeOfficialDivisionForDisplay(row.division || sheet.division, sheet.rankingGroup);
-        const userId = makeSampleUserId(row.name, row.school);
+        const sampleBowType = row.bowType || sheet.bowType || "리커브";
+        const userId = makeSampleUserId(`${sampleBowType}_${row.name}`, row.school);
         const dedupeKey = `${userId}__${sheet.date}__${sheet.id}`;
         if (seen.has(dedupeKey)) return null;
         seen.add(dedupeKey);
@@ -21163,7 +21165,7 @@ function buildPermanentSampleSessions() {
           division: assignedDivision,
           gender: normalizeGenderValue(row.gender || sheet.gender, "남"),
           regionCity: row.regionCity || sheet.regionCity || "경기도",
-          bowType: row.bowType || sheet.bowType || "리커브",
+          bowType: sampleBowType,
           clubName: row.school,
           groupName: row.school,
           distance: sheet.distances[0],
@@ -21622,6 +21624,11 @@ function getRankingGroupQueryValues(rankingGroup = "") {
   if (group === "고등부") return ["고등부", "고등부(남)", "고등부(여)"];
   if (group === "대학/일반부") return ["대학/일반부", "대학/일반부(남)", "대학/일반부(여)"];
   return [group];
+}
+
+function matchesBowTypeFilter(entity = {}, bowType = "all") {
+  if (!bowType || bowType === "all") return true;
+  return String(entity?.bowType || "리커브") === String(bowType);
 }
 
 function rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }) {
@@ -22741,7 +22748,7 @@ function getQualifiedDistanceAttempts(session) {
     division: session.division || "",
     gender: session.gender || "",
     bowType: session.bowType || "리커브",
-    rankingGroup: getRankingGroup(session.division, session.gender),
+    rankingGroup: resolveRankingGroup(session.division, session.gender, session.rankingGroup),
     groupName: session.groupName || "",
     regionCity: session.regionCity || "",
     sourceType: session.sourceType || "",
@@ -22761,7 +22768,8 @@ function buildCompoundSessionTotalRankingItem(user, sessions, rankingFilters = {
 
   const candidateSessions = (sessions || [])
     .filter((session) => session?.userId === user?.id)
-    .filter((session) => (session.bowType || user?.bowType || "리커브") === "컴파운드")
+    .filter((session) => matchesBowTypeFilter(session, rankingFilters.bowType || "컴파운드"))
+    .filter((session) => (session.bowType || "리커브") === "컴파운드")
     .filter((session) => session?.mode === "cumulative" && session?.recordInputType === "distance")
     .filter((session) => session?.isComplete)
     .filter((session) => !weekly || isWithinRecent7Days(session.sessionDate || session.updatedAt))
@@ -22878,16 +22886,8 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
       ) {
         return null;
       }
-      if (
-        rankingFilters.bowType &&
-        rankingFilters.bowType !== "all" &&
-        (user.bowType || "리커브") !== rankingFilters.bowType
-      ) {
-        return null;
-      }
-
       const allAttempts = getUserQualifiedAttempts(user, sessions, attemptsByUserId)
-        .filter((attempt) => !rankingFilters.bowType || rankingFilters.bowType === "all" || (attempt.bowType || user.bowType || "리커브") === rankingFilters.bowType)
+        .filter((attempt) => !rankingFilters.bowType || rankingFilters.bowType === "all" || String(attempt.bowType || "리커브") === String(rankingFilters.bowType))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
         .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
 
@@ -23012,16 +23012,8 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
       ) {
         return null;
       }
-      if (
-        rankingFilters.bowType &&
-        rankingFilters.bowType !== "all" &&
-        (user.bowType || "리커브") !== rankingFilters.bowType
-      ) {
-        return null;
-      }
-
       const allAttempts = getUserQualifiedAttempts(user, sessions, attemptsByUserId)
-        .filter((attempt) => !rankingFilters.bowType || rankingFilters.bowType === "all" || (attempt.bowType || user.bowType || "리커브") === rankingFilters.bowType)
+        .filter((attempt) => !rankingFilters.bowType || rankingFilters.bowType === "all" || String(attempt.bowType || "리커브") === String(rankingFilters.bowType))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
         .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
 
@@ -26454,12 +26446,28 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     currentApprovedClaim?.officialSampleUserId,
   ].filter(Boolean)), [currentUserId, currentApprovedClaim]);
 
+  const scopedRankingSessions = useMemo(() => {
+    const selectedBowType = appliedRankingFilters.bowType || "리커브";
+    return (rankingSessions || []).filter((session) => matchesBowTypeFilter(session, selectedBowType));
+  }, [rankingSessions, appliedRankingFilters.bowType]);
+
+  const scopedRankingUsers = useMemo(() => {
+    const selectedBowType = appliedRankingFilters.bowType || "리커브";
+    const sessionUserIds = new Set((scopedRankingSessions || []).map((session) => session.userId).filter(Boolean));
+    return (effectiveRankingUsers || []).filter((user) => matchesBowTypeFilter(user, selectedBowType) || sessionUserIds.has(user.id));
+  }, [effectiveRankingUsers, scopedRankingSessions, appliedRankingFilters.bowType]);
+
+  const scopedQualifiedAttemptsByUserId = useMemo(
+    () => buildQualifiedAttemptsByUserId(scopedRankingSessions),
+    [scopedRankingSessions]
+  );
+
   const activeRankings = useMemo(() => {
     const weekly = rankingType === "weeklyDistance" || rankingType === "weeklyTotal";
     const distanceMode = rankingType === "distance" || rankingType === "weeklyDistance";
     const items = distanceMode
-      ? buildDistanceRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly, attemptsByUserId: qualifiedAttemptsByUserId })
-      : buildTotalRankings(effectiveRankingUsers, rankingSessions, appliedRankingFilters, { weekly, attemptsByUserId: qualifiedAttemptsByUserId });
+      ? buildDistanceRankings(scopedRankingUsers, scopedRankingSessions, appliedRankingFilters, { weekly, attemptsByUserId: scopedQualifiedAttemptsByUserId })
+      : buildTotalRankings(scopedRankingUsers, scopedRankingSessions, appliedRankingFilters, { weekly, attemptsByUserId: scopedQualifiedAttemptsByUserId });
 
     items.sort((a, b) => {
       const bScore = distanceMode ? b.bestScore : b.totalScore;
@@ -26468,7 +26476,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
     return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
-  }, [rankingType, effectiveRankingUsers, rankingSessions, appliedRankingFilters, qualifiedAttemptsByUserId]);
+  }, [rankingType, scopedRankingUsers, scopedRankingSessions, appliedRankingFilters, scopedQualifiedAttemptsByUserId]);
 
   const visibleRankings = showAllRankings ? activeRankings : activeRankings.slice(0, 50);
   const hasMoreRankings = activeRankings.length > visibleRankings.length;
