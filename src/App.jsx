@@ -1267,7 +1267,7 @@ const ENABLE_OFFICIAL_RECORDS = true;
 const USE_FIRESTORE_RANKING_ENTRIES = false;
 // 사용자 세션 전체/ranking_entries 전체를 랭킹 화면에서 직접 읽지 않는다.
 // 인증선수는 verified_best_records 최고기록 캐시만 읽어서 공식행을 1줄로 대체 표시한다.
-const USE_FIRESTORE_USER_RANKING_ENTRIES = false;
+const USE_FIRESTORE_USER_RANKING_ENTRIES = true;
 const USE_VERIFIED_BEST_RECORDS = true;
 
 // 데이터화된 공식기록 원본. 개인 기록으로 자동 주입하지 않고 공식기록으로만 사용한다.
@@ -21475,7 +21475,11 @@ function buildRankingEntriesFromSession(session, user = null) {
     division: normalizeDivisionLabel(normalized.division || profile.division || ""),
     gender: normalizeGenderValue(normalized.gender || profile.gender, "남"),
     bowType: normalized.bowType || profile.bowType || "리커브",
-    rankingGroup: resolveRankingGroup(normalized.division || profile.division, normalized.gender || profile.gender),
+    rankingGroup: resolveRankingGroup(
+      normalized.division || profile.division,
+      normalized.gender || profile.gender,
+      normalized.rankingGroup || profile.rankingGroup || getRankingGroup(normalized.division || profile.division, normalized.gender || profile.gender)
+    ),
     sourceType: normalized.isSampleData ? "official_sample" : "user_session",
     competitionId: normalized.competitionId || "",
     competitionName: normalized.competitionName || "",
@@ -21494,8 +21498,8 @@ function buildRankingEntriesFromSession(session, user = null) {
       distance: Number(round.distance),
       score: Number(round.total) || 0,
       arrows: Number(normalized.arrowsPerDistance) || 36,
-      rankingKey: [base.rankingGroup || "unknown", base.gender || "unknown", Number(round.distance)].join("_"),
-      entryId: `${base.sessionId || base.userId}_${Number(round.distance)}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
+      rankingKey: [base.bowType || "리커브", base.rankingGroup || "unknown", base.gender || "unknown", Number(round.distance)].join("_"),
+      entryId: `${base.bowType || "리커브"}_${base.sessionId || base.userId}_${Number(round.distance)}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
     }));
 }
 
@@ -22035,7 +22039,7 @@ function buildSessionsFromVerifiedBestRecords(records = []) {
   return sessions;
 }
 
-async function fetchUserRankingEntriesForView(db, { maxLoad = 5000 } = {}) {
+async function fetchUserRankingEntriesForView(db, { maxLoad = 5000, bowType = "all", currentUserId = "" } = {}) {
   if (!db) return [];
 
   const normalizeDocs = (snap) => (snap.docs || [])
@@ -22048,17 +22052,22 @@ async function fetchUserRankingEntriesForView(db, { maxLoad = 5000 } = {}) {
     });
 
   try {
+    const constraints = [where("sourceType", "==", "user_session")];
+    if (bowType && bowType !== "all") constraints.push(where("bowType", "==", bowType));
+    if (currentUserId) constraints.push(where("userId", "==", currentUserId));
+    constraints.push(limit(maxLoad));
     const snap = await getDocs(query(
       collection(db, "ranking_entries"),
-      where("sourceType", "==", "user_session"),
-      limit(maxLoad)
+      ...constraints
     ));
     return normalizeDocs(snap);
   } catch (error) {
     console.warn("user ranking_entries filtered query failed; fallback to bounded scan", error);
     try {
       const snap = await getDocs(query(collection(db, "ranking_entries"), limit(maxLoad)));
-      return normalizeDocs(snap);
+      return normalizeDocs(snap)
+        .filter((entry) => (!bowType || bowType === "all" || String(entry.bowType || "리커브") === String(bowType)))
+        .filter((entry) => (!currentUserId || String(entry.userId || "") === String(currentUserId)));
     } catch (fallbackError) {
       console.warn("user ranking_entries fallback query failed", fallbackError);
       return [];
@@ -26276,6 +26285,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const [showAllRankings, setShowAllRankings] = useState(false);
   const [officialResultsOpen, setOfficialResultsOpen] = useState(false);
   const [remoteRankingEntries, setRemoteRankingEntries] = useState([]);
+  const [userRankingEntries, setUserRankingEntries] = useState([]);
   const [remoteRankingLoading, setRemoteRankingLoading] = useState(false);
   const [remoteRankingNotice, setRemoteRankingNotice] = useState("");
   const [rankingSearchBusy, setRankingSearchBusy] = useState(false);
@@ -26337,6 +26347,32 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return () => { cancelled = true; };
   }, [appServices?.db]);
 
+  useEffect(() => {
+    if (!USE_FIRESTORE_USER_RANKING_ENTRIES || !appServices?.db || !currentUserId) {
+      setUserRankingEntries([]);
+      return;
+    }
+
+    let cancelled = false;
+    const selectedBowType = appliedRankingFilters.bowType || currentUser?.bowType || "리커브";
+
+    fetchUserRankingEntriesForView(appServices.db, {
+      maxLoad: 1200,
+      bowType: selectedBowType,
+      currentUserId,
+    })
+      .then((entries) => {
+        if (!cancelled) setUserRankingEntries(entries);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.warn("user ranking_entries query failed", error);
+        setUserRankingEntries([]);
+      });
+
+    return () => { cancelled = true; };
+  }, [appServices?.db, currentUserId, currentUser?.bowType, appliedRankingFilters.bowType]);
+
   const currentApprovedClaim = useMemo(() => {
     const claimPool = [
       ...(officialClaims || []),
@@ -26369,6 +26405,8 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
   const remoteUsers = useMemo(() => buildUsersFromVerifiedBestRecords(verifiedBestRecordsForRanking), [verifiedBestRecordsForRanking]);
   const remoteSessions = useMemo(() => buildSessionsFromVerifiedBestRecords(verifiedBestRecordsForRanking), [verifiedBestRecordsForRanking]);
+  const userRankingEntryUsers = useMemo(() => buildUsersFromRankingEntries(userRankingEntries), [userRankingEntries]);
+  const userRankingEntrySessions = useMemo(() => buildSessionsFromRankingEntries(userRankingEntries), [userRankingEntries]);
 
   const verifiedOfficialSampleIds = useMemo(
     () => new Set((verifiedBestRecordsForRanking || []).map((record) => record.officialSampleUserId || record.sampleUserId).filter(Boolean)),
@@ -26377,11 +26415,23 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
   const rankingUsers = useMemo(() => {
     const publicBaseUsers = users.filter((user) => isOfficialRankingUser(user) && !verifiedOfficialSampleIds.has(user.id));
-    const sourceUsers = [...publicBaseUsers, ...remoteUsers];
+    const ownUser = currentUser?.id && !isOfficialRankingUser(currentUser) ? [{
+      ...currentUser,
+      id: currentUser.id,
+      uid: currentUser.uid || currentUser.id,
+      name: currentUser.name || "사용자",
+      groupName: currentUser.groupName || "",
+      regionCity: currentUser.regionCity || "",
+      division: currentUser.division || "",
+      gender: currentUser.gender || "남",
+      bowType: currentUser.bowType || "리커브",
+      sourceType: currentUser.sourceType || "current_user",
+    }] : [];
+    const sourceUsers = [...publicBaseUsers, ...remoteUsers, ...userRankingEntryUsers, ...ownUser];
     const dedupedUsers = Array.from(new Map(sourceUsers.map((user) => [user.id, user])).values());
     if (!hideOfficialRecords) return dedupedUsers;
-    return dedupedUsers.filter((user) => user.sourceType === "verified_user_best");
-  }, [users, remoteUsers, hideOfficialRecords, verifiedOfficialSampleIds]);
+    return dedupedUsers.filter((user) => user.sourceType === "verified_user_best" || user.id === currentUser?.id);
+  }, [users, remoteUsers, userRankingEntryUsers, currentUser, hideOfficialRecords, verifiedOfficialSampleIds]);
   const rankingSessions = useMemo(() => {
     const sessionMap = new Map();
     const addSession = (session) => {
@@ -26396,12 +26446,20 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     sessions
       .filter((session) => isOfficialRankingSession(session) && !verifiedOfficialSampleIds.has(session.userId))
       .forEach(addSession);
+
+    // 속도 저하 방지를 위해 전체 일반 사용자 기록은 랭킹에 넣지 않는다.
+    // 단, 현재 로그인 사용자의 저장 기록은 랭킹 확인을 위해 공식기록과 함께 계산한다.
+    sessions
+      .filter((session) => currentUserId && session.userId === currentUserId && !session.isSampleData)
+      .forEach(addSession);
+
     remoteSessions.forEach(addSession);
+    userRankingEntrySessions.forEach(addSession);
     const dedupedSessions = Array.from(sessionMap.values());
     if (!hideOfficialRecords) return dedupedSessions;
     const allowedUserIds = new Set(rankingUsers.map((user) => user.id));
-    return dedupedSessions.filter((session) => allowedUserIds.has(session.userId) && session.sourceType === "verified_user_best");
-  }, [sessions, remoteSessions, rankingUsers, hideOfficialRecords, verifiedOfficialSampleIds]);
+    return dedupedSessions.filter((session) => allowedUserIds.has(session.userId) && (session.sourceType === "verified_user_best" || session.userId === currentUserId));
+  }, [sessions, remoteSessions, userRankingEntrySessions, rankingUsers, currentUserId, hideOfficialRecords, verifiedOfficialSampleIds]);
   const qualifiedAttemptsByUserId = useMemo(() => buildQualifiedAttemptsByUserId(rankingSessions), [rankingSessions]);
   const effectiveRankingUsers = useMemo(() => {
     if (!hideOfficialRecords) return rankingUsers;
@@ -31007,7 +31065,22 @@ function XSessionApp() {
       };
       try {
         if (USE_FIRESTORE_USER_RANKING_ENTRIES) {
-          await upsertRankingEntriesForSession(appServices.db, savedPreviewSession, currentUser);
+          const writtenEntries = await upsertRankingEntriesForSession(appServices.db, savedPreviewSession, currentUser);
+          setUserRankingEntries((prev) => {
+            const nextMap = new Map((prev || []).map((entry) => [entry.entryId || `${entry.sessionId}_${entry.distance}`, entry]));
+            (writtenEntries || []).forEach((entry) => {
+              nextMap.set(entry.entryId || `${entry.sessionId}_${entry.distance}`, {
+                ...entry,
+                id: entry.entryId,
+                sourceType: "user_session",
+                isUserRecord: true,
+                isSampleData: false,
+                isOfficialRecord: false,
+                officialRecord: false,
+              });
+            });
+            return Array.from(nextMap.values());
+          });
         }
       } catch (rankingEntryError) {
         console.warn("ranking_entries user-session sync failed", rankingEntryError);
@@ -31065,6 +31138,7 @@ function XSessionApp() {
     try {
       await deleteDoc(doc(appServices.db, "sessions", editingSessionId));
       await deleteRankingEntriesForSession(appServices.db, editingSessionId);
+      setUserRankingEntries((prev) => (prev || []).filter((entry) => entry.sessionId !== editingSessionId));
       setEditingSessionId(null);
       setDraftSession(normalizeSessionShape(createNewSession(profile, "cumulative"), profile));
       clearDraftFromLocal(authUser.uid);
