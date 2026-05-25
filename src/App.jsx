@@ -26861,39 +26861,77 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return () => window.clearTimeout(timer);
   }, [showAllRankings, visibleRankings, myRank]);
 
+  const myRankingBowType = appliedRankingFilters.bowType || myRank?.bowType || currentUser?.bowType || "리커브";
+  const getDisplayDistanceFromRankingDistance = useCallback((distanceValue) => {
+    if (typeof distanceValue === "string" && distanceValue.includes("_")) {
+      const [, distanceText] = distanceValue.split("_");
+      return Number(distanceText) || distanceValue;
+    }
+    return Number(distanceValue) || distanceValue;
+  }, []);
+
+  const getMyDistanceScoreForDisplay = useCallback((distanceValue, rowIndex) => {
+    const displayDistance = getDisplayDistanceFromRankingDistance(distanceValue);
+    if (myRankingBowType === "컴파운드") {
+      const mySessions = (scopedRankingSessions || [])
+        .filter((session) => currentRankingUserIds.has(session.userId))
+        .filter((session) => (session.bowType || "리커브") === "컴파운드")
+        .filter((session) => !myRankingGroup || rankingGroupMatchesFilter(myRankingGroup, session.rankingGroup || getRankingGroup(session.division, session.gender)));
+      const bestSession = mySessions
+        .slice()
+        .sort((a, b) => Number(b.summary?.totalScore ?? getSessionTotal(b) ?? 0) - Number(a.summary?.totalScore ?? getSessionTotal(a) ?? 0))[0];
+      const rounds = (bestSession?.distanceRounds || [])
+        .slice()
+        .sort((a, b) => Number(a.index || 0) - Number(b.index || 0));
+      const round = rounds[rowIndex];
+      if (round && String(round.distance) === String(displayDistance)) {
+        return Number(round.total) || 0;
+      }
+      const sameDistanceRounds = rounds.filter((item) => String(item.distance) === String(displayDistance));
+      return Number(sameDistanceRounds[0]?.total || 0);
+    }
+    return null;
+  }, [currentRankingUserIds, getDisplayDistanceFromRankingDistance, myRankingBowType, myRankingGroup, scopedRankingSessions]);
+
   const myRankingGroup = myRank?.rankingGroup || getRankingGroup(currentUser?.division, currentUser?.gender) || rankingFilters.rankingGroup;
   const myRequiredDistances = myRank?.requiredDistances?.length
-    ? myRank.requiredDistances
+    ? (myRankingBowType === "컴파운드"
+        ? myRank.requiredDistances.map((distance) => getDisplayDistanceFromRankingDistance(distance))
+        : myRank.requiredDistances)
     : getRequiredDistancesForRankingGroup(myRankingGroup, currentUser?.gender || myRank?.gender || "");
   const myDistanceRankRows = useMemo(() => {
     if (!currentRankingUserIds.size || !myRequiredDistances.length) return [];
     const weekly = rankingType === "weeklyDistance" || rankingType === "weeklyTotal";
-    return myRequiredDistances.map((distance) => {
+    return myRequiredDistances.map((distance, idx) => {
+      const displayDistance = getDisplayDistanceFromRankingDistance(distance);
       const items = buildDistanceRankings(
-        effectiveRankingUsers,
-        rankingSessions,
+        scopedRankingUsers,
+        scopedRankingSessions,
         {
           ...appliedRankingFilters,
-          distance: String(distance),
+          distance: String(displayDistance),
           rankingGroup: myRankingGroup || appliedRankingFilters.rankingGroup || "all",
+          bowType: myRankingBowType,
         },
-        { weekly, attemptsByUserId: qualifiedAttemptsByUserId }
+        { weekly, attemptsByUserId: scopedQualifiedAttemptsByUserId }
       );
       items.sort((a, b) => {
         if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
         return String(b.latestDate).localeCompare(String(a.latestDate));
       });
-      const ranked = items.map((item, idx) => ({ ...item, rank: idx + 1 }));
+      const ranked = items.map((item, rankIdx) => ({ ...item, rank: rankIdx + 1 }));
       const mine = ranked.find((item) => currentRankingUserIds.has(item.userId));
+      const displayScore = getMyDistanceScoreForDisplay(distance, idx);
       return {
         distance,
+        displayDistance,
         rank: mine?.rank || null,
-        bestScore: mine?.bestScore || 0,
+        bestScore: displayScore !== null ? displayScore : (mine?.bestScore || 0),
         totalCount: ranked.length,
         qualifiedSessions: mine?.qualifiedSessions || 0,
       };
     });
-  }, [currentRankingUserIds, myRequiredDistances, rankingType, effectiveRankingUsers, rankingSessions, appliedRankingFilters, myRankingGroup, qualifiedAttemptsByUserId]);
+  }, [currentRankingUserIds, myRequiredDistances, rankingType, scopedRankingUsers, scopedRankingSessions, appliedRankingFilters, myRankingGroup, myRankingBowType, scopedQualifiedAttemptsByUserId, getDisplayDistanceFromRankingDistance, getMyDistanceScoreForDisplay]);
 
   const myTargetScoreAnalysis = useMemo(() => {
     const mineSessions = (sessions || []).filter((session) => session?.userId === currentUserId && (session.isComplete || session.status === "completed"));
@@ -27032,7 +27070,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                           key={row.distance}
                           className="grid grid-cols-[64px_1fr_auto] items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm"
                         >
-                          <div className="font-bold text-slate-900">{row.distance}m</div>
+                          <div className="font-bold text-slate-900">{row.displayDistance || row.distance}m</div>
                           <div className="text-slate-600">
                             {row.rank ? (
                               <>
