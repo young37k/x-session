@@ -26878,19 +26878,32 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return Number(distanceValue) || distanceValue;
   }, []);
 
+  const myBestCompoundSession = useMemo(() => {
+    if (myRankingBowType !== "컴파운드") return null;
+    return (scopedRankingSessions || [])
+      .filter((session) => currentRankingUserIds.has(session.userId))
+      .filter((session) => String(session.bowType || "리커브") === "컴파운드")
+      .filter((session) => !myRankingGroup || rankingGroupMatchesFilter(myRankingGroup, session.rankingGroup || getRankingGroup(session.division, session.gender)))
+      .slice()
+      .sort((a, b) => Number(b.summary?.totalScore ?? getSessionTotal(b) ?? 0) - Number(a.summary?.totalScore ?? getSessionTotal(a) ?? 0))[0] || null;
+  }, [currentRankingUserIds, myRankingBowType, myRankingGroup, scopedRankingSessions]);
+
+  const myBestCompoundRoundDistances = useMemo(() => {
+    if (!myBestCompoundSession) return [];
+    return (myBestCompoundSession.distanceRounds || [])
+      .slice()
+      .sort((a, b) => Number(a.index || a.roundNo || 0) - Number(b.index || b.roundNo || 0))
+      .map((round) => Number(round.distance) || 0)
+      .filter(Boolean);
+  }, [myBestCompoundSession]);
+
+
   const getMyDistanceScoreForDisplay = useCallback((distanceValue, rowIndex) => {
     const displayDistance = getDisplayDistanceFromRankingDistance(distanceValue);
     if (myRankingBowType === "컴파운드") {
-      const mySessions = (scopedRankingSessions || [])
-        .filter((session) => currentRankingUserIds.has(session.userId))
-        .filter((session) => (session.bowType || "리커브") === "컴파운드")
-        .filter((session) => !myRankingGroup || rankingGroupMatchesFilter(myRankingGroup, session.rankingGroup || getRankingGroup(session.division, session.gender)));
-      const bestSession = mySessions
+      const rounds = (myBestCompoundSession?.distanceRounds || [])
         .slice()
-        .sort((a, b) => Number(b.summary?.totalScore ?? getSessionTotal(b) ?? 0) - Number(a.summary?.totalScore ?? getSessionTotal(a) ?? 0))[0];
-      const rounds = (bestSession?.distanceRounds || [])
-        .slice()
-        .sort((a, b) => Number(a.index || 0) - Number(b.index || 0));
+        .sort((a, b) => Number(a.index || a.roundNo || 0) - Number(b.index || b.roundNo || 0));
       const round = rounds[rowIndex];
       if (round && String(round.distance) === String(displayDistance)) {
         return Number(round.total) || 0;
@@ -26899,29 +26912,15 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
       return Number(sameDistanceRounds[0]?.total || 0);
     }
     return null;
-  }, [currentRankingUserIds, getDisplayDistanceFromRankingDistance, myRankingBowType, myRankingGroup, scopedRankingSessions]);
+  }, [getDisplayDistanceFromRankingDistance, myBestCompoundSession, myRankingBowType]);
 
-  const myRequiredDistances = myRank?.requiredDistances?.length
-    ? (myRankingBowType === "컴파운드"
-        ? myRank.requiredDistances.map((distance) => getDisplayDistanceFromRankingDistance(distance))
-        : myRank.requiredDistances)
-    : (() => {
-        if (myRankingBowType === "컴파운드") {
-          const myCompoundSession = (scopedRankingSessions || [])
-            .filter((session) => currentRankingUserIds.has(session.userId))
-            .filter((session) => String(session.bowType || "리커브") === "컴파운드")
-            .filter((session) => !myRankingGroup || rankingGroupMatchesFilter(myRankingGroup, session.rankingGroup || getRankingGroup(session.division, session.gender)))
-            .slice()
-            .sort((a, b) => Number(b.summary?.totalScore ?? getSessionTotal(b) ?? 0) - Number(a.summary?.totalScore ?? getSessionTotal(a) ?? 0))[0];
-          const rounds = (myCompoundSession?.distanceRounds || [])
-            .slice()
-            .sort((a, b) => Number(a.index || 0) - Number(b.index || 0))
-            .map((round) => Number(round.distance) || 0)
-            .filter(Boolean);
-          if (rounds.length) return rounds;
-        }
-        return getRequiredDistancesForRankingGroup(myRankingGroup, currentUser?.gender || myRank?.gender || "");
-      })();
+  const myRequiredDistances = myRankingBowType === "컴파운드"
+    ? (myBestCompoundRoundDistances.length
+        ? myBestCompoundRoundDistances
+        : (myRank?.distanceRoundScores || []).map((round) => Number(round.distance) || 0).filter(Boolean))
+    : (myRank?.requiredDistances?.length
+        ? myRank.requiredDistances
+        : getRequiredDistancesForRankingGroup(myRankingGroup, currentUser?.gender || myRank?.gender || ""));
   const myDistanceRankRows = useMemo(() => {
     if (!currentRankingUserIds.size || !myRequiredDistances.length) return [];
     const weekly = rankingType === "weeklyDistance" || rankingType === "weeklyTotal";
