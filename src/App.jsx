@@ -19085,6 +19085,7 @@ const SAMPLE_SHEETS = [
       30,
       20
     ],
+    "rawDistances": [30, 20, 30, 20],
     "arrowsPerDistance": 72,
     "sourceFile": "AR0542026AR002AR01M01Q.pdf",
     "eventLabel": "남자 컴파운드 초등부개인",
@@ -19099,7 +19100,8 @@ const SAMPLE_SHEETS = [
           710
         ],
         "total": 1391,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [339, 354, 342, 356]
       },
       {
         "rank": 2,
@@ -19111,7 +19113,8 @@ const SAMPLE_SHEETS = [
           696
         ],
         "total": 1371,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [339, 346, 336, 350]
       },
       {
         "rank": 3,
@@ -19123,7 +19126,8 @@ const SAMPLE_SHEETS = [
           697
         ],
         "total": 1353,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [326, 351, 330, 346]
       },
       {
         "rank": 4,
@@ -19135,7 +19139,8 @@ const SAMPLE_SHEETS = [
           683
         ],
         "total": 1328,
-        "sourceRank": 4
+        "sourceRank": 4,
+        "rawRounds": [317, 344, 328, 339]
       },
       {
         "rank": 5,
@@ -19147,7 +19152,8 @@ const SAMPLE_SHEETS = [
           673
         ],
         "total": 1281,
-        "sourceRank": 5
+        "sourceRank": 5,
+        "rawRounds": [317, 340, 291, 333]
       },
       {
         "rank": 6,
@@ -19159,7 +19165,8 @@ const SAMPLE_SHEETS = [
           654
         ],
         "total": 1233,
-        "sourceRank": 6
+        "sourceRank": 6,
+        "rawRounds": [298, 335, 281, 319]
       },
       {
         "rank": 7,
@@ -19171,7 +19178,8 @@ const SAMPLE_SHEETS = [
           636
         ],
         "total": 1231,
-        "sourceRank": 7
+        "sourceRank": 7,
+        "rawRounds": [294, 329, 301, 307]
       },
       {
         "rank": 8,
@@ -19183,7 +19191,8 @@ const SAMPLE_SHEETS = [
           596
         ],
         "total": 1060,
-        "sourceRank": 8
+        "sourceRank": 8,
+        "rawRounds": [216, 305, 248, 291]
       },
       {
         "rank": 9,
@@ -19195,7 +19204,8 @@ const SAMPLE_SHEETS = [
           399
         ],
         "total": 765,
-        "sourceRank": 9
+        "sourceRank": 9,
+        "rawRounds": [223, 246, 143, 153]
       },
       {
         "rank": 10,
@@ -19207,7 +19217,8 @@ const SAMPLE_SHEETS = [
           436
         ],
         "total": 726,
-        "sourceRank": 10
+        "sourceRank": 10,
+        "rawRounds": [142, 228, 148, 208]
       }
     ]
   },
@@ -19227,6 +19238,7 @@ const SAMPLE_SHEETS = [
       30,
       20
     ],
+    "rawDistances": [30, 20, 30, 20],
     "arrowsPerDistance": 72,
     "sourceFile": "AR0542026AR002AR01W01Q.pdf",
     "eventLabel": "여자 컴파운드 초등부개인",
@@ -19241,7 +19253,8 @@ const SAMPLE_SHEETS = [
           707
         ],
         "total": 1400,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [347, 351, 346, 356]
       },
       {
         "rank": 2,
@@ -19253,7 +19266,8 @@ const SAMPLE_SHEETS = [
           684
         ],
         "total": 1357,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [335, 334, 338, 350]
       },
       {
         "rank": 3,
@@ -19265,7 +19279,8 @@ const SAMPLE_SHEETS = [
           695
         ],
         "total": 1356,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [338, 345, 323, 350]
       },
       {
         "rank": 4,
@@ -19277,7 +19292,8 @@ const SAMPLE_SHEETS = [
           655
         ],
         "total": 1269,
-        "sourceRank": 4
+        "sourceRank": 4,
+        "rawRounds": [303, 327, 311, 328]
       },
       {
         "rank": 5,
@@ -19289,7 +19305,8 @@ const SAMPLE_SHEETS = [
           505
         ],
         "total": 903,
-        "sourceRank": 5
+        "sourceRank": 5,
+        "rawRounds": [214, 243, 184, 262]
       }
     ]
   },
@@ -19309,6 +19326,7 @@ const SAMPLE_SHEETS = [
       50,
       30
     ],
+    "rawDistances": [50, 30, 50, 30],
     "arrowsPerDistance": 72,
     "sourceFile": "AR0542026AR002AR02M01Q.pdf",
     "eventLabel": "남자 컴파운드 중학부개인",
@@ -19323,7 +19341,8 @@ const SAMPLE_SHEETS = [
           719
         ],
         "total": 1414,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [342, 360, 353, 359]
       },
       {
         "rank": 2,
@@ -19335,7 +19354,8 @@ const SAMPLE_SHEETS = [
           716
         ],
         "total": 1407,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [347, 360, 344, 356]
       },
       {
         "rank": 3,
@@ -19347,7 +19367,8 @@ const SAMPLE_SHEETS = [
           710
         ],
         "total": 1397,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [347, 355, 340, 355]
       },
       {
         "rank": 4,
@@ -19359,7 +19380,8 @@ const SAMPLE_SHEETS = [
           713
         ],
         "total": 1386,
-        "sourceRank": 4
+        "sourceRank": 4,
+        "rawRounds": [334, 359, 339, 354]
       },
       {
         "rank": 5,
@@ -19371,7 +19393,8 @@ const SAMPLE_SHEETS = [
           710
         ],
         "total": 1379,
-        "sourceRank": 5
+        "sourceRank": 5,
+        "rawRounds": [333, 356, 336, 354]
       },
       {
         "rank": 6,
@@ -19383,7 +19406,8 @@ const SAMPLE_SHEETS = [
           709
         ],
         "total": 1373,
-        "sourceRank": 6
+        "sourceRank": 6,
+        "rawRounds": [340, 354, 324, 355]
       },
       {
         "rank": 7,
@@ -19395,7 +19419,8 @@ const SAMPLE_SHEETS = [
           709
         ],
         "total": 1366,
-        "sourceRank": 7
+        "sourceRank": 7,
+        "rawRounds": [323, 350, 334, 359]
       },
       {
         "rank": 8,
@@ -19407,7 +19432,8 @@ const SAMPLE_SHEETS = [
           703
         ],
         "total": 1365,
-        "sourceRank": 8
+        "sourceRank": 8,
+        "rawRounds": [330, 352, 332, 351]
       },
       {
         "rank": 9,
@@ -19419,7 +19445,8 @@ const SAMPLE_SHEETS = [
           702
         ],
         "total": 1354,
-        "sourceRank": 9
+        "sourceRank": 9,
+        "rawRounds": [321, 354, 331, 348]
       },
       {
         "rank": 10,
@@ -19431,7 +19458,8 @@ const SAMPLE_SHEETS = [
           692
         ],
         "total": 1333,
-        "sourceRank": 10
+        "sourceRank": 10,
+        "rawRounds": [325, 344, 316, 348]
       },
       {
         "rank": 11,
@@ -19443,7 +19471,8 @@ const SAMPLE_SHEETS = [
           686
         ],
         "total": 1313,
-        "sourceRank": 11
+        "sourceRank": 11,
+        "rawRounds": [316, 340, 311, 346]
       },
       {
         "rank": 12,
@@ -19455,7 +19484,8 @@ const SAMPLE_SHEETS = [
           668
         ],
         "total": 1277,
-        "sourceRank": 12
+        "sourceRank": 12,
+        "rawRounds": [303, 336, 306, 332]
       },
       {
         "rank": 13,
@@ -19467,7 +19497,8 @@ const SAMPLE_SHEETS = [
           677
         ],
         "total": 1260,
-        "sourceRank": 13
+        "sourceRank": 13,
+        "rawRounds": [303, 338, 280, 339]
       },
       {
         "rank": 14,
@@ -19479,7 +19510,8 @@ const SAMPLE_SHEETS = [
           676
         ],
         "total": 1259,
-        "sourceRank": 14
+        "sourceRank": 14,
+        "rawRounds": [299, 339, 284, 337]
       },
       {
         "rank": 15,
@@ -19491,7 +19523,8 @@ const SAMPLE_SHEETS = [
           669
         ],
         "total": 1256,
-        "sourceRank": 15
+        "sourceRank": 15,
+        "rawRounds": [294, 327, 293, 342]
       },
       {
         "rank": 16,
@@ -19503,7 +19536,8 @@ const SAMPLE_SHEETS = [
           657
         ],
         "total": 1247,
-        "sourceRank": 16
+        "sourceRank": 16,
+        "rawRounds": [299, 326, 291, 331]
       }
     ]
   },
@@ -19523,6 +19557,7 @@ const SAMPLE_SHEETS = [
       50,
       30
     ],
+    "rawDistances": [50, 30, 50, 30],
     "arrowsPerDistance": 72,
     "sourceFile": "AR0542026AR002AR02W01Q.pdf",
     "eventLabel": "여자 컴파운드 중학부개인",
@@ -19537,7 +19572,8 @@ const SAMPLE_SHEETS = [
           712
         ],
         "total": 1405,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [349, 355, 344, 357]
       },
       {
         "rank": 2,
@@ -19549,7 +19585,8 @@ const SAMPLE_SHEETS = [
           706
         ],
         "total": 1390,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [339, 353, 345, 353]
       },
       {
         "rank": 3,
@@ -19561,7 +19598,8 @@ const SAMPLE_SHEETS = [
           706
         ],
         "total": 1381,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [335, 355, 340, 351]
       },
       {
         "rank": 4,
@@ -19573,7 +19611,8 @@ const SAMPLE_SHEETS = [
           707
         ],
         "total": 1375,
-        "sourceRank": 4
+        "sourceRank": 4,
+        "rawRounds": [335, 350, 333, 357]
       },
       {
         "rank": 4,
@@ -19585,7 +19624,8 @@ const SAMPLE_SHEETS = [
           712
         ],
         "total": 1375,
-        "sourceRank": 4
+        "sourceRank": 4,
+        "rawRounds": [331, 356, 332, 356]
       },
       {
         "rank": 6,
@@ -19597,7 +19637,8 @@ const SAMPLE_SHEETS = [
           708
         ],
         "total": 1371,
-        "sourceRank": 6
+        "sourceRank": 6,
+        "rawRounds": [327, 352, 336, 356]
       },
       {
         "rank": 7,
@@ -19609,7 +19650,8 @@ const SAMPLE_SHEETS = [
           702
         ],
         "total": 1369,
-        "sourceRank": 7
+        "sourceRank": 7,
+        "rawRounds": [336, 349, 331, 353]
       },
       {
         "rank": 8,
@@ -19621,7 +19663,8 @@ const SAMPLE_SHEETS = [
           698
         ],
         "total": 1367,
-        "sourceRank": 8
+        "sourceRank": 8,
+        "rawRounds": [333, 348, 336, 350]
       },
       {
         "rank": 9,
@@ -19633,7 +19676,8 @@ const SAMPLE_SHEETS = [
           698
         ],
         "total": 1365,
-        "sourceRank": 9
+        "sourceRank": 9,
+        "rawRounds": [340, 349, 327, 349]
       },
       {
         "rank": 10,
@@ -19645,7 +19689,8 @@ const SAMPLE_SHEETS = [
           703
         ],
         "total": 1364,
-        "sourceRank": 10
+        "sourceRank": 10,
+        "rawRounds": [334, 348, 327, 355]
       },
       {
         "rank": 11,
@@ -19657,7 +19702,8 @@ const SAMPLE_SHEETS = [
           701
         ],
         "total": 1346,
-        "sourceRank": 11
+        "sourceRank": 11,
+        "rawRounds": [318, 351, 327, 350]
       },
       {
         "rank": 12,
@@ -19669,7 +19715,8 @@ const SAMPLE_SHEETS = [
           694
         ],
         "total": 1344,
-        "sourceRank": 12
+        "sourceRank": 12,
+        "rawRounds": [320, 343, 330, 351]
       },
       {
         "rank": 13,
@@ -19681,7 +19728,8 @@ const SAMPLE_SHEETS = [
           664
         ],
         "total": 1267,
-        "sourceRank": 13
+        "sourceRank": 13,
+        "rawRounds": [309, 324, 294, 340]
       },
       {
         "rank": 14,
@@ -19693,7 +19741,8 @@ const SAMPLE_SHEETS = [
           546
         ],
         "total": 1022,
-        "sourceRank": 14
+        "sourceRank": 14,
+        "rawRounds": [247, 235, 229, 311]
       },
       {
         "rank": 15,
@@ -19705,7 +19754,8 @@ const SAMPLE_SHEETS = [
           671
         ],
         "total": 671,
-        "sourceRank": 15
+        "sourceRank": 15,
+        "rawRounds": [0, 334, 0, 337]
       }
     ]
   },
@@ -19724,6 +19774,7 @@ const SAMPLE_SHEETS = [
     "distances": [
       50
     ],
+    "rawDistances": [50, 50, 50, 50],
     "arrowsPerDistance": 144,
     "sourceFile": "AR0542026AR002AR03M01Q.pdf",
     "eventLabel": "남자 컴파운드 고등부개인",
@@ -19737,7 +19788,8 @@ const SAMPLE_SHEETS = [
           1407
         ],
         "total": 1407,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [353, 349, 352, 353]
       },
       {
         "rank": 2,
@@ -19748,7 +19800,8 @@ const SAMPLE_SHEETS = [
           1405
         ],
         "total": 1405,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [348, 352, 352, 353]
       },
       {
         "rank": 3,
@@ -19759,7 +19812,8 @@ const SAMPLE_SHEETS = [
           1395
         ],
         "total": 1395,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [349, 350, 348, 348]
       },
       {
         "rank": 4,
@@ -19770,7 +19824,8 @@ const SAMPLE_SHEETS = [
           1393
         ],
         "total": 1393,
-        "sourceRank": 4
+        "sourceRank": 4,
+        "rawRounds": [348, 348, 348, 349]
       },
       {
         "rank": 5,
@@ -19781,7 +19836,8 @@ const SAMPLE_SHEETS = [
           1386
         ],
         "total": 1386,
-        "sourceRank": 5
+        "sourceRank": 5,
+        "rawRounds": [342, 346, 349, 349]
       },
       {
         "rank": 6,
@@ -19792,7 +19848,8 @@ const SAMPLE_SHEETS = [
           1380
         ],
         "total": 1380,
-        "sourceRank": 6
+        "sourceRank": 6,
+        "rawRounds": [351, 347, 342, 340]
       },
       {
         "rank": 7,
@@ -19803,7 +19860,8 @@ const SAMPLE_SHEETS = [
           1379
         ],
         "total": 1379,
-        "sourceRank": 7
+        "sourceRank": 7,
+        "rawRounds": [340, 342, 351, 346]
       },
       {
         "rank": 8,
@@ -19814,7 +19872,8 @@ const SAMPLE_SHEETS = [
           1378
         ],
         "total": 1378,
-        "sourceRank": 8
+        "sourceRank": 8,
+        "rawRounds": [345, 345, 344, 344]
       },
       {
         "rank": 9,
@@ -19825,7 +19884,8 @@ const SAMPLE_SHEETS = [
           1370
         ],
         "total": 1370,
-        "sourceRank": 9
+        "sourceRank": 9,
+        "rawRounds": [340, 345, 338, 347]
       },
       {
         "rank": 10,
@@ -19836,7 +19896,8 @@ const SAMPLE_SHEETS = [
           1366
         ],
         "total": 1366,
-        "sourceRank": 10
+        "sourceRank": 10,
+        "rawRounds": [337, 342, 342, 345]
       },
       {
         "rank": 11,
@@ -19847,7 +19908,8 @@ const SAMPLE_SHEETS = [
           1364
         ],
         "total": 1364,
-        "sourceRank": 11
+        "sourceRank": 11,
+        "rawRounds": [343, 333, 345, 343]
       },
       {
         "rank": 12,
@@ -19858,7 +19920,8 @@ const SAMPLE_SHEETS = [
           1360
         ],
         "total": 1360,
-        "sourceRank": 12
+        "sourceRank": 12,
+        "rawRounds": [345, 340, 340, 335]
       },
       {
         "rank": 13,
@@ -19869,7 +19932,8 @@ const SAMPLE_SHEETS = [
           1347
         ],
         "total": 1347,
-        "sourceRank": 13
+        "sourceRank": 13,
+        "rawRounds": [334, 336, 339, 338]
       },
       {
         "rank": 14,
@@ -19880,7 +19944,8 @@ const SAMPLE_SHEETS = [
           1333
         ],
         "total": 1333,
-        "sourceRank": 14
+        "sourceRank": 14,
+        "rawRounds": [327, 336, 335, 335]
       },
       {
         "rank": 15,
@@ -19891,7 +19956,8 @@ const SAMPLE_SHEETS = [
           1319
         ],
         "total": 1319,
-        "sourceRank": 15
+        "sourceRank": 15,
+        "rawRounds": [329, 334, 328, 328]
       },
       {
         "rank": 16,
@@ -19902,7 +19968,8 @@ const SAMPLE_SHEETS = [
           1310
         ],
         "total": 1310,
-        "sourceRank": 16
+        "sourceRank": 16,
+        "rawRounds": [331, 327, 331, 321]
       },
       {
         "rank": 17,
@@ -19913,7 +19980,8 @@ const SAMPLE_SHEETS = [
           1295
         ],
         "total": 1295,
-        "sourceRank": 17
+        "sourceRank": 17,
+        "rawRounds": [332, 317, 327, 319]
       },
       {
         "rank": 18,
@@ -19924,7 +19992,8 @@ const SAMPLE_SHEETS = [
           1281
         ],
         "total": 1281,
-        "sourceRank": 18
+        "sourceRank": 18,
+        "rawRounds": [321, 328, 315, 317]
       },
       {
         "rank": 19,
@@ -19935,7 +20004,8 @@ const SAMPLE_SHEETS = [
           1273
         ],
         "total": 1273,
-        "sourceRank": 19
+        "sourceRank": 19,
+        "rawRounds": [321, 318, 316, 318]
       },
       {
         "rank": 20,
@@ -19946,7 +20016,8 @@ const SAMPLE_SHEETS = [
           1201
         ],
         "total": 1201,
-        "sourceRank": 20
+        "sourceRank": 20,
+        "rawRounds": [299, 289, 310, 303]
       },
       {
         "rank": 21,
@@ -19957,7 +20028,8 @@ const SAMPLE_SHEETS = [
           1148
         ],
         "total": 1148,
-        "sourceRank": 21
+        "sourceRank": 21,
+        "rawRounds": [305, 279, 274, 290]
       },
       {
         "rank": 22,
@@ -19968,7 +20040,8 @@ const SAMPLE_SHEETS = [
           1101
         ],
         "total": 1101,
-        "sourceRank": 22
+        "sourceRank": 22,
+        "rawRounds": [265, 274, 278, 284]
       }
     ]
   },
@@ -19987,6 +20060,7 @@ const SAMPLE_SHEETS = [
     "distances": [
       50
     ],
+    "rawDistances": [50, 50, 50, 50],
     "arrowsPerDistance": 144,
     "sourceFile": "AR0542026AR002AR03W01Q.pdf",
     "eventLabel": "여자 컴파운드 고등부개인",
@@ -20000,7 +20074,8 @@ const SAMPLE_SHEETS = [
           1395
         ],
         "total": 1395,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [353, 348, 345, 349]
       },
       {
         "rank": 2,
@@ -20011,7 +20086,8 @@ const SAMPLE_SHEETS = [
           1394
         ],
         "total": 1394,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [343, 357, 345, 349]
       },
       {
         "rank": 3,
@@ -20022,7 +20098,8 @@ const SAMPLE_SHEETS = [
           1368
         ],
         "total": 1368,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [339, 342, 342, 345]
       },
       {
         "rank": 4,
@@ -20033,7 +20110,8 @@ const SAMPLE_SHEETS = [
           1365
         ],
         "total": 1365,
-        "sourceRank": 4
+        "sourceRank": 4,
+        "rawRounds": [345, 340, 337, 343]
       },
       {
         "rank": 5,
@@ -20044,7 +20122,8 @@ const SAMPLE_SHEETS = [
           1361
         ],
         "total": 1361,
-        "sourceRank": 5
+        "sourceRank": 5,
+        "rawRounds": [338, 344, 337, 342]
       },
       {
         "rank": 6,
@@ -20055,7 +20134,8 @@ const SAMPLE_SHEETS = [
           1351
         ],
         "total": 1351,
-        "sourceRank": 6
+        "sourceRank": 6,
+        "rawRounds": [336, 339, 335, 341]
       },
       {
         "rank": 7,
@@ -20066,7 +20146,8 @@ const SAMPLE_SHEETS = [
           1346
         ],
         "total": 1346,
-        "sourceRank": 7
+        "sourceRank": 7,
+        "rawRounds": [337, 337, 335, 337]
       },
       {
         "rank": 8,
@@ -20077,7 +20158,8 @@ const SAMPLE_SHEETS = [
           1345
         ],
         "total": 1345,
-        "sourceRank": 8
+        "sourceRank": 8,
+        "rawRounds": [331, 341, 338, 335]
       },
       {
         "rank": 9,
@@ -20088,7 +20170,8 @@ const SAMPLE_SHEETS = [
           1338
         ],
         "total": 1338,
-        "sourceRank": 9
+        "sourceRank": 9,
+        "rawRounds": [334, 338, 332, 334]
       },
       {
         "rank": 10,
@@ -20099,7 +20182,8 @@ const SAMPLE_SHEETS = [
           1335
         ],
         "total": 1335,
-        "sourceRank": 10
+        "sourceRank": 10,
+        "rawRounds": [333, 341, 333, 328]
       },
       {
         "rank": 11,
@@ -20110,7 +20194,8 @@ const SAMPLE_SHEETS = [
           1329
         ],
         "total": 1329,
-        "sourceRank": 11
+        "sourceRank": 11,
+        "rawRounds": [330, 341, 324, 334]
       },
       {
         "rank": 11,
@@ -20121,7 +20206,8 @@ const SAMPLE_SHEETS = [
           1329
         ],
         "total": 1329,
-        "sourceRank": 11
+        "sourceRank": 11,
+        "rawRounds": [329, 325, 331, 344]
       },
       {
         "rank": 13,
@@ -20132,7 +20218,8 @@ const SAMPLE_SHEETS = [
           1328
         ],
         "total": 1328,
-        "sourceRank": 13
+        "sourceRank": 13,
+        "rawRounds": [331, 328, 336, 333]
       },
       {
         "rank": 14,
@@ -20143,7 +20230,8 @@ const SAMPLE_SHEETS = [
           1324
         ],
         "total": 1324,
-        "sourceRank": 14
+        "sourceRank": 14,
+        "rawRounds": [334, 337, 330, 323]
       },
       {
         "rank": 15,
@@ -20154,7 +20242,8 @@ const SAMPLE_SHEETS = [
           1320
         ],
         "total": 1320,
-        "sourceRank": 15
+        "sourceRank": 15,
+        "rawRounds": [334, 333, 334, 319]
       },
       {
         "rank": 16,
@@ -20165,7 +20254,8 @@ const SAMPLE_SHEETS = [
           1318
         ],
         "total": 1318,
-        "sourceRank": 16
+        "sourceRank": 16,
+        "rawRounds": [328, 336, 321, 333]
       },
       {
         "rank": 17,
@@ -20176,7 +20266,8 @@ const SAMPLE_SHEETS = [
           1298
         ],
         "total": 1298,
-        "sourceRank": 17
+        "sourceRank": 17,
+        "rawRounds": [320, 329, 327, 322]
       },
       {
         "rank": 17,
@@ -20187,7 +20278,8 @@ const SAMPLE_SHEETS = [
           1298
         ],
         "total": 1298,
-        "sourceRank": 17
+        "sourceRank": 17,
+        "rawRounds": [326, 324, 319, 329]
       },
       {
         "rank": 19,
@@ -20198,7 +20290,8 @@ const SAMPLE_SHEETS = [
           1293
         ],
         "total": 1293,
-        "sourceRank": 19
+        "sourceRank": 19,
+        "rawRounds": [322, 319, 323, 329]
       },
       {
         "rank": 20,
@@ -20209,7 +20302,8 @@ const SAMPLE_SHEETS = [
           1290
         ],
         "total": 1290,
-        "sourceRank": 20
+        "sourceRank": 20,
+        "rawRounds": [323, 322, 318, 327]
       },
       {
         "rank": 21,
@@ -20220,7 +20314,8 @@ const SAMPLE_SHEETS = [
           1264
         ],
         "total": 1264,
-        "sourceRank": 21
+        "sourceRank": 21,
+        "rawRounds": [326, 313, 319, 306]
       },
       {
         "rank": 22,
@@ -20231,7 +20326,8 @@ const SAMPLE_SHEETS = [
           1259
         ],
         "total": 1259,
-        "sourceRank": 22
+        "sourceRank": 22,
+        "rawRounds": [318, 306, 313, 322]
       },
       {
         "rank": 23,
@@ -20242,7 +20338,8 @@ const SAMPLE_SHEETS = [
           1236
         ],
         "total": 1236,
-        "sourceRank": 23
+        "sourceRank": 23,
+        "rawRounds": [308, 302, 309, 317]
       }
     ]
   },
@@ -20261,6 +20358,7 @@ const SAMPLE_SHEETS = [
     "distances": [
       50
     ],
+    "rawDistances": [50, 50, 50, 50],
     "arrowsPerDistance": 144,
     "sourceFile": "AR0542026AR002AR04M01Q.pdf",
     "eventLabel": "남자 컴파운드 대학부개인",
@@ -20274,7 +20372,8 @@ const SAMPLE_SHEETS = [
           1409
         ],
         "total": 1409,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [350, 353, 351, 355]
       },
       {
         "rank": 2,
@@ -20285,7 +20384,8 @@ const SAMPLE_SHEETS = [
           1399
         ],
         "total": 1399,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [349, 350, 351, 349]
       },
       {
         "rank": 3,
@@ -20296,7 +20396,8 @@ const SAMPLE_SHEETS = [
           1398
         ],
         "total": 1398,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [348, 350, 351, 349]
       },
       {
         "rank": 4,
@@ -20307,7 +20408,8 @@ const SAMPLE_SHEETS = [
           1393
         ],
         "total": 1393,
-        "sourceRank": 4
+        "sourceRank": 4,
+        "rawRounds": [347, 345, 353, 348]
       },
       {
         "rank": 5,
@@ -20318,7 +20420,8 @@ const SAMPLE_SHEETS = [
           1392
         ],
         "total": 1392,
-        "sourceRank": 5
+        "sourceRank": 5,
+        "rawRounds": [347, 346, 348, 351]
       },
       {
         "rank": 6,
@@ -20329,7 +20432,8 @@ const SAMPLE_SHEETS = [
           1390
         ],
         "total": 1390,
-        "sourceRank": 6
+        "sourceRank": 6,
+        "rawRounds": [348, 345, 352, 345]
       },
       {
         "rank": 7,
@@ -20340,7 +20444,8 @@ const SAMPLE_SHEETS = [
           1389
         ],
         "total": 1389,
-        "sourceRank": 7
+        "sourceRank": 7,
+        "rawRounds": [344, 347, 349, 349]
       },
       {
         "rank": 8,
@@ -20351,7 +20456,8 @@ const SAMPLE_SHEETS = [
           1385
         ],
         "total": 1385,
-        "sourceRank": 8
+        "sourceRank": 8,
+        "rawRounds": [344, 347, 347, 347]
       },
       {
         "rank": 9,
@@ -20362,7 +20468,8 @@ const SAMPLE_SHEETS = [
           1373
         ],
         "total": 1373,
-        "sourceRank": 9
+        "sourceRank": 9,
+        "rawRounds": [348, 344, 345, 336]
       },
       {
         "rank": 9,
@@ -20373,7 +20480,8 @@ const SAMPLE_SHEETS = [
           1373
         ],
         "total": 1373,
-        "sourceRank": 9
+        "sourceRank": 9,
+        "rawRounds": [334, 349, 340, 350]
       },
       {
         "rank": 11,
@@ -20384,7 +20492,8 @@ const SAMPLE_SHEETS = [
           1370
         ],
         "total": 1370,
-        "sourceRank": 11
+        "sourceRank": 11,
+        "rawRounds": [336, 345, 345, 344]
       },
       {
         "rank": 12,
@@ -20395,7 +20504,8 @@ const SAMPLE_SHEETS = [
           1369
         ],
         "total": 1369,
-        "sourceRank": 12
+        "sourceRank": 12,
+        "rawRounds": [342, 341, 337, 349]
       },
       {
         "rank": 13,
@@ -20406,7 +20516,8 @@ const SAMPLE_SHEETS = [
           1364
         ],
         "total": 1364,
-        "sourceRank": 13
+        "sourceRank": 13,
+        "rawRounds": [345, 339, 342, 338]
       },
       {
         "rank": 14,
@@ -20417,7 +20528,8 @@ const SAMPLE_SHEETS = [
           1358
         ],
         "total": 1358,
-        "sourceRank": 14
+        "sourceRank": 14,
+        "rawRounds": [338, 340, 340, 340]
       },
       {
         "rank": 15,
@@ -20428,7 +20540,8 @@ const SAMPLE_SHEETS = [
           1345
         ],
         "total": 1345,
-        "sourceRank": 15
+        "sourceRank": 15,
+        "rawRounds": [344, 331, 337, 333]
       },
       {
         "rank": 16,
@@ -20439,7 +20552,8 @@ const SAMPLE_SHEETS = [
           1339
         ],
         "total": 1339,
-        "sourceRank": 16
+        "sourceRank": 16,
+        "rawRounds": [338, 344, 325, 332]
       }
     ]
   },
@@ -20458,6 +20572,7 @@ const SAMPLE_SHEETS = [
     "distances": [
       50
     ],
+    "rawDistances": [50, 50, 50, 50],
     "arrowsPerDistance": 144,
     "sourceFile": "AR0542026AR002AR04W01Q.pdf",
     "eventLabel": "여자 컴파운드 대학부개인",
@@ -20471,7 +20586,8 @@ const SAMPLE_SHEETS = [
           1400
         ],
         "total": 1400,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [349, 347, 350, 354]
       },
       {
         "rank": 2,
@@ -20482,7 +20598,8 @@ const SAMPLE_SHEETS = [
           1391
         ],
         "total": 1391,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [342, 352, 348, 349]
       },
       {
         "rank": 3,
@@ -20493,7 +20610,8 @@ const SAMPLE_SHEETS = [
           1366
         ],
         "total": 1366,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [343, 337, 344, 342]
       },
       {
         "rank": 3,
@@ -20504,7 +20622,8 @@ const SAMPLE_SHEETS = [
           1366
         ],
         "total": 1366,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [342, 342, 343, 339]
       },
       {
         "rank": 5,
@@ -20515,7 +20634,8 @@ const SAMPLE_SHEETS = [
           1365
         ],
         "total": 1365,
-        "sourceRank": 5
+        "sourceRank": 5,
+        "rawRounds": [340, 340, 342, 343]
       },
       {
         "rank": 6,
@@ -20526,7 +20646,8 @@ const SAMPLE_SHEETS = [
           1354
         ],
         "total": 1354,
-        "sourceRank": 6
+        "sourceRank": 6,
+        "rawRounds": [341, 340, 333, 340]
       },
       {
         "rank": 7,
@@ -20537,7 +20658,8 @@ const SAMPLE_SHEETS = [
           1329
         ],
         "total": 1329,
-        "sourceRank": 7
+        "sourceRank": 7,
+        "rawRounds": [326, 333, 334, 336]
       },
       {
         "rank": 8,
@@ -20548,7 +20670,8 @@ const SAMPLE_SHEETS = [
           1227
         ],
         "total": 1227,
-        "sourceRank": 8
+        "sourceRank": 8,
+        "rawRounds": [313, 307, 298, 309]
       }
     ]
   },
@@ -20567,6 +20690,7 @@ const SAMPLE_SHEETS = [
     "distances": [
       50
     ],
+    "rawDistances": [50, 50, 50, 50],
     "arrowsPerDistance": 144,
     "sourceFile": "AR0542026AR002AR05M01Q.pdf",
     "eventLabel": "남자 컴파운드 일반부개인",
@@ -20580,7 +20704,8 @@ const SAMPLE_SHEETS = [
           1418
         ],
         "total": 1418,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [352, 354, 357, 355]
       },
       {
         "rank": 2,
@@ -20591,7 +20716,8 @@ const SAMPLE_SHEETS = [
           1411
         ],
         "total": 1411,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [353, 356, 353, 349]
       },
       {
         "rank": 3,
@@ -20602,7 +20728,8 @@ const SAMPLE_SHEETS = [
           1409
         ],
         "total": 1409,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [351, 353, 352, 353]
       },
       {
         "rank": 4,
@@ -20613,7 +20740,8 @@ const SAMPLE_SHEETS = [
           1406
         ],
         "total": 1406,
-        "sourceRank": 4
+        "sourceRank": 4,
+        "rawRounds": [347, 349, 355, 355]
       },
       {
         "rank": 5,
@@ -20624,7 +20752,8 @@ const SAMPLE_SHEETS = [
           1405
         ],
         "total": 1405,
-        "sourceRank": 5
+        "sourceRank": 5,
+        "rawRounds": [350, 354, 350, 351]
       },
       {
         "rank": 6,
@@ -20635,7 +20764,8 @@ const SAMPLE_SHEETS = [
           1400
         ],
         "total": 1400,
-        "sourceRank": 6
+        "sourceRank": 6,
+        "rawRounds": [345, 350, 351, 354]
       },
       {
         "rank": 7,
@@ -20646,7 +20776,8 @@ const SAMPLE_SHEETS = [
           1398
         ],
         "total": 1398,
-        "sourceRank": 7
+        "sourceRank": 7,
+        "rawRounds": [347, 348, 353, 350]
       },
       {
         "rank": 8,
@@ -20657,7 +20788,8 @@ const SAMPLE_SHEETS = [
           1397
         ],
         "total": 1397,
-        "sourceRank": 8
+        "sourceRank": 8,
+        "rawRounds": [349, 353, 348, 347]
       },
       {
         "rank": 9,
@@ -20668,7 +20800,8 @@ const SAMPLE_SHEETS = [
           1393
         ],
         "total": 1393,
-        "sourceRank": 9
+        "sourceRank": 9,
+        "rawRounds": [346, 347, 350, 350]
       },
       {
         "rank": 10,
@@ -20679,7 +20812,8 @@ const SAMPLE_SHEETS = [
           1389
         ],
         "total": 1389,
-        "sourceRank": 10
+        "sourceRank": 10,
+        "rawRounds": [344, 349, 344, 352]
       },
       {
         "rank": 11,
@@ -20690,7 +20824,8 @@ const SAMPLE_SHEETS = [
           1375
         ],
         "total": 1375,
-        "sourceRank": 11
+        "sourceRank": 11,
+        "rawRounds": [339, 345, 348, 343]
       },
       {
         "rank": 12,
@@ -20701,7 +20836,8 @@ const SAMPLE_SHEETS = [
           1373
         ],
         "total": 1373,
-        "sourceRank": 12
+        "sourceRank": 12,
+        "rawRounds": [343, 342, 341, 347]
       },
       {
         "rank": 13,
@@ -20712,7 +20848,8 @@ const SAMPLE_SHEETS = [
           1370
         ],
         "total": 1370,
-        "sourceRank": 13
+        "sourceRank": 13,
+        "rawRounds": [333, 349, 345, 343]
       },
       {
         "rank": 14,
@@ -20723,7 +20860,8 @@ const SAMPLE_SHEETS = [
           1348
         ],
         "total": 1348,
-        "sourceRank": 14
+        "sourceRank": 14,
+        "rawRounds": [331, 337, 342, 338]
       },
       {
         "rank": 15,
@@ -20734,7 +20872,8 @@ const SAMPLE_SHEETS = [
           1340
         ],
         "total": 1340,
-        "sourceRank": 15
+        "sourceRank": 15,
+        "rawRounds": [331, 335, 339, 335]
       },
       {
         "rank": 16,
@@ -20745,7 +20884,8 @@ const SAMPLE_SHEETS = [
           1314
         ],
         "total": 1314,
-        "sourceRank": 16
+        "sourceRank": 16,
+        "rawRounds": [317, 323, 341, 333]
       },
       {
         "rank": 17,
@@ -20756,7 +20896,8 @@ const SAMPLE_SHEETS = [
           1304
         ],
         "total": 1304,
-        "sourceRank": 17
+        "sourceRank": 17,
+        "rawRounds": [324, 325, 323, 332]
       },
       {
         "rank": 18,
@@ -20767,7 +20908,8 @@ const SAMPLE_SHEETS = [
           1297
         ],
         "total": 1297,
-        "sourceRank": 18
+        "sourceRank": 18,
+        "rawRounds": [321, 328, 319, 329]
       },
       {
         "rank": 19,
@@ -20778,7 +20920,8 @@ const SAMPLE_SHEETS = [
           1294
         ],
         "total": 1294,
-        "sourceRank": 19
+        "sourceRank": 19,
+        "rawRounds": [308, 327, 337, 322]
       },
       {
         "rank": 20,
@@ -20789,7 +20932,8 @@ const SAMPLE_SHEETS = [
           1283
         ],
         "total": 1283,
-        "sourceRank": 20
+        "sourceRank": 20,
+        "rawRounds": [317, 320, 319, 327]
       },
       {
         "rank": 21,
@@ -20800,7 +20944,8 @@ const SAMPLE_SHEETS = [
           1275
         ],
         "total": 1275,
-        "sourceRank": 21
+        "sourceRank": 21,
+        "rawRounds": [320, 323, 313, 319]
       },
       {
         "rank": 22,
@@ -20811,7 +20956,8 @@ const SAMPLE_SHEETS = [
           1269
         ],
         "total": 1269,
-        "sourceRank": 22
+        "sourceRank": 22,
+        "rawRounds": [305, 323, 316, 325]
       },
       {
         "rank": 23,
@@ -20822,7 +20968,8 @@ const SAMPLE_SHEETS = [
           1257
         ],
         "total": 1257,
-        "sourceRank": 23
+        "sourceRank": 23,
+        "rawRounds": [313, 328, 314, 302]
       }
     ]
   },
@@ -20841,6 +20988,7 @@ const SAMPLE_SHEETS = [
     "distances": [
       50
     ],
+    "rawDistances": [50, 50, 50, 50],
     "arrowsPerDistance": 144,
     "sourceFile": "AR0542026AR002AR05W01Q.pdf",
     "eventLabel": "여자 컴파운드 일반부개인",
@@ -20854,7 +21002,8 @@ const SAMPLE_SHEETS = [
           1403
         ],
         "total": 1403,
-        "sourceRank": 1
+        "sourceRank": 1,
+        "rawRounds": [350, 355, 349, 349]
       },
       {
         "rank": 2,
@@ -20865,7 +21014,8 @@ const SAMPLE_SHEETS = [
           1397
         ],
         "total": 1397,
-        "sourceRank": 2
+        "sourceRank": 2,
+        "rawRounds": [353, 353, 346, 345]
       },
       {
         "rank": 3,
@@ -20876,7 +21026,8 @@ const SAMPLE_SHEETS = [
           1388
         ],
         "total": 1388,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [353, 349, 344, 342]
       },
       {
         "rank": 3,
@@ -20887,7 +21038,8 @@ const SAMPLE_SHEETS = [
           1388
         ],
         "total": 1388,
-        "sourceRank": 3
+        "sourceRank": 3,
+        "rawRounds": [342, 350, 346, 350]
       },
       {
         "rank": 5,
@@ -20898,7 +21050,8 @@ const SAMPLE_SHEETS = [
           1386
         ],
         "total": 1386,
-        "sourceRank": 5
+        "sourceRank": 5,
+        "rawRounds": [347, 347, 346, 346]
       },
       {
         "rank": 6,
@@ -20909,7 +21062,8 @@ const SAMPLE_SHEETS = [
           1369
         ],
         "total": 1369,
-        "sourceRank": 6
+        "sourceRank": 6,
+        "rawRounds": [345, 341, 343, 340]
       },
       {
         "rank": 7,
@@ -20920,7 +21074,8 @@ const SAMPLE_SHEETS = [
           1365
         ],
         "total": 1365,
-        "sourceRank": 7
+        "sourceRank": 7,
+        "rawRounds": [343, 340, 343, 339]
       },
       {
         "rank": 8,
@@ -20931,7 +21086,8 @@ const SAMPLE_SHEETS = [
           1356
         ],
         "total": 1356,
-        "sourceRank": 8
+        "sourceRank": 8,
+        "rawRounds": [336, 342, 342, 336]
       },
       {
         "rank": 9,
@@ -20942,7 +21098,8 @@ const SAMPLE_SHEETS = [
           1336
         ],
         "total": 1336,
-        "sourceRank": 9
+        "sourceRank": 9,
+        "rawRounds": [333, 330, 338, 335]
       },
       {
         "rank": 10,
@@ -20953,7 +21110,8 @@ const SAMPLE_SHEETS = [
           1303
         ],
         "total": 1303,
-        "sourceRank": 10
+        "sourceRank": 10,
+        "rawRounds": [327, 324, 320, 332]
       },
       {
         "rank": 11,
@@ -20964,7 +21122,8 @@ const SAMPLE_SHEETS = [
           1289
         ],
         "total": 1289,
-        "sourceRank": 11
+        "sourceRank": 11,
+        "rawRounds": [324, 319, 324, 322]
       },
       {
         "rank": 12,
@@ -20975,7 +21134,8 @@ const SAMPLE_SHEETS = [
           1261
         ],
         "total": 1261,
-        "sourceRank": 12
+        "sourceRank": 12,
+        "rawRounds": [315, 327, 309, 310]
       },
       {
         "rank": 13,
@@ -20986,7 +21146,8 @@ const SAMPLE_SHEETS = [
           1199
         ],
         "total": 1199,
-        "sourceRank": 13
+        "sourceRank": 13,
+        "rawRounds": [288, 305, 302, 304]
       },
       {
         "rank": 14,
@@ -20997,7 +21158,8 @@ const SAMPLE_SHEETS = [
           1137
         ],
         "total": 1137,
-        "sourceRank": 14
+        "sourceRank": 14,
+        "rawRounds": [270, 279, 292, 296]
       }
     ]
   }
@@ -21148,6 +21310,26 @@ function buildPermanentSampleUsers() {
   return Array.from(map.values());
 }
 
+
+function buildOfficialDisplayRounds(sheet = {}, row = {}) {
+  const rawDistances = Array.isArray(row.rawDistances) && row.rawDistances.length
+    ? row.rawDistances
+    : Array.isArray(sheet.rawDistances) && sheet.rawDistances.length
+      ? sheet.rawDistances
+      : [];
+  const rawRounds = Array.isArray(row.rawRounds) ? row.rawRounds : [];
+
+  if (rawDistances.length && rawRounds.length && rawDistances.length === rawRounds.length) {
+    return rawDistances.map((distance, idx) => ({
+      roundNo: idx + 1,
+      distance: Number(distance) || 0,
+      score: Number(rawRounds[idx]) || 0,
+    })).filter((round) => round.distance > 0);
+  }
+
+  return [];
+}
+
 function buildPermanentSampleSessions() {
   const seen = new Set();
   return SAMPLE_SHEETS.flatMap((sheet) =>
@@ -21164,23 +21346,27 @@ function buildPermanentSampleSessions() {
         if (seen.has(dedupeKey)) return null;
         seen.add(dedupeKey);
 
-        return buildSampleDistanceSession({
-          userId,
-          date: sheet.date,
-          title: `${sheet.sheetLabel} · ${row.name}`,
-          division: assignedDivision,
-          gender: normalizeGenderValue(row.gender || sheet.gender, "남"),
-          regionCity: row.regionCity || sheet.regionCity || "경기도",
-          bowType: sampleBowType,
-          clubName: row.school,
-          groupName: row.school,
-          distance: sheet.distances[0],
-          arrowsPerDistance: Number(sheet.arrowsPerDistance) || 36,
-          rounds: sheet.distances.map((distance, idx) => ({
-            distance,
-            total: row.rounds[idx],
-          })),
-        });
+        const officialDisplayRounds = buildOfficialDisplayRounds(sheet, row);
+        return {
+          ...buildSampleDistanceSession({
+            userId,
+            date: sheet.date,
+            title: `${sheet.sheetLabel} · ${row.name}`,
+            division: assignedDivision,
+            gender: normalizeGenderValue(row.gender || sheet.gender, "남"),
+            regionCity: row.regionCity || sheet.regionCity || "경기도",
+            bowType: sampleBowType,
+            clubName: row.school,
+            groupName: row.school,
+            distance: sheet.distances[0],
+            arrowsPerDistance: Number(sheet.arrowsPerDistance) || 36,
+            rounds: sheet.distances.map((distance, idx) => ({
+              distance,
+              total: row.rounds[idx],
+            })),
+          }),
+          officialDisplayRounds,
+        };
       })
       .filter(Boolean)
   );
@@ -22853,16 +23039,25 @@ function buildCompoundSessionTotalRankingItem(user, sessions, rankingFilters = {
       const sessionRankingGroup = attempts[0]?.rankingGroup || profileRankingGroup || session.rankingGroup || "";
       if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, sessionRankingGroup)) return null;
 
-      const orderedRounds = Array.isArray(session.distanceRounds)
-        ? session.distanceRounds
+      const orderedRounds = Array.isArray(session.officialDisplayRounds) && session.officialDisplayRounds.length
+        ? session.officialDisplayRounds
             .map((round, idx) => ({
-              roundNo: Number(round.index || round.roundNo || idx + 1),
+              roundNo: Number(round.roundNo || round.index || idx + 1),
               distance: Number(round.distance) || 0,
-              score: Number(round.total ?? round.score) || 0,
+              score: Number(round.score ?? round.total) || 0,
             }))
             .filter((round) => round.distance > 0)
             .sort((a, b) => a.roundNo - b.roundNo)
-        : [];
+        : Array.isArray(session.distanceRounds)
+          ? session.distanceRounds
+              .map((round, idx) => ({
+                roundNo: Number(round.index || round.roundNo || idx + 1),
+                distance: Number(round.distance) || 0,
+                score: Number(round.total ?? round.score) || 0,
+              }))
+              .filter((round) => round.distance > 0)
+              .sort((a, b) => a.roundNo - b.roundNo)
+          : [];
 
       const distanceRoundScores = orderedRounds.length
         ? orderedRounds
@@ -22879,7 +23074,7 @@ function buildCompoundSessionTotalRankingItem(user, sessions, rankingFilters = {
         distanceScores[`${round.roundNo}_${distance}`] = Number(round.score || 0);
       });
 
-      const totalScore = distanceRoundScores.reduce((sum, round) => sum + (Number(round.score) || 0), 0);
+      const totalScore = Number(session.summary?.totalScore ?? getSessionTotal(session) ?? distanceRoundScores.reduce((sum, round) => sum + (Number(round.score) || 0), 0));
 
       return {
         session,
