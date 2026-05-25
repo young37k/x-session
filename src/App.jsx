@@ -19058,6 +19058,1944 @@ const SAMPLE_SHEETS = [
       }
     ]
   }
+,
+
+
+  // 2026 제60회 전국 남여 양궁 종별선수권 대회 컴파운드 공식기록 PDF 반영
+
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar01m01q",
+    "sheetLabel": "종별대회 남자 컴파운드 초등부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "초등부(통합)",
+    "division": "초등부(통합)",
+    "gender": "남",
+    "distances": [
+      30,
+      20
+    ],
+    "arrowsPerDistance": 72,
+    "sourceFile": "AR0542026AR002AR01M01Q.pdf",
+    "eventLabel": "남자 컴파운드 초등부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "1A",
+        "name": "장이호",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          681,
+          710
+        ],
+        "total": 1391,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "5B",
+        "name": "임시우",
+        "school": "팀자이언트(컴)",
+        "rounds": [
+          675,
+          696
+        ],
+        "total": 1371,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "4B",
+        "name": "설승훈",
+        "school": "팀자이언트(컴)",
+        "rounds": [
+          656,
+          697
+        ],
+        "total": 1353,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "5A",
+        "name": "임건우",
+        "school": "예천초등학교(컴)",
+        "rounds": [
+          645,
+          683
+        ],
+        "total": 1328,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "2B",
+        "name": "이지석",
+        "school": "서울개봉초등학교(컴)",
+        "rounds": [
+          608,
+          673
+        ],
+        "total": 1281,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "1B",
+        "name": "김지호",
+        "school": "서울개봉초등학교(컴)",
+        "rounds": [
+          579,
+          654
+        ],
+        "total": 1233,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "3A",
+        "name": "임원후",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          595,
+          636
+        ],
+        "total": 1231,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "4A",
+        "name": "김주원",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          464,
+          596
+        ],
+        "total": 1060,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "2A",
+        "name": "이윤우",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          366,
+          399
+        ],
+        "total": 765,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "3B",
+        "name": "최건",
+        "school": "서울개봉초등학교(컴)",
+        "rounds": [
+          290,
+          436
+        ],
+        "total": 726,
+        "sourceRank": 10
+      }
+    ]
+  },
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar01w01q",
+    "sheetLabel": "종별대회 여자 컴파운드 초등부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "초등부(통합)",
+    "division": "초등부(통합)",
+    "gender": "여",
+    "distances": [
+      30,
+      20
+    ],
+    "arrowsPerDistance": 72,
+    "sourceFile": "AR0542026AR002AR01W01Q.pdf",
+    "eventLabel": "여자 컴파운드 초등부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "1A",
+        "name": "고주은",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          693,
+          707
+        ],
+        "total": 1400,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "2B",
+        "name": "류예지",
+        "school": "팀자이언트(컴)",
+        "rounds": [
+          673,
+          684
+        ],
+        "total": 1357,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "1B",
+        "name": "치앙보혜",
+        "school": "팀자이언트(컴)",
+        "rounds": [
+          661,
+          695
+        ],
+        "total": 1356,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "2A",
+        "name": "전이수",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          614,
+          655
+        ],
+        "total": 1269,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "1C",
+        "name": "이서우",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          398,
+          505
+        ],
+        "total": 903,
+        "sourceRank": 5
+      }
+    ]
+  },
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar02m01q",
+    "sheetLabel": "종별대회 남자 컴파운드 중학부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "중학부",
+    "division": "중학부",
+    "gender": "남",
+    "distances": [
+      50,
+      30
+    ],
+    "arrowsPerDistance": 72,
+    "sourceFile": "AR0542026AR002AR02M01Q.pdf",
+    "eventLabel": "남자 컴파운드 중학부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "6A",
+        "name": "장우석",
+        "school": "팀자이언트(컴)",
+        "rounds": [
+          695,
+          719
+        ],
+        "total": 1414,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "5B",
+        "name": "이승준",
+        "school": "팀파이빅스(컴)",
+        "rounds": [
+          691,
+          716
+        ],
+        "total": 1407,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "7B",
+        "name": "박푸름",
+        "school": "수원시양궁협회(컴)",
+        "rounds": [
+          687,
+          710
+        ],
+        "total": 1397,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "4A",
+        "name": "김태우",
+        "school": "만수북중학교(컴)",
+        "rounds": [
+          673,
+          713
+        ],
+        "total": 1386,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "2B",
+        "name": "방서현",
+        "school": "오수중학교(컴)",
+        "rounds": [
+          669,
+          710
+        ],
+        "total": 1379,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "7A",
+        "name": "박현",
+        "school": "제주양궁클럽(컴)",
+        "rounds": [
+          664,
+          709
+        ],
+        "total": 1373,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "4B",
+        "name": "이건우",
+        "school": "팀파이빅스(컴)",
+        "rounds": [
+          657,
+          709
+        ],
+        "total": 1366,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "5A",
+        "name": "김철현",
+        "school": "루미너스",
+        "rounds": [
+          662,
+          703
+        ],
+        "total": 1365,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "3B",
+        "name": "임형규",
+        "school": "오수중학교(컴)",
+        "rounds": [
+          652,
+          702
+        ],
+        "total": 1354,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "8B",
+        "name": "김지원",
+        "school": "수원시양궁협회(컴)",
+        "rounds": [
+          641,
+          692
+        ],
+        "total": 1333,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "8A",
+        "name": "우도겸",
+        "school": "타겟28(동)(컴)",
+        "rounds": [
+          627,
+          686
+        ],
+        "total": 1313,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "1A",
+        "name": "고대윤",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          609,
+          668
+        ],
+        "total": 1277,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "1B",
+        "name": "방도현",
+        "school": "오수중학교(컴)",
+        "rounds": [
+          583,
+          677
+        ],
+        "total": 1260,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "3A",
+        "name": "이찬희",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          583,
+          676
+        ],
+        "total": 1259,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "6B",
+        "name": "강하율",
+        "school": "수원시양궁협회(컴)",
+        "rounds": [
+          587,
+          669
+        ],
+        "total": 1256,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "2A",
+        "name": "임채현",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          590,
+          657
+        ],
+        "total": 1247,
+        "sourceRank": 16
+      }
+    ]
+  },
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar02w01q",
+    "sheetLabel": "종별대회 여자 컴파운드 중학부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "중학부",
+    "division": "중학부",
+    "gender": "여",
+    "distances": [
+      50,
+      30
+    ],
+    "arrowsPerDistance": 72,
+    "sourceFile": "AR0542026AR002AR02W01Q.pdf",
+    "eventLabel": "여자 컴파운드 중학부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "3A",
+        "name": "서지은",
+        "school": "부천G-스포츠(컴)",
+        "rounds": [
+          693,
+          712
+        ],
+        "total": 1405,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "2B",
+        "name": "김효빈",
+        "school": "양화중학교(컴)",
+        "rounds": [
+          684,
+          706
+        ],
+        "total": 1390,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "2A",
+        "name": "송채은",
+        "school": "부천G-스포츠(컴)",
+        "rounds": [
+          675,
+          706
+        ],
+        "total": 1381,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "4B",
+        "name": "강수민",
+        "school": "부일중학교(컴)",
+        "rounds": [
+          668,
+          707
+        ],
+        "total": 1375,
+        "sourceRank": 4
+      },
+      {
+        "rank": 4,
+        "target": "7B",
+        "name": "김선율",
+        "school": "강화여자중학교(컴)",
+        "rounds": [
+          663,
+          712
+        ],
+        "total": 1375,
+        "sourceRank": 4
+      },
+      {
+        "rank": 6,
+        "target": "1B",
+        "name": "김혜윤",
+        "school": "양화중학교(컴)",
+        "rounds": [
+          663,
+          708
+        ],
+        "total": 1371,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "2C",
+        "name": "김연아",
+        "school": "NLCS 국제학교",
+        "rounds": [
+          667,
+          702
+        ],
+        "total": 1369,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "6B",
+        "name": "김민지",
+        "school": "신장중학교(컴)",
+        "rounds": [
+          669,
+          698
+        ],
+        "total": 1367,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "5A",
+        "name": "고라온",
+        "school": "부천G-스포츠(컴)",
+        "rounds": [
+          667,
+          698
+        ],
+        "total": 1365,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "3B",
+        "name": "김시우",
+        "school": "양화중학교(컴)",
+        "rounds": [
+          661,
+          703
+        ],
+        "total": 1364,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "4A",
+        "name": "문이수",
+        "school": "부천G-스포츠(컴)",
+        "rounds": [
+          645,
+          701
+        ],
+        "total": 1346,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "5B",
+        "name": "신아인",
+        "school": "성사중학교(컴)",
+        "rounds": [
+          650,
+          694
+        ],
+        "total": 1344,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "6A",
+        "name": "정주원",
+        "school": "부천G-스포츠(컴)",
+        "rounds": [
+          603,
+          664
+        ],
+        "total": 1267,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "3C",
+        "name": "허수인",
+        "school": "임실군양궁스포츠클럽(동)(컴)",
+        "rounds": [
+          476,
+          546
+        ],
+        "total": 1022,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "7A",
+        "name": "유미혜",
+        "school": "부천G-스포츠(컴)",
+        "rounds": [
+          0,
+          671
+        ],
+        "total": 671,
+        "sourceRank": 15
+      }
+    ]
+  },
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar03m01q",
+    "sheetLabel": "종별대회 남자 컴파운드 고등부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "고등부",
+    "division": "고등부",
+    "gender": "남",
+    "distances": [
+      50
+    ],
+    "arrowsPerDistance": 144,
+    "sourceFile": "AR0542026AR002AR03M01Q.pdf",
+    "eventLabel": "남자 컴파운드 고등부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "1B",
+        "name": "노형주",
+        "school": "충북체육고등학교",
+        "rounds": [
+          1407
+        ],
+        "total": 1407,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "1A",
+        "name": "김강민",
+        "school": "인천영선고등학교(컴)",
+        "rounds": [
+          1405
+        ],
+        "total": 1405,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "2B",
+        "name": "윤선우",
+        "school": "충북체육고등학교",
+        "rounds": [
+          1395
+        ],
+        "total": 1395,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "3A",
+        "name": "안태환",
+        "school": "팀자이언트",
+        "rounds": [
+          1393
+        ],
+        "total": 1393,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "9A",
+        "name": "김진서",
+        "school": "팀자이언트인천",
+        "rounds": [
+          1386
+        ],
+        "total": 1386,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "2A",
+        "name": "정재웅",
+        "school": "인천영선고등학교(컴)",
+        "rounds": [
+          1380
+        ],
+        "total": 1380,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "4B",
+        "name": "김태형",
+        "school": "충북체육고등학교",
+        "rounds": [
+          1379
+        ],
+        "total": 1379,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "8A",
+        "name": "이지후",
+        "school": "팀자이언트인천",
+        "rounds": [
+          1378
+        ],
+        "total": 1378,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "10A",
+        "name": "류희태",
+        "school": "팀자이언트인천",
+        "rounds": [
+          1370
+        ],
+        "total": 1370,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "6A",
+        "name": "김재현",
+        "school": "전북펫고등학교(컴)",
+        "rounds": [
+          1366
+        ],
+        "total": 1366,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "11B",
+        "name": "명한결",
+        "school": "순천고등학교(컴)",
+        "rounds": [
+          1364
+        ],
+        "total": 1364,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "11A",
+        "name": "신정우",
+        "school": "광주체육고등학교(컴)",
+        "rounds": [
+          1360
+        ],
+        "total": 1360,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "3B",
+        "name": "이도율",
+        "school": "충북체육고등학교",
+        "rounds": [
+          1347
+        ],
+        "total": 1347,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "8B",
+        "name": "손형국",
+        "school": "전북체육고등학교(컴)",
+        "rounds": [
+          1333
+        ],
+        "total": 1333,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "5A",
+        "name": "방지윤",
+        "school": "전북펫고등학교(컴)",
+        "rounds": [
+          1319
+        ],
+        "total": 1319,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "10B",
+        "name": "김규민",
+        "school": "순천고등학교(컴)",
+        "rounds": [
+          1310
+        ],
+        "total": 1310,
+        "sourceRank": 16
+      },
+      {
+        "rank": 17,
+        "target": "7B",
+        "name": "최갑재",
+        "school": "제주양궁클럽(컴)",
+        "rounds": [
+          1295
+        ],
+        "total": 1295,
+        "sourceRank": 17
+      },
+      {
+        "rank": 18,
+        "target": "9B",
+        "name": "김명수",
+        "school": "하남시양궁협회(컴)",
+        "rounds": [
+          1281
+        ],
+        "total": 1281,
+        "sourceRank": 18
+      },
+      {
+        "rank": 19,
+        "target": "7A",
+        "name": "조민성",
+        "school": "전북펫고등학교(컴)",
+        "rounds": [
+          1273
+        ],
+        "total": 1273,
+        "sourceRank": 19
+      },
+      {
+        "rank": 20,
+        "target": "12B",
+        "name": "신우태",
+        "school": "순천고등학교(컴)",
+        "rounds": [
+          1201
+        ],
+        "total": 1201,
+        "sourceRank": 20
+      },
+      {
+        "rank": 21,
+        "target": "5B",
+        "name": "박현수",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          1148
+        ],
+        "total": 1148,
+        "sourceRank": 21
+      },
+      {
+        "rank": 22,
+        "target": "6B",
+        "name": "이예중",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          1101
+        ],
+        "total": 1101,
+        "sourceRank": 22
+      }
+    ]
+  },
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar03w01q",
+    "sheetLabel": "종별대회 여자 컴파운드 고등부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "고등부",
+    "division": "고등부",
+    "gender": "여",
+    "distances": [
+      50
+    ],
+    "arrowsPerDistance": 144,
+    "sourceFile": "AR0542026AR002AR03W01Q.pdf",
+    "eventLabel": "여자 컴파운드 고등부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "4B",
+        "name": "김시연",
+        "school": "부천G-스포츠",
+        "rounds": [
+          1395
+        ],
+        "total": 1395,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "1B",
+        "name": "김서윤",
+        "school": "부개고등학교(컴)",
+        "rounds": [
+          1394
+        ],
+        "total": 1394,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "2B",
+        "name": "변지영",
+        "school": "부개고등학교(컴)",
+        "rounds": [
+          1368
+        ],
+        "total": 1368,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "3B",
+        "name": "최성은",
+        "school": "부개고등학교(컴)",
+        "rounds": [
+          1365
+        ],
+        "total": 1365,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "3A",
+        "name": "김은결",
+        "school": "전남체육고등학교(컴)",
+        "rounds": [
+          1361
+        ],
+        "total": 1361,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "5B",
+        "name": "송유림",
+        "school": "부천G-스포츠",
+        "rounds": [
+          1351
+        ],
+        "total": 1351,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "7A",
+        "name": "박소윤",
+        "school": "강화여자고등학교(컴)",
+        "rounds": [
+          1346
+        ],
+        "total": 1346,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "2A",
+        "name": "한서은",
+        "school": "충북체육고등학교",
+        "rounds": [
+          1345
+        ],
+        "total": 1345,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "5A",
+        "name": "김가온",
+        "school": "무거고등학교(클)",
+        "rounds": [
+          1338
+        ],
+        "total": 1338,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "7B",
+        "name": "김예령",
+        "school": "광주체육고등학교(컴)",
+        "rounds": [
+          1335
+        ],
+        "total": 1335,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "10A",
+        "name": "박채은",
+        "school": "팀자이언트(컴)",
+        "rounds": [
+          1329
+        ],
+        "total": 1329,
+        "sourceRank": 11
+      },
+      {
+        "rank": 11,
+        "target": "6B",
+        "name": "박지은",
+        "school": "부천G-스포츠",
+        "rounds": [
+          1329
+        ],
+        "total": 1329,
+        "sourceRank": 11
+      },
+      {
+        "rank": 13,
+        "target": "8A",
+        "name": "박연우",
+        "school": "강화여자고등학교(컴)",
+        "rounds": [
+          1328
+        ],
+        "total": 1328,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "10B",
+        "name": "김시현",
+        "school": "서울여자고등학교",
+        "rounds": [
+          1324
+        ],
+        "total": 1324,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "9A",
+        "name": "박예은",
+        "school": "팀자이언트(컴)",
+        "rounds": [
+          1320
+        ],
+        "total": 1320,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "4A",
+        "name": "이서현",
+        "school": "경남체육고등학교(컴)",
+        "rounds": [
+          1318
+        ],
+        "total": 1318,
+        "sourceRank": 16
+      },
+      {
+        "rank": 17,
+        "target": "8B",
+        "name": "김소연",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          1298
+        ],
+        "total": 1298,
+        "sourceRank": 17
+      },
+      {
+        "rank": 17,
+        "target": "12A",
+        "name": "강서윤",
+        "school": "제주양궁클럽(컴)",
+        "rounds": [
+          1298
+        ],
+        "total": 1298,
+        "sourceRank": 17
+      },
+      {
+        "rank": 19,
+        "target": "1A",
+        "name": "최민서",
+        "school": "임실군양궁스포츠클럽(컴)",
+        "rounds": [
+          1293
+        ],
+        "total": 1293,
+        "sourceRank": 19
+      },
+      {
+        "rank": 20,
+        "target": "11B",
+        "name": "이태경",
+        "school": "서울여자고등학교",
+        "rounds": [
+          1290
+        ],
+        "total": 1290,
+        "sourceRank": 20
+      },
+      {
+        "rank": 21,
+        "target": "11A",
+        "name": "엄세민",
+        "school": "팀자이언트(컴)",
+        "rounds": [
+          1264
+        ],
+        "total": 1264,
+        "sourceRank": 21
+      },
+      {
+        "rank": 22,
+        "target": "6A",
+        "name": "김나연",
+        "school": "강화여자고등학교(컴)",
+        "rounds": [
+          1259
+        ],
+        "total": 1259,
+        "sourceRank": 22
+      },
+      {
+        "rank": 23,
+        "target": "12B",
+        "name": "한희연",
+        "school": "서울여자고등학교",
+        "rounds": [
+          1236
+        ],
+        "total": 1236,
+        "sourceRank": 23
+      }
+    ]
+  },
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar04m01q",
+    "sheetLabel": "종별대회 남자 컴파운드 대학부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "대학/일반부",
+    "division": "대학부",
+    "gender": "남",
+    "distances": [
+      50
+    ],
+    "arrowsPerDistance": 144,
+    "sourceFile": "AR0542026AR002AR04M01Q.pdf",
+    "eventLabel": "남자 컴파운드 대학부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "4A",
+        "name": "전한서",
+        "school": "한국체육대학교",
+        "rounds": [
+          1409
+        ],
+        "total": 1409,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "2B",
+        "name": "장윤우",
+        "school": "배재대학교",
+        "rounds": [
+          1399
+        ],
+        "total": 1399,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "3A",
+        "name": "배찬우",
+        "school": "한국체육대학교",
+        "rounds": [
+          1398
+        ],
+        "total": 1398,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "1B",
+        "name": "김승규",
+        "school": "배재대학교",
+        "rounds": [
+          1393
+        ],
+        "total": 1393,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "5B",
+        "name": "김상찬",
+        "school": "남서울대학교(컴)(클)",
+        "rounds": [
+          1392
+        ],
+        "total": 1392,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "4B",
+        "name": "김명규",
+        "school": "남서울대학교(컴)(클)",
+        "rounds": [
+          1390
+        ],
+        "total": 1390,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "6A",
+        "name": "이유찬",
+        "school": "한국체육대학교",
+        "rounds": [
+          1389
+        ],
+        "total": 1389,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "6B",
+        "name": "박상민",
+        "school": "남서울대학교(컴)(클)",
+        "rounds": [
+          1385
+        ],
+        "total": 1385,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "8B",
+        "name": "안채율",
+        "school": "상지대학교(컴)",
+        "rounds": [
+          1373
+        ],
+        "total": 1373,
+        "sourceRank": 9
+      },
+      {
+        "rank": 9,
+        "target": "7B",
+        "name": "황도원",
+        "school": "상지대학교(컴)",
+        "rounds": [
+          1373
+        ],
+        "total": 1373,
+        "sourceRank": 9
+      },
+      {
+        "rank": 11,
+        "target": "8A",
+        "name": "임웅섭",
+        "school": "한일장신대학교",
+        "rounds": [
+          1370
+        ],
+        "total": 1370,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "5A",
+        "name": "황성욱",
+        "school": "한국체육대학교",
+        "rounds": [
+          1369
+        ],
+        "total": 1369,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "2A",
+        "name": "윤찬영",
+        "school": "한국체육대학교",
+        "rounds": [
+          1364
+        ],
+        "total": 1364,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "9B",
+        "name": "이석원",
+        "school": "상지대학교(컴)",
+        "rounds": [
+          1358
+        ],
+        "total": 1358,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "7A",
+        "name": "김제영",
+        "school": "한일장신대학교",
+        "rounds": [
+          1345
+        ],
+        "total": 1345,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "3B",
+        "name": "전수민",
+        "school": "한양대학교안산캠퍼스",
+        "rounds": [
+          1339
+        ],
+        "total": 1339,
+        "sourceRank": 16
+      }
+    ]
+  },
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar04w01q",
+    "sheetLabel": "종별대회 여자 컴파운드 대학부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "대학/일반부",
+    "division": "대학부",
+    "gender": "여",
+    "distances": [
+      50
+    ],
+    "arrowsPerDistance": 144,
+    "sourceFile": "AR0542026AR002AR04W01Q.pdf",
+    "eventLabel": "여자 컴파운드 대학부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "5B",
+        "name": "문예은",
+        "school": "한국체육대학교",
+        "rounds": [
+          1400
+        ],
+        "total": 1400,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "7B",
+        "name": "이지윤",
+        "school": "한국체육대학교",
+        "rounds": [
+          1391
+        ],
+        "total": 1391,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "6A",
+        "name": "김미현",
+        "school": "한일장신대학교",
+        "rounds": [
+          1366
+        ],
+        "total": 1366,
+        "sourceRank": 3
+      },
+      {
+        "rank": 3,
+        "target": "6B",
+        "name": "김가빈",
+        "school": "한국체육대학교",
+        "rounds": [
+          1366
+        ],
+        "total": 1366,
+        "sourceRank": 3
+      },
+      {
+        "rank": 5,
+        "target": "5A",
+        "name": "김수인",
+        "school": "국립경국대학교(컴)",
+        "rounds": [
+          1365
+        ],
+        "total": 1365,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "2A",
+        "name": "김하람",
+        "school": "창원대학교(컴)",
+        "rounds": [
+          1354
+        ],
+        "total": 1354,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "1A",
+        "name": "조유진",
+        "school": "원광대학교(컴)",
+        "rounds": [
+          1329
+        ],
+        "total": 1329,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "4A",
+        "name": "이정민",
+        "school": "도화살(컴)",
+        "rounds": [
+          1227
+        ],
+        "total": 1227,
+        "sourceRank": 8
+      }
+    ]
+  },
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar05m01q",
+    "sheetLabel": "종별대회 남자 컴파운드 일반부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "대학/일반부",
+    "division": "일반부",
+    "gender": "남",
+    "distances": [
+      50
+    ],
+    "arrowsPerDistance": 144,
+    "sourceFile": "AR0542026AR002AR05M01Q.pdf",
+    "eventLabel": "남자 컴파운드 일반부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "19A",
+        "name": "박승현",
+        "school": "국군체육부대",
+        "rounds": [
+          1418
+        ],
+        "total": 1418,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "18A",
+        "name": "이광성",
+        "school": "대전시체육회(컴)",
+        "rounds": [
+          1411
+        ],
+        "total": 1411,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "13A",
+        "name": "김형헌",
+        "school": "현대제철",
+        "rounds": [
+          1409
+        ],
+        "total": 1409,
+        "sourceRank": 3
+      },
+      {
+        "rank": 4,
+        "target": "22B",
+        "name": "김성철",
+        "school": "인천계양구청",
+        "rounds": [
+          1406
+        ],
+        "total": 1406,
+        "sourceRank": 4
+      },
+      {
+        "rank": 5,
+        "target": "16A",
+        "name": "주재훈",
+        "school": "한국수력원자력",
+        "rounds": [
+          1405
+        ],
+        "total": 1405,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "12A",
+        "name": "강동현",
+        "school": "현대제철",
+        "rounds": [
+          1400
+        ],
+        "total": 1400,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "17B",
+        "name": "성우경",
+        "school": "팀자이언트",
+        "rounds": [
+          1398
+        ],
+        "total": 1398,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "11B",
+        "name": "양재원",
+        "school": "울산남구청",
+        "rounds": [
+          1397
+        ],
+        "total": 1397,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "12B",
+        "name": "고보현",
+        "school": "울산남구청",
+        "rounds": [
+          1393
+        ],
+        "total": 1393,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "22A",
+        "name": "신재훈",
+        "school": "코오롱엑스텐보이즈(컴)",
+        "rounds": [
+          1389
+        ],
+        "total": 1389,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "17A",
+        "name": "홍정기",
+        "school": "경기도양궁협회",
+        "rounds": [
+          1375
+        ],
+        "total": 1375,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "18B",
+        "name": "김수홍",
+        "school": "전북원스포츠단(컴)",
+        "rounds": [
+          1373
+        ],
+        "total": 1373,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "21B",
+        "name": "구동남",
+        "school": "대구중구청",
+        "rounds": [
+          1370
+        ],
+        "total": 1370,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "19B",
+        "name": "고도현",
+        "school": "전북원스포츠단(컴)",
+        "rounds": [
+          1348
+        ],
+        "total": 1348,
+        "sourceRank": 14
+      },
+      {
+        "rank": 15,
+        "target": "13B",
+        "name": "김창식",
+        "school": "예천진호양궁클럽(동)(컴)",
+        "rounds": [
+          1340
+        ],
+        "total": 1340,
+        "sourceRank": 15
+      },
+      {
+        "rank": 16,
+        "target": "15B",
+        "name": "안태규",
+        "school": "예천진호양궁클럽(동)(컴)",
+        "rounds": [
+          1314
+        ],
+        "total": 1314,
+        "sourceRank": 16
+      },
+      {
+        "rank": 17,
+        "target": "14B",
+        "name": "권순집",
+        "school": "예천진호양궁클럽(동)(컴)",
+        "rounds": [
+          1304
+        ],
+        "total": 1304,
+        "sourceRank": 17
+      },
+      {
+        "rank": 18,
+        "target": "20B",
+        "name": "조용우",
+        "school": "강원도양궁협회",
+        "rounds": [
+          1297
+        ],
+        "total": 1297,
+        "sourceRank": 18
+      },
+      {
+        "rank": 19,
+        "target": "15A",
+        "name": "안강민",
+        "school": "파이빅스(컴)(동)",
+        "rounds": [
+          1294
+        ],
+        "total": 1294,
+        "sourceRank": 19
+      },
+      {
+        "rank": 20,
+        "target": "21A",
+        "name": "신광석",
+        "school": "대구시양궁협회(동)",
+        "rounds": [
+          1283
+        ],
+        "total": 1283,
+        "sourceRank": 20
+      },
+      {
+        "rank": 21,
+        "target": "20A",
+        "name": "신민욱",
+        "school": "수원양궁클럽",
+        "rounds": [
+          1275
+        ],
+        "total": 1275,
+        "sourceRank": 21
+      },
+      {
+        "rank": 22,
+        "target": "14A",
+        "name": "조양호",
+        "school": "임실군양궁스포츠클럽(컴)(동)",
+        "rounds": [
+          1269
+        ],
+        "total": 1269,
+        "sourceRank": 22
+      },
+      {
+        "rank": 23,
+        "target": "16B",
+        "name": "권일영",
+        "school": "예천진호양궁클럽(동)(컴)",
+        "rounds": [
+          1257
+        ],
+        "total": 1257,
+        "sourceRank": 23
+      }
+    ]
+  },
+  {
+    "id": "compound_jongbyeol_ar0542026ar002ar05w01q",
+    "sheetLabel": "종별대회 여자 컴파운드 일반부",
+    "competitionId": "2026_jongbyeol_60_compound",
+    "competitionName": "제60회 전국 남여 양궁 종별선수권 대회",
+    "date": "2026-05-02",
+    "regionCity": "전국",
+    "venue": "예천진호국제양궁장",
+    "bowType": "컴파운드",
+    "rankingGroup": "대학/일반부",
+    "division": "일반부",
+    "gender": "여",
+    "distances": [
+      50
+    ],
+    "arrowsPerDistance": 144,
+    "sourceFile": "AR0542026AR002AR05W01Q.pdf",
+    "eventLabel": "여자 컴파운드 일반부개인",
+    "rows": [
+      {
+        "rank": 1,
+        "target": "14B",
+        "name": "한승연",
+        "school": "현대백화점(컴)",
+        "rounds": [
+          1403
+        ],
+        "total": 1403,
+        "sourceRank": 1
+      },
+      {
+        "rank": 2,
+        "target": "12A",
+        "name": "소채원",
+        "school": "현대모비스",
+        "rounds": [
+          1397
+        ],
+        "total": 1397,
+        "sourceRank": 2
+      },
+      {
+        "rank": 3,
+        "target": "14A",
+        "name": "유희연",
+        "school": "현대모비스",
+        "rounds": [
+          1388
+        ],
+        "total": 1388,
+        "sourceRank": 3
+      },
+      {
+        "rank": 3,
+        "target": "9B",
+        "name": "심수인",
+        "school": "창원시청",
+        "rounds": [
+          1388
+        ],
+        "total": 1388,
+        "sourceRank": 3
+      },
+      {
+        "rank": 5,
+        "target": "15A",
+        "name": "류예인",
+        "school": "청주시청",
+        "rounds": [
+          1386
+        ],
+        "total": 1386,
+        "sourceRank": 5
+      },
+      {
+        "rank": 6,
+        "target": "13A",
+        "name": "조수아",
+        "school": "현대모비스",
+        "rounds": [
+          1369
+        ],
+        "total": 1369,
+        "sourceRank": 6
+      },
+      {
+        "rank": 7,
+        "target": "9A",
+        "name": "권나래",
+        "school": "광주광역시청(컴)",
+        "rounds": [
+          1365
+        ],
+        "total": 1365,
+        "sourceRank": 7
+      },
+      {
+        "rank": 8,
+        "target": "10A",
+        "name": "이다희",
+        "school": "LH(컴)",
+        "rounds": [
+          1356
+        ],
+        "total": 1356,
+        "sourceRank": 8
+      },
+      {
+        "rank": 9,
+        "target": "8A",
+        "name": "신유경",
+        "school": "경기도양궁협회",
+        "rounds": [
+          1336
+        ],
+        "total": 1336,
+        "sourceRank": 9
+      },
+      {
+        "rank": 10,
+        "target": "11A",
+        "name": "김귀월",
+        "school": "예천진호양궁클럽(동)",
+        "rounds": [
+          1303
+        ],
+        "total": 1303,
+        "sourceRank": 10
+      },
+      {
+        "rank": 11,
+        "target": "10B",
+        "name": "황영지",
+        "school": "팀자이언트",
+        "rounds": [
+          1289
+        ],
+        "total": 1289,
+        "sourceRank": 11
+      },
+      {
+        "rank": 12,
+        "target": "11B",
+        "name": "김도희",
+        "school": "충북양궁협회",
+        "rounds": [
+          1261
+        ],
+        "total": 1261,
+        "sourceRank": 12
+      },
+      {
+        "rank": 13,
+        "target": "15B",
+        "name": "정은하",
+        "school": "하남시양궁협회(동)",
+        "rounds": [
+          1199
+        ],
+        "total": 1199,
+        "sourceRank": 13
+      },
+      {
+        "rank": 14,
+        "target": "13B",
+        "name": "김예은",
+        "school": "헌터양궁클럽(컴)",
+        "rounds": [
+          1137
+        ],
+        "total": 1137,
+        "sourceRank": 14
+      }
+    ]
+  }
+
 ];
 
 // 공식 결과 목록은 SAMPLE_SHEETS에서 자동 생성한다.
@@ -19229,7 +21167,7 @@ function buildPermanentSampleSessions() {
           clubName: row.school,
           groupName: row.school,
           distance: sheet.distances[0],
-          arrowsPerDistance: 36,
+          arrowsPerDistance: Number(sheet.arrowsPerDistance) || 36,
           rounds: sheet.distances.map((distance, idx) => ({
             distance,
             total: row.rounds[idx],
@@ -20759,16 +22697,20 @@ function getQualifiedDistanceAttempts(session) {
 
   if (session.recordInputType === "distance") {
     const arrowsPerDistance = Number(session.arrowsPerDistance) || 0;
-    if (arrowsPerDistance !== 36) return [];
+    const bowType = session.bowType || "리커브";
+    const maxDistanceScore = arrowsPerDistance > 0 ? arrowsPerDistance * 10 : 360;
+    if (bowType !== "컴파운드" && arrowsPerDistance !== 36) return [];
     return (session.distanceRounds || [])
       .map((round) => ({
         distance: Number(round.distance) || 0,
         score: Number(round.total) || 0,
         arrowsCount: arrowsPerDistance,
+        sessionId: session.id || session.sessionId || "",
+        totalScore: session.summary?.totalScore ?? getSessionTotal(session),
         sessionDate: session.sessionDate || session.updatedAt || "",
         division: session.division || "",
         gender: session.gender || "",
-        bowType: session.bowType || "리커브",
+        bowType,
         rankingGroup: resolveRankingGroup(session.division, session.gender, session.rankingGroup),
         groupName: session.groupName || "",
         regionCity: session.regionCity || "",
@@ -20778,7 +22720,7 @@ function getQualifiedDistanceAttempts(session) {
         verifiedAthlete: Boolean(session.verifiedAthlete),
         isSampleData: Boolean(session.isSampleData),
       }))
-      .filter((item) => item.distance > 0 && item.score >= 0 && item.score <= 360);
+      .filter((item) => item.distance > 0 && item.score >= 0 && item.score <= maxDistanceScore);
   }
 
   const actualArrowCount = (session.ends || [])
@@ -20809,6 +22751,80 @@ function getQualifiedDistanceAttempts(session) {
     isSampleData: Boolean(session.isSampleData),
   }];
 }
+
+
+function buildCompoundSessionTotalRankingItem(user, sessions, rankingFilters = {}, options = {}) {
+  const { weekly = false } = options;
+  const userGender = user?.gender || "남";
+  const userDivision = user?.division || "";
+  const profileRankingGroup = getRankingGroup(userDivision, userGender);
+
+  const candidateSessions = (sessions || [])
+    .filter((session) => session?.userId === user?.id)
+    .filter((session) => (session.bowType || user?.bowType || "리커브") === "컴파운드")
+    .filter((session) => session?.mode === "cumulative" && session?.recordInputType === "distance")
+    .filter((session) => session?.isComplete)
+    .filter((session) => !weekly || isWithinRecent7Days(session.sessionDate || session.updatedAt))
+    .filter((session) => isWithinDateFilter(session.sessionDate || session.updatedAt, rankingFilters.dateFilter || "all", rankingFilters.customDate))
+    .map((session) => {
+      const attempts = getQualifiedDistanceAttempts(session)
+        .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
+        .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
+
+      if (!attempts.length) return null;
+
+      const sessionRankingGroup = attempts[0]?.rankingGroup || profileRankingGroup || session.rankingGroup || "";
+      if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, sessionRankingGroup)) return null;
+
+      const distanceScores = {};
+      attempts.forEach((attempt) => {
+        const distance = Number(attempt.distance);
+        if (!distance) return;
+        distanceScores[distance] = Math.max(Number(distanceScores[distance] || 0), Number(attempt.score || 0));
+      });
+
+      return {
+        session,
+        attempts,
+        rankingGroup: sessionRankingGroup,
+        requiredDistances: Object.keys(distanceScores).map((distance) => Number(distance)).sort((a, b) => b - a),
+        distanceScores,
+        totalScore: Number(session.summary?.totalScore ?? getSessionTotal(session) ?? attempts.reduce((sum, attempt) => sum + (Number(attempt.score) || 0), 0)),
+        latestDate: session.sessionDate || session.updatedAt || "",
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      return String(b.latestDate).localeCompare(String(a.latestDate));
+    });
+
+  if (!candidateSessions.length) return null;
+  const best = candidateSessions[0];
+  const verifiedBestItem = isVerifiedBestSource(user) || isVerifiedBestSource(best.session);
+  const officialItem = !verifiedBestItem && (isOfficialRankingUser(user) || isOfficialRankingSession(best.session));
+
+  return {
+    userId: user.id,
+    name: getDisplayName(user),
+    groupName: user.groupName || best.session?.groupName || "-",
+    regionCity: user.regionCity || best.session?.regionCity || "-",
+    gender: userGender,
+    division: normalizeDivisionLabel(userDivision || best.session?.division || "-"),
+    bowType: "컴파운드",
+    rankingGroup: best.rankingGroup || "-",
+    requiredDistances: best.requiredDistances,
+    distanceScores: best.distanceScores,
+    totalScore: best.totalScore,
+    latestDate: best.latestDate || "",
+    isSampleData: Boolean(user.isSampleData),
+    sourceType: verifiedBestItem ? "verified_user_best" : (officialItem ? "official" : "user"),
+    recordLabel: verifiedBestItem ? "인증선수 · 개인 종합 최고기록" : "",
+    claimedByUid: user.claimedByUid || "",
+    verifiedAthlete: Boolean(user.verifiedAthlete || best.session?.verifiedAthlete || verifiedBestItem),
+  };
+}
+
 
 function buildQualifiedAttemptsByUserId(sessions = []) {
   const map = new Map();
@@ -21008,6 +23024,10 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
         .filter((attempt) => !rankingFilters.bowType || rankingFilters.bowType === "all" || (attempt.bowType || user.bowType || "리커브") === rankingFilters.bowType)
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
         .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
+
+      if ((rankingFilters.bowType === "컴파운드") || (user.bowType === "컴파운드")) {
+        return buildCompoundSessionTotalRankingItem(user, sessions, rankingFilters, { weekly });
+      }
 
       const candidateGroups = Array.from(
         new Set(
