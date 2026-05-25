@@ -294,6 +294,8 @@ const RANKING_GROUP_OPTIONS = [
   "고등부",
   "대학/일반부"
 ];
+const COMPOUND_DISTANCE_OPTIONS = [50, 30, 18];
+
 const DISTANCE_OPTIONS = [18, 20, 25, 30, 35, 40, 50, 60, 70, 90];
 
 const DIVISION_DISTANCE_RULES = {
@@ -22480,6 +22482,32 @@ function SessionEditor({
     setDeleteDialog({ open: false, endId: null });
   }
 
+
+  function applyBowType(nextBowType) {
+    patchSession((prev) => ({
+      ...prev,
+      bowType: nextBowType,
+      mode: nextBowType === "컴파운드" ? "cumulative" : prev.mode,
+      distance:
+        nextBowType === "컴파운드"
+          ? 50
+          : prev.distance || 70,
+      targetFace:
+        nextBowType === "컴파운드"
+          ? "80cm-6ring"
+          : "122cm",
+      tenRule:
+        nextBowType === "컴파운드"
+          ? "inner10"
+          : "standard10",
+    }));
+
+    if (nextBowType === "컴파운드") {
+      setActiveOpponentEndId(null);
+      setOpponentInputBuffers({});
+    }
+  }
+
   function applyMode(mode) {
     patchSession((prev) => {
       const allEndsEmpty = (prev.ends || []).every((end) => (end.arrows || []).every((arrow) => arrow === null));
@@ -22895,7 +22923,35 @@ function SessionEditor({
                 </div>
               </div>
 
+              
               <div className="flex items-start gap-3">
+                <Label className="w-24 shrink-0 pt-3 text-sm">활 종류</Label>
+                <div className="grid flex-1 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant={(session.bowType || "리커브") === "리커브" ? "default" : "outline"}
+                      className="h-11 rounded-2xl bg-blue-900 px-3 hover:bg-blue-800"
+                      onClick={() => applyBowType("리커브")}
+                    >
+                      리커브
+                    </Button>
+
+                    <Button
+                      variant={session.bowType === "컴파운드" ? "default" : "outline"}
+                      className="h-11 rounded-2xl bg-amber-700 px-3 hover:bg-amber-600"
+                      onClick={() => applyBowType("컴파운드")}
+                    >
+                      컴파운드
+                    </Button>
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    컴파운드 선택 시 50m · 누적제 · Inner10(X) 기준으로 자동 설정됩니다.
+                  </div>
+                </div>
+              </div>
+
+<div className="flex items-start gap-3">
                 <Label className="w-24 shrink-0 pt-3 text-sm">기록 방식</Label>
                 <div className="grid flex-1 gap-2">
                   <div className="grid grid-cols-2 gap-2">
@@ -22906,6 +22962,7 @@ function SessionEditor({
                     >
                       누적제
                     </Button>
+                    {(session.bowType || "리커브") !== "컴파운드" && (
                     <Button
                       variant={session.mode === "set" ? "default" : "outline"}
                       className="h-11 rounded-2xl bg-red-700 px-3 hover:bg-red-600"
@@ -22913,6 +22970,7 @@ function SessionEditor({
                     >
                       세트제
                     </Button>
+                    )}
                   </div>
                   <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
                     누적제는 총점 합산 방식이고, 세트제는 엔드별 승패를 기록하는 방식입니다.
@@ -22931,7 +22989,10 @@ function SessionEditor({
                       <SelectValue placeholder="거리 선택" />
                     </SelectTrigger>
                     <SelectContent>
-                      {DISTANCE_OPTIONS.map((distance) => (
+                      {((session.bowType || "리커브") === "컴파운드"
+                        ? COMPOUND_DISTANCE_OPTIONS
+                        : DISTANCE_OPTIONS
+                      ).map((distance) => (
                         <SelectItem key={distance} value={String(distance)}>
                           {distance}m
                         </SelectItem>
