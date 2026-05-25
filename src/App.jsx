@@ -28299,6 +28299,7 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
   const savedAnalysisState = readSessionStorageJSON(analysisStateKey, {});
   const [period, setPeriod] = useState(savedAnalysisState.period || "day");
   const [matchType, setMatchType] = useState(savedAnalysisState.matchType || "all");
+  const [analysisBowType, setAnalysisBowType] = useState(savedAnalysisState.analysisBowType || currentUser?.bowType || "리커브");
   const [dateFilter, setDateFilter] = useState(savedAnalysisState.dateFilter || "all");
   const [customAnalysisDate, setCustomAnalysisDate] = useState(savedAnalysisState.customAnalysisDate || getCurrentLocalDateString());
   const [requiredFilters, setRequiredFilters] = useState(savedAnalysisState.requiredFilters || {
@@ -28346,13 +28347,14 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
     writeSessionStorageJSON(analysisStateKey, {
       period,
       matchType,
+      analysisBowType,
       dateFilter,
       customAnalysisDate,
       requiredFilters,
       activeAnalysisTab,
       activeSideMenu,
     });
-  }, [analysisStateKey, period, matchType, dateFilter, customAnalysisDate, requiredFilters, activeAnalysisTab, activeSideMenu]);
+  }, [analysisStateKey, period, matchType, analysisBowType, dateFilter, customAnalysisDate, requiredFilters, activeAnalysisTab, activeSideMenu]);
 
   useEffect(() => {
     try { sessionStorage.setItem(`${analysisStateKey}_tablet_full_view`, tabletFullView ? "true" : "false"); } catch {}
@@ -28433,11 +28435,12 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
   }, []);
 
   const filteredMine = useMemo(() => allMySessions
+    .filter((s) => (analysisBowType === "all" ? true : (s.bowType || currentUser?.bowType || "리커브") === analysisBowType))
     .filter((s) => matchesSelectedDistance(s, requiredFilters.distance))
     .filter((s) => matchesSelectedRankingGroup(s, currentUser, requiredFilters.rankingGroup))
     .filter((s) => requiredFilters.regionCity === "all" ? true : (s.regionCity || currentUser.regionCity || "") === requiredFilters.regionCity)
     .filter((s) => isWithinDateFilter(s.sessionDate, dateFilter, customAnalysisDate)),
-    [allMySessions, matchesSelectedDistance, matchesSelectedRankingGroup, currentUser, requiredFilters, dateFilter, customAnalysisDate]
+    [allMySessions, analysisBowType, matchesSelectedDistance, matchesSelectedRankingGroup, currentUser, requiredFilters, dateFilter, customAnalysisDate]
   );
 
   const analytics = useMemo(() => buildAnalyticsData(filteredMine, period, matchType), [filteredMine, period, matchType]);
@@ -28602,6 +28605,49 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
   }, []);
 
   const tenRate = filteredMine.length ? Math.round(averageNumbers(filteredMine.map(getSessionTenRate))) : 0;
+
+  const compoundPrecision = useMemo(() => {
+    const sessionsForAnalysis = filteredMine.filter((session) => (session.bowType || currentUser?.bowType || "리커브") === "컴파운드");
+    const arrows = sessionsForAnalysis
+      .flatMap((session) => (session.ends || []).flatMap((end) => end.arrows || []))
+      .filter((arrow) => arrow !== null && arrow !== undefined && String(arrow).trim() !== "");
+
+    const totalArrows = arrows.length || sessionsForAnalysis.reduce((sum, session) => sum + getArrowCount(session), 0);
+    const xCount = arrows.length ? arrows.filter((arrow) => String(arrow).toUpperCase() === "X").length : Number(Math.round(totalArrows * Math.max(0, Math.min(0.18, (avgScore - 9.2) / 5))) || 0);
+    const tenCount = arrows.length ? arrows.filter((arrow) => String(arrow) === "10" || String(arrow).toUpperCase() === "X").length : Number(Math.round(totalArrows * Math.max(0, Math.min(0.72, (avgScore - 8.9) / 1.45))) || 0);
+    const nineOrLowerCount = arrows.length ? arrows.filter((arrow) => scoreToNumber(arrow) <= 9).length : Math.max(0, totalArrows - tenCount);
+    const belowNineCount = arrows.length ? arrows.filter((arrow) => scoreToNumber(arrow) <= 8).length : Math.max(0, Math.round(totalArrows * Math.max(0, 9.35 - avgScore) / 3));
+    const xRate = totalArrows ? Math.round((xCount / totalArrows) * 100) : 0;
+    const tenXRate = totalArrows ? Math.round((tenCount / totalArrows) * 100) : 0;
+    const nineOrLowerRate = totalArrows ? Math.round((nineOrLowerCount / totalArrows) * 100) : 0;
+    const belowNineRate = totalArrows ? Math.round((belowNineCount / totalArrows) * 100) : 0;
+    const distanceSpread = distancePerformance.length > 1
+      ? Number((Math.max(...distancePerformance.map((item) => Number(item.avgArrow) || 0)) - Math.min(...distancePerformance.map((item) => Number(item.avgArrow) || 0))).toFixed(2))
+      : 0;
+    const equipmentIndex = Math.max(0, Math.min(100, Math.round(100 - distanceSpread * 22 - belowNineRate * 0.8)));
+    const mentalIndex = Math.max(0, Math.min(100, Math.round(consistencyIndex - Math.max(0, belowNineRate - 8) * 0.7)));
+    const techniqueIndex = Math.max(0, Math.min(100, Math.round((avgScore / 10) * 55 + tenXRate * 0.35 + xRate * 0.1)));
+    const equipmentSignal = equipmentIndex >= 86 ? "정상 범위" : equipmentIndex >= 72 ? "세팅 재확인" : "장비 점검 우선";
+    const mentalSignal = mentalIndex >= 84 ? "유지력 좋음" : mentalIndex >= 70 ? "후반 집중 보완" : "멘탈 루틴 필요";
+    const techniqueSignal = techniqueIndex >= 84 ? "릴리즈 재현성 양호" : techniqueIndex >= 70 ? "앵커·조준 유지 보완" : "기술 루틴 재정비";
+    return {
+      totalArrows,
+      xRate,
+      tenXRate,
+      nineOrLowerRate,
+      belowNineRate,
+      distanceSpread,
+      equipmentIndex,
+      mentalIndex,
+      techniqueIndex,
+      equipmentSignal,
+      mentalSignal,
+      techniqueSignal,
+      measured: arrows.length > 0,
+    };
+  }, [filteredMine, currentUser?.bowType, avgScore, consistencyIndex, distancePerformance]);
+
+  const isCompoundAnalysis = analysisBowType === "컴파운드";
 
   const recentSessions = useMemo(() => filteredMine
     .slice()
@@ -28901,7 +28947,14 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                 <button type="button" onClick={handleDownloadParentReportPdf} disabled={pdfBusy} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{pdfBusy ? "PDF 생성 중..." : "부모용 PDF 다운로드"}</button>
               </div>
 
-              <div className="mb-4 grid gap-2 rounded-[24px] bg-white p-3 shadow-sm lg:grid-cols-6 xl:gap-3 xl:p-4">
+              <div className="mb-4 grid gap-2 rounded-[24px] bg-white p-3 shadow-sm lg:grid-cols-7 xl:gap-3 xl:p-4">
+                <Select value={analysisBowType} onValueChange={setAnalysisBowType}>
+                  <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="활종류" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="리커브">리커브</SelectItem>
+                    <SelectItem value="컴파운드">컴파운드</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Select value={requiredFilters.distance} onValueChange={(value) => setRequiredFilters((prev) => ({ ...prev, distance: value }))}>
                   <SelectTrigger className="h-11 rounded-2xl bg-white"><SelectValue placeholder="전체 거리" /></SelectTrigger>
                   <SelectContent>
@@ -28938,13 +28991,19 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
               </div>
 
               <div ref={summarySectionRef} className="scroll-mt-6 grid gap-3 lg:grid-cols-5 xl:gap-4">
-                {[
+                {(isCompoundAnalysis ? [
+                  { icon: Target, label: "10+X 집중률", value: `${compoundPrecision.tenXRate}%`, sub: compoundPrecision.measured ? "화살 입력 기반" : "거리합계 기반 추정", color: "blue" },
+                  { icon: Award, label: "X 중심률", value: `${compoundPrecision.xRate}%`, sub: "중앙 집중도 핵심", color: "emerald" },
+                  { icon: Shield, label: "9점 이하율", value: `${compoundPrecision.nineOrLowerRate}%`, sub: "컴파운드 실점 관리", color: "amber" },
+                  { icon: Settings, label: "장비 안정성", value: `${compoundPrecision.equipmentIndex}%`, sub: compoundPrecision.equipmentSignal, color: "purple" },
+                  { icon: CalendarRange, label: "분석 세션", value: filteredMine.length, sub: "컴파운드 기준", color: "slate" },
+                ] : [
                   { icon: Target, label: "평균 점수(전체)", value: avgScore ? avgScore.toFixed(2) : "-", sub: `${parentGrowthSummary.deltaLabel} 지난 기간 대비`, color: "blue" },
                   { icon: Award, label: "10점 비율", value: `${tenRate}%`, sub: "화살별 기록은 실측, 거리합계는 추정", color: "emerald" },
                   { icon: Shield, label: "일관성 지수", value: `${consistencyIndex}%`, sub: "편차 기반 안정성", color: "amber" },
                   { icon: TrendingUp, label: "최고 점수", value: bestScore ? bestScore.toFixed(1) : "-", sub: "평균 화살 기준", color: "purple" },
                   { icon: CalendarRange, label: "훈련 세션", value: filteredMine.length, sub: "선택 조건 기준", color: "slate" },
-                ].map(({ icon: Icon, label, value, sub, color }) => (
+                ]).map(({ icon: Icon, label, value, sub, color }) => (
                   <div key={label} className="rounded-[24px] bg-white p-5 shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="grid h-11 w-11 place-items-center rounded-full bg-blue-100 text-blue-700"><Icon className="h-5 w-5" /></div>
@@ -28959,6 +29018,25 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
               <div className="mt-4">
                 <TargetScoreAnalysisCard analysis={targetScoreAnalysis} />
               </div>
+
+              {isCompoundAnalysis && (
+                <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                  {[
+                    ["장비", `${compoundPrecision.equipmentIndex}%`, compoundPrecision.equipmentSignal, "피프/스코프/릴리즈/센터샷 변화가 점수 분산으로 드러나는지 확인한다."],
+                    ["멘탈", `${compoundPrecision.mentalIndex}%`, compoundPrecision.mentalSignal, "후반 9점 이하 증가, 첫 발 흔들림, 연속 10점 이후 실점 패턴을 관리한다."],
+                    ["기술", `${compoundPrecision.techniqueIndex}%`, compoundPrecision.techniqueSignal, "앵커 재현성, 릴리즈 압력, 조준 유지 시간을 같은 루틴으로 고정한다."],
+                  ].map(([label, value, signal, desc]) => (
+                    <div key={label} className="rounded-[24px] bg-white p-5 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="text-lg font-black">{label} 분석</div>
+                        <Badge className="rounded-full bg-slate-100 text-slate-700">{signal}</Badge>
+                      </div>
+                      <div className="mt-3 text-3xl font-black text-slate-950">{value}</div>
+                      <div className="mt-2 text-sm leading-6 text-slate-600">{desc}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-4 grid gap-4">
                 <div className="grid gap-4 lg:grid-cols-[1.18fr_0.9fr]">
@@ -28987,23 +29065,57 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                   </section>
 
                   <section ref={compareSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
-                  <div className="mb-4 text-lg font-black">그룹핑 분석 <span className="text-sm font-normal text-slate-500">(평균 그룹 크기)</span></div>
-                  <div className="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] lg:grid-cols-1 2lg:grid-cols-[190px_minmax(0,1fr)]">
-                    <div className="relative mx-auto grid h-44 w-44 place-items-center rounded-full border border-slate-200 bg-slate-100">
-                      <div className="grid h-36 w-36 place-items-center rounded-full bg-slate-950"><div className="grid h-28 w-28 place-items-center rounded-full bg-blue-600"><div className="grid h-20 w-20 place-items-center rounded-full bg-red-600"><div className="grid h-12 w-12 place-items-center rounded-full bg-yellow-400"><div className="h-4 w-4 rounded-full bg-orange-500" /></div></div></div></div>
-                    </div>
-                    <div className="space-y-3 text-sm">
-                      {[
-                        ["10점 (±5cm)", strongestDistance ? `${Math.max(8, Number((42 - strongestDistance.avgArrow * 3).toFixed(1)))}cm` : "-"],
-                        ["9점 (±10cm)", avgScore ? `${Math.max(12, Number((48 - avgScore * 3).toFixed(1)))}cm` : "-"],
-                        ["8점 (±15cm)", weakestDistance ? `${Math.max(16, Number((52 - weakestDistance.avgArrow * 3).toFixed(1)))}cm` : "-"],
-                        ["7점 이하", avgScore ? `${Math.max(20, Number((58 - avgScore * 3).toFixed(1)))}cm` : "-"],
-                      ].map(([label, value], idx) => (
-                        <div key={label} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2"><span className="flex items-center gap-2"><span className={`h-3 w-3 rounded ${idx === 0 ? "bg-blue-600" : idx === 1 ? "bg-green-500" : idx === 2 ? "bg-amber-500" : "bg-slate-400"}`} />{label}</span><b>{value}</b></div>
-                      ))}
-                      <div className="text-xs text-slate-500">거리합계 입력은 실제 좌표가 없어 평균 기반 추정값이다.</div>
-                    </div>
-                  </div>
+                  {isCompoundAnalysis ? (
+                    <>
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-lg font-black">컴파운드 정밀 분석</div>
+                          <div className="text-xs text-slate-500">좌표 입력 대신 점수 패턴으로 중앙 집중도와 장비 신호를 추정한다.</div>
+                        </div>
+                        <Badge className="rounded-full bg-amber-100 text-amber-700">X · 10+X · 장비</Badge>
+                      </div>
+                      <div className="grid gap-3 text-sm">
+                        {[
+                          ["10+X 집중률", `${compoundPrecision.tenXRate}%`, "10점권을 얼마나 안정적으로 유지하는가"],
+                          ["X 중심률", `${compoundPrecision.xRate}%`, "같은 10점 안에서도 중앙으로 모이는 정도"],
+                          ["9점 이하율", `${compoundPrecision.nineOrLowerRate}%`, "컴파운드에서 바로 손실로 이어지는 실점 비율"],
+                          ["8점 이하 경고", `${compoundPrecision.belowNineRate}%`, "장비 세팅/릴리즈 이탈 가능성"],
+                          ["거리별 편차", `${compoundPrecision.distanceSpread.toFixed(2)}점`, "거리별 평균 차이가 크면 조준점·스코프·폼 유지 점검"],
+                        ].map(([label, value, desc]) => (
+                          <div key={label} className="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-semibold text-slate-700">{label}</span>
+                              <b className="text-slate-950">{value}</b>
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500">{desc}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+                        <b>훈련 처방:</b> 30발 단위로 10+X율과 9점 이하율을 함께 기록한다. 10+X율이 유지되는데 X율만 낮으면 조준 중심/스코프 확인, 9점 이하율이 늘면 릴리즈 압력·그립 토크·피프 정렬을 우선 점검한다.
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="mb-4 text-lg font-black">그룹핑 분석 <span className="text-sm font-normal text-slate-500">(평균 그룹 크기)</span></div>
+                      <div className="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] lg:grid-cols-1 2lg:grid-cols-[190px_minmax(0,1fr)]">
+                        <div className="relative mx-auto grid h-44 w-44 place-items-center rounded-full border border-slate-200 bg-slate-100">
+                          <div className="grid h-36 w-36 place-items-center rounded-full bg-slate-950"><div className="grid h-28 w-28 place-items-center rounded-full bg-blue-600"><div className="grid h-20 w-20 place-items-center rounded-full bg-red-600"><div className="grid h-12 w-12 place-items-center rounded-full bg-yellow-400"><div className="h-4 w-4 rounded-full bg-orange-500" /></div></div></div></div>
+                        </div>
+                        <div className="space-y-3 text-sm">
+                          {[
+                            ["10점 (±5cm)", strongestDistance ? `${Math.max(8, Number((42 - strongestDistance.avgArrow * 3).toFixed(1)))}cm` : "-"],
+                            ["9점 (±10cm)", avgScore ? `${Math.max(12, Number((48 - avgScore * 3).toFixed(1)))}cm` : "-"],
+                            ["8점 (±15cm)", weakestDistance ? `${Math.max(16, Number((52 - weakestDistance.avgArrow * 3).toFixed(1)))}cm` : "-"],
+                            ["7점 이하", avgScore ? `${Math.max(20, Number((58 - avgScore * 3).toFixed(1)))}cm` : "-"],
+                          ].map(([label, value], idx) => (
+                            <div key={label} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2"><span className="flex items-center gap-2"><span className={`h-3 w-3 rounded ${idx === 0 ? "bg-blue-600" : idx === 1 ? "bg-green-500" : idx === 2 ? "bg-amber-500" : "bg-slate-400"}`} />{label}</span><b>{value}</b></div>
+                          ))}
+                          <div className="text-xs text-slate-500">거리합계 입력은 실제 좌표가 없어 평균 기반 추정값이다.</div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                   </section>
                 </div>
 
