@@ -559,7 +559,7 @@ function getAnalysisSessionStateKey(userId) {
 
 function getInitialTabByRole(role) {
   const normalized = String(role || "선수").trim();
-  if (normalized === "감독/코치/스탭" || normalized === "학부모") return "ranking";
+  if (normalized === "감독/코치/스탭" || normalized === "학기록관리자") return "ranking";
   return "routine";
 }
 
@@ -24057,7 +24057,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                   >
                     <option value="선수">선수</option>
                     <option value="감독/코치/스탭">감독/코치/스탭</option>
-                    <option value="학부모">학부모</option>
+                    <option value="학기록관리자">학기록관리자</option>
                   </select>
                 </div>
                 <div className="grid gap-2">
@@ -27564,7 +27564,7 @@ function buildParentGrowthSummary(sessions = []) {
       delta: 0,
       deltaLabel: "기록 필요",
       statusLabel: "분석 대기",
-      summary: "기록이 쌓이면 최근 평균, 이전 평균, 성장 흐름을 부모용 문장으로 보여준다.",
+      summary: "기록이 쌓이면 최근 평균, 이전 평균, 성장 흐름을 기록관리자용 문장으로 보여준다.",
       action: "먼저 동일 조건 기록을 3회 이상 저장해야 한다.",
       retentionRate: "-",
     };
@@ -28014,11 +28014,11 @@ function buildParentAnalysisDataFromSessions(sessions = [], distancePerformance 
 
   const parentSummary = completed.length
     ? `최근 ${recentFive.length || completed.length}회 기준 평균은 ${recentAverage || "-"}점이며 이전 구간 대비 ${delta > 0 ? "+" : ""}${delta}점 ${trendLabel} 흐름입니다. 가장 약한 거리는 ${weakDistanceLabel}, 가장 안정적인 거리는 ${strongDistanceLabel}입니다. 바람과 멘탈 변수는 점수 변동을 크게 만들 수 있으므로 별도 관리가 필요합니다.`
-    : "기록이 쌓이면 최근 평균, 성장 추세, 약점 거리, 후반 유지율을 부모용 문장으로 자동 변환합니다.";
+    : "기록이 쌓이면 최근 평균, 성장 추세, 약점 거리, 후반 유지율을 기록관리자용 문장으로 자동 변환합니다.";
 
   const parentRecommendation = completed.length
     ? `${weakDistanceLabel} 집중 훈련을 우선하고, ${lateLabel === "후반 하락" ? "후반 집중력 유지 루틴" : "동일 조건 반복 기록"}을 함께 관리하세요. 특히 바람이 있는 날과 실수 직후의 멘탈 회복 루틴을 기록해야 합니다.`
-    : "동일 조건 기록을 3회 이상 저장하면 첫 부모용 리포트를 생성할 수 있습니다.";
+    : "동일 조건 기록을 3회 이상 저장하면 첫 기록향상 리포트를 생성할 수 있습니다.";
 
   const trainingPrescription = buildTrainingPrescriptionData({
     completed,
@@ -28097,7 +28097,7 @@ function renderCompactParentReportHtml({ reportData, playerName, divisionLabel, 
   const metricRows = [
     ["최근 평균", reportData?.recentAverage || "-", "최근 5회 또는 선택 조건 기준"],
     ["이전 대비", `${reportData?.delta > 0 ? "+" : ""}${reportData?.delta ?? 0}점`, reportData?.trendLabel || "-"],
-    ["최고 평균", reportData?.bestAverage || "-", "개인 최고 흐름"],
+    ["최고 평균", reportData?.bestAverage || "-", "최고 기록 흐름"],
     ["안정성", `${reportData?.stability || consistencyIndex || 0}%`, reportData?.growthLevel || "-"],
     ["약점 거리", reportData?.weakDistanceLabel || "-", `강점 거리: ${reportData?.strongDistanceLabel || "-"}`],
     ["후반 집중력", reportData?.lateLabel || "-", reportData?.lateMessage || "-"],
@@ -28109,7 +28109,7 @@ function renderCompactParentReportHtml({ reportData, playerName, divisionLabel, 
   <div style="width:794px;background:#f8fafc;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR','Malgun Gothic',Arial,sans-serif;padding:28px;box-sizing:border-box;line-height:1.42;">
     <div style="background:#0f172a;color:white;border-radius:18px;padding:22px 24px;margin-bottom:14px;">
       <div style="font-size:12px;letter-spacing:.08em;color:#93c5fd;font-weight:800;">X-ANALYSIS PARENT REPORT</div>
-      <div style="font-size:25px;font-weight:900;margin-top:4px;">부모용 성장 · 바람 · 멘탈 분석 리포트</div>
+      <div style="font-size:25px;font-weight:900;margin-top:4px;">기록관리자용 성장 · 바람 · 멘탈 분석 리포트</div>
       <div style="display:flex;justify-content:space-between;gap:16px;margin-top:12px;font-size:12px;color:#cbd5e1;">
         <div>선수: <b style="color:white;">${escapeHtml(playerName || "선수")}</b> · 구분: ${escapeHtml(divisionLabel || "-")}</div>
         <div>생성일: ${escapeHtml(generatedAt)}</div>
@@ -28719,7 +28719,7 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
           distanceWeaknessMessage: distanceWeakness?.message,
           lateSetDropMessage: lateSetDropInsight?.message,
         },
-        `X-Analysis_부모용_리포트_${String(currentName || "선수").replace(/\s+/g, "_")}_${getCurrentLocalDateString()}.pdf`
+        `X-Analysis_기록관리자용_리포트_${String(currentName || "선수").replace(/\s+/g, "_")}_${getCurrentLocalDateString()}.pdf`
       );
     } catch (error) {
       alert(error?.message || "PDF 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.");
@@ -28739,7 +28739,7 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
         <Card className="rounded-[24px] border-0 bg-white shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between text-base">
-              <span>모바일 성장 요약</span>
+              <span>모바일 기록 요약</span>
               <Badge className="rounded-full bg-blue-50 text-blue-700">기록 중심</Badge>
             </CardTitle>
           </CardHeader>
@@ -28794,7 +28794,7 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
           <CardContent className="space-y-3 text-sm leading-6 text-slate-700">
             <div className="rounded-2xl bg-blue-50 p-4 text-blue-900">{mobileTrendLabel}</div>
             <div className="rounded-2xl bg-slate-50 p-4">{mobileFeedback}</div>
-            <div className="rounded-2xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">모바일은 기록 입력과 핵심 트렌드 확인용입니다. 후반 엔드 붕괴, 경기별 거리 하락, 부모용 PDF, 운동 처방 전체 분석은 PC/태블릿에서 확인하세요.</div>
+            <div className="rounded-2xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">모바일은 기록 입력과 핵심 트렌드 확인용입니다. 후반 엔드 붕괴, 경기별 거리 하락, 기록관리자용 PDF, 운동 처방 전체 분석은 PC/태블릿에서 확인하세요.</div>
           </CardContent>
         </Card>
       </div>
@@ -28809,7 +28809,7 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <div className="text-2xl font-black text-slate-950">X-Analysis</div>
-                <div className="text-sm text-slate-500">태블릿용 2열 성장 분석 리포트</div>
+                <div className="text-sm text-slate-500">태블릿용 2열 기록향상 분석 리포트</div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">개발 중 전체 공개</Badge>
@@ -28944,7 +28944,7 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                     <TabsTrigger value="report" className="rounded-xl">리포트</TabsTrigger>
                   </TabsList>
                 </Tabs>
-                <button type="button" onClick={handleDownloadParentReportPdf} disabled={pdfBusy} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{pdfBusy ? "PDF 생성 중..." : "부모용 PDF 다운로드"}</button>
+                <button type="button" onClick={handleDownloadParentReportPdf} disabled={pdfBusy} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{pdfBusy ? "PDF 생성 중..." : "기록향상 PDF 다운로드"}</button>
               </div>
 
               <div className="mb-4 grid gap-2 rounded-[24px] bg-white p-3 shadow-sm lg:grid-cols-7 xl:gap-3 xl:p-4">
@@ -29097,22 +29097,47 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                     </>
                   ) : (
                     <>
-                      <div className="mb-4 text-lg font-black">그룹핑 분석 <span className="text-sm font-normal text-slate-500">(평균 그룹 크기)</span></div>
-                      <div className="grid gap-4 sm:grid-cols-[190px_minmax(0,1fr)] lg:grid-cols-1 2lg:grid-cols-[190px_minmax(0,1fr)]">
-                        <div className="relative mx-auto grid h-44 w-44 place-items-center rounded-full border border-slate-200 bg-slate-100">
-                          <div className="grid h-36 w-36 place-items-center rounded-full bg-slate-950"><div className="grid h-28 w-28 place-items-center rounded-full bg-blue-600"><div className="grid h-20 w-20 place-items-center rounded-full bg-red-600"><div className="grid h-12 w-12 place-items-center rounded-full bg-yellow-400"><div className="h-4 w-4 rounded-full bg-orange-500" /></div></div></div></div>
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-lg font-black">리커브 수행 분석</div>
+                          <div className="text-xs text-slate-500">체력 · 멘탈 · 훈련량을 기준으로 기록 향상 포인트를 추정한다.</div>
                         </div>
-                        <div className="space-y-3 text-sm">
-                          {[
-                            ["10점 (±5cm)", strongestDistance ? `${Math.max(8, Number((42 - strongestDistance.avgArrow * 3).toFixed(1)))}cm` : "-"],
-                            ["9점 (±10cm)", avgScore ? `${Math.max(12, Number((48 - avgScore * 3).toFixed(1)))}cm` : "-"],
-                            ["8점 (±15cm)", weakestDistance ? `${Math.max(16, Number((52 - weakestDistance.avgArrow * 3).toFixed(1)))}cm` : "-"],
-                            ["7점 이하", avgScore ? `${Math.max(20, Number((58 - avgScore * 3).toFixed(1)))}cm` : "-"],
-                          ].map(([label, value], idx) => (
-                            <div key={label} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2"><span className="flex items-center gap-2"><span className={`h-3 w-3 rounded ${idx === 0 ? "bg-blue-600" : idx === 1 ? "bg-green-500" : idx === 2 ? "bg-amber-500" : "bg-slate-400"}`} />{label}</span><b>{value}</b></div>
-                          ))}
-                          <div className="text-xs text-slate-500">거리합계 입력은 실제 좌표가 없어 평균 기반 추정값이다.</div>
-                        </div>
+                        <Badge className="rounded-full bg-blue-100 text-blue-700">체력 · 멘탈 · 훈련량</Badge>
+                      </div>
+                      <div className="grid gap-3 text-sm">
+                        {[
+                          [
+                            "체력 유지력",
+                            `${Math.max(
+                              0,
+                              Math.min(
+                                100,
+                                Math.round(
+                                  consistencyIndex - Math.max(
+                                    0,
+                                    (weakestDistance ? avgScore - Number(weakestDistance.avgArrow || 0) : 0) * 12
+                                  )
+                                )
+                              )
+                            )}%`,
+                            "후반부 또는 약점 거리에서 평균이 얼마나 떨어지는지 본다.",
+                          ],
+                          ["멘탈 안정성", `${consistencyIndex}%`, "편차가 작고 동일 루틴을 유지할수록 높게 평가한다."],
+                          ["훈련량 신뢰도", `${Math.min(100, Math.round(filteredMine.length * 12))}%`, "분석에 반영된 세션 수가 많을수록 판단 신뢰도가 올라간다."],
+                          ["약점 거리", weakestDistance ? `${weakestDistance.label} · ${weakestDistance.avgArrow}` : "-", "거리별 평균 차이를 기준으로 보완 거리를 찾는다."],
+                          ["강점 거리", strongestDistance ? `${strongestDistance.label} · ${strongestDistance.avgArrow}` : "-", "현재 기록을 가장 안정적으로 만드는 거리다."],
+                        ].map(([label, value, desc]) => (
+                          <div key={label} className="rounded-2xl bg-slate-50 px-4 py-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-semibold text-slate-700">{label}</span>
+                              <b className="text-slate-950">{value}</b>
+                            </div>
+                            <div className="mt-1 text-xs text-slate-500">{desc}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+                        <b>훈련 처방:</b> 리커브는 기록 변동이 체력 저하, 집중 유지, 훈련량 누적의 영향을 크게 받는다. 약점 거리 1개를 고정해 반복하고, 세션별 평균·최저 엔드·후반 점수 하락을 함께 확인한다.
                       </div>
                     </>
                   )}
@@ -29123,15 +29148,15 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                   <div ref={reportSectionRef} className="scroll-mt-6 rounded-[24px] bg-white p-5 shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <div className="text-lg font-black">부모용 성장 분석 리포트</div>
-                        <div className="text-xs text-slate-500">세션 기록을 자동 변환해 성장 추세, 약점 거리, 훈련 추천을 생성합니다.</div>
+                        <div className="text-lg font-black">기록향상 분석 리포트</div>
+                        <div className="text-xs text-slate-500">세션 기록을 자동 변환해 기록 추세, 약점 거리, 훈련 추천을 생성합니다.</div>
                       </div>
                       <Badge className="bg-blue-100 text-blue-700">PDF 저장 가능</Badge>
                     </div>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                       {[
                         ["최근 평균", parentReportData.recentAverage || "-", `${parentReportData.delta > 0 ? "+" : ""}${parentReportData.delta || 0}점`],
-                        ["최고 평균", parentReportData.bestAverage || "-", "개인 최고 흐름"],
+                        ["최고 평균", parentReportData.bestAverage || "-", "최고 기록 흐름"],
                         ["안정성", `${parentReportData.stability || 0}%`, parentReportData.growthLevel],
                         ["약점 거리", parentReportData.weakDistanceLabel, `차이 ${parentReportData.distanceGap || 0}점`],
                       ].map(([label, value, sub]) => (
@@ -29144,7 +29169,7 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                     </div>
                     <div className="mt-4 grid gap-3 lg:grid-cols-3">
                       <div className="rounded-3xl bg-blue-50 p-4 text-sm leading-6 text-blue-900">
-                        <div className="mb-1 font-black">성장 요약</div>
+                        <div className="mb-1 font-black">기록 요약</div>
                         {parentReportData.parentSummary}
                       </div>
                       <div className="rounded-3xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
@@ -29174,7 +29199,7 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
                     <div className="mt-4 rounded-3xl border border-indigo-100 bg-indigo-50 p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="font-black text-indigo-950">필요 근력·유산소 처방</div>
-                        <Badge className="bg-white text-indigo-700">부모/코치용 실행 과제</Badge>
+                        <Badge className="bg-white text-indigo-700">기록관리자/코치용 실행 과제</Badge>
                       </div>
                       <div className="mt-2 text-sm leading-6 text-indigo-900">{parentReportData.trainingPrescription?.summary}</div>
                       <div className="mt-3 grid gap-3 lg:grid-cols-2">
