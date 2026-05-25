@@ -28449,6 +28449,46 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
     () => buildTargetScoreAnalysis(filteredMine, currentUser, requiredFilters),
     [filteredMine, currentUser, requiredFilters]
   );
+
+  const targetAchievementPlan = useMemo(() => {
+    const data = targetScoreAnalysis || {};
+    const growthGap = Math.max(0, Math.round(Number(data.growthGap || 0)));
+    const consistencyFactor = Math.max(0.65, Math.min(1.25, Number(consistencyIndex || 0) / 80 || 0.8));
+    const bowDifficulty = analysisBowType === "컴파운드" ? 1.18 : 1;
+    const dailyGainBase = Math.max(
+      0.35,
+      Math.min(
+        analysisBowType === "컴파운드" ? 1.4 : 2.2,
+        ((avgScore >= 9.2 ? 0.55 : avgScore >= 8.7 ? 0.85 : 1.2) * consistencyFactor) / bowDifficulty
+      )
+    );
+    const estimatedDays = growthGap > 0 ? Math.max(7, Math.ceil(growthGap / dailyGainBase)) : 0;
+    const phaseOneDays = Math.max(3, Math.round(estimatedDays * 0.25));
+    const phaseTwoDays = Math.max(4, Math.round(estimatedDays * 0.35));
+    const phaseThreeDays = Math.max(5, estimatedDays - phaseOneDays - phaseTwoDays);
+    const phaseOneTarget = Math.max(1, Math.round(growthGap * 0.25));
+    const phaseTwoTarget = Math.max(1, Math.round(growthGap * 0.35));
+    const rows = growthGap > 0
+      ? [
+          { phase: "1단계", days: phaseOneDays, target: phaseOneTarget, focus: analysisBowType === "컴파운드" ? "장비 기준점 고정 · 9점 이하 제거" : "약점 거리 반복 · 자세 리듬 고정" },
+          { phase: "2단계", days: phaseTwoDays, target: phaseTwoTarget, focus: analysisBowType === "컴파운드" ? "10+X 유지율 상승 · 릴리즈 압력 관리" : "후반 체력 유지 · 실수 후 루틴 복구" },
+          { phase: "3단계", days: phaseThreeDays, target: Math.max(1, growthGap - phaseOneTarget - phaseTwoTarget), focus: analysisBowType === "컴파운드" ? "대회형 4라운드 연결 · X 중심률 확인" : "4거리 종합 연결 · 기록 안정화" },
+        ]
+      : [];
+    return {
+      available: Boolean(data.available),
+      growthGap,
+      estimatedDays,
+      dailyGain: Number(dailyGainBase.toFixed(2)),
+      currentScore: Number(data.bestTotalScore || 0),
+      targetScore: Number(data.targetScore || 0),
+      rows,
+      message: growthGap > 0
+        ? `${growthGap}점 향상은 현재 기록 흐름 기준 약 ${estimatedDays}일 훈련 목표로 잡는 것이 현실적입니다.`
+        : "현재 거리별 최고점 합계와 종합 최고기록 차이가 작습니다. 목표는 안정적 재현으로 전환하는 것이 좋습니다.",
+    };
+  }, [targetScoreAnalysis, avgScore, consistencyIndex, analysisBowType]);
+
   const trend = useMemo(() => getTrendInsight(filteredMine), [filteredMine]);
   const parentGrowthSummary = useMemo(() => buildParentGrowthSummary(filteredMine), [filteredMine]);
   const lateSetDropInsight = useMemo(() => buildLateSetDropInsight(filteredMine), [filteredMine]);
@@ -29298,25 +29338,71 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
 
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
                   <section className="min-w-0 rounded-[24px] bg-white p-4 shadow-sm xl:p-5">
-                    <div className="mb-3 text-lg font-black">시간대별/세트별 성과 분석</div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[420px] text-center text-sm">
-                        <thead><tr className="text-xs text-slate-500"><th className="py-2 text-left">구분</th>{[1,2,3,4,5].map((n) => <th key={n}>{n}세트</th>)}</tr></thead>
-                        <tbody>
-                          {["오전", "오후", "저녁"].map((label, rowIdx) => (
-                            <tr key={label} className="border-t">
-                              <td className="py-3 text-left font-semibold">{label}</td>
-                              {setAverages.map((value, idx) => {
-                                const shown = value ? Number((value - rowIdx * 0.15).toFixed(1)) : 0;
-                                return <td key={idx} className={`${shown >= 8.5 ? "bg-green-200" : shown >= 8 ? "bg-lime-100" : "bg-yellow-100"} px-2 py-3 font-bold`}>{shown || "-"}</td>;
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <div className="text-lg font-black">목표점수 달성 예상표</div>
+                        <div className="text-xs text-slate-500">성장 가능 점수를 훈련 일수와 단계별 목표점수로 변환합니다.</div>
+                      </div>
+                      <Badge className="rounded-full bg-blue-100 text-blue-700">{analysisBowType}</Badge>
                     </div>
-                    <div className="mt-3 h-2 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500" />
-                    <div className="mt-1 flex justify-between text-xs text-slate-500"><span>6.0</span><span>10.0</span></div>
+
+                    {targetAchievementPlan.available ? (
+                      <>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <div className="rounded-2xl bg-slate-50 p-4">
+                            <div className="text-xs font-semibold text-slate-500">현재 최고 종합점수</div>
+                            <div className="mt-1 text-2xl font-black text-slate-950">{targetAchievementPlan.currentScore.toFixed(0)}점</div>
+                          </div>
+                          <div className="rounded-2xl bg-blue-50 p-4">
+                            <div className="text-xs font-semibold text-blue-700">다음 목표점수</div>
+                            <div className="mt-1 text-2xl font-black text-blue-800">{targetAchievementPlan.targetScore.toFixed(0)}점</div>
+                          </div>
+                          <div className="rounded-2xl bg-emerald-50 p-4">
+                            <div className="text-xs font-semibold text-emerald-700">예상 훈련 기간</div>
+                            <div className="mt-1 text-2xl font-black text-emerald-700">
+                              {targetAchievementPlan.growthGap > 0 ? `${targetAchievementPlan.estimatedDays}일` : "재현 단계"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-sm leading-6 text-slate-700">
+                          {targetAchievementPlan.message} 일평균 기대 향상폭은 약 <b>{targetAchievementPlan.dailyGain}점</b>으로 계산했습니다.
+                        </div>
+
+                        {targetAchievementPlan.rows.length ? (
+                          <div className="mt-3 overflow-x-auto rounded-2xl border border-slate-100">
+                            <table className="w-full min-w-[560px] text-sm">
+                              <thead>
+                                <tr className="border-b bg-slate-50 text-left text-xs text-slate-500">
+                                  <th className="px-3 py-3">단계</th>
+                                  <th className="px-3 py-3">권장 일수</th>
+                                  <th className="px-3 py-3">목표 향상</th>
+                                  <th className="px-3 py-3">훈련 초점</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {targetAchievementPlan.rows.map((row) => (
+                                  <tr key={row.phase} className="border-b last:border-0">
+                                    <td className="px-3 py-3 font-black">{row.phase}</td>
+                                    <td className="px-3 py-3">{row.days}일</td>
+                                    <td className="px-3 py-3 font-black text-emerald-700">+{row.target}점</td>
+                                    <td className="px-3 py-3 text-slate-600">{row.focus}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="mt-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                            추가 향상폭보다 현재 최고기록을 반복 재현하는 훈련이 우선입니다.
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                        4거리 종합기록과 거리별 최고기록이 쌓이면 목표점수 달성 예상일을 자동 계산합니다.
+                      </div>
+                    )}
                   </section>
 
                   <section className="min-w-0 overflow-hidden rounded-[24px] bg-white p-4 shadow-sm xl:p-5">
