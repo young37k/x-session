@@ -26581,7 +26581,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
       : "동점일 경우 최근 기준거리 기록일이 더 최근인 선수가 앞 순위로 표시됩니다.";
   const officialResultSources = useMemo(() => {
     if (!ENABLE_OFFICIAL_RECORDS || hideOfficialRecords) return [];
+    const selectedBowType = appliedRankingFilters.bowType || "리커브";
     return OFFICIAL_RESULT_SOURCES.filter((item) => {
+      if (!matchesBowTypeFilter(item, selectedBowType)) return false;
       if (!rankingGroupMatchesFilter(appliedRankingFilters.rankingGroup, item.rankingGroup)) return false;
       if (appliedRankingFilters.regionCity !== "all" && item.region !== appliedRankingFilters.regionCity) return false;
       if (appliedRankingFilters.gender !== "all" && item.gender !== appliedRankingFilters.gender) return false;
