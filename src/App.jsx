@@ -26827,7 +26827,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const visibleRankings = showAllRankings ? activeRankings : activeRankings.slice(0, 50);
   const hasMoreRankings = activeRankings.length > visibleRankings.length;
 
-  const selectedRankingBowTypeForMine = appliedRankingFilters.bowType || currentUser?.bowType || "리커브";
+  const selectedRankingBowTypeForMine = appliedRankingFilters.bowType && appliedRankingFilters.bowType !== "all" ? appliedRankingFilters.bowType : (currentUser?.bowType || "리커브");
   const myRank = activeRankings.find((item) =>
     currentRankingUserIds.has(item.userId) &&
     String(item.bowType || selectedRankingBowTypeForMine || "리커브") === String(selectedRankingBowTypeForMine)
@@ -26870,6 +26870,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
   const myRankingBowType = selectedRankingBowTypeForMine || myRank?.bowType || currentUser?.bowType || "리커브";
   const myRankingGroup = myRank?.rankingGroup || getRankingGroup(currentUser?.division, currentUser?.gender) || rankingFilters.rankingGroup;
+
   const getDisplayDistanceFromRankingDistance = useCallback((distanceValue) => {
     if (typeof distanceValue === "string" && distanceValue.includes("_")) {
       const [, distanceText] = distanceValue.split("_");
@@ -26878,49 +26879,52 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return Number(distanceValue) || distanceValue;
   }, []);
 
-  const myBestCompoundSession = useMemo(() => {
-    if (myRankingBowType !== "컴파운드") return null;
+  const getMyOrderedSessionsForSelectedBow = useCallback(() => {
     return (scopedRankingSessions || [])
       .filter((session) => currentRankingUserIds.has(session.userId))
-      .filter((session) => String(session.bowType || "리커브") === "컴파운드")
+      .filter((session) => String(session.bowType || "리커브") === String(myRankingBowType))
       .filter((session) => !myRankingGroup || rankingGroupMatchesFilter(myRankingGroup, session.rankingGroup || getRankingGroup(session.division, session.gender)))
       .slice()
-      .sort((a, b) => Number(b.summary?.totalScore ?? getSessionTotal(b) ?? 0) - Number(a.summary?.totalScore ?? getSessionTotal(a) ?? 0))[0] || null;
+      .sort((a, b) => {
+        const bScore = Number(b.summary?.totalScore ?? getSessionTotal(b) ?? 0);
+        const aScore = Number(a.summary?.totalScore ?? getSessionTotal(a) ?? 0);
+        if (bScore !== aScore) return bScore - aScore;
+        return String(b.sessionDate || b.updatedAt || "").localeCompare(String(a.sessionDate || a.updatedAt || ""));
+      });
   }, [currentRankingUserIds, myRankingBowType, myRankingGroup, scopedRankingSessions]);
 
-  const myBestCompoundRoundDistances = useMemo(() => {
-    if (!myBestCompoundSession) return [];
-    return (myBestCompoundSession.distanceRounds || [])
+  const myBestSelectedBowSession = useMemo(() => getMyOrderedSessionsForSelectedBow()[0] || null, [getMyOrderedSessionsForSelectedBow]);
+
+  const myInputOrderDistances = useMemo(() => {
+    const rounds = (myBestSelectedBowSession?.distanceRounds || [])
       .slice()
       .sort((a, b) => Number(a.index || a.roundNo || 0) - Number(b.index || b.roundNo || 0))
       .map((round) => Number(round.distance) || 0)
       .filter(Boolean);
-  }, [myBestCompoundSession]);
-
+    return rounds;
+  }, [myBestSelectedBowSession]);
 
   const getMyDistanceScoreForDisplay = useCallback((distanceValue, rowIndex) => {
     const displayDistance = getDisplayDistanceFromRankingDistance(distanceValue);
-    if (myRankingBowType === "컴파운드") {
-      const rounds = (myBestCompoundSession?.distanceRounds || [])
-        .slice()
-        .sort((a, b) => Number(a.index || a.roundNo || 0) - Number(b.index || b.roundNo || 0));
-      const round = rounds[rowIndex];
-      if (round && String(round.distance) === String(displayDistance)) {
-        return Number(round.total) || 0;
-      }
-      const sameDistanceRounds = rounds.filter((item) => String(item.distance) === String(displayDistance));
-      return Number(sameDistanceRounds[0]?.total || 0);
+    const rounds = (myBestSelectedBowSession?.distanceRounds || [])
+      .slice()
+      .sort((a, b) => Number(a.index || a.roundNo || 0) - Number(b.index || b.roundNo || 0));
+    const round = rounds[rowIndex];
+    if (round && String(round.distance) === String(displayDistance)) {
+      return Number(round.total) || 0;
     }
-    return null;
-  }, [getDisplayDistanceFromRankingDistance, myBestCompoundSession, myRankingBowType]);
+    const sameDistanceRounds = rounds.filter((item) => String(item.distance) === String(displayDistance));
+    return sameDistanceRounds.length ? Number(sameDistanceRounds[0]?.total || 0) : null;
+  }, [getDisplayDistanceFromRankingDistance, myBestSelectedBowSession]);
 
-  const myRequiredDistances = myRankingBowType === "컴파운드"
-    ? (myBestCompoundRoundDistances.length
-        ? myBestCompoundRoundDistances
-        : (myRank?.distanceRoundScores || []).map((round) => Number(round.distance) || 0).filter(Boolean))
+  const myRequiredDistances = myInputOrderDistances.length
+    ? myInputOrderDistances
     : (myRank?.requiredDistances?.length
-        ? myRank.requiredDistances
+        ? (myRankingBowType === "컴파운드"
+            ? myRank.requiredDistances.map((distance) => getDisplayDistanceFromRankingDistance(distance))
+            : myRank.requiredDistances)
         : getRequiredDistancesForRankingGroup(myRankingGroup, currentUser?.gender || myRank?.gender || ""));
+
   const myDistanceRankRows = useMemo(() => {
     if (!currentRankingUserIds.size || !myRequiredDistances.length) return [];
     const weekly = rankingType === "weeklyDistance" || rankingType === "weeklyTotal";
@@ -27093,9 +27097,9 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                       <div className="text-xs text-slate-500">{myRankingGroup || "내 구분"}</div>
                     </div>
                     <div className="grid gap-2">
-                      {myDistanceRankRows.map((row) => (
+                      {myDistanceRankRows.map((row, idx) => (
                         <div
-                          key={row.distance}
+                          key={`${idx}_${row.displayDistance || row.distance}`}
                           className="grid grid-cols-[64px_1fr_auto] items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm"
                         >
                           <div className="font-bold text-slate-900">{row.displayDistance || row.distance}m</div>
