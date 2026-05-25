@@ -21260,6 +21260,7 @@ function createNewSession(profile, mode = "cumulative") {
     sessionDate: getCurrentLocalDateString(),
     mode,
     recordInputType: "end",
+    bowType: profile?.bowType || "리커브",
     distance: 30,
     division: profile?.division || "",
     arrowsPerEnd: 6,
@@ -22481,6 +22482,7 @@ function buildSessionPayload({ draftSession, profile, uid }) {
     sessionDate: draftSession.sessionDate,
     title: draftSession.title,
     mode: draftSession.mode,
+    bowType: draftSession.bowType || profile?.bowType || "리커브",
     distance: draftSession.distance,
     groupName: profile.groupName || "",
     regionCity: profile.regionCity || "",
@@ -22529,6 +22531,7 @@ function fromFirestoreProfile(uidValue, data) {
     regionDistrict: data.regionDistrict || "",
     division: data.division || "",
     gender: data.gender || "남",
+    bowType: data.bowType || "리커브",
     role: data.role || "선수",
     avatar: "",
     photoURL: "",
@@ -22552,6 +22555,7 @@ function fromFirestoreSession(docSnap) {
     createdAt: data.createdAt?.toDate?.()?.toISOString?.() || data.sessionDate,
     mode: data.mode,
     recordInputType: data.recordInputType || "end",
+    bowType: data.bowType || "리커브",
     distance: data.distance,
     division: data.division || "",
     gender: data.gender || "남",
@@ -30966,6 +30970,7 @@ function XSessionApp() {
           title: payload.title,
           mode: payload.mode,
           recordInputType: payload.recordInputType,
+          bowType: payload.bowType,
           distance: payload.distance,
           groupName: payload.groupName,
           regionCity: payload.regionCity,
@@ -31086,6 +31091,7 @@ function XSessionApp() {
     setDraftSession({
       ...target,
       recordInputType: target.recordInputType || "end",
+      bowType: target.bowType || profile?.bowType || "리커브",
       division: target.division || profile.division || "",
       distanceRounds:
         target.distanceRounds?.length
