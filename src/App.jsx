@@ -21493,14 +21493,19 @@ function buildRankingEntriesFromSession(session, user = null) {
 
   return rounds
     .filter((round) => Number(round.distance) && Number.isFinite(Number(round.total)))
-    .map((round) => ({
-      ...base,
-      distance: Number(round.distance),
-      score: Number(round.total) || 0,
-      arrows: Number(normalized.arrowsPerDistance) || 36,
-      rankingKey: [base.bowType || "리커브", base.rankingGroup || "unknown", base.gender || "unknown", Number(round.distance)].join("_"),
-      entryId: `${base.bowType || "리커브"}_${base.sessionId || base.userId}_${Number(round.distance)}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
-    }));
+    .map((round, idx) => {
+      const roundNo = Number(round.index || round.roundNo || idx + 1);
+      const distance = Number(round.distance);
+      return {
+        ...base,
+        roundNo,
+        distance,
+        score: Number(round.total) || 0,
+        arrows: Number(normalized.arrowsPerDistance) || 36,
+        rankingKey: [base.bowType || "리커브", base.rankingGroup || "unknown", base.gender || "unknown", distance].join("_"),
+        entryId: `${base.bowType || "리커브"}_${base.sessionId || base.userId}_${roundNo}_${distance}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
+      };
+    });
 }
 
 async function upsertRankingEntriesForSession(db, session, user = null) {
@@ -22215,42 +22220,87 @@ function buildUsersFromRankingEntries(entries = []) {
 }
 
 function buildSessionsFromRankingEntries(entries = []) {
-  return entries.map((entry) => {
+  const groups = new Map();
+
+  (entries || []).forEach((entry) => {
     const userEntry = isUserRankingEntry(entry);
     const userId = entry.userId || makeSampleUserId(entry.name, entry.groupName);
-    const distance = Number(entry.distance) || 0;
-    const score = Number(entry.score) || 0;
-    const arrows = Number(entry.arrows) || 36;
-    const stableSessionId = entry.sessionId || entry.originalSessionId || `${entry.entryId || userId}_${distance}`;
-    const session = buildSampleDistanceSession({
+    const stableSessionId = entry.sessionId || entry.originalSessionId || entry.sourceSessionId || entry.entryId || userId;
+    const groupKey = `${userId}_${stableSessionId}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
+    const bucket = groups.get(groupKey) || {
+      userEntry,
       userId,
-      date: entry.sessionDate || getCurrentLocalDateString(),
-      title: userEntry
-        ? `${entry.name || "사용자"} · 개인 거리기록`
-        : `${entry.competitionName || "공식기록"} · ${entry.name || "선수"}`.trim(),
-      division: entry.division || "",
-      gender: entry.gender || "남",
-      regionCity: entry.regionCity || "전국",
-      bowType: entry.bowType || "리커브",
-      clubName: getCanonicalSchoolName(entry.groupName || entry.school || ""),
-      groupName: getCanonicalSchoolName(entry.groupName || entry.school || ""),
-      distance,
+      stableSessionId,
+      entries: [],
+      first: entry,
+    };
+    bucket.entries.push(entry);
+    groups.set(groupKey, bucket);
+  });
+
+  return Array.from(groups.values()).map((bucket) => {
+    const first = bucket.first || {};
+    const orderedEntries = (bucket.entries || [])
+      .slice()
+      .sort((a, b) => {
+        const aRound = Number(a.roundNo || a.round || a.index || 0);
+        const bRound = Number(b.roundNo || b.round || b.index || 0);
+        if (aRound || bRound) return aRound - bRound;
+        return Number(a.distance || 0) - Number(b.distance || 0);
+      });
+
+    const rounds = orderedEntries.map((entry, idx) => ({
+      distance: Number(entry.distance) || 0,
+      total: Number(entry.score) || 0,
+      index: Number(entry.roundNo || entry.round || entry.index || idx + 1),
+    })).filter((round) => round.distance > 0);
+
+    const totalScore = rounds.reduce((sum, round) => sum + (Number(round.total) || 0), 0);
+    const arrows = Number(first.arrows) || 36;
+
+    const session = buildSampleDistanceSession({
+      userId: bucket.userId,
+      date: first.sessionDate || getCurrentLocalDateString(),
+      title: bucket.userEntry
+        ? `${first.name || "사용자"} · 개인 거리기록`
+        : `${first.competitionName || "공식기록"} · ${first.name || "선수"}`.trim(),
+      division: first.division || "",
+      gender: first.gender || "남",
+      regionCity: first.regionCity || "전국",
+      bowType: first.bowType || "리커브",
+      clubName: getCanonicalSchoolName(first.groupName || first.school || ""),
+      groupName: getCanonicalSchoolName(first.groupName || first.school || ""),
+      distance: rounds[0]?.distance || Number(first.distance) || 0,
       arrowsPerDistance: arrows,
-      rounds: [{ distance, total: score }],
+      rounds,
     });
+
     return {
       ...session,
-      id: entry.entryId || `${stableSessionId}_${distance}`.replace(/[^a-zA-Z0-9가-힣_-]/g, "_"),
-      sessionId: stableSessionId,
-      originalSessionId: stableSessionId,
-      sourceEntryId: entry.entryId || "",
-      sourceType: entry.sourceType || (userEntry ? "user_session" : "official_firestore"),
-      isSampleData: !userEntry,
-      isOfficialRecord: !userEntry,
-      officialRecord: !userEntry,
+      id: first.sessionId || bucket.stableSessionId,
+      sessionId: bucket.stableSessionId,
+      originalSessionId: bucket.stableSessionId,
+      sourceEntryId: first.entryId || "",
+      sourceType: first.sourceType || (bucket.userEntry ? "user_session" : "official_firestore"),
+      isSampleData: !bucket.userEntry,
+      isOfficialRecord: !bucket.userEntry,
+      officialRecord: !bucket.userEntry,
+      rankingGroup: first.rankingGroup || session.rankingGroup || "",
+      summary: {
+        ...(session.summary || {}),
+        totalScore,
+        averageArrow: rounds.length && arrows ? Number((totalScore / (rounds.length * arrows)).toFixed(2)) : session.summary?.averageArrow || 0,
+      },
+      distanceRounds: rounds.map((round, idx) => ({
+        id: `ranking_entry_round_${idx + 1}_${round.distance}`,
+        index: idx + 1,
+        distance: round.distance,
+        total: round.total,
+      })),
     };
   });
 }
+
 
 async function upsertOfficialCompetitionSheetToRankingEntries(db, sheet) {
   if (!db || !sheet?.rows?.length) return 0;
@@ -22803,20 +22853,42 @@ function buildCompoundSessionTotalRankingItem(user, sessions, rankingFilters = {
       const sessionRankingGroup = attempts[0]?.rankingGroup || profileRankingGroup || session.rankingGroup || "";
       if (!rankingGroupMatchesFilter(rankingFilters.rankingGroup, sessionRankingGroup)) return null;
 
+      const orderedRounds = Array.isArray(session.distanceRounds)
+        ? session.distanceRounds
+            .map((round, idx) => ({
+              roundNo: Number(round.index || round.roundNo || idx + 1),
+              distance: Number(round.distance) || 0,
+              score: Number(round.total ?? round.score) || 0,
+            }))
+            .filter((round) => round.distance > 0)
+            .sort((a, b) => a.roundNo - b.roundNo)
+        : [];
+
+      const distanceRoundScores = orderedRounds.length
+        ? orderedRounds
+        : attempts.map((attempt, idx) => ({
+            roundNo: Number(attempt.roundNo || idx + 1),
+            distance: Number(attempt.distance) || 0,
+            score: Number(attempt.score) || 0,
+          }));
+
       const distanceScores = {};
-      attempts.forEach((attempt) => {
-        const distance = Number(attempt.distance);
+      distanceRoundScores.forEach((round) => {
+        const distance = Number(round.distance);
         if (!distance) return;
-        distanceScores[distance] = Math.max(Number(distanceScores[distance] || 0), Number(attempt.score || 0));
+        distanceScores[`${round.roundNo}_${distance}`] = Number(round.score || 0);
       });
+
+      const totalScore = distanceRoundScores.reduce((sum, round) => sum + (Number(round.score) || 0), 0);
 
       return {
         session,
         attempts,
         rankingGroup: sessionRankingGroup,
-        requiredDistances: Object.keys(distanceScores).map((distance) => Number(distance)).sort((a, b) => b - a),
+        requiredDistances: distanceRoundScores.map((round) => `${round.roundNo}_${round.distance}`),
         distanceScores,
-        totalScore: Number(session.summary?.totalScore ?? getSessionTotal(session) ?? attempts.reduce((sum, attempt) => sum + (Number(attempt.score) || 0), 0)),
+        distanceRoundScores,
+        totalScore,
         latestDate: session.sessionDate || session.updatedAt || "",
       };
     })
@@ -22842,6 +22914,7 @@ function buildCompoundSessionTotalRankingItem(user, sessions, rankingFilters = {
     rankingGroup: best.rankingGroup || "-",
     requiredDistances: best.requiredDistances,
     distanceScores: best.distanceScores,
+    distanceRoundScores: best.distanceRoundScores || [],
     totalScore: best.totalScore,
     latestDate: best.latestDate || "",
     isSampleData: Boolean(user.isSampleData),
@@ -27153,7 +27226,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                         </div>
                       ) : (
                         <>
-                          {item.requiredDistances.map((distance) => `${distance}m ${item.distanceScores[distance]}점`).join(" · ")}
+                          {Array.isArray(item.distanceRoundScores) && item.distanceRoundScores.length
+                            ? item.distanceRoundScores
+                                .map((round) => `${round.distance}m ${round.score}점`)
+                                .join(" · ")
+                            : item.requiredDistances.map((distance) => `${distance}m ${item.distanceScores[distance]}점`).join(" · ")}
                         </>
                       )}
                     </div>
