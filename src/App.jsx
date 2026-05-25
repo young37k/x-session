@@ -26880,10 +26880,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, []);
 
   const getMyOrderedSessionsForSelectedBow = useCallback(() => {
-    return (scopedRankingSessions || [])
-      .filter((session) => currentRankingUserIds.has(session.userId))
-      .filter((session) => String(session.bowType || "리커브") === String(myRankingBowType))
-      .filter((session) => !myRankingGroup || rankingGroupMatchesFilter(myRankingGroup, session.rankingGroup || getRankingGroup(session.division, session.gender)))
+    const sortByTotalAndDate = (items = []) => items
       .slice()
       .sort((a, b) => {
         const bScore = Number(b.summary?.totalScore ?? getSessionTotal(b) ?? 0);
@@ -26891,7 +26888,20 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         if (bScore !== aScore) return bScore - aScore;
         return String(b.sessionDate || b.updatedAt || "").localeCompare(String(a.sessionDate || a.updatedAt || ""));
       });
-  }, [currentRankingUserIds, myRankingBowType, myRankingGroup, scopedRankingSessions]);
+
+    const rawSavedSessions = (sessions || [])
+      .filter((session) => currentRankingUserIds.has(session.userId) || session.userId === currentUserId)
+      .filter((session) => session?.isComplete || session?.status === "completed")
+      .filter((session) => String(session.bowType || currentUser?.bowType || "리커브") === String(myRankingBowType))
+      .filter((session) => !myRankingGroup || rankingGroupMatchesFilter(myRankingGroup, session.rankingGroup || getRankingGroup(session.division, session.gender)));
+
+    if (rawSavedSessions.length) return sortByTotalAndDate(rawSavedSessions);
+
+    return sortByTotalAndDate((scopedRankingSessions || [])
+      .filter((session) => currentRankingUserIds.has(session.userId))
+      .filter((session) => String(session.bowType || "리커브") === String(myRankingBowType))
+      .filter((session) => !myRankingGroup || rankingGroupMatchesFilter(myRankingGroup, session.rankingGroup || getRankingGroup(session.division, session.gender))));
+  }, [currentRankingUserIds, currentUser?.bowType, currentUserId, myRankingBowType, myRankingGroup, scopedRankingSessions, sessions]);
 
   const myBestSelectedBowSession = useMemo(() => getMyOrderedSessionsForSelectedBow()[0] || null, [getMyOrderedSessionsForSelectedBow]);
 
@@ -26902,6 +26912,18 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
       .map((round) => Number(round.distance) || 0)
       .filter(Boolean);
     return rounds;
+  }, [myBestSelectedBowSession]);
+
+  const myInputOrderRoundScores = useMemo(() => {
+    return (myBestSelectedBowSession?.distanceRounds || [])
+      .slice()
+      .sort((a, b) => Number(a.index || a.roundNo || 0) - Number(b.index || b.roundNo || 0))
+      .map((round, idx) => ({
+        roundNo: idx + 1,
+        distance: Number(round.distance) || 0,
+        score: Number(round.total ?? round.score) || 0,
+      }))
+      .filter((round) => round.distance > 0);
   }, [myBestSelectedBowSession]);
 
   const getMyDistanceScoreForDisplay = useCallback((distanceValue, rowIndex) => {
@@ -27491,11 +27513,15 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                         </div>
                       ) : (
                         <>
-                          {Array.isArray(item.distanceRoundScores) && item.distanceRoundScores.length
-                            ? item.distanceRoundScores
+                          {currentRankingUserIds.has(item.userId) && myInputOrderRoundScores.length
+                            ? myInputOrderRoundScores
                                 .map((round) => `${round.distance}m ${round.score}점`)
                                 .join(" · ")
-                            : item.requiredDistances.map((distance) => `${distance}m ${item.distanceScores[distance]}점`).join(" · ")}
+                            : Array.isArray(item.distanceRoundScores) && item.distanceRoundScores.length
+                              ? item.distanceRoundScores
+                                  .map((round) => `${round.distance}m ${round.score}점`)
+                                  .join(" · ")
+                              : item.requiredDistances.map((distance) => `${getDisplayDistanceFromRankingDistance(distance)}m ${item.distanceScores[distance]}점`).join(" · ")}
                         </>
                       )}
                     </div>
