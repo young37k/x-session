@@ -1097,6 +1097,12 @@ function rankingGroupMatchesFilter(selectedGroup, actualGroup) {
   if (selectedGroup === "초등부(통합)") {
     return actualGroup === "초등부(통합)" || actualGroup === "초등부(저학년)" || actualGroup === "초등부(고학년)";
   }
+  if (selectedGroup === "중등부") {
+    return actualGroup === "중등부" || actualGroup === "중학부";
+  }
+  if (selectedGroup === "중학부") {
+    return actualGroup === "중등부" || actualGroup === "중학부";
+  }
   if (selectedGroup === "고등부") {
     return actualGroup === "고등부(남)" || actualGroup === "고등부(여)";
   }
@@ -26582,9 +26588,14 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const officialResultSources = useMemo(() => {
     if (!ENABLE_OFFICIAL_RECORDS || hideOfficialRecords) return [];
     const selectedBowType = appliedRankingFilters.bowType || "리커브";
+    const selectedRankingGroup =
+      selectedBowType === "컴파운드" &&
+      (appliedRankingFilters.rankingGroup === "초등부(저학년)" || appliedRankingFilters.rankingGroup === "초등부(고학년)")
+        ? "초등부(통합)"
+        : appliedRankingFilters.rankingGroup;
     return OFFICIAL_RESULT_SOURCES.filter((item) => {
       if (!matchesBowTypeFilter(item, selectedBowType)) return false;
-      if (!rankingGroupMatchesFilter(appliedRankingFilters.rankingGroup, item.rankingGroup)) return false;
+      if (!rankingGroupMatchesFilter(selectedRankingGroup, item.rankingGroup)) return false;
       if (appliedRankingFilters.regionCity !== "all" && item.region !== appliedRankingFilters.regionCity) return false;
       if (appliedRankingFilters.gender !== "all" && item.gender !== appliedRankingFilters.gender) return false;
       if (!isWithinDateFilter(item.date, appliedRankingFilters.dateFilter || "all", appliedRankingFilters.customDate)) return false;
@@ -26816,7 +26827,18 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               <Label className="w-16 shrink-0 text-sm">활종류</Label>
               <select
                 value={rankingFilters.bowType || "리커브"}
-                onChange={(e) => setRankingFilters((prev) => ({ ...prev, bowType: e.target.value }))}
+                onChange={(e) => {
+                  const nextBowType = e.target.value;
+                  setRankingFilters((prev) => ({
+                    ...prev,
+                    bowType: nextBowType,
+                    rankingGroup:
+                      nextBowType === "컴파운드" &&
+                      (prev.rankingGroup === "초등부(저학년)" || prev.rankingGroup === "초등부(고학년)")
+                        ? "초등부(통합)"
+                        : prev.rankingGroup,
+                  }));
+                }}
                 className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
               >
                 <option value="리커브">리커브</option>
@@ -26828,13 +26850,30 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
               <Label className="w-16 shrink-0 text-sm">구분</Label>
               <select
                 value={rankingFilters.rankingGroup}
-                onChange={(e) => setRankingFilters((prev) => ({ ...prev, rankingGroup: e.target.value }))}
+                onChange={(e) => {
+                  const nextGroup = e.target.value;
+                  setRankingFilters((prev) => ({
+                    ...prev,
+                    rankingGroup:
+                      (prev.bowType || "리커브") === "컴파운드" &&
+                      (nextGroup === "초등부(저학년)" || nextGroup === "초등부(고학년)")
+                        ? "초등부(통합)"
+                        : nextGroup,
+                  }));
+                }}
                 className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
               >
                 <option value="all">전체 구분</option>
-                {rankingGroupOptions.map((item) => (
-                  <option key={item} value={item}>{item}</option>
-                ))}
+                {rankingGroupOptions.map((item) => {
+                  const disabledForCompound =
+                    (rankingFilters.bowType || "리커브") === "컴파운드" &&
+                    (item === "초등부(저학년)" || item === "초등부(고학년)");
+                  return (
+                    <option key={item} value={item} disabled={disabledForCompound}>
+                      {item}{disabledForCompound ? " - 컴파운드 제외" : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
