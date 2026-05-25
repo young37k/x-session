@@ -294,8 +294,6 @@ const RANKING_GROUP_OPTIONS = [
   "고등부",
   "대학/일반부"
 ];
-const COMPOUND_DISTANCE_OPTIONS = [50, 30, 18];
-
 const DISTANCE_OPTIONS = [18, 20, 25, 30, 35, 40, 50, 60, 70, 90];
 
 const DIVISION_DISTANCE_RULES = {
@@ -1163,7 +1161,11 @@ function normalizeSessionShape(session, profile = null) {
     sessionDate: safe.sessionDate || getCurrentLocalDateString(),
     mode: safe.mode || "cumulative",
     recordInputType: safe.recordInputType || "end",
-    distance: Number(safe.distance) || 30,
+    bowType: safe.bowType || "리커브",
+    distance:
+      safe.distance === undefined || safe.distance === null || safe.distance === ""
+        ? null
+        : Number(safe.distance) || 30,
     division: safe.division || profile?.division || "",
     gender: safe.gender || profile?.gender || "남",
     arrowsPerEnd,
@@ -22487,25 +22489,7 @@ function SessionEditor({
     patchSession((prev) => ({
       ...prev,
       bowType: nextBowType,
-      mode: nextBowType === "컴파운드" ? "cumulative" : prev.mode,
-      distance:
-        nextBowType === "컴파운드"
-          ? 50
-          : prev.distance || 70,
-      targetFace:
-        nextBowType === "컴파운드"
-          ? "80cm-6ring"
-          : "122cm",
-      tenRule:
-        nextBowType === "컴파운드"
-          ? "inner10"
-          : "standard10",
     }));
-
-    if (nextBowType === "컴파운드") {
-      setActiveOpponentEndId(null);
-      setOpponentInputBuffers({});
-    }
   }
 
   function applyMode(mode) {
@@ -22923,7 +22907,6 @@ function SessionEditor({
                 </div>
               </div>
 
-              
               <div className="flex items-start gap-3">
                 <Label className="w-24 shrink-0 pt-3 text-sm">활 종류</Label>
                 <div className="grid flex-1 gap-2">
@@ -22935,7 +22918,6 @@ function SessionEditor({
                     >
                       리커브
                     </Button>
-
                     <Button
                       variant={session.bowType === "컴파운드" ? "default" : "outline"}
                       className="h-11 rounded-2xl bg-amber-700 px-3 hover:bg-amber-600"
@@ -22944,14 +22926,10 @@ function SessionEditor({
                       컴파운드
                     </Button>
                   </div>
-
-                  <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                    컴파운드 선택 시 50m · 누적제 · Inner10(X) 기준으로 자동 설정됩니다.
-                  </div>
                 </div>
               </div>
 
-<div className="flex items-start gap-3">
+              <div className="flex items-start gap-3">
                 <Label className="w-24 shrink-0 pt-3 text-sm">기록 방식</Label>
                 <div className="grid flex-1 gap-2">
                   <div className="grid grid-cols-2 gap-2">
@@ -22962,7 +22940,6 @@ function SessionEditor({
                     >
                       누적제
                     </Button>
-                    {(session.bowType || "리커브") !== "컴파운드" && (
                     <Button
                       variant={session.mode === "set" ? "default" : "outline"}
                       className="h-11 rounded-2xl bg-red-700 px-3 hover:bg-red-600"
@@ -22970,7 +22947,6 @@ function SessionEditor({
                     >
                       세트제
                     </Button>
-                    )}
                   </div>
                   <div className="rounded-2xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
                     누적제는 총점 합산 방식이고, 세트제는 엔드별 승패를 기록하는 방식입니다.
@@ -22982,17 +22958,22 @@ function SessionEditor({
                 <Label className="w-24 shrink-0 text-sm">거리 (m)</Label>
                 <div className="flex-1">
                   <Select
-                    value={String(session.distance)}
-                    onValueChange={(value) => patchSession((prev) => ({ ...prev, distance: Number(value) }))}
+                    value={session.distance ? String(session.distance) : "distance-unselected"}
+                    onValueChange={(value) =>
+                      patchSession((prev) => ({
+                        ...prev,
+                        distance: value === "distance-unselected" ? null : Number(value),
+                      }))
+                    }
                   >
                     <SelectTrigger className="h-11">
-                      <SelectValue placeholder="거리 선택" />
+                      <SelectValue placeholder="거리를 선택해 주세요" />
                     </SelectTrigger>
                     <SelectContent>
-                      {((session.bowType || "리커브") === "컴파운드"
-                        ? COMPOUND_DISTANCE_OPTIONS
-                        : DISTANCE_OPTIONS
-                      ).map((distance) => (
+                      <SelectItem value="distance-unselected">
+                        거리를 선택해 주세요
+                      </SelectItem>
+                      {DISTANCE_OPTIONS.map((distance) => (
                         <SelectItem key={distance} value={String(distance)}>
                           {distance}m
                         </SelectItem>
