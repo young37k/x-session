@@ -26165,6 +26165,13 @@ function Dashboard({ sessions, routines = [], currentUser, loading, onEditSessio
                     <div className="min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-2">
+                          <Badge className={`rounded-full text-white ${
+                            (session.bowType || "리커브") === "컴파운드"
+                              ? "bg-amber-700"
+                              : "bg-blue-900"
+                          }`}>
+                            {session.bowType || "리커브"}
+                          </Badge>
                           <Badge className="rounded-full bg-gradient-to-r from-blue-900 to-red-700 text-white">
                             {getModeLabel(session.mode)}
                           </Badge>
