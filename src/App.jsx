@@ -23636,7 +23636,7 @@ function TargetScoreAnalysisCard({ analysis, compact = false }) {
           </div>
 
           <div className="mt-3 overflow-x-auto rounded-2xl bg-white">
-            <table className="w-full min-w-[440px] text-sm">
+            <table className={`w-full ${compact ? "min-w-[360px]" : "min-w-[440px]"} text-sm`}>
               <thead>
                 <tr className="border-b bg-slate-50 text-left text-xs text-slate-500">
                   <th className="px-3 py-2">거리</th>
@@ -28814,50 +28814,52 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
       : "기록을 저장하면 최근 평균과 점수 트렌드가 자동으로 표시됩니다.";
 
     return (
-      <div className="grid gap-4">
-        <Card className="rounded-[24px] border-0 bg-white shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center justify-between text-base">
-              <span>모바일 기록 요약</span>
-              <Badge className="rounded-full bg-blue-50 text-blue-700">기록 중심</Badge>
+      <div className="mx-auto grid w-full max-w-[100vw] min-w-0 gap-4 overflow-x-hidden px-3 pb-6">
+        <Card className="w-full min-w-0 overflow-hidden rounded-[24px] border-0 bg-white shadow-sm">
+          <CardHeader className="px-4 pb-2 pt-4">
+            <CardTitle className="flex min-w-0 flex-wrap items-center justify-between gap-2 text-[18px] leading-6">
+              <span className="min-w-0 truncate">모바일 기록 요약</span>
+              <Badge className="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-[13px] text-blue-700">기록 중심</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="rounded-[22px] bg-slate-950 p-5 text-white">
-              <div className="text-xs text-slate-300">최근 평균 점수</div>
-              <div className="mt-2 text-4xl font-black">{avgScore ? avgScore.toFixed(2) : "-"}</div>
-              <div className="mt-2 text-sm text-slate-300">{parentGrowthSummary.deltaLabel} 지난 기간 대비</div>
+          <CardContent className="grid min-w-0 gap-4 px-4 pb-4">
+            <div className="min-w-0 rounded-[22px] bg-slate-950 p-5 text-white">
+              <div className="text-[13px] text-slate-300">최근 평균 점수</div>
+              <div className="mt-2 break-words text-[42px] font-black leading-none">{avgScore ? avgScore.toFixed(2) : "-"}</div>
+              <div className="mt-3 text-[15px] leading-6 text-slate-300">{parentGrowthSummary.deltaLabel} 지난 기간 대비</div>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-2xl bg-slate-50 p-3">
-                <div className="text-xs text-slate-500">10점 비율</div>
-                <div className="mt-1 text-xl font-black">{tenRate}%</div>
+            <div className="grid min-w-0 grid-cols-3 gap-2 text-center">
+              <div className="min-w-0 rounded-2xl bg-slate-50 px-2 py-3">
+                <div className="text-[13px] leading-5 text-slate-500">10점 비율</div>
+                <div className="mt-1 text-[24px] font-black leading-tight">{tenRate}%</div>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-3">
-                <div className="text-xs text-slate-500">안정성</div>
-                <div className="mt-1 text-xl font-black">{consistencyIndex}%</div>
+              <div className="min-w-0 rounded-2xl bg-slate-50 px-2 py-3">
+                <div className="text-[13px] leading-5 text-slate-500">안정성</div>
+                <div className="mt-1 text-[24px] font-black leading-tight">{consistencyIndex}%</div>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-3">
-                <div className="text-xs text-slate-500">세션</div>
-                <div className="mt-1 text-xl font-black">{filteredMine.length}</div>
+              <div className="min-w-0 rounded-2xl bg-slate-50 px-2 py-3">
+                <div className="text-[13px] leading-5 text-slate-500">세션</div>
+                <div className="mt-1 text-[24px] font-black leading-tight">{filteredMine.length}</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <TargetScoreAnalysisCard analysis={targetScoreAnalysis} compact />
+        <div className="w-full min-w-0 overflow-hidden [&_section]:w-full [&_section]:min-w-0 [&_table]:text-[13px]">
+          <TargetScoreAnalysisCard analysis={targetScoreAnalysis} compact />
+        </div>
 
-        <Card className="rounded-[24px] border-0 bg-white shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">점수 트렌드</CardTitle>
+        <Card className="w-full min-w-0 overflow-hidden rounded-[24px] border-0 bg-white shadow-sm">
+          <CardHeader className="px-4 pb-2 pt-4">
+            <CardTitle className="text-[18px] leading-6">점수 트렌드</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-[210px]">
+          <CardContent className="min-w-0 px-3 pb-4">
+            <div className="h-[220px] w-full min-w-0 overflow-hidden">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                <LineChart data={chartData} margin={{ top: 8, right: 12, left: -14, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-                  <YAxis domain={[0, 10]} tick={{ fontSize: 10 }} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                  <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Line type="monotone" dataKey="avgArrow" name="평균" stroke={CHART_COLORS.avg} strokeWidth={3} dot={{ r: 3 }} />
                 </LineChart>
@@ -28866,14 +28868,14 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
           </CardContent>
         </Card>
 
-        <Card className="rounded-[24px] border-0 bg-white shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">오늘 피드백</CardTitle>
+        <Card className="w-full min-w-0 overflow-hidden rounded-[24px] border-0 bg-white shadow-sm">
+          <CardHeader className="px-4 pb-2 pt-4">
+            <CardTitle className="text-[18px] leading-6">오늘 피드백</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm leading-6 text-slate-700">
+          <CardContent className="min-w-0 space-y-3 px-4 pb-4 text-[15px] leading-7 text-slate-700">
             <div className="rounded-2xl bg-blue-50 p-4 text-blue-900">{mobileTrendLabel}</div>
             <div className="rounded-2xl bg-slate-50 p-4">{mobileFeedback}</div>
-            <div className="rounded-2xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">모바일은 기록 입력과 핵심 트렌드 확인용입니다. 후반 엔드 붕괴, 경기별 거리 하락, 기록관리자용 PDF, 운동 처방 전체 분석은 PC/태블릿에서 확인하세요.</div>
+            <div className="rounded-2xl bg-amber-50 p-4 text-[14px] leading-6 text-amber-800">모바일은 기록 입력과 핵심 트렌드 확인용입니다. 후반 엔드 붕괴, 경기별 거리 하락, 기록향상 PDF, 운동 처방 전체 분석은 PC/태블릿에서 확인하세요.</div>
           </CardContent>
         </Card>
       </div>
