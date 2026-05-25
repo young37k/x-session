@@ -28450,45 +28450,6 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
     [filteredMine, currentUser, requiredFilters]
   );
 
-  const targetAchievementPlan = useMemo(() => {
-    const data = targetScoreAnalysis || {};
-    const growthGap = Math.max(0, Math.round(Number(data.growthGap || 0)));
-    const consistencyFactor = Math.max(0.65, Math.min(1.25, Number(consistencyIndex || 0) / 80 || 0.8));
-    const bowDifficulty = analysisBowType === "컴파운드" ? 1.18 : 1;
-    const dailyGainBase = Math.max(
-      0.35,
-      Math.min(
-        analysisBowType === "컴파운드" ? 1.4 : 2.2,
-        ((avgScore >= 9.2 ? 0.55 : avgScore >= 8.7 ? 0.85 : 1.2) * consistencyFactor) / bowDifficulty
-      )
-    );
-    const estimatedDays = growthGap > 0 ? Math.max(7, Math.ceil(growthGap / dailyGainBase)) : 0;
-    const phaseOneDays = Math.max(3, Math.round(estimatedDays * 0.25));
-    const phaseTwoDays = Math.max(4, Math.round(estimatedDays * 0.35));
-    const phaseThreeDays = Math.max(5, estimatedDays - phaseOneDays - phaseTwoDays);
-    const phaseOneTarget = Math.max(1, Math.round(growthGap * 0.25));
-    const phaseTwoTarget = Math.max(1, Math.round(growthGap * 0.35));
-    const rows = growthGap > 0
-      ? [
-          { phase: "1단계", days: phaseOneDays, target: phaseOneTarget, focus: analysisBowType === "컴파운드" ? "장비 기준점 고정 · 9점 이하 제거" : "약점 거리 반복 · 자세 리듬 고정" },
-          { phase: "2단계", days: phaseTwoDays, target: phaseTwoTarget, focus: analysisBowType === "컴파운드" ? "10+X 유지율 상승 · 릴리즈 압력 관리" : "후반 체력 유지 · 실수 후 루틴 복구" },
-          { phase: "3단계", days: phaseThreeDays, target: Math.max(1, growthGap - phaseOneTarget - phaseTwoTarget), focus: analysisBowType === "컴파운드" ? "대회형 4라운드 연결 · X 중심률 확인" : "4거리 종합 연결 · 기록 안정화" },
-        ]
-      : [];
-    return {
-      available: Boolean(data.available),
-      growthGap,
-      estimatedDays,
-      dailyGain: Number(dailyGainBase.toFixed(2)),
-      currentScore: Number(data.bestTotalScore || 0),
-      targetScore: Number(data.targetScore || 0),
-      rows,
-      message: growthGap > 0
-        ? `${growthGap}점 향상은 현재 기록 흐름 기준 약 ${estimatedDays}일 훈련 목표로 잡는 것이 현실적입니다.`
-        : "현재 거리별 최고점 합계와 종합 최고기록 차이가 작습니다. 목표는 안정적 재현으로 전환하는 것이 좋습니다.",
-    };
-  }, [targetScoreAnalysis, avgScore, consistencyIndex, analysisBowType]);
-
   const trend = useMemo(() => getTrendInsight(filteredMine), [filteredMine]);
   const parentGrowthSummary = useMemo(() => buildParentGrowthSummary(filteredMine), [filteredMine]);
   const lateSetDropInsight = useMemo(() => buildLateSetDropInsight(filteredMine), [filteredMine]);
@@ -28633,6 +28594,46 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
   const bestScore = sessionAverages.length ? Number(Math.max(...sessionAverages).toFixed(2)) : 0;
   const variance = sessionAverages.length ? averageNumbers(sessionAverages.map((value) => Math.pow(value - avgScore, 2))) : 0;
   const consistencyIndex = Math.max(0, Math.min(100, Math.round(100 - Math.sqrt(variance) * 20)));
+
+  const targetAchievementPlan = useMemo(() => {
+    const data = targetScoreAnalysis || {};
+    const growthGap = Math.max(0, Math.round(Number(data.growthGap || 0)));
+    const consistencyFactor = Math.max(0.65, Math.min(1.25, Number(consistencyIndex || 0) / 80 || 0.8));
+    const bowDifficulty = analysisBowType === "컴파운드" ? 1.18 : 1;
+    const dailyGainBase = Math.max(
+      0.35,
+      Math.min(
+        analysisBowType === "컴파운드" ? 1.4 : 2.2,
+        ((avgScore >= 9.2 ? 0.55 : avgScore >= 8.7 ? 0.85 : 1.2) * consistencyFactor) / bowDifficulty
+      )
+    );
+    const estimatedDays = growthGap > 0 ? Math.max(7, Math.ceil(growthGap / dailyGainBase)) : 0;
+    const phaseOneDays = Math.max(3, Math.round(estimatedDays * 0.25));
+    const phaseTwoDays = Math.max(4, Math.round(estimatedDays * 0.35));
+    const phaseThreeDays = Math.max(5, estimatedDays - phaseOneDays - phaseTwoDays);
+    const phaseOneTarget = Math.max(1, Math.round(growthGap * 0.25));
+    const phaseTwoTarget = Math.max(1, Math.round(growthGap * 0.35));
+    const rows = growthGap > 0
+      ? [
+          { phase: "1단계", days: phaseOneDays, target: phaseOneTarget, focus: analysisBowType === "컴파운드" ? "장비 기준점 고정 · 9점 이하 제거" : "약점 거리 반복 · 자세 리듬 고정" },
+          { phase: "2단계", days: phaseTwoDays, target: phaseTwoTarget, focus: analysisBowType === "컴파운드" ? "10+X 유지율 상승 · 릴리즈 압력 관리" : "후반 체력 유지 · 실수 후 루틴 복구" },
+          { phase: "3단계", days: phaseThreeDays, target: Math.max(1, growthGap - phaseOneTarget - phaseTwoTarget), focus: analysisBowType === "컴파운드" ? "대회형 4라운드 연결 · X 중심률 확인" : "4거리 종합 연결 · 기록 안정화" },
+        ]
+      : [];
+    return {
+      available: Boolean(data.available),
+      growthGap,
+      estimatedDays,
+      dailyGain: Number(dailyGainBase.toFixed(2)),
+      currentScore: Number(data.bestTotalScore || 0),
+      targetScore: Number(data.targetScore || 0),
+      rows,
+      message: growthGap > 0
+        ? `${growthGap}점 향상은 현재 기록 흐름 기준 약 ${estimatedDays}일 훈련 목표로 잡는 것이 현실적입니다.`
+        : "현재 거리별 최고점 합계와 종합 최고기록 차이가 작습니다. 목표는 안정적 재현으로 전환하는 것이 좋습니다.",
+    };
+  }, [targetScoreAnalysis, avgScore, consistencyIndex, analysisBowType]);
+
 
   const getSessionTenRate = useCallback((session) => {
     const arrows = (session.ends || []).flatMap((end) => end.arrows || []).filter((arrow) => arrow !== null && arrow !== undefined && String(arrow).trim() !== "");
