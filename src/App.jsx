@@ -19687,6 +19687,7 @@ function getRankingGroupQueryValues(rankingGroup = "") {
 }
 
 function rankingEntryMatchesFilters(entry, { rankingGroup, gender, rankingFilters, distances, dateFilter, customDate }) {
+  if (rankingFilters?.bowType && rankingFilters.bowType !== "all" && String(entry.bowType || "리커브") !== String(rankingFilters.bowType)) return false;
   if (rankingGroup && rankingGroup !== "all" && !rankingGroupMatchesFilter(rankingGroup, entry.rankingGroup)) return false;
   if (gender && gender !== "all" && String(entry.gender || "") !== String(gender)) return false;
   if (rankingFilters?.regionCity && rankingFilters.regionCity !== "all" && String(entry.regionCity || "") !== String(rankingFilters.regionCity)) return false;
@@ -20767,6 +20768,7 @@ function getQualifiedDistanceAttempts(session) {
         sessionDate: session.sessionDate || session.updatedAt || "",
         division: session.division || "",
         gender: session.gender || "",
+        bowType: session.bowType || "리커브",
         rankingGroup: resolveRankingGroup(session.division, session.gender, session.rankingGroup),
         groupName: session.groupName || "",
         regionCity: session.regionCity || "",
@@ -20796,6 +20798,7 @@ function getQualifiedDistanceAttempts(session) {
     sessionDate: session.sessionDate || session.updatedAt || "",
     division: session.division || "",
     gender: session.gender || "",
+    bowType: session.bowType || "리커브",
     rankingGroup: getRankingGroup(session.division, session.gender),
     groupName: session.groupName || "",
     regionCity: session.regionCity || "",
@@ -20859,8 +20862,16 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
       ) {
         return null;
       }
+      if (
+        rankingFilters.bowType &&
+        rankingFilters.bowType !== "all" &&
+        (user.bowType || "리커브") !== rankingFilters.bowType
+      ) {
+        return null;
+      }
 
       const allAttempts = getUserQualifiedAttempts(user, sessions, attemptsByUserId)
+        .filter((attempt) => !rankingFilters.bowType || rankingFilters.bowType === "all" || (attempt.bowType || user.bowType || "리커브") === rankingFilters.bowType)
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
         .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
 
@@ -20985,8 +20996,16 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
       ) {
         return null;
       }
+      if (
+        rankingFilters.bowType &&
+        rankingFilters.bowType !== "all" &&
+        (user.bowType || "리커브") !== rankingFilters.bowType
+      ) {
+        return null;
+      }
 
       const allAttempts = getUserQualifiedAttempts(user, sessions, attemptsByUserId)
+        .filter((attempt) => !rankingFilters.bowType || rankingFilters.bowType === "all" || (attempt.bowType || user.bowType || "리커브") === rankingFilters.bowType)
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
         .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
 
@@ -24200,8 +24219,10 @@ function StatCard({ title, value, sub, icon: Icon, tone }) {
 function RankingBoard({ users, sessions, currentUser, currentUserId, officialClaims = [], onRequestOfficialClaim, appServices = null }) {
   const initialRankingGroup = getRankingGroup(currentUser?.division || "", currentUser?.gender || "남") || "all";
   const initialGender = currentUser?.gender || "all";
+  const initialBowType = currentUser?.bowType || "리커브";
   const [rankingType, setRankingType] = useState("total");
   const [rankingFilters, setRankingFilters] = useState({
+    bowType: initialBowType,
     distance: "all",
     rankingGroup: initialRankingGroup,
     groupName: "all",
@@ -24211,6 +24232,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     customDate: getCurrentLocalDateString(),
   });
   const [appliedRankingFilters, setAppliedRankingFilters] = useState({
+    bowType: initialBowType,
     distance: "all",
     rankingGroup: initialRankingGroup,
     groupName: "all",
@@ -24365,6 +24387,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         regionCity: session.regionCity || "",
         division: session.division || "",
         gender: session.gender || "남",
+        bowType: session.bowType || "리커브",
       });
     });
     return Array.from(map.values());
@@ -24382,7 +24405,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
 
   useEffect(() => {
     setShowAllRankings(false);
-  }, [rankingType, rankingFilters.distance, rankingFilters.rankingGroup, rankingFilters.groupName, rankingFilters.regionCity, rankingFilters.gender, rankingFilters.dateFilter, rankingFilters.customDate, hideOfficialRecords]);
+  }, [rankingType, rankingFilters.bowType, rankingFilters.distance, rankingFilters.rankingGroup, rankingFilters.groupName, rankingFilters.regionCity, rankingFilters.gender, rankingFilters.dateFilter, rankingFilters.customDate, hideOfficialRecords]);
 
   const regionOptions = useMemo(() => sortKoreanOptions(REGION_OPTIONS), [sortKoreanOptions]);
   const rankingGroupOptions = useMemo(() => RANKING_GROUP_OPTIONS, []);
@@ -24758,6 +24781,18 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                 </select>
               </div>
             )}
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Label className="w-16 shrink-0 text-sm">활종류</Label>
+              <select
+                value={rankingFilters.bowType || "리커브"}
+                onChange={(e) => setRankingFilters((prev) => ({ ...prev, bowType: e.target.value }))}
+                className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-2 text-xs outline-none"
+              >
+                <option value="리커브">리커브</option>
+                <option value="컴파운드">컴파운드</option>
+              </select>
+            </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <Label className="w-16 shrink-0 text-sm">구분</Label>
@@ -26800,6 +26835,7 @@ function ProfilePanel({ user, onUpdate, saving }) {
       setForm({
         ...user,
         division: user?.division || "전체학년",
+        bowType: user?.bowType || "리커브",
         regionCity: user?.regionCity || "",
         regionDistrict: user?.regionDistrict || "",
         groupName: user?.groupName || "",
@@ -26891,6 +26927,19 @@ function ProfilePanel({ user, onUpdate, saving }) {
             <div className="grid gap-2">
               <Label>이메일</Label>
               <Input value={form.email || ""} disabled />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>활 종류</Label>
+              <Select value={form.bowType || "리커브"} onValueChange={(value) => setForm({ ...form, bowType: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="활 종류 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="리커브">리커브</SelectItem>
+                  <SelectItem value="컴파운드">컴파운드</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">
