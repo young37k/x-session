@@ -26862,6 +26862,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [showAllRankings, visibleRankings, myRank]);
 
   const myRankingBowType = appliedRankingFilters.bowType || myRank?.bowType || currentUser?.bowType || "리커브";
+  const myRankingGroup = myRank?.rankingGroup || getRankingGroup(currentUser?.division, currentUser?.gender) || rankingFilters.rankingGroup;
   const getDisplayDistanceFromRankingDistance = useCallback((distanceValue) => {
     if (typeof distanceValue === "string" && distanceValue.includes("_")) {
       const [, distanceText] = distanceValue.split("_");
@@ -26893,7 +26894,6 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return null;
   }, [currentRankingUserIds, getDisplayDistanceFromRankingDistance, myRankingBowType, myRankingGroup, scopedRankingSessions]);
 
-  const myRankingGroup = myRank?.rankingGroup || getRankingGroup(currentUser?.division, currentUser?.gender) || rankingFilters.rankingGroup;
   const myRequiredDistances = myRank?.requiredDistances?.length
     ? (myRankingBowType === "컴파운드"
         ? myRank.requiredDistances.map((distance) => getDisplayDistanceFromRankingDistance(distance))
@@ -27051,7 +27051,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                       ) : (
                         <>
                           <div>종합 {myRank.totalScore}점</div>
-                          <div>기준 거리 {myRank.requiredDistances.join(" / ")}m</div>
+                          <div>기준 거리 {myRequiredDistances.map((distance) => `${getDisplayDistanceFromRankingDistance(distance)}m`).join(" / ")}</div>
                         </>
                       )}
                     </div>
