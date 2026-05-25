@@ -23472,7 +23472,10 @@ function getDistancePerformance(sessions) {
 
 
 function buildTargetScoreAnalysis(sessions = [], user = {}, filters = {}) {
-  const completed = (sessions || []).filter((session) => session && (session.isComplete || session.status === "completed"));
+  const selectedBowType = filters.bowType && filters.bowType !== "all" ? filters.bowType : "";
+  const completed = (sessions || [])
+    .filter((session) => session && (session.isComplete || session.status === "completed"))
+    .filter((session) => !selectedBowType || String(session.bowType || user?.bowType || "리커브") === String(selectedBowType));
   if (!completed.length) {
     return {
       available: false,
@@ -26824,7 +26827,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const visibleRankings = showAllRankings ? activeRankings : activeRankings.slice(0, 50);
   const hasMoreRankings = activeRankings.length > visibleRankings.length;
 
-  const myRank = activeRankings.find((item) => currentRankingUserIds.has(item.userId));
+  const selectedRankingBowTypeForMine = appliedRankingFilters.bowType || currentUser?.bowType || "리커브";
+  const myRank = activeRankings.find((item) =>
+    currentRankingUserIds.has(item.userId) &&
+    String(item.bowType || selectedRankingBowTypeForMine || "리커브") === String(selectedRankingBowTypeForMine)
+  );
   const myRankIsVisible = Boolean(myRank && visibleRankings.some((item) => currentRankingUserIds.has(item.userId)));
 
   const scrollToPageTop = useCallback(() => {
@@ -26861,7 +26868,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return () => window.clearTimeout(timer);
   }, [showAllRankings, visibleRankings, myRank]);
 
-  const myRankingBowType = appliedRankingFilters.bowType || myRank?.bowType || currentUser?.bowType || "리커브";
+  const myRankingBowType = selectedRankingBowTypeForMine || myRank?.bowType || currentUser?.bowType || "리커브";
   const myRankingGroup = myRank?.rankingGroup || getRankingGroup(currentUser?.division, currentUser?.gender) || rankingFilters.rankingGroup;
   const getDisplayDistanceFromRankingDistance = useCallback((distanceValue) => {
     if (typeof distanceValue === "string" && distanceValue.includes("_")) {
@@ -26898,7 +26905,23 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     ? (myRankingBowType === "컴파운드"
         ? myRank.requiredDistances.map((distance) => getDisplayDistanceFromRankingDistance(distance))
         : myRank.requiredDistances)
-    : getRequiredDistancesForRankingGroup(myRankingGroup, currentUser?.gender || myRank?.gender || "");
+    : (() => {
+        if (myRankingBowType === "컴파운드") {
+          const myCompoundSession = (scopedRankingSessions || [])
+            .filter((session) => currentRankingUserIds.has(session.userId))
+            .filter((session) => String(session.bowType || "리커브") === "컴파운드")
+            .filter((session) => !myRankingGroup || rankingGroupMatchesFilter(myRankingGroup, session.rankingGroup || getRankingGroup(session.division, session.gender)))
+            .slice()
+            .sort((a, b) => Number(b.summary?.totalScore ?? getSessionTotal(b) ?? 0) - Number(a.summary?.totalScore ?? getSessionTotal(a) ?? 0))[0];
+          const rounds = (myCompoundSession?.distanceRounds || [])
+            .slice()
+            .sort((a, b) => Number(a.index || 0) - Number(b.index || 0))
+            .map((round) => Number(round.distance) || 0)
+            .filter(Boolean);
+          if (rounds.length) return rounds;
+        }
+        return getRequiredDistancesForRankingGroup(myRankingGroup, currentUser?.gender || myRank?.gender || "");
+      })();
   const myDistanceRankRows = useMemo(() => {
     if (!currentRankingUserIds.size || !myRequiredDistances.length) return [];
     const weekly = rankingType === "weeklyDistance" || rankingType === "weeklyTotal";
@@ -26920,7 +26943,10 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
         return String(b.latestDate).localeCompare(String(a.latestDate));
       });
       const ranked = items.map((item, rankIdx) => ({ ...item, rank: rankIdx + 1 }));
-      const mine = ranked.find((item) => currentRankingUserIds.has(item.userId));
+      const mine = ranked.find((item) =>
+        currentRankingUserIds.has(item.userId) &&
+        String(item.bowType || myRankingBowType || "리커브") === String(myRankingBowType)
+      );
       const displayScore = getMyDistanceScoreForDisplay(distance, idx);
       return {
         distance,
@@ -26934,12 +26960,15 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [currentRankingUserIds, myRequiredDistances, rankingType, scopedRankingUsers, scopedRankingSessions, appliedRankingFilters, myRankingGroup, myRankingBowType, scopedQualifiedAttemptsByUserId, getDisplayDistanceFromRankingDistance, getMyDistanceScoreForDisplay]);
 
   const myTargetScoreAnalysis = useMemo(() => {
-    const mineSessions = (sessions || []).filter((session) => session?.userId === currentUserId && (session.isComplete || session.status === "completed"));
+    const mineSessions = (sessions || [])
+      .filter((session) => session?.userId === currentUserId && (session.isComplete || session.status === "completed"))
+      .filter((session) => String(session.bowType || currentUser?.bowType || "리커브") === String(myRankingBowType));
     return buildTargetScoreAnalysis(mineSessions, currentUser, {
       rankingGroup: myRankingGroup || rankingFilters.rankingGroup,
       gender: currentUser?.gender || myRank?.gender || "남",
+      bowType: myRankingBowType,
     });
-  }, [sessions, currentUserId, currentUser, myRankingGroup, rankingFilters.rankingGroup, myRank?.gender]);
+  }, [sessions, currentUserId, currentUser, myRankingGroup, rankingFilters.rankingGroup, myRank?.gender, myRankingBowType]);
 
   const rankingGuide =
     rankingType === "distance"
@@ -28484,8 +28513,8 @@ function AnalysisBoard({ currentUser, users, sessions, routines = [], appService
   const analytics = useMemo(() => buildAnalyticsData(filteredMine, period, matchType), [filteredMine, period, matchType]);
   const distancePerformance = useMemo(() => getDistancePerformance(filteredMine), [filteredMine]);
   const targetScoreAnalysis = useMemo(
-    () => buildTargetScoreAnalysis(filteredMine, currentUser, requiredFilters),
-    [filteredMine, currentUser, requiredFilters]
+    () => buildTargetScoreAnalysis(filteredMine, currentUser, { ...requiredFilters, bowType: analysisBowType }),
+    [filteredMine, currentUser, requiredFilters, analysisBowType]
   );
 
   const trend = useMemo(() => getTrendInsight(filteredMine), [filteredMine]);
