@@ -22700,16 +22700,14 @@ function calculateSessionSummary(session) {
 function formatSessionDistanceSummary(session) {
   if (!session) return "";
   if (session.recordInputType === "distance" && Array.isArray(session.distanceRounds)) {
-    const distances = Array.from(
-      new Set(
-        session.distanceRounds
-          .filter((round) => Number(round.total) > 0 || Number(round.distance) > 0)
-          .map((round) => Number(round.distance))
-          .filter(Boolean)
-      )
-    ).sort((a, b) => a - b);
+    const distances = session.distanceRounds
+      .slice()
+      .sort((a, b) => Number(a.index || a.roundNo || 0) - Number(b.index || b.roundNo || 0))
+      .filter((round) => Number(round.total) > 0 || Number(round.distance) > 0)
+      .map((round) => Number(round.distance))
+      .filter(Boolean);
 
-    if (distances.length) return `거리 ${distances.map((distance) => `${distance}m`).join(" / ")}`;
+    if (distances.length) return `거리 ${distances.map((distance, idx) => `${distance}m(${idx + 1})`).join(" / ")}`;
     return "거리 기록 없음";
   }
 
@@ -22738,11 +22736,16 @@ function buildSessionPayload({ draftSession, profile, uid }) {
     endCount: isDistanceInput ? 0 : draftSession.ends.length,
     distanceRoundCount: isDistanceInput ? (draftSession.distanceRounds || []).length : 0,
     distanceRounds: isDistanceInput
-      ? (draftSession.distanceRounds || []).map((round) => ({
-          roundNo: round.index,
-          distance: Number(round.distance) || 0,
-          total: Number(round.total) || 0,
-        }))
+      ? (draftSession.distanceRounds || []).map((round, idx) => {
+          const roundIndex = Number(round.index || round.roundNo || idx + 1);
+          return {
+            id: round.id || `distance_round_${roundIndex}`,
+            index: roundIndex,
+            roundNo: roundIndex,
+            distance: Number(round.distance) || 0,
+            total: Number(round.total) || 0,
+          };
+        })
       : [],
     ends: isDistanceInput
       ? []
@@ -31679,22 +31682,7 @@ function XSessionApp() {
       };
       try {
         if (USE_FIRESTORE_USER_RANKING_ENTRIES) {
-          const writtenEntries = await upsertRankingEntriesForSession(appServices.db, savedPreviewSession, currentUser);
-          setUserRankingEntries((prev) => {
-            const nextMap = new Map((prev || []).map((entry) => [entry.entryId || `${entry.sessionId}_${entry.distance}`, entry]));
-            (writtenEntries || []).forEach((entry) => {
-              nextMap.set(entry.entryId || `${entry.sessionId}_${entry.distance}`, {
-                ...entry,
-                id: entry.entryId,
-                sourceType: "user_session",
-                isUserRecord: true,
-                isSampleData: false,
-                isOfficialRecord: false,
-                officialRecord: false,
-              });
-            });
-            return Array.from(nextMap.values());
-          });
+          await upsertRankingEntriesForSession(appServices.db, savedPreviewSession, currentUser);
         }
       } catch (rankingEntryError) {
         console.warn("ranking_entries user-session sync failed", rankingEntryError);
@@ -31752,7 +31740,6 @@ function XSessionApp() {
     try {
       await deleteDoc(doc(appServices.db, "sessions", editingSessionId));
       await deleteRankingEntriesForSession(appServices.db, editingSessionId);
-      setUserRankingEntries((prev) => (prev || []).filter((entry) => entry.sessionId !== editingSessionId));
       setEditingSessionId(null);
       setDraftSession(normalizeSessionShape(createNewSession(profile, "cumulative"), profile));
       clearDraftFromLocal(authUser.uid);
