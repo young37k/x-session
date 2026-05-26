@@ -21331,6 +21331,25 @@ function buildOfficialDisplayRounds(sheet = {}, row = {}) {
 }
 
 
+
+const OFFICIAL_TENX_X_OVERRIDES = {
+  "AR0542026AR002AR01W01Q.pdf__1__고주은__헌터양궁클럽(컴)": { tenX: 106, x: 44 },
+  "AR0542026AR002AR01W01Q.pdf__2__류예지__팀자이언트(컴)": { tenX: 98, x: 37 },
+  "AR0542026AR002AR01W01Q.pdf__3__치앙보혜__팀자이언트(컴)": { tenX: 79, x: 28 },
+  "AR0542026AR002AR01W01Q.pdf__4__전이수__헌터양궁클럽(컴)": { tenX: 72, x: 31 },
+  "AR0542026AR002AR01W01Q.pdf__5__이서우__헌터양궁클럽(컴)": { tenX: 79, x: 32 },
+};
+
+function getOfficialTenXXOverride(sheet = {}, row = {}) {
+  const key = [
+    sheet.sourceFile || "",
+    row.rank || row.sourceRank || "",
+    row.name || "",
+    row.school || "",
+  ].join("__");
+  return OFFICIAL_TENX_X_OVERRIDES[key] || null;
+}
+
 function getOfficialTenXValue(row = {}) {
   const candidates = [row.tenX, row.tenPlusX, row.ten_plus_x, row["10+X"], row.tenXCount, row.tenPlusXCount];
   const found = candidates.find((value) => value !== undefined && value !== null && value !== "");
@@ -21360,8 +21379,9 @@ function buildPermanentSampleSessions() {
         seen.add(dedupeKey);
 
         const officialDisplayRounds = buildOfficialDisplayRounds(sheet, row);
-        const officialTenX = getOfficialTenXValue(row);
-        const officialX = getOfficialXValue(row);
+        const officialTenXXOverride = getOfficialTenXXOverride(sheet, row);
+        const officialTenX = officialTenXXOverride?.tenX ?? getOfficialTenXValue(row);
+        const officialX = officialTenXXOverride?.x ?? getOfficialXValue(row);
         return {
           ...buildSampleDistanceSession({
             userId,
@@ -26925,8 +26945,10 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   const getSessionTenXSummary = useCallback((session) => {
     if (!session) return { tenXText: "10+X -", xText: "X -" };
 
-    const officialTenX = Number(session.officialTenX ?? session.tenX ?? session.tenPlusX ?? session.summary?.tenXCount);
-    const officialX = Number(session.officialX ?? session.x ?? session.xCount ?? session.summary?.xCount);
+    const explicitTenX = session.officialTenX ?? session.tenX ?? session.tenPlusX ?? session["10+X"];
+    const explicitX = session.officialX ?? session.x ?? session.X;
+    const officialTenX = explicitTenX === undefined || explicitTenX === null || explicitTenX === "" ? null : Number(explicitTenX);
+    const officialX = explicitX === undefined || explicitX === null || explicitX === "" ? null : Number(explicitX);
     if (Number.isFinite(officialTenX) || Number.isFinite(officialX)) {
       return {
         tenXText: `10+X ${Number.isFinite(officialTenX) ? officialTenX : "-"}`,
