@@ -26902,6 +26902,24 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return `${displayDistance}m(${Number(index) + 1})`;
   }, [getDisplayDistanceFromRankingDistance]);
 
+  const getRoundTenXSummary = useCallback((session, roundIndex) => {
+    if (!session || session.recordInputType === "distance") {
+      return { tenXText: "10+X -", xText: "X -" };
+    }
+    const end = Array.isArray(session.ends) ? session.ends[roundIndex] : null;
+    const arrows = Array.isArray(end?.arrows) ? end.arrows : [];
+    if (!arrows.length) return { tenXText: "10+X -", xText: "X -" };
+    const xCount = arrows.filter((arrow) => String(arrow).toUpperCase() === "X").length;
+    const tenXCount = arrows.filter((arrow) => String(arrow) === "10" || String(arrow).toUpperCase() === "X").length;
+    return { tenXText: `10+X ${tenXCount}`, xText: `X ${xCount}` };
+  }, []);
+
+  const formatRoundScoreWithTenX = useCallback((round, idx, session) => {
+    const score = Number(round?.score ?? round?.total ?? 0) || 0;
+    const { tenXText, xText } = getRoundTenXSummary(session, idx);
+    return `${formatDistanceRoundLabel(round?.distance, idx)} ${score}점 · ${tenXText} · ${xText}`;
+  }, [formatDistanceRoundLabel, getRoundTenXSummary]);
+
   const getMyOrderedSessionsForSelectedBow = useCallback(() => {
     const sortByTotalAndDate = (items = []) => items
       .slice()
@@ -27538,13 +27556,16 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                         <>
                           {currentRankingUserIds.has(item.userId) && myInputOrderRoundScores.length
                             ? myInputOrderRoundScores
-                                .map((round, idx) => `${formatDistanceRoundLabel(round.distance, idx)} ${round.score}점`)
+                                .map((round, idx) => formatRoundScoreWithTenX(round, idx, myBestSelectedBowSession))
                                 .join(" · ")
                             : Array.isArray(item.distanceRoundScores) && item.distanceRoundScores.length
                               ? item.distanceRoundScores
-                                  .map((round, idx) => `${formatDistanceRoundLabel(round.distance, idx)} ${round.score}점`)
+                                  .map((round, idx) => formatRoundScoreWithTenX(round, idx, item.session))
                                   .join(" · ")
-                              : item.requiredDistances.map((distance, idx) => `${formatDistanceRoundLabel(distance, idx)} ${item.distanceScores[distance]}점`).join(" · ")}
+                              : item.requiredDistances.map((distance, idx) => {
+                                  const score = item.distanceScores[distance] || 0;
+                                  return `${formatDistanceRoundLabel(distance, idx)} ${score}점 · 10+X - · X -`;
+                                }).join(" · ")}
                         </>
                       )}
                     </div>
