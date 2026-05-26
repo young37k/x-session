@@ -21330,38 +21330,6 @@ function buildOfficialDisplayRounds(sheet = {}, row = {}) {
   return [];
 }
 
-
-
-const OFFICIAL_TENX_X_OVERRIDES = {
-  "AR0542026AR002AR01W01Q.pdf__1__고주은__헌터양궁클럽(컴)": { tenX: 106, x: 44 },
-  "AR0542026AR002AR01W01Q.pdf__2__류예지__팀자이언트(컴)": { tenX: 98, x: 37 },
-  "AR0542026AR002AR01W01Q.pdf__3__치앙보혜__팀자이언트(컴)": { tenX: 79, x: 28 },
-  "AR0542026AR002AR01W01Q.pdf__4__전이수__헌터양궁클럽(컴)": { tenX: 72, x: 31 },
-  "AR0542026AR002AR01W01Q.pdf__5__이서우__헌터양궁클럽(컴)": { tenX: 79, x: 32 },
-};
-
-function getOfficialTenXXOverride(sheet = {}, row = {}) {
-  const key = [
-    sheet.sourceFile || "",
-    row.rank || row.sourceRank || "",
-    row.name || "",
-    row.school || "",
-  ].join("__");
-  return OFFICIAL_TENX_X_OVERRIDES[key] || null;
-}
-
-function getOfficialTenXValue(row = {}) {
-  const candidates = [row.tenX, row.tenPlusX, row.ten_plus_x, row["10+X"], row.tenXCount, row.tenPlusXCount];
-  const found = candidates.find((value) => value !== undefined && value !== null && value !== "");
-  return found === undefined ? null : Number(found);
-}
-
-function getOfficialXValue(row = {}) {
-  const candidates = [row.x, row.X, row.xCount, row.XCount, row.xs];
-  const found = candidates.find((value) => value !== undefined && value !== null && value !== "");
-  return found === undefined ? null : Number(found);
-}
-
 function buildPermanentSampleSessions() {
   const seen = new Set();
   return SAMPLE_SHEETS.flatMap((sheet) =>
@@ -21379,9 +21347,6 @@ function buildPermanentSampleSessions() {
         seen.add(dedupeKey);
 
         const officialDisplayRounds = buildOfficialDisplayRounds(sheet, row);
-        const officialTenXXOverride = getOfficialTenXXOverride(sheet, row);
-        const officialTenX = officialTenXXOverride?.tenX ?? getOfficialTenXValue(row);
-        const officialX = officialTenXXOverride?.x ?? getOfficialXValue(row);
         return {
           ...buildSampleDistanceSession({
             userId,
@@ -21401,8 +21366,6 @@ function buildPermanentSampleSessions() {
             })),
           }),
           officialDisplayRounds,
-          officialTenX: Number.isFinite(officialTenX) ? officialTenX : null,
-          officialX: Number.isFinite(officialX) ? officialX : null,
         };
       })
       .filter(Boolean)
@@ -23150,9 +23113,6 @@ function buildCompoundSessionTotalRankingItem(user, sessions, rankingFilters = {
     requiredDistances: best.requiredDistances,
     distanceScores: best.distanceScores,
     distanceRoundScores: best.distanceRoundScores || [],
-    session: best.session,
-    officialTenX: best.session?.officialTenX ?? null,
-    officialX: best.session?.officialX ?? null,
     totalScore: best.totalScore,
     latestDate: best.latestDate || "",
     isSampleData: Boolean(user.isSampleData),
@@ -26942,40 +26902,6 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     return `${displayDistance}m(${Number(index) + 1})`;
   }, [getDisplayDistanceFromRankingDistance]);
 
-  const getSessionTenXSummary = useCallback((session) => {
-    if (!session) return { tenXText: "10+X -", xText: "X -" };
-
-    const explicitTenX = session.officialTenX ?? session.tenX ?? session.tenPlusX ?? session["10+X"];
-    const explicitX = session.officialX ?? session.x ?? session.X;
-    const officialTenX = explicitTenX === undefined || explicitTenX === null || explicitTenX === "" ? null : Number(explicitTenX);
-    const officialX = explicitX === undefined || explicitX === null || explicitX === "" ? null : Number(explicitX);
-    if (Number.isFinite(officialTenX) || Number.isFinite(officialX)) {
-      return {
-        tenXText: `10+X ${Number.isFinite(officialTenX) ? officialTenX : "-"}`,
-        xText: `X ${Number.isFinite(officialX) ? officialX : "-"}`,
-      };
-    }
-
-    if (session.recordInputType === "distance") {
-      return { tenXText: "10+X -", xText: "X -" };
-    }
-    const arrows = (session.ends || []).flatMap((end) => Array.isArray(end?.arrows) ? end.arrows : []);
-    if (!arrows.length) return { tenXText: "10+X -", xText: "X -" };
-    const xCount = arrows.filter((arrow) => String(arrow).toUpperCase() === "X").length;
-    const tenXCount = arrows.filter((arrow) => String(arrow) === "10" || String(arrow).toUpperCase() === "X").length;
-    return { tenXText: `10+X ${tenXCount}`, xText: `X ${xCount}` };
-  }, []);
-
-  const formatRoundScoreOnly = useCallback((round, idx) => {
-    const score = Number(round?.score ?? round?.total ?? 0) || 0;
-    return `${formatDistanceRoundLabel(round?.distance, idx)} ${score}점`;
-  }, [formatDistanceRoundLabel]);
-
-  const formatSessionTenXText = useCallback((session) => {
-    const { tenXText, xText } = getSessionTenXSummary(session);
-    return `${tenXText} · ${xText}`;
-  }, [getSessionTenXSummary]);
-
   const getMyOrderedSessionsForSelectedBow = useCallback(() => {
     const sortByTotalAndDate = (items = []) => items
       .slice()
@@ -27611,17 +27537,14 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                       ) : (
                         <>
                           {currentRankingUserIds.has(item.userId) && myInputOrderRoundScores.length
-                            ? `${myInputOrderRoundScores
-                                .map((round, idx) => formatRoundScoreOnly(round, idx))
-                                .join(" · ")} · ${formatSessionTenXText(myBestSelectedBowSession)}`
+                            ? myInputOrderRoundScores
+                                .map((round, idx) => `${formatDistanceRoundLabel(round.distance, idx)} ${round.score}점`)
+                                .join(" · ")
                             : Array.isArray(item.distanceRoundScores) && item.distanceRoundScores.length
-                              ? `${item.distanceRoundScores
-                                  .map((round, idx) => formatRoundScoreOnly(round, idx))
-                                  .join(" · ")} · ${formatSessionTenXText(item.session || item)}`
-                              : `${item.requiredDistances.map((distance, idx) => {
-                                  const score = item.distanceScores[distance] || 0;
-                                  return `${formatDistanceRoundLabel(distance, idx)} ${score}점`;
-                                }).join(" · ")} · 10+X - · X -`}
+                              ? item.distanceRoundScores
+                                  .map((round, idx) => `${formatDistanceRoundLabel(round.distance, idx)} ${round.score}점`)
+                                  .join(" · ")
+                              : item.requiredDistances.map((distance, idx) => `${formatDistanceRoundLabel(distance, idx)} ${item.distanceScores[distance]}점`).join(" · ")}
                         </>
                       )}
                     </div>
