@@ -26821,7 +26821,22 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
       if (bScore !== aScore) return bScore - aScore;
       return String(b.latestDate).localeCompare(String(a.latestDate));
     });
-    return items.map((item, idx) => ({ ...item, rank: idx + 1 }));
+    const rankedItems = items.map((item, idx) => ({ ...item, rank: idx + 1 }));
+    const dedupedByPerson = [];
+    const seenPersonKeys = new Set();
+    rankedItems.forEach((item) => {
+      const personKey = [
+        String(item.bowType || appliedRankingFilters.bowType || "리커브"),
+        String(item.name || "").trim(),
+        String(item.groupName || "").trim(),
+        String(item.gender || "").trim(),
+        String(item.rankingGroup || "").trim(),
+      ].join("__");
+      if (seenPersonKeys.has(personKey)) return;
+      seenPersonKeys.add(personKey);
+      dedupedByPerson.push(item);
+    });
+    return dedupedByPerson.map((item, idx) => ({ ...item, rank: idx + 1 }));
   }, [rankingType, scopedRankingUsers, scopedRankingSessions, appliedRankingFilters, scopedQualifiedAttemptsByUserId]);
 
   const visibleRankings = showAllRankings ? activeRankings : activeRankings.slice(0, 50);
@@ -26878,6 +26893,11 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
     }
     return Number(distanceValue) || distanceValue;
   }, []);
+
+  const formatDistanceRoundLabel = useCallback((distance, index) => {
+    const displayDistance = getDisplayDistanceFromRankingDistance(distance);
+    return `${displayDistance}m(${Number(index) + 1})`;
+  }, [getDisplayDistanceFromRankingDistance]);
 
   const getMyOrderedSessionsForSelectedBow = useCallback(() => {
     const sortByTotalAndDate = (items = []) => items
@@ -27105,7 +27125,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                       ) : (
                         <>
                           <div>종합 {myRank.totalScore}점</div>
-                          <div>기준 거리 {myRequiredDistances.map((distance) => `${getDisplayDistanceFromRankingDistance(distance)}m`).join(" / ")}</div>
+                          <div>기준 거리 {myRequiredDistances.map((distance, idx) => formatDistanceRoundLabel(distance, idx)).join(" / ")}</div>
                         </>
                       )}
                     </div>
@@ -27124,7 +27144,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                           key={`${idx}_${row.displayDistance || row.distance}`}
                           className="grid grid-cols-[64px_1fr_auto] items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm"
                         >
-                          <div className="font-bold text-slate-900">{row.displayDistance || row.distance}m</div>
+                          <div className="font-bold text-slate-900">{formatDistanceRoundLabel(row.displayDistance || row.distance, idx)}</div>
                           <div className="text-slate-600">
                             {row.rank ? (
                               <>
@@ -27515,13 +27535,13 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                         <>
                           {currentRankingUserIds.has(item.userId) && myInputOrderRoundScores.length
                             ? myInputOrderRoundScores
-                                .map((round) => `${round.distance}m ${round.score}점`)
+                                .map((round, idx) => `${formatDistanceRoundLabel(round.distance, idx)} ${round.score}점`)
                                 .join(" · ")
                             : Array.isArray(item.distanceRoundScores) && item.distanceRoundScores.length
                               ? item.distanceRoundScores
-                                  .map((round) => `${round.distance}m ${round.score}점`)
+                                  .map((round, idx) => `${formatDistanceRoundLabel(round.distance, idx)} ${round.score}점`)
                                   .join(" · ")
-                              : item.requiredDistances.map((distance) => `${getDisplayDistanceFromRankingDistance(distance)}m ${item.distanceScores[distance]}점`).join(" · ")}
+                              : item.requiredDistances.map((distance, idx) => `${formatDistanceRoundLabel(distance, idx)} ${item.distanceScores[distance]}점`).join(" · ")}
                         </>
                       )}
                     </div>
