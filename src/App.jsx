@@ -23358,7 +23358,7 @@ function buildTotalRankings(users, sessions, rankingFilters = {}, options = {}) 
           });
 
         // 공식 원본과 인증선수 최고기록은 반드시 같은 세션의 4거리 합계만 종합랭킹에 사용한다.
-        // 거리별 개인 최고점들을 서로 다른 날짜에서 합산하지 않는다.
+        // 거리별 최고기록들을 서로 다른 날짜에서 합산하지 않는다.
         if ((user.isSampleData || user.isOfficialRecordUser || user.verifiedAthlete || user.sourceType === "verified_user_best") && strictSessionTotals.length) {
           const bestStrict = strictSessionTotals[0];
           const strictAttempts = Object.values(bestStrict.byDistance || {});
@@ -23583,7 +23583,7 @@ function buildTargetScoreAnalysis(sessions = [], user = {}, filters = {}) {
       targetScore,
       growthGap: targetScore - (bestTotal.totalScore || 0),
       rows,
-      reason: "거리별 개인 최고점은 서로 다른 컨디션에서 나온 실제 기록입니다. 종합랭킹 점수와 구분해 다음 목표점수로 사용합니다.",
+      reason: "거리별 최고기록은 서로 다른 컨디션에서 나온 실제 기록입니다. 종합랭킹 점수와 구분해 다음 목표점수로 사용합니다.",
     };
   }).filter(Boolean);
 
@@ -23611,7 +23611,7 @@ function TargetScoreAnalysisCard({ analysis, compact = false }) {
         <div>
           <div className="text-base font-black text-blue-950">다음 목표점수</div>
           <div className="mt-1 text-xs leading-5 text-blue-800">
-            4거리 종합 최고기록과 거리별 개인 최고점을 비교해 성장 가능 점수를 계산합니다.
+            4거리 종합 최고기록과 거리별 최고기록을 비교해 성장 가능 점수를 계산합니다.
           </div>
         </div>
         <Badge className="rounded-full bg-blue-900 px-3 py-1 text-white">거리별 최고점 기준</Badge>
@@ -23637,25 +23637,25 @@ function TargetScoreAnalysisCard({ analysis, compact = false }) {
           </div>
 
           <div className="mt-3 rounded-2xl bg-white p-3 text-sm leading-6 text-slate-700">
-            현재 최고 종합점수는 <b>{Number(data.bestTotalScore || 0).toFixed(0)}점</b>입니다. 거리별 개인 최고점을 합치면 <b>{Number(data.targetScore || 0).toFixed(0)}점</b>까지 도전할 수 있습니다.
+            현재 최고 종합점수는 <b>{Number(data.bestTotalScore || 0).toFixed(0)}점</b>입니다. 거리별 최고기록을 합치면 <b>{Number(data.targetScore || 0).toFixed(0)}점</b>까지 도전할 수 있습니다.
             {growthGap > 0 ? ` 즉, 이미 각 거리에서 만든 점수를 기준으로 ${growthGap.toFixed(0)}점의 성장 여지가 있습니다.` : " 현재는 종합 최고기록과 거리별 최고점 합계가 거의 같습니다."}
           </div>
 
           <div className="mt-3 overflow-x-auto rounded-2xl bg-white">
-            <table className={`w-full ${compact ? "min-w-[360px]" : "min-w-[440px]"} text-sm`}>
+            <table className={`w-full ${compact ? "min-w-[360px]" : "min-w-[440px]"} text-center text-sm`}>
               <thead>
                 <tr className="border-b bg-slate-50 text-left text-xs text-slate-500">
-                  <th className="px-3 py-2">거리</th>
-                  <th className="px-3 py-2">종합 최고기록 당시</th>
-                  <th className="px-3 py-2">거리별 개인 최고점</th>
-                  <th className="px-3 py-2">차이</th>
+                  <th className="px-3 py-2 text-center">거리</th>
+                  <th className="px-3 py-2 text-center">종합 최고기록</th>
+                  <th className="px-3 py-2 text-center">거리별 최고기록</th>
+                  <th className="px-3 py-2 text-center">차이</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.distance} className="border-b last:border-0">
                     <td className="px-3 py-2 font-black">{row.distance}m</td>
-                    <td className="px-3 py-2">{Number(row.totalScore || 0).toFixed(0)}점</td>
+                    <td className="px-3 py-2 text-center">{Number(row.totalScore || 0).toFixed(0)}점</td>
                     <td className="px-3 py-2 font-semibold text-blue-700">{Number(row.bestDistanceScore || 0).toFixed(0)}점</td>
                     <td className={`px-3 py-2 font-black ${Number(row.gap || 0) > 0 ? "text-emerald-600" : "text-slate-500"}`}>
                       {Number(row.gap || 0) > 0 ? "+" : ""}{Number(row.gap || 0).toFixed(0)}
@@ -23663,8 +23663,8 @@ function TargetScoreAnalysisCard({ analysis, compact = false }) {
                   </tr>
                 ))}
                 <tr className="bg-blue-50/70 font-black">
-                  <td className="px-3 py-2">합계</td>
-                  <td className="px-3 py-2">{Number(data.bestTotalScore || 0).toFixed(0)}점</td>
+                  <td className="px-3 py-2 text-center">합계</td>
+                  <td className="px-3 py-2 text-center">{Number(data.bestTotalScore || 0).toFixed(0)}점</td>
                   <td className="px-3 py-2 text-blue-700">{Number(data.targetScore || 0).toFixed(0)}점</td>
                   <td className="px-3 py-2 text-emerald-600">{growthGap > 0 ? "+" : ""}{growthGap.toFixed(0)}</td>
                 </tr>
