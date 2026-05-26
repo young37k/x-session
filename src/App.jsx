@@ -21330,6 +21330,19 @@ function buildOfficialDisplayRounds(sheet = {}, row = {}) {
   return [];
 }
 
+
+function getOfficialTenXValue(row = {}) {
+  const candidates = [row.tenX, row.tenPlusX, row.ten_plus_x, row["10+X"], row.tenXCount, row.tenPlusXCount];
+  const found = candidates.find((value) => value !== undefined && value !== null && value !== "");
+  return found === undefined ? null : Number(found);
+}
+
+function getOfficialXValue(row = {}) {
+  const candidates = [row.x, row.X, row.xCount, row.XCount, row.xs];
+  const found = candidates.find((value) => value !== undefined && value !== null && value !== "");
+  return found === undefined ? null : Number(found);
+}
+
 function buildPermanentSampleSessions() {
   const seen = new Set();
   return SAMPLE_SHEETS.flatMap((sheet) =>
@@ -21347,6 +21360,8 @@ function buildPermanentSampleSessions() {
         seen.add(dedupeKey);
 
         const officialDisplayRounds = buildOfficialDisplayRounds(sheet, row);
+        const officialTenX = getOfficialTenXValue(row);
+        const officialX = getOfficialXValue(row);
         return {
           ...buildSampleDistanceSession({
             userId,
@@ -21366,6 +21381,8 @@ function buildPermanentSampleSessions() {
             })),
           }),
           officialDisplayRounds,
+          officialTenX: Number.isFinite(officialTenX) ? officialTenX : null,
+          officialX: Number.isFinite(officialX) ? officialX : null,
         };
       })
       .filter(Boolean)
@@ -23113,6 +23130,9 @@ function buildCompoundSessionTotalRankingItem(user, sessions, rankingFilters = {
     requiredDistances: best.requiredDistances,
     distanceScores: best.distanceScores,
     distanceRoundScores: best.distanceRoundScores || [],
+    session: best.session,
+    officialTenX: best.session?.officialTenX ?? null,
+    officialX: best.session?.officialX ?? null,
     totalScore: best.totalScore,
     latestDate: best.latestDate || "",
     isSampleData: Boolean(user.isSampleData),
@@ -26903,7 +26923,18 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
   }, [getDisplayDistanceFromRankingDistance]);
 
   const getSessionTenXSummary = useCallback((session) => {
-    if (!session || session.recordInputType === "distance") {
+    if (!session) return { tenXText: "10+X -", xText: "X -" };
+
+    const officialTenX = Number(session.officialTenX ?? session.tenX ?? session.tenPlusX ?? session.summary?.tenXCount);
+    const officialX = Number(session.officialX ?? session.x ?? session.xCount ?? session.summary?.xCount);
+    if (Number.isFinite(officialTenX) || Number.isFinite(officialX)) {
+      return {
+        tenXText: `10+X ${Number.isFinite(officialTenX) ? officialTenX : "-"}`,
+        xText: `X ${Number.isFinite(officialX) ? officialX : "-"}`,
+      };
+    }
+
+    if (session.recordInputType === "distance") {
       return { tenXText: "10+X -", xText: "X -" };
     }
     const arrows = (session.ends || []).flatMap((end) => Array.isArray(end?.arrows) ? end.arrows : []);
@@ -27564,7 +27595,7 @@ function RankingBoard({ users, sessions, currentUser, currentUserId, officialCla
                             : Array.isArray(item.distanceRoundScores) && item.distanceRoundScores.length
                               ? `${item.distanceRoundScores
                                   .map((round, idx) => formatRoundScoreOnly(round, idx))
-                                  .join(" · ")} · ${formatSessionTenXText(item.session)}`
+                                  .join(" · ")} · ${formatSessionTenXText(item.session || item)}`
                               : `${item.requiredDistances.map((distance, idx) => {
                                   const score = item.distanceScores[distance] || 0;
                                   return `${formatDistanceRoundLabel(distance, idx)} ${score}점`;
