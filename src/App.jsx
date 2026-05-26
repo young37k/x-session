@@ -23148,6 +23148,15 @@ function getUserQualifiedAttempts(user, sessions = [], attemptsByUserId = null) 
     .flatMap((session) => getQualifiedDistanceAttempts(session));
 }
 
+
+function isRankableDistanceAttempt(attempt) {
+  return Number(attempt?.distance) > 0 && Number(attempt?.score) > 0;
+}
+
+// 거리 랭킹 모수 기준:
+// - 점수 0점도 대회/사용자 입력 기록이면 유효 기록으로 포함한다.
+// - 이름/소속만 있는 rosterOnly 명단 행은 SAMPLE 생성 단계에서 제외한다.
+// - distance가 없거나 score가 숫자가 아닌 데이터만 랭킹 후보에서 제외한다.
 function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {}) {
   const { weekly = false, attemptsByUserId = null } = options;
   const selectedDistance = rankingFilters.distance || "all";
@@ -23177,6 +23186,7 @@ function buildDistanceRankings(users, sessions, rankingFilters = {}, options = {
         return null;
       }
       const allAttempts = getUserQualifiedAttempts(user, sessions, attemptsByUserId)
+        .filter((attempt) => Number(attempt?.distance) > 0 && Number.isFinite(Number(attempt?.score)))
         .filter((attempt) => !rankingFilters.bowType || rankingFilters.bowType === "all" || String(attempt.bowType || "리커브") === String(rankingFilters.bowType))
         .filter((attempt) => !weekly || isWithinRecent7Days(attempt.sessionDate))
         .filter((attempt) => isWithinDateFilter(attempt.sessionDate, rankingFilters.dateFilter || "all", rankingFilters.customDate));
