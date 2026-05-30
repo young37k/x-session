@@ -559,7 +559,7 @@ function getAnalysisSessionStateKey(userId) {
 
 function getInitialTabByRole(role) {
   const normalized = String(role || "선수").trim();
-  if (normalized === "감독/코치/스탭" || normalized === "학기록관리자") return "ranking";
+  if (normalized === "감독/코치/스탭" || normalized === "학부모") return "ranking";
   return "routine";
 }
 
@@ -19698,7 +19698,7 @@ function AuthPanel({ onRegister, onLogin, authLoading }) {
                   >
                     <option value="선수">선수</option>
                     <option value="감독/코치/스탭">감독/코치/스탭</option>
-                    <option value="학기록관리자">학기록관리자</option>
+                    <option value="학부모">학부모</option>
                   </select>
                 </div>
                 <div className="grid gap-2">
